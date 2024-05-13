@@ -4,7 +4,7 @@
   "description": "BE Express",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"nodemon node ./start.js\" \"npm run compile:watch\"",
+    "dev": "concurrently \"nodemon node ./dist/start.js\" \"npm run compile:watch\"",
     "compile": "tsc -p ./",
     "compile:watch": "tsc -p ./ --watch",
     "start": "node ./start.js",

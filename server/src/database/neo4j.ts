@@ -40,7 +40,7 @@ export default class Neo4jDriver {
   ): Promise<QueryResult> {
     const session: Session = this.instance.session();
     // TODO: This should ideally be split up in "exectuteWrite" and "executeRead"
-    const result: QueryResult = await session.executeWrite(tx => {
+    const result: QueryResult = await session.executeRead(tx => {
       return tx.run(query, ...params);
     });
     await session.close();
