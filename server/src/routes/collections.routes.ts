@@ -17,6 +17,21 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/', async (req: Request, res: Response) => {
+  const data: CollectionPostData = { label: req.body.label, uuid: crypto.randomUUID() };
+
+  try {
+    const collectionService: CollectionService = new CollectionService();
+    const newCollection: ICollection | undefined =
+      await collectionService.createNewCollection(data);
+
+    res.status(201).json(newCollection);
+  } catch (error: unknown) {
+    console.log(error);
+    res.status(500).json({ error: error }); // Handle error appropriately
+  }
+});
+
 router.get('/:uuid', async (req: Request, res: Response) => {
   const uuid: string = req.params.uuid;
 
@@ -30,18 +45,20 @@ router.get('/:uuid', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
-  const data: CollectionPostData = { label: req.body.label, uuid: crypto.randomUUID() };
+router.post('/:uuid', async (req: Request, res: Response) => {
+  const uuid: string = req.params.uuid;
+  const data: Record<string, string> = req.body;
 
   try {
     const collectionService: CollectionService = new CollectionService();
-    const newCollection: ICollection | undefined =
-      await collectionService.createNewCollection(data);
+    const collection: ICollection | undefined = await collectionService.updateCollection(
+      uuid,
+      data,
+    );
 
-    res.status(201).json(newCollection);
+    res.json(collection ?? {});
   } catch (error: unknown) {
     console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
   }
 });
 

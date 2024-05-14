@@ -77,4 +77,35 @@ export default class CollectionService {
 
     return collection;
   }
+
+  /**
+   * Updates properties of collection node with given data.
+   *
+   * @param {string} uuid - The UUID of the collection node to update.
+   * @param {Record<string, string>} data - The data to update the collection with.
+   * @return {Promise<ICollection | undefined>} A promise that resolves to the updated collection or undefined.
+   */
+  public async updateCollection(
+    uuid: string,
+    data: Record<string, string>,
+  ): Promise<ICollection | undefined> {
+    data = { ...data, uuid };
+
+    const query: string = `
+    MATCH (c:Collection {uuid: $uuid})
+    SET c = $data
+    RETURN c {.*} AS collection
+    `;
+
+    let collection: ICollection | undefined = undefined;
+
+    try {
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data }); // Pass newData instead of data
+      collection = result.records[0]?.get('collection');
+    } catch (error) {
+      console.error(error);
+    }
+
+    return collection;
+  }
 }
