@@ -1,6 +1,7 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import ICollection from '../models/ICollection.js';
+import { CollectionPostData } from '../models/types.js';
 
 export default class CollectionService {
   /**
@@ -42,6 +43,33 @@ export default class CollectionService {
 
     try {
       const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+      collection = result.records[0]?.get('collection');
+    } catch (error: unknown) {
+      console.log(error);
+    }
+
+    return collection;
+  }
+
+  /**
+   * Creates a new collection node with given data as properties, along with an associated text node.
+   *
+   * @param {CollectionPostData} data - The data containing the UUID and label for the new collection node.
+   * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
+   */
+  public async createNewCollection(data: CollectionPostData): Promise<ICollection | undefined> {
+    const { uuid, label } = data;
+    const textUuid: string = crypto.randomUUID();
+
+    const query: string = `
+    CREATE (c:Collection { uuid: $uuid, label: $label })-[:HAS_TEXT]->(t:Text { uuid: $textUuid })
+    RETURN c {.*} AS collection
+    `;
+
+    let collection: ICollection | undefined = undefined;
+
+    try {
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, label, textUuid });
       collection = result.records[0]?.get('collection');
     } catch (error: unknown) {
       console.log(error);
