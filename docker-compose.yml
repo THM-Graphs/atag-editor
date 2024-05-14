@@ -1,24 +1,24 @@
 version: '3.9'
 services:
  ## Nginx Proxy
- web:
-  image: nginx:alpine
-  volumes:
-   - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-  #  - ../etc/:/etc/nginx/certs
-  ports:
-   - '80:80'
-   - '443:443'
-  restart: always
-  depends_on:
-   - backend
-   #  - frontend
-   - neo4j
-  environment:
-   - NGINX_PORT=80
-  networks:
-   - intern
-   - extern
+ #  web:
+ #   image: nginx:alpine
+ #   volumes:
+ #    - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+ #   #  - ../etc/:/etc/nginx/certs
+ #   ports:
+ #    - '80:80'
+ #    - '443:443'
+ #   restart: always
+ #   depends_on:
+ #    - backend
+ #    #  - frontend
+ #    - neo4j
+ #   environment:
+ #    - NGINX_PORT=80
+ #   networks:
+ #    - intern
+ #    - extern
 
  ## Vue (Nginx) Frontend
  #  frontend:
@@ -32,6 +32,7 @@ services:
  #    - intern
  ## NodeJS-Express Backend
  backend:
+  container_name: backend
   build:
    context: ./server
    dockerfile: Dockerfile
@@ -48,10 +49,13 @@ services:
    - NEO4J_USER=${NEO4J_USER}
    - NEO4J_PW=${NEO4J_PW}
    - TEST=${TEST}
-  networks:
-   - intern
+  depends_on:
+   - neo4j
+  # networks:
+  #  - intern
  #  Neo4j Database
  neo4j:
+  container_name: neo4j
   image: neo4j:5.9
   restart: unless-stopped
   ports:
@@ -60,8 +64,7 @@ services:
   environment:
    NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
    NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
-
-networks:
- intern:
- extern:
-  driver: bridge
+# networks:
+#  intern:
+#  extern:
+#   driver: bridge

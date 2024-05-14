@@ -9,7 +9,8 @@ export default class Neo4jDriver {
    * @return {Promise<Driver>} A promise that resolves to the Neo4j driver instance.
    */
   public static async createDatabaseConnection(): Promise<Driver> {
-    const uri: string = `bolt://atag_neo4j:${process.env.NEO4J_BOLT_PORT}`;
+    // TODO: Put uri string in .env file
+    const uri: string = `bolt://neo4j:${process.env.NEO4J_BOLT_PORT}`;
     const user: string = `${process.env.NEO4J_USER}`;
     const password: string = `${process.env.NEO4J_PW}`;
 
@@ -34,10 +35,7 @@ export default class Neo4jDriver {
    * @param {...any[]} params The parameters to pass to the query.
    * @return {Promise<QueryResult>} A promise that resolves to the query result.
    */
-  public static async runQuery(
-    query: string,
-    ...params: any[]
-  ): Promise<QueryResult> {
+  public static async runQuery(query: string, ...params: any[]): Promise<QueryResult> {
     const session: Session = this.instance.session();
     // TODO: This should ideally be split up in "exectuteWrite" and "executeRead"
     const result: QueryResult = await session.executeRead(tx => {
