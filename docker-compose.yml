@@ -59,7 +59,7 @@ services:
  #  Neo4j Database
  neo4j:
   container_name: neo4j
-  image: neo4j:5.9
+  image: neo4j:5.19
   restart: unless-stopped
   ports:
    - 7474:7474
@@ -68,4 +68,4 @@ services:
    - ./neo4j:/var/lib/neo4j/plugins
   environment:
    NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
-   # NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
+   NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
