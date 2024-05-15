@@ -61,9 +61,11 @@ services:
   ports:
    - 7474:7474
    - 7687:7687
+  volumes:
+   - ./neo4j:/var/lib/neo4j/plugins
   environment:
    NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
-   NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
+   # NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
 # networks:
 #  intern:
 #  extern:
