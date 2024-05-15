@@ -21,15 +21,19 @@ services:
  #    - extern
 
  ## Vue (Nginx) Frontend
- #  frontend:
- #   build:
- #    context: ./client
- #    dockerfile: Dockerfile
- #   restart: on-failure
- #   depends_on:
- #    - backend
- #   networks:
- #    - intern
+ frontend:
+  container_name: frontend
+  build:
+   context: ./client
+   dockerfile: Dockerfile
+  volumes:
+   - ./client:/app
+  restart: on-failure
+  depends_on:
+   - backend
+  ports:
+   - '5173:5173'
+
  ## NodeJS-Express Backend
  backend:
   container_name: backend
@@ -51,8 +55,7 @@ services:
    - TEST=${TEST}
   depends_on:
    - neo4j
-  # networks:
-  #  - intern
+
  #  Neo4j Database
  neo4j:
   container_name: neo4j
@@ -66,7 +69,3 @@ services:
   environment:
    NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
    # NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
-# networks:
-#  intern:
-#  extern:
-#   driver: bridge
