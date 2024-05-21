@@ -62,7 +62,7 @@ export default class CollectionService {
     const textUuid: string = crypto.randomUUID();
 
     const query: string = `
-    CREATE (c:Collection { uuid: $uuid, label: $label })-[:HAS_TEXT]->(t:Text { uuid: $textUuid })
+    CREATE (c:Collection {uuid: $uuid, label: $label})-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
     RETURN c {.*} AS collection
     `;
 
@@ -79,33 +79,28 @@ export default class CollectionService {
   }
 
   /**
-   * Updates properties of collection node with given data.
+   * Updates the label property of a collection node with given UUID.
    *
    * @param {string} uuid - The UUID of the collection node to update.
-   * @param {Record<string, string>} data - The data to update the collection with.
-   * @return {Promise<ICollection | undefined>} A promise that resolves to the updated collection or undefined.
+   * @param {string} label - The new label for the collection node.
+   * @return {Promise<ICollection | undefined>} A promise that resolves to the updated collection node or undefined if not found.
    */
-  public async updateCollection(
-    uuid: string,
-    data: Record<string, string>,
-  ): Promise<ICollection | undefined> {
-    data = { ...data, uuid };
-
+  public async updateCollection(uuid: string, label: string): Promise<ICollection | undefined> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    SET c = $data
+    SET c.label = $label
     RETURN c {.*} AS collection
     `;
 
-    let collection: ICollection | undefined = undefined;
+    let updatedCollection: ICollection | undefined = undefined;
 
     try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data }); // Pass newData instead of data
-      collection = result.records[0]?.get('collection');
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, label });
+      updatedCollection = result.records[0]?.get('collection');
     } catch (error) {
       console.error(error);
     }
 
-    return collection;
+    return updatedCollection;
   }
 }

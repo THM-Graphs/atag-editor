@@ -47,13 +47,13 @@ router.get('/:uuid', async (req: Request, res: Response) => {
 
 router.post('/:uuid', async (req: Request, res: Response) => {
   const uuid: string = req.params.uuid;
-  const data: Record<string, string> = req.body;
+  const label: string = req.body.label;
 
   try {
     const collectionService: CollectionService = new CollectionService();
     const collection: ICollection | undefined = await collectionService.updateCollection(
       uuid,
-      data,
+      label,
     );
 
     res.json(collection ?? {});
