@@ -12,7 +12,7 @@ export default class CollectionService {
    */
   public async getCollections(additionalLabel: string): Promise<ICollection[]> {
     const query: string = `
-    MATCH (n:COLLECTION:${additionalLabel}) RETURN COLLECT(n {.*}) as collections
+    MATCH (n:Collection:${additionalLabel}) RETURN COLLECT(n {.*}) as collections
     `;
 
     let collections: ICollection[] = [];
@@ -35,7 +35,7 @@ export default class CollectionService {
    */
   public async getCollectionById(uuid: string): Promise<ICollection | undefined> {
     const query: string = `
-    MATCH (c:COLLECTION {uuid: $uuid})
+    MATCH (c:Collection {uuid: $uuid})
     RETURN c {.*} AS collection
     `;
 
@@ -57,12 +57,15 @@ export default class CollectionService {
    * @param {CollectionPostData} data - The data containing the UUID and label for the new collection node.
    * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
    */
-  public async createNewCollection(data: CollectionPostData): Promise<ICollection | undefined> {
+  public async createNewCollection(
+    data: CollectionPostData,
+    additionalLabel: string,
+  ): Promise<ICollection | undefined> {
     const { uuid, label } = data;
     const textUuid: string = crypto.randomUUID();
 
     const query: string = `
-    CREATE (c:Collection {uuid: $uuid, label: $label})-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
+    CREATE (c:Collection:${additionalLabel} {uuid: $uuid, label: $label})-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
     RETURN c {.*} AS collection
     `;
 

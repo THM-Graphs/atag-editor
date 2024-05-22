@@ -3,7 +3,7 @@ export default interface ICollection {
   explicit: string;
   folioEnd: string;
   folioStart: string;
-  guid: string;
+  // guid: string;
   incipit: string;
   inscriptio: string;
   label: string;
@@ -12,5 +12,6 @@ export default interface ICollection {
   sentBy: string;
   status: number;
   textGuid: string;
+  uuid: string;
   websiteUrl: string;
 }
