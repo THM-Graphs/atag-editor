@@ -11,6 +11,7 @@ import Dialog from 'primevue/dialog';
 
 const collections = ref<ICollection[]>([]);
 const dialogIsVisible = ref<boolean>(false);
+const newCollectionTitle = ref<string>('');
 
 onMounted(async (): Promise<void> => {
   collections.value = await getCollections();
@@ -33,6 +34,35 @@ async function getCollections(): Promise<ICollection[]> {
   });
 
   return collections;
+}
+
+async function createNewCollection(): Promise<void> {
+  try {
+    // TODO: Replace localhost with vite configuration
+    const url: string = 'http://localhost:8080/api/collections';
+    const response: Response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      redirect: 'follow',
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify({ label: newCollectionTitle.value }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    newCollectionTitle.value = '';
+    dialogIsVisible.value = false;
+    collections.value = await getCollections();
+  } catch (error: unknown) {
+    console.error('Error creating collection:', error);
+  }
 }
 </script>
 
@@ -67,7 +97,7 @@ async function getCollections(): Promise<ICollection[]> {
     >
       <div class="flex align-items-center gap-3 mb-3">
         <label for="title" class="font-semibold w-6rem">Title</label>
-        <InputText id="title" class="flex-auto" autocomplete="off" />
+        <InputText id="title" class="flex-auto" autocomplete="off" v-model="newCollectionTitle" />
       </div>
       <div class="flex justify-content-end gap-2">
         <Button
@@ -76,25 +106,32 @@ async function getCollections(): Promise<ICollection[]> {
           severity="secondary"
           @click="dialogIsVisible = false"
         ></Button>
-        <Button type="button" label="Create" @click="dialogIsVisible = false"></Button>
+        <Button type="button" label="Create" @click="createNewCollection"></Button>
       </div>
     </Dialog>
 
-    <span>{{ collections.length }} texts</span>
-    <ul>
-      <li v-for="collection in collections" :key="collection.uuid">
-        <Card>
-          <template #title>
-            <RouterLink :to="`/texts/${collection.uuid}`">{{ collection.label }} </RouterLink>
-          </template>
-        </Card>
-      </li>
-    </ul>
+    <div class="counter-container">
+      <span>{{ collections.length }} texts</span>
+    </div>
+    <div class="list-container">
+      <ul>
+        <li v-for="collection in collections" :key="collection.uuid">
+          <Card>
+            <template #title>
+              <RouterLink :to="`/texts/${collection.uuid}`">{{ collection.label }} </RouterLink>
+            </template>
+          </Card>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   margin: auto;
   width: 60%;
   min-width: 800px;
@@ -103,5 +140,11 @@ async function getCollections(): Promise<ICollection[]> {
 .toolbar {
   width: 60%;
   margin: auto;
+}
+
+.list-container {
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  flex-grow: 1;
 }
 </style>

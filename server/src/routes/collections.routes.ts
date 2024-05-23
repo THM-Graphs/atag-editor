@@ -11,9 +11,10 @@ router.get('/', async (req: Request, res: Response) => {
     const collectionService: CollectionService = new CollectionService();
     const collections: ICollection[] = await collectionService.getCollections('Metadata');
 
-    res.json(collections);
+    res.status(200).json(collections);
   } catch (error: unknown) {
     console.log(error);
+    res.status(500).json({ error: error }); // Handle error appropriately
   }
 });
 
@@ -41,9 +42,10 @@ router.get('/:uuid', async (req: Request, res: Response) => {
     const collectionService: CollectionService = new CollectionService();
     const collection: ICollection | undefined = await collectionService.getCollectionById(uuid);
 
-    res.json(collection ?? {});
+    res.status(200).json(collection ?? {});
   } catch (error: unknown) {
     console.log(error);
+    res.status(500).json({ error: error }); // Handle error appropriately
   }
 });
 
@@ -58,9 +60,10 @@ router.post('/:uuid', async (req: Request, res: Response) => {
       label,
     );
 
-    res.json(collection ?? {});
+    res.status(200).json(collection ?? {});
   } catch (error: unknown) {
     console.log(error);
+    res.status(500).json({ error: error }); // Handle error appropriately
   }
 });
 
