@@ -67,6 +67,20 @@ router.post('/:uuid', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/:uuid', async (req: Request, res: Response) => {
+  const uuid: string = req.params.uuid;
+
+  try {
+    const collectionService: CollectionService = new CollectionService();
+    const collection: ICollection | undefined = await collectionService.deleteCollection(uuid);
+
+    res.status(200).json(collection ?? {});
+  } catch (error: unknown) {
+    console.log(error);
+    res.status(500).json({ error: error }); // Handle error appropriately
+  }
+});
+
 router.use('/:uuid/characters', characterRoutes);
 
 export default router;

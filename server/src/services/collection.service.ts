@@ -106,4 +106,31 @@ export default class CollectionService {
 
     return updatedCollection;
   }
+
+  /**
+   * Deletes a collection node with given UUID, along with an associated text node.
+   *
+   * @param {string} uuid - The UUID of the collection node to delete.
+   * @return {Promise<ICollection | undefined>} A promise that resolves to the deleted collection or undefined.
+   */
+  public async deleteCollection(uuid: string): Promise<ICollection | undefined> {
+    // TODO: Delete Character nodes, too
+    const query: string = `
+    MATCH (c:Collection {uuid: $uuid})-[:HAS_TEXT]->(t:Text)
+    WITH c, t, c {.*} as collection
+    DETACH DELETE c, t
+    RETURN collection
+    `;
+
+    let deletedCollection: ICollection | undefined = undefined;
+
+    try {
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+      deletedCollection = result.records[0]?.get('collection');
+    } catch (error) {
+      console.error(error);
+    }
+
+    return deletedCollection;
+  }
 }
