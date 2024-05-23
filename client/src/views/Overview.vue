@@ -10,30 +10,43 @@ import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 
 const collections = ref<ICollection[]>([]);
+const filteredCollections = ref<ICollection[]>([]);
+const searchInput = ref<string>('');
 const dialogIsVisible = ref<boolean>(false);
 const newCollectionTitle = ref<string>('');
 
 onMounted(async (): Promise<void> => {
-  collections.value = await getCollections();
+  await getCollections();
 });
 
-async function getCollections(): Promise<ICollection[]> {
-  // TODO: Replace localhost with vite configuration
-  const url: string = 'http://localhost:8080/api/collections';
-  const response: Response = await fetch(url);
-  const collections: ICollection[] = await response.json();
+async function getCollections(): Promise<void> {
+  try {
+    // TODO: Replace localhost with vite configuration
+    const url: string = 'http://localhost:8080/api/collections';
+    const response: Response = await fetch(url);
 
-  collections.sort((a: ICollection, b: ICollection) => {
-    if (a.label < b.label) {
-      return -1;
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
     }
-    if (a.label > b.label) {
-      return 1;
-    }
-    return 0;
-  });
 
-  return collections;
+    const fetchedCollections: ICollection[] = await response.json();
+
+    fetchedCollections.sort((a: ICollection, b: ICollection) => {
+      if (a.label < b.label) {
+        return -1;
+      }
+      if (a.label > b.label) {
+        return 1;
+      }
+      return 0;
+    });
+
+    collections.value = fetchedCollections;
+
+    filterCollections();
+  } catch (error: unknown) {
+    console.error('Error creating collection:', error);
+  }
 }
 
 async function createNewCollection(): Promise<void> {
@@ -42,13 +55,11 @@ async function createNewCollection(): Promise<void> {
     const url: string = 'http://localhost:8080/api/collections';
     const response: Response = await fetch(url, {
       method: 'POST',
-      mode: 'cors',
       cache: 'no-cache',
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
       },
-      redirect: 'follow',
       referrerPolicy: 'no-referrer',
       body: JSON.stringify({ label: newCollectionTitle.value }),
     });
@@ -59,10 +70,17 @@ async function createNewCollection(): Promise<void> {
 
     newCollectionTitle.value = '';
     dialogIsVisible.value = false;
-    collections.value = await getCollections();
+
+    await getCollections();
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
   }
+}
+
+function filterCollections(): void {
+  filteredCollections.value = collections.value.filter(
+    (c: ICollection) => c.label && c.label.includes(searchInput.value),
+  );
 }
 </script>
 
@@ -76,7 +94,7 @@ async function createNewCollection(): Promise<void> {
           <InputIcon>
             <i class="pi pi-search" />
           </InputIcon>
-          <InputText placeholder="Filter texts" />
+          <InputText placeholder="Filter texts" v-model="searchInput" @input="filterCollections" />
         </IconField>
       </template>
 
@@ -111,11 +129,11 @@ async function createNewCollection(): Promise<void> {
     </Dialog>
 
     <div class="counter-container">
-      <span>{{ collections.length }} texts</span>
+      <span>{{ filteredCollections.length }} texts</span>
     </div>
     <div class="list-container">
       <ul>
-        <li v-for="collection in collections" :key="collection.uuid">
+        <li v-for="collection in filteredCollections" :key="collection.uuid">
           <Card>
             <template #title>
               <RouterLink :to="`/texts/${collection.uuid}`">{{ collection.label }} </RouterLink>
