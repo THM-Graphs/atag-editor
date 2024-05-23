@@ -6,7 +6,6 @@ import Toolbar from 'primevue/toolbar';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 
 const collections = ref<ICollection[]>([]);
@@ -103,8 +102,8 @@ async function deleteCollection(uuid: string): Promise<void> {
 }
 
 function filterCollections(): void {
-  filteredCollections.value = collections.value.filter(
-    (c: ICollection) => c.label && c.label.includes(searchInput.value),
+  filteredCollections.value = collections.value.filter((c: ICollection) =>
+    c.label.includes(searchInput.value),
   );
 }
 </script>
@@ -138,19 +137,28 @@ function filterCollections(): void {
       header="Add new text"
       :style="{ width: '25rem' }"
     >
-      <div class="flex align-items-center gap-3 mb-3">
-        <label for="title" class="font-semibold w-6rem">Title</label>
-        <InputText id="title" class="flex-auto" autocomplete="off" v-model="newCollectionTitle" />
-      </div>
-      <div class="flex justify-content-end gap-2">
-        <Button
-          type="button"
-          label="Cancel"
-          severity="secondary"
-          @click="dialogIsVisible = false"
-        ></Button>
-        <Button type="button" label="Create" @click="createNewCollection"></Button>
-      </div>
+      <form @submit.prevent="createNewCollection">
+        <div class="flex align-items-center gap-3 mb-3">
+          <label for="title" class="font-semibold w-6rem">Title</label>
+          <InputText
+            id="title"
+            class="flex-auto"
+            autocomplete="off"
+            required
+            autofocus
+            v-model="newCollectionTitle"
+          />
+        </div>
+        <div class="flex justify-content-end gap-2">
+          <Button
+            type="button"
+            label="Cancel"
+            severity="secondary"
+            @click="dialogIsVisible = false"
+          ></Button>
+          <Button type="submit" label="Create"></Button>
+        </div>
+      </form>
     </Dialog>
 
     <div class="counter-container">
@@ -162,7 +170,6 @@ function filterCollections(): void {
           class="list-item flex justify-content-between gap-6 flex-grow-1 text-xl p-3"
           v-for="collection in filteredCollections"
           :key="collection.uuid"
-          @mouseover=""
         >
           <div class="title">
             <RouterLink :to="`/texts/${collection.uuid}`">{{ collection.label }} </RouterLink>
