@@ -14,27 +14,11 @@ const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
 
 const collection = ref<ICollection | null>(null);
-
-// TODO: Implement character fetching
-const characters: ICharacter[] =
-  'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
-    .split('')
-    .map((char: string) => {
-      const textGuid = crypto.randomUUID();
-      const letterLabel = collection.value?.label;
-      const textUrl = 'www.xyz.de';
-
-      return {
-        textGuid: textGuid,
-        letterLabel: letterLabel,
-        text: char,
-        uuid: crypto.randomUUID(),
-        textUrl: textUrl,
-      };
-    });
+const characters = ref<ICharacter[]>([]);
 
 onMounted(async (): Promise<void> => {
   await getCollectionByUuid(uuid);
+  await getCharacters(uuid);
 });
 
 async function getCollectionByUuid(uuid: string): Promise<void> {
@@ -52,6 +36,24 @@ async function getCollectionByUuid(uuid: string): Promise<void> {
     collection.value = fetchedCollection;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
+  }
+}
+
+async function getCharacters(uuid: string): Promise<void> {
+  try {
+    // TODO: Replace localhost with vite configuration
+    const url: string = `http://localhost:8080/api/collections/${uuid}/characters`;
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedCharacters: ICharacter[] = await response.json();
+
+    characters.value = fetchedCharacters;
+  } catch (error: unknown) {
+    console.error('Error fetching characters:', error);
   }
 }
 </script>
@@ -75,7 +77,7 @@ async function getCollectionByUuid(uuid: string): Promise<void> {
         <div class="uuid text-center">UUID: {{ collection?.uuid }}</div>
       </div>
       <div class="content flex flex-column flex-1 p-3">
-        <div class="character-counter text-right">1435 characters</div>
+        <div class="character-counter text-right">{{ characters.length }}</div>
         <div class="text-container p-2">
           <div id="text" contenteditable="true" spellcheck="false">
             <span v-for="character in characters" :key="character.uuid">
