@@ -79,7 +79,7 @@ async function getCharacters(uuid: string): Promise<void> {
 </script>
 
 <template>
-  <div class="container flex">
+  <div class="container flex h-screen">
     <section class="sidebar sidebar-left flex-1"></section>
     <section class="main flex flex-column flex-grow-1">
       <div class="header">
@@ -98,11 +98,11 @@ async function getCharacters(uuid: string): Promise<void> {
             class="input-label text-center w-full text-xl font-bold"
           />
         </div>
-        <div class="uuid text-center">UUID: {{ displayedUuid }}</div>
+        <small class="uuid text-center block">UUID: {{ displayedUuid }}</small>
       </div>
-      <div class="content flex flex-column flex-1 p-3">
-        <div class="character-counter text-right">{{ characters.length }} characters</div>
-        <div class="text-container p-2">
+      <div class="content flex flex-column flex-1 p-3 overflow-auto">
+        <small class="character-counter text-right">{{ characters.length }} characters</small>
+        <div class="text-container h-full p-2">
           <div id="text" contenteditable="true" spellcheck="false">
             <span v-for="character in characters" :key="character.uuid" :id="character.uuid">
               {{ character.text }}
@@ -120,10 +120,6 @@ async function getCharacters(uuid: string): Promise<void> {
 </template>
 
 <style scoped>
-.container {
-  height: 100dvh;
-}
-
 .main {
   max-width: 80%;
 }
@@ -133,10 +129,8 @@ async function getCharacters(uuid: string): Promise<void> {
 }
 
 .text-container {
-  height: 100%;
   background-color: white;
   border-radius: 3px;
-  overflow: auto;
   outline: 1px solid green;
 }
 

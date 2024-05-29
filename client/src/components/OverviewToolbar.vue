@@ -47,7 +47,7 @@ function handleInput(): void {
 </script>
 
 <template>
-  <Toolbar class="toolbar">
+  <Toolbar class="toolbar w-7 m-auto">
     <template #start>
       <IconField iconPosition="left">
         <InputIcon>
@@ -92,9 +92,4 @@ function handleInput(): void {
   </Dialog>
 </template>
 
-<style scoped>
-.toolbar {
-  width: 60%;
-  margin: auto;
-}
-</style>
+<style scoped></style>

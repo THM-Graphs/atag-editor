@@ -60,7 +60,7 @@ function handleSearchInputChange(newInput: string): void {
 </script>
 
 <template>
-  <div class="container">
+  <div class="container flex flex-column h-screen m-auto">
     <h1 class="text-center">Available texts</h1>
 
     <OverviewToolbar
@@ -78,10 +78,6 @@ function handleSearchInputChange(newInput: string): void {
 
 <style scoped>
 .container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  margin: auto;
   width: 40%;
   min-width: 800px;
 }

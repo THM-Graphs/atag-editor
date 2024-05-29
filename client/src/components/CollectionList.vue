@@ -38,7 +38,7 @@ async function deleteCollection(uuid: string): Promise<void> {
   <div class="list-container">
     <ul>
       <li
-        class="list-item flex justify-content-between gap-6 flex-grow-1 text-xl p-3"
+        class="list-item flex justify-content-between gap-6 flex-grow-1 text-xl m-3 p-3"
         v-for="collection in collections"
         :key="collection.uuid"
       >
@@ -66,9 +66,6 @@ async function deleteCollection(uuid: string): Promise<void> {
 }
 
 .list-item {
-  /* border: 2px solid gray;
-  border-radius: 5px; */
-  margin: 1rem;
   box-shadow:
     0 1px 3px 0 rgba(0, 0, 0, 0.1),
     0 1px 2px -1px rgba(0, 0, 0, 0.1);
