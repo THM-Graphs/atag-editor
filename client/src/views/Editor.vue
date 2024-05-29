@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import Button from 'primevue/button';
-import ICharacter from '../models/ICharacter';
-import { onMounted, ref } from 'vue';
-import ICollection from '../models/ICollection';
+import { ComputedRef, WritableComputedRef, computed, onMounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+import ICharacter from '../models/ICharacter';
+import ICollection from '../models/ICollection';
+import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
 
 // TODO: Fix route param passing...
 defineProps({
@@ -20,6 +21,22 @@ onMounted(async (): Promise<void> => {
   await getCollectionByUuid(uuid);
   await getCharacters(uuid);
 });
+
+// This allows using v-model for title input changes.
+// TODO: Replace with more generic async handling later
+const displayedLabel: WritableComputedRef<string> = computed({
+  get() {
+    return collection.value?.label || '';
+  },
+  set(value: string) {
+    if (collection.value) {
+      collection.value.label = value;
+    }
+  },
+});
+
+// TODO: Replace with more generic async handling later
+const displayedUuid: ComputedRef<string> = computed(() => collection.value?.uuid || '');
 
 async function getCollectionByUuid(uuid: string): Promise<void> {
   try {
@@ -51,6 +68,9 @@ async function getCharacters(uuid: string): Promise<void> {
 
     const fetchedCharacters: ICharacter[] = await response.json();
 
+    // TODO: This should come from the database
+    fetchedCharacters.forEach((c: ICharacter) => (c.uuid = crypto.randomUUID()));
+
     characters.value = fetchedCharacters;
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
@@ -68,19 +88,23 @@ async function getCharacters(uuid: string): Promise<void> {
             <Button icon="pi pi-home" aria-label="Home"></Button>
           </RouterLink>
         </div>
-        <div class="title flex justify-content-center">
-          <h2>
-            {{ collection?.label }}
-            <Button icon="pi pi-pencil" aria-label="Edit title"></Button>
-          </h2>
+        <div class="label flex justify-content-center text-center">
+          <InputText
+            id="label"
+            v-model="displayedLabel"
+            spellcheck="false"
+            :invalid="displayedLabel.length === 0"
+            placeholder="No label provided"
+            class="input-label text-center w-full text-xl font-bold"
+          />
         </div>
-        <div class="uuid text-center">UUID: {{ collection?.uuid }}</div>
+        <div class="uuid text-center">UUID: {{ displayedUuid }}</div>
       </div>
       <div class="content flex flex-column flex-1 p-3">
-        <div class="character-counter text-right">{{ characters.length }}</div>
+        <div class="character-counter text-right">{{ characters.length }} characters</div>
         <div class="text-container p-2">
           <div id="text" contenteditable="true" spellcheck="false">
-            <span v-for="character in characters" :key="character.uuid">
+            <span v-for="character in characters" :key="character.uuid" :id="character.uuid">
               {{ character.text }}
             </span>
           </div>
@@ -114,5 +138,18 @@ async function getCharacters(uuid: string): Promise<void> {
   border-radius: 3px;
   overflow: auto;
   outline: 1px solid green;
+}
+
+.input-label {
+  &::placeholder {
+    color: rgb(255, 173, 173);
+    font-weight: normal;
+  }
+
+  &:not(:focus-visible):not(:hover):not([aria-invalid='true']) {
+    outline: none;
+    box-shadow: none;
+    border-color: white;
+  }
 }
 </style>
