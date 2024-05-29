@@ -61,14 +61,14 @@ function handleSearchInputChange(newInput: string): void {
 
 <template>
   <div class="container">
-    <h1>Available texts</h1>
+    <h1 class="text-center">Available texts</h1>
 
     <OverviewToolbar
       @collection-created="getCollections"
       @search-input-changed="handleSearchInputChange"
     />
 
-    <div class="counter">
+    <div class="counter text-right">
       <span>{{ filteredCollections.length }} texts</span>
     </div>
 
