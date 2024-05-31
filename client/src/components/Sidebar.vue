@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
   position: String,
@@ -15,7 +15,8 @@ const sidebarWidth = computed(() => props.width);
 
 <template>
   <section
-    :class="['sidebar', 'sidebar-' + position, 'testiiiiii']"
+    :sidebar-id="position"
+    :class="['sidebar', 'sidebar-' + position]"
     :style="{ width: sidebarWidth + 'px', background: 'gray' }"
     v-show="!isCollapsed"
   >

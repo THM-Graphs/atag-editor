@@ -8,6 +8,12 @@ import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
 import Resizer from '../components/Resizer.vue';
 
+interface SidebarConfig {
+  isCollapsed: boolean;
+  resizerActive: boolean;
+  width: number;
+}
+
 // TODO: Fix route param passing...
 defineProps({
   uuid: String,
@@ -18,10 +24,21 @@ const uuid: string = route.params.uuid as string;
 
 const collection = ref<ICollection | null>(null);
 const characters = ref<ICharacter[]>([]);
-const sidebars = ref([
-  { side: 'left', collapsed: false },
-  { side: 'right', collapsed: false },
-]);
+
+const sidebars = ref<Record<string, SidebarConfig>>({
+  left: {
+    isCollapsed: false,
+    resizerActive: false,
+    width: 250,
+  },
+  right: {
+    isCollapsed: false,
+    resizerActive: false,
+    width: 250,
+  },
+});
+
+const activeResizer = ref<string>('');
 
 onMounted(async (): Promise<void> => {
   window.addEventListener('mouseup', handleMouseUp);
@@ -114,31 +131,30 @@ async function getCharacters(): Promise<void> {
   }
 }
 
-function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean) {
-  const sidebar = sidebars.value.find(s => s.side === position);
-  sidebar.collapsed = !wasCollapsed;
+function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {
+  const sidebar = sidebars.value[position];
+  sidebar.isCollapsed = !wasCollapsed;
 }
 
-const resizerIsActive = ref<boolean>(false);
-const sidebarWidth = ref<number>(250);
-
-function handleResize(event: MouseEvent) {
-  if (resizerIsActive.value === true) {
-    sidebarWidth.value = event.clientX;
-  }
+function handleResize(event: MouseEvent): void {
+  const sidebar: SidebarConfig = sidebars.value[activeResizer.value];
+  sidebar.width =
+    activeResizer.value === 'left' ? event.clientX : window.innerWidth - event.clientX;
 }
 
-function handleMouseDown(event: MouseEvent) {
+function handleMouseDown(event: MouseEvent): void {
   if (!(event.target as Element).classList.contains('resizer')) {
     return;
   }
+
+  const side: string = (event.target as Element).getAttribute('resizer-id');
+  activeResizer.value = side;
   window.addEventListener('mousemove', handleResize);
-  resizerIsActive.value = true;
 }
 
-function handleMouseUp(event: MouseEvent) {
+function handleMouseUp(event: MouseEvent): void {
+  activeResizer.value = '';
   window.removeEventListener('mousemove', handleResize);
-  resizerIsActive.value = false;
 }
 </script>
 
@@ -146,12 +162,12 @@ function handleMouseUp(event: MouseEvent) {
   <div class="container flex h-screen">
     <Sidebar
       position="left"
-      :isCollapsed="sidebars.find(s => s.side === 'left').collapsed === true"
-      :width="250"
+      :isCollapsed="sidebars['left'].isCollapsed === true"
+      :width="sidebars['left'].width"
     />
     <Resizer
       position="left"
-      :sidebarIsCollapsed="sidebars.find(s => s.side === 'left').collapsed === true"
+      :sidebarIsCollapsed="sidebars['left'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
     <section class="main flex flex-column flex-grow-1">
@@ -190,20 +206,23 @@ function handleMouseUp(event: MouseEvent) {
     </section>
     <Resizer
       position="right"
-      :sidebarIsCollapsed="sidebars.find(s => s.side === 'right').collapsed === true"
+      :sidebarIsCollapsed="sidebars['right'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
     <Sidebar
       position="right"
-      :isCollapsed="sidebars.find(s => s.side === 'right').collapsed === true"
-      :width="250"
+      :isCollapsed="sidebars['right'].isCollapsed === true"
+      :width="sidebars['right'].width"
     />
   </div>
 </template>
 
 <style scoped>
 .main {
-  flex-basis: 60%;
+  /* TODO: Fix this */
+  /* flex-basis: 60%; */
+  /* flex-grow: 1;
+  flex-shrink: 1; */
 }
 
 .content {
@@ -226,50 +245,6 @@ function handleMouseUp(event: MouseEvent) {
     outline: none;
     box-shadow: none;
     border-color: white;
-  }
-}
-
-.resizer {
-  width: 0.2rem;
-  cursor: col-resize;
-  background-color: black;
-  position: relative;
-
-  --height: 2.5rem;
-  --width: 1.25rem;
-
-  .handle {
-    /* display: flex; */
-    /* justify-content: center; */
-    /* align-items: center; */
-    /* background-color: #b2b2d7; */
-    /* color: #fff; */
-    /* border: 1px solid #b2b2d7; */
-    position: absolute;
-    height: var(--height);
-    width: var(--width);
-    top: 50%;
-    cursor: pointer;
-    /* z-index: 5; */
-    /* transition: background-color 100ms; */
-
-    &.handle-left {
-      left: 100%;
-      transform: translateY(-50%);
-      /* border-radius: 0 var(--width) var(--width) 0; */
-    }
-
-    &.handle-right {
-      right: 100%;
-      transform: translateY(-50%);
-      /* border-radius: var(--width) 0 0 var(--width); */
-    }
-
-    /* &:hover {
-      background-color: darkblue;
-      border: 1px solid darkblue;
-      transition: background-color 100ms;
-    } */
   }
 }
 </style>

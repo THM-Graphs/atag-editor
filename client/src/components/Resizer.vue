@@ -28,7 +28,7 @@ const arrowDirection = computed(() => {
 </script>
 
 <template>
-  <div :class="['resizer', `resizer-${position}`]">
+  <div :resizer-id="position" :class="['resizer', `resizer-${position}`]">
     <Button
       :class="['handle', `handle-${position}`]"
       :icon="arrowDirection"
