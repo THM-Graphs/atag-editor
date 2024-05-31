@@ -6,6 +6,7 @@ import ICollection from '../models/ICollection';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
+import Resizer from '../components/Resizer.vue';
 
 // TODO: Fix route param passing...
 defineProps({
@@ -113,33 +114,29 @@ async function getCharacters(): Promise<void> {
   }
 }
 
-function toggleSidebar(side: 'left' | 'right') {
-  const sidebar = sidebars.value.find(s => s.side === side);
-  sidebar.collapsed = sidebar.collapsed === true ? false : true;
-  console.log(sidebar);
+function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean) {
+  const sidebar = sidebars.value.find(s => s.side === position);
+  sidebar.collapsed = !wasCollapsed;
 }
 
 const resizerIsActive = ref<boolean>(false);
 const sidebarWidth = ref<number>(250);
 
-function handleResize(event) {
+function handleResize(event: MouseEvent) {
   if (resizerIsActive.value === true) {
     sidebarWidth.value = event.clientX;
   }
 }
 
-function handleMouseDown(event) {
-  if (!event.target.classList.contains('resizer')) {
+function handleMouseDown(event: MouseEvent) {
+  if (!(event.target as Element).classList.contains('resizer')) {
     return;
   }
   window.addEventListener('mousemove', handleResize);
   resizerIsActive.value = true;
 }
 
-function handleMouseUp(event) {
-  // if (!event.target.classList.contains('resizer')) {
-  //   return;
-  // }
+function handleMouseUp(event: MouseEvent) {
   window.removeEventListener('mousemove', handleResize);
   resizerIsActive.value = false;
 }
@@ -147,20 +144,16 @@ function handleMouseUp(event) {
 
 <template>
   <div class="container flex h-screen">
-    <!-- <Sidebar direction="left" /> -->
-    <section
-      class="sidebar sidebar-left"
-      v-show="sidebars.find(s => s.side === 'left').collapsed === false"
-      :style="{ width: sidebarWidth + 'px' }"
-    ></section>
-    <div class="resizer resizer-left">
-      <Button
-        class="handle handle-left"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        @click="toggleSidebar('left')"
-      ></Button>
-    </div>
+    <Sidebar
+      position="left"
+      :isCollapsed="sidebars.find(s => s.side === 'left').collapsed === true"
+      :width="250"
+    />
+    <Resizer
+      position="left"
+      :sidebarIsCollapsed="sidebars.find(s => s.side === 'left').collapsed === true"
+      @toggle-sidebar="toggleSidebar"
+    />
     <section class="main flex flex-column flex-grow-1">
       <div class="header">
         <div class="header-buttons flex">
@@ -195,18 +188,16 @@ function handleMouseUp(event) {
         <Button severity="secondary" aria-label="Cancel changes">Cancel</Button>
       </div>
     </section>
-    <div class="resizer resizer-right">
-      <Button
-        class="handle handle-right"
-        icon="pi pi-arrow-right"
-        severity="secondary"
-        @click="toggleSidebar('right')"
-      ></Button>
-    </div>
-    <section
-      class="sidebar sidebar-right"
-      v-show="sidebars.find(s => s.side === 'right').collapsed === false"
-    ></section>
+    <Resizer
+      position="right"
+      :sidebarIsCollapsed="sidebars.find(s => s.side === 'right').collapsed === true"
+      @toggle-sidebar="toggleSidebar"
+    />
+    <Sidebar
+      position="right"
+      :isCollapsed="sidebars.find(s => s.side === 'right').collapsed === true"
+      :width="250"
+    />
   </div>
 </template>
 
