@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ComputedRef, WritableComputedRef, computed, onMounted, ref } from 'vue';
+import { ComputedRef, WritableComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
 import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
+import Sidebar from '../components/Sidebar.vue';
 
 // TODO: Fix route param passing...
 defineProps({
@@ -22,8 +23,16 @@ const sidebars = ref([
 ]);
 
 onMounted(async (): Promise<void> => {
+  window.addEventListener('mouseup', handleMouseUp);
+  window.addEventListener('mousedown', handleMouseDown);
+
   await getCollectionByUuid();
   await getCharacters();
+});
+
+onUnmounted((): void => {
+  window.removeEventListener('mouseup', handleMouseUp);
+  window.removeEventListener('mousedown', handleMouseDown);
 });
 
 // This allows using v-model for title input changes.
@@ -109,13 +118,40 @@ function toggleSidebar(side: 'left' | 'right') {
   sidebar.collapsed = sidebar.collapsed === true ? false : true;
   console.log(sidebar);
 }
+
+const resizerIsActive = ref<boolean>(false);
+const sidebarWidth = ref<number>(250);
+
+function handleResize(event) {
+  if (resizerIsActive.value === true) {
+    sidebarWidth.value = event.clientX;
+  }
+}
+
+function handleMouseDown(event) {
+  if (!event.target.classList.contains('resizer')) {
+    return;
+  }
+  window.addEventListener('mousemove', handleResize);
+  resizerIsActive.value = true;
+}
+
+function handleMouseUp(event) {
+  // if (!event.target.classList.contains('resizer')) {
+  //   return;
+  // }
+  window.removeEventListener('mousemove', handleResize);
+  resizerIsActive.value = false;
+}
 </script>
 
 <template>
   <div class="container flex h-screen">
+    <!-- <Sidebar direction="left" /> -->
     <section
       class="sidebar sidebar-left"
       v-show="sidebars.find(s => s.side === 'left').collapsed === false"
+      :style="{ width: sidebarWidth + 'px' }"
     ></section>
     <div class="resizer resizer-left">
       <Button
@@ -179,10 +215,6 @@ function toggleSidebar(side: 'left' | 'right') {
   flex-basis: 60%;
 }
 
-.sidebar {
-  flex-basis: 20%;
-}
-
 .content {
   outline: 1px solid red;
 }
@@ -207,7 +239,7 @@ function toggleSidebar(side: 'left' | 'right') {
 }
 
 .resizer {
-  width: 0.1rem;
+  width: 0.2rem;
   cursor: col-resize;
   background-color: black;
   position: relative;
