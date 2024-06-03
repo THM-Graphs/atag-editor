@@ -50,7 +50,7 @@ async function getCollections(): Promise<void> {
 
 function filterCollections(): void {
   filteredCollections.value = collections.value.filter((c: ICollection) => {
-    return c.label.includes(searchInput.value);
+    return c.label.toLowerCase().includes(searchInput.value);
   });
 }
 

@@ -42,7 +42,7 @@ async function createNewCollection(): Promise<void> {
 }
 
 function handleInput(): void {
-  emit('searchInputChanged', searchInput.value);
+  emit('searchInputChanged', searchInput.value.toLowerCase());
 }
 </script>
 
