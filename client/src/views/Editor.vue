@@ -38,7 +38,7 @@ const sidebars = ref<Record<string, SidebarConfig>>({
   },
 });
 
-const resizerWidth = 20;
+const resizerWidth = 5;
 
 const mainWidth: ComputedRef<number> = computed(() => {
   const leftSidebarWidth: number = sidebars.value.left.isCollapsed ? 0 : sidebars.value.left.width;

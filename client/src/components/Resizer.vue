@@ -47,7 +47,7 @@ const arrowDirection = computed(() => {
 .resizer {
   /* width: 20px; */
   cursor: col-resize;
-  background-color: yellow;
+  background-color: black;
   position: relative;
 
   --height: 2.5rem;
