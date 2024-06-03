@@ -5,11 +5,12 @@ import Button from 'primevue/button';
 const props = defineProps({
   position: String,
   sidebarIsCollapsed: Boolean,
+  width: Number,
 });
 
 const emit = defineEmits(['toggleSidebar']);
 
-const position = props.position;
+const { position, width } = props;
 
 const sidebarIsCollapsed = computed(() => props.sidebarIsCollapsed);
 
@@ -28,7 +29,11 @@ const arrowDirection = computed(() => {
 </script>
 
 <template>
-  <div :resizer-id="position" :class="['resizer', `resizer-${position}`]">
+  <div
+    :resizer-id="position"
+    :class="['resizer', `resizer-${position}`]"
+    :style="{ minWidth: width + 'px' }"
+  >
     <Button
       :class="['handle', `handle-${position}`]"
       :icon="arrowDirection"
@@ -40,9 +45,9 @@ const arrowDirection = computed(() => {
 
 <style scoped>
 .resizer {
-  width: 0.2rem;
+  /* width: 20px; */
   cursor: col-resize;
-  background-color: black;
+  background-color: yellow;
   position: relative;
 
   --height: 2.5rem;

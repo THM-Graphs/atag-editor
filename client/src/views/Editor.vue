@@ -38,6 +38,16 @@ const sidebars = ref<Record<string, SidebarConfig>>({
   },
 });
 
+const resizerWidth = 20;
+
+const mainWidth: ComputedRef<number> = computed(() => {
+  const leftSidebarWidth: number = sidebars.value.left.isCollapsed ? 0 : sidebars.value.left.width;
+  const rightSidebarWidth: number = sidebars.value.right.isCollapsed
+    ? 0
+    : sidebars.value.right.width;
+  return window.innerWidth - leftSidebarWidth - rightSidebarWidth - resizerWidth * 2;
+});
+
 const activeResizer = ref<string>('');
 
 onMounted(async (): Promise<void> => {
@@ -167,10 +177,11 @@ function handleMouseUp(event: MouseEvent): void {
     />
     <Resizer
       position="left"
+      :width="resizerWidth"
       :sidebarIsCollapsed="sidebars['left'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
-    <section class="main flex flex-column flex-grow-1">
+    <section class="main flex flex-column flex-grow-1" :style="{ width: mainWidth + 'px' }">
       <div class="header">
         <div class="header-buttons flex">
           <RouterLink to="/">
@@ -206,6 +217,7 @@ function handleMouseUp(event: MouseEvent): void {
     </section>
     <Resizer
       position="right"
+      :width="resizerWidth"
       :sidebarIsCollapsed="sidebars['right'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
