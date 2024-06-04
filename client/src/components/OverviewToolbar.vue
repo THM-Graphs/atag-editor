@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
-import InputText from 'primevue/inputtext';
+import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
 import Skeleton from 'primevue/skeleton';
+import Toolbar from 'primevue/toolbar';
+import { capitalize } from '../helper/helper';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
 const searchInput = ref<string>('');
-const dialogIsVisible = ref<boolean>(false);
-const newCollectionTitle = ref<string>('');
-
+const newCollectionData = ref<Record<string, string>>({});
 const guidelines = ref<IGuidelines>({} as IGuidelines);
 
+const dialogIsVisible = ref<boolean>(false);
 const guidelinesAreLoaded = ref<boolean>(false);
 
 // TODO: Fix form submission
@@ -32,14 +32,14 @@ async function createNewCollection(): Promise<void> {
         'Content-Type': 'application/json',
       },
       referrerPolicy: 'no-referrer',
-      body: JSON.stringify({ label: newCollectionTitle.value }),
+      body: JSON.stringify(newCollectionData.value),
     });
 
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
 
-    newCollectionTitle.value = '';
+    newCollectionData.value = {};
     dialogIsVisible.value = false;
 
     emit('collectionCreated');
@@ -75,7 +75,7 @@ async function getGuidelines(): Promise<void> {
   }
 }
 
-function handleInput(): void {
+function handleSearchInput(): void {
   emit('searchInputChanged', searchInput.value.toLowerCase());
 }
 </script>
@@ -87,7 +87,7 @@ function handleInput(): void {
         <InputIcon>
           <i class="pi pi-search" />
         </InputIcon>
-        <InputText placeholder="Filter texts" v-model="searchInput" @input="handleInput" />
+        <InputText placeholder="Filter texts" v-model="searchInput" @input="handleSearchInput" />
       </IconField>
     </template>
 
@@ -110,13 +110,16 @@ function handleInput(): void {
       <div v-if="guidelinesAreLoaded" class="input-container">
         <template v-for="(property, index) in guidelines.collections['text'].properties">
           <div v-if="property.required" class="flex align-items-center gap-3 mb-3">
-            <label :for="property.name" class="font-semibold w-6rem">{{ property.name }} </label>
+            <label :for="property.name" class="font-semibold w-6rem"
+              >{{ capitalize(property.name) }}
+            </label>
             <InputText
               :id="property.name"
               :disabled="!property.editable"
               :required="property.required"
               :autofocus="index === 0"
               :key="property.name"
+              v-model="newCollectionData[property.name]"
               class="flex-auto"
               autocomplete="off"
             />

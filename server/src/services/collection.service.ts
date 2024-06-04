@@ -1,7 +1,6 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import ICollection from '../models/ICollection.js';
-import { CollectionPostData } from '../models/types.js';
 
 export default class CollectionService {
   /**
@@ -54,25 +53,25 @@ export default class CollectionService {
   /**
    * Creates a new collection node with given data as properties, along with an associated text node.
    *
-   * @param {CollectionPostData} data - The data containing the UUID and label for the new collection node.
+   * @param {Record<string, string>} data - JSON data for the new collection node.
    * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
    */
+  // TODO: Make additional label(s) dynamic
   public async createNewCollection(
-    data: CollectionPostData,
+    data: Record<string, string>,
     additionalLabel: string,
   ): Promise<ICollection | undefined> {
-    const { uuid, label } = data;
     const textUuid: string = crypto.randomUUID();
 
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} {uuid: $uuid, label: $label})-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
+    CREATE (c:Collection:${additionalLabel} $data)-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
     RETURN c {.*} AS collection
     `;
 
     let collection: ICollection | undefined = undefined;
 
     try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, label, textUuid });
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { data, textUuid });
       collection = result.records[0]?.get('collection');
     } catch (error: unknown) {
       console.log(error);

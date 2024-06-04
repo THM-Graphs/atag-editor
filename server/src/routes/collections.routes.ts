@@ -2,7 +2,6 @@ import express, { Request, Response, Router } from 'express';
 import characterRoutes from './characters.routes.js';
 import CollectionService from '../services/collection.service.js';
 import ICollection from '../models/ICollection.js';
-import { CollectionPostData } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -19,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 router.post('/', async (req: Request, res: Response) => {
-  const data: CollectionPostData = { label: req.body.label, uuid: crypto.randomUUID() };
+  const data: Record<string, string> = { ...req.body, uuid: crypto.randomUUID() };
 
   try {
     const collectionService: CollectionService = new CollectionService();
