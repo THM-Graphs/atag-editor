@@ -1,0 +1,44 @@
+{
+  "collections": {
+    "text": {
+      "additionalLabels": ["Letter"],
+      "properties": [
+        {
+          "name": "label",
+          "type": "string",
+          "required": true,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "name": "sender",
+          "type": "string",
+          "required": false,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "name": "receiver",
+          "type": "string",
+          "required": false,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "name": "uuid",
+          "type": "string",
+          "required": false,
+          "editable": false,
+          "visible": true
+        },
+        {
+          "name": "websiteUrl",
+          "type": "string",
+          "required": false,
+          "editable": true,
+          "visible": true
+        }
+      ]
+    }
+  }
+}
