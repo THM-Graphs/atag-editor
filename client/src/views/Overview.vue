@@ -33,10 +33,10 @@ async function getCollections(): Promise<void> {
     const fetchedCollections: ICollection[] = await response.json();
 
     fetchedCollections.sort((a: ICollection, b: ICollection) => {
-      if (a.label < b.label) {
+      if (a.label.toLowerCase() < b.label.toLowerCase()) {
         return -1;
       }
-      if (a.label > b.label) {
+      if (a.label.toLowerCase() > b.label.toLowerCase()) {
         return 1;
       }
       return 0;
