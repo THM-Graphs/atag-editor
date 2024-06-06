@@ -134,6 +134,15 @@ async function saveChanges(): Promise<void> {
   }
 }
 
+async function cancelChanges(): Promise<void> {
+  try {
+    await getCollectionByUuid();
+    await getCharacters();
+  } catch (error: unknown) {
+    console.error('Error discarding changes:', error);
+  }
+}
+
 async function getCharacters(): Promise<void> {
   try {
     // TODO: Replace localhost with vite configuration
@@ -254,7 +263,9 @@ function showMessage(result: 'success' | 'error') {
       </div>
       <div class="editor-button-container flex justify-content-center gap-3 p-3">
         <Button aria-label="Save changes" @click="saveChanges">Save</Button>
-        <Button severity="secondary" aria-label="Cancel changes">Cancel</Button>
+        <Button severity="secondary" aria-label="Cancel changes" @click="cancelChanges"
+          >Cancel</Button
+        >
       </div>
     </section>
     <Resizer
