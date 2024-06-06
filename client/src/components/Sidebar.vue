@@ -17,10 +17,11 @@ const sidebarWidth = computed(() => props.width);
   <section
     :sidebar-id="position"
     :class="['sidebar', 'sidebar-' + position]"
+    class="p-3"
     :style="{ width: sidebarWidth + 'px', background: 'gray' }"
     v-show="!isCollapsed"
   >
-    Sidebar component :)
+    <slot></slot>
   </section>
 </template>
 

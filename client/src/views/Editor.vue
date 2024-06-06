@@ -7,6 +7,8 @@ import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
 import Resizer from '../components/Resizer.vue';
+import Metadata from '../components/Metadata.vue';
+import { IGuidelines } from '../../../server/src/models/IGuidelines';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -19,25 +21,26 @@ defineProps({
   uuid: String,
 });
 
+onMounted(async (): Promise<void> => {
+  window.addEventListener('mouseup', handleMouseUp);
+  window.addEventListener('mousedown', handleMouseDown);
+
+  await getCollectionByUuid();
+  await getGuidelines();
+  await getCharacters();
+});
+
+onUnmounted((): void => {
+  window.removeEventListener('mouseup', handleMouseUp);
+  window.removeEventListener('mousedown', handleMouseDown);
+});
+
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
 
 const collection = ref<ICollection | null>(null);
 const characters = ref<ICharacter[]>([]);
-
-const sidebars = ref<Record<string, SidebarConfig>>({
-  left: {
-    isCollapsed: false,
-    resizerActive: false,
-    width: 250,
-  },
-  right: {
-    isCollapsed: false,
-    resizerActive: false,
-    width: 250,
-  },
-});
-
+const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
 
 const mainWidth: ComputedRef<number> = computed(() => {
@@ -48,20 +51,21 @@ const mainWidth: ComputedRef<number> = computed(() => {
   return window.innerWidth - leftSidebarWidth - rightSidebarWidth - resizerWidth * 2;
 });
 
+const sidebars = ref<Record<string, SidebarConfig>>({
+  left: {
+    isCollapsed: false,
+    resizerActive: false,
+    width: 350,
+  },
+  right: {
+    isCollapsed: false,
+    resizerActive: false,
+    width: 250,
+  },
+});
+
 const activeResizer = ref<string>('');
-
-onMounted(async (): Promise<void> => {
-  window.addEventListener('mouseup', handleMouseUp);
-  window.addEventListener('mousedown', handleMouseDown);
-
-  await getCollectionByUuid();
-  await getCharacters();
-});
-
-onUnmounted((): void => {
-  window.removeEventListener('mouseup', handleMouseUp);
-  window.removeEventListener('mousedown', handleMouseDown);
-});
+const metadataRef = ref();
 
 // This allows using v-model for title input changes.
 // TODO: Replace with more generic async handling later
@@ -75,9 +79,6 @@ const displayedLabel: WritableComputedRef<string> = computed({
     }
   },
 });
-
-// TODO: Replace with more generic async handling later
-const displayedUuid: ComputedRef<string> = computed(() => collection.value?.uuid || '');
 
 async function getCollectionByUuid(): Promise<void> {
   try {
@@ -97,7 +98,13 @@ async function getCollectionByUuid(): Promise<void> {
   }
 }
 
-async function updateCollection(): Promise<void> {
+async function saveChanges(): Promise<void> {
+  const metadataAreValid: boolean = metadataRef.value.validate();
+
+  if (!metadataAreValid) {
+    return;
+  }
+
   try {
     // TODO: Replace localhost with vite configuration
     const url: string = `http://localhost:8080/api/collections/${uuid}`;
@@ -141,6 +148,23 @@ async function getCharacters(): Promise<void> {
   }
 }
 
+async function getGuidelines(): Promise<void> {
+  try {
+    // TODO: Replace localhost with vite configuration
+    const url: string = 'http://localhost:8080/api/guidelines';
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedGuidelines: IGuidelines = await response.json();
+    guidelines.value = fetchedGuidelines;
+  } catch (error: unknown) {
+    console.error('Error fetching guidelines:', error);
+  }
+}
+
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {
   const sidebar = sidebars.value[position];
   sidebar.isCollapsed = !wasCollapsed;
@@ -174,7 +198,9 @@ function handleMouseUp(event: MouseEvent): void {
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
-    />
+    >
+      <Metadata v-model="collection" :guidelines="guidelines" ref="metadataRef" />
+    </Sidebar>
     <Resizer
       position="left"
       :width="resizerWidth"
@@ -198,7 +224,6 @@ function handleMouseUp(event: MouseEvent): void {
             class="input-label text-center w-full text-xl font-bold"
           />
         </div>
-        <small class="uuid text-center block">UUID: {{ displayedUuid }}</small>
       </div>
       <div class="content flex flex-column flex-1 p-3 overflow-auto">
         <small class="character-counter text-right">{{ characters.length }} characters</small>
@@ -211,7 +236,7 @@ function handleMouseUp(event: MouseEvent): void {
         </div>
       </div>
       <div class="editor-button-container flex justify-content-center gap-3 p-3">
-        <Button aria-label="Save changes" @click="updateCollection">Save</Button>
+        <Button aria-label="Save changes" @click="saveChanges">Save</Button>
         <Button severity="secondary" aria-label="Cancel changes">Cancel</Button>
       </div>
     </section>

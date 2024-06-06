@@ -25,16 +25,9 @@
           "visible": true
         },
         {
-          "name": "uuid",
-          "type": "string",
-          "required": false,
-          "editable": false,
-          "visible": true
-        },
-        {
           "name": "websiteUrl",
           "type": "string",
-          "required": false,
+          "required": true,
           "editable": true,
           "visible": true
         }
