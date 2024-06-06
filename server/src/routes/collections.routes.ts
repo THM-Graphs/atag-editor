@@ -50,13 +50,13 @@ router.get('/:uuid', async (req: Request, res: Response) => {
 
 router.post('/:uuid', async (req: Request, res: Response) => {
   const uuid: string = req.params.uuid;
-  const label: string = req.body.label;
+  const data: Record<string, string> = req.body;
 
   try {
     const collectionService: CollectionService = new CollectionService();
     const collection: ICollection | undefined = await collectionService.updateCollection(
       uuid,
-      label,
+      data,
     );
 
     res.status(200).json(collection ?? {});

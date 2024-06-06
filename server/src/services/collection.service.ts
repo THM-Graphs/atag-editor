@@ -57,6 +57,7 @@ export default class CollectionService {
    * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
    */
   // TODO: Make additional label(s) dynamic
+  // TODO: Set default fields from guidelines.json as empty strings?
   public async createNewCollection(
     data: Record<string, string>,
     additionalLabel: string,
@@ -81,23 +82,26 @@ export default class CollectionService {
   }
 
   /**
-   * Updates the label property of a collection node with given UUID.
+   * Updates the properties of a collection node with given UUID.
    *
    * @param {string} uuid - The UUID of the collection node to update.
-   * @param {string} label - The new label for the collection node.
+   * @param {Record<string, string>} data - The data for the collection node.
    * @return {Promise<ICollection | undefined>} A promise that resolves to the updated collection node or undefined if not found.
    */
-  public async updateCollection(uuid: string, label: string): Promise<ICollection | undefined> {
+  public async updateCollection(
+    uuid: string,
+    data: Record<string, string>,
+  ): Promise<ICollection | undefined> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    SET c.label = $label
+    SET c = $data
     RETURN c {.*} AS collection
     `;
 
     let updatedCollection: ICollection | undefined = undefined;
 
     try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, label });
+      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data });
       updatedCollection = result.records[0]?.get('collection');
     } catch (error) {
       console.error(error);

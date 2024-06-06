@@ -116,7 +116,7 @@ async function saveChanges(): Promise<void> {
         'Content-Type': 'application/json',
       },
       referrerPolicy: 'no-referrer',
-      body: JSON.stringify({ label: collection.value.label }),
+      body: JSON.stringify(collection.value),
     });
 
     if (!response.ok) {
