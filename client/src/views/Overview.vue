@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import ICollection from '../models/ICollection';
-import CollectionList from '../components/CollectionList.vue';
+import Toast from 'primevue/toast';
+import { ToastServiceMethods } from 'primevue/toastservice';
+import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
+import CollectionList from '../components/CollectionList.vue';
+import ICollection from '../models/ICollection';
 
 const collections = ref<ICollection[]>([]);
 const filteredCollections = ref<ICollection[]>([]);
 const searchInput = ref<string>('');
+
+const toast: ToastServiceMethods = useToast();
 
 watch(collections, () => {
   filterCollections();
@@ -54,17 +59,33 @@ function filterCollections(): void {
   });
 }
 
+function handleCollectionCreation(newCollection: ICollection) {
+  showMessage('success', `"${newCollection.label}"`);
+  getCollections();
+}
+
 function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
+}
+
+function showMessage(result: 'success' | 'error', detail?: string) {
+  toast.add({
+    severity: result,
+    summary: result === 'success' ? 'New Collection created' : 'Collection could not be created',
+    detail: detail,
+    life: 2000,
+  });
 }
 </script>
 
 <template>
   <div class="container flex flex-column h-screen m-auto">
+    <Toast />
+
     <h1 class="text-center">Available texts</h1>
 
     <OverviewToolbar
-      @collection-created="getCollections"
+      @collection-created="handleCollectionCreation"
       @search-input-changed="handleSearchInputChange"
     />
 

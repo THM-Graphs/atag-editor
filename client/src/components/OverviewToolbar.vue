@@ -8,6 +8,7 @@ import InputText from 'primevue/inputtext';
 import Skeleton from 'primevue/skeleton';
 import Toolbar from 'primevue/toolbar';
 import { capitalize } from '../helper/helper';
+import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
@@ -19,7 +20,8 @@ const guidelines = ref<IGuidelines>({} as IGuidelines);
 const dialogIsVisible = ref<boolean>(false);
 const guidelinesAreLoaded = ref<boolean>(false);
 
-// TODO: Fix form submission
+// TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
+// TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
   try {
     // TODO: Replace localhost with vite configuration
@@ -39,10 +41,12 @@ async function createNewCollection(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
+    const createdCollection: ICollection = await response.json();
+
     newCollectionData.value = {};
     dialogIsVisible.value = false;
 
-    emit('collectionCreated');
+    emit('collectionCreated', createdCollection);
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
   }
@@ -54,6 +58,7 @@ async function showDialog(): Promise<void> {
 }
 
 async function hideDialog(): Promise<void> {
+  newCollectionData.value = {};
   dialogIsVisible.value = false;
   guidelinesAreLoaded.value = false;
 }
@@ -71,7 +76,7 @@ async function getGuidelines(): Promise<void> {
     guidelines.value = fetchedGuidelines;
     guidelinesAreLoaded.value = true;
   } catch (error: unknown) {
-    console.error('Error creating collection:', error);
+    console.error('Error fetching guidelines:', error);
   }
 }
 
@@ -107,24 +112,25 @@ function handleSearchInput(): void {
       <h2 class="w-full text-center m-0">Add new text</h2>
     </template>
     <form @submit.prevent="createNewCollection">
-      <div v-if="guidelinesAreLoaded" class="input-container">
-        <template v-for="(property, index) in guidelines.collections['text'].properties">
-          <div v-if="property.required" class="flex align-items-center gap-3 mb-3">
-            <label :for="property.name" class="font-semibold w-6rem"
-              >{{ capitalize(property.name) }}
-            </label>
-            <InputText
-              :id="property.name"
-              :disabled="!property.editable"
-              :required="property.required"
-              :autofocus="index === 0"
-              :key="property.name"
-              v-model="newCollectionData[property.name]"
-              class="flex-auto"
-              autocomplete="off"
-            />
-          </div>
-        </template>
+      <div
+        v-if="guidelinesAreLoaded"
+        class="input-container"
+        v-for="(property, index) in guidelines.collections['text'].properties"
+      >
+        <div v-if="property.required" class="flex align-items-center gap-3 mb-3">
+          <label :for="property.name" class="font-semibold w-6rem"
+            >{{ capitalize(property.name) }}
+          </label>
+          <InputText
+            :id="property.name"
+            :disabled="!property.editable"
+            :required="property.required"
+            :autofocus="index === 0"
+            :key="property.name"
+            v-model="newCollectionData[property.name]"
+            class="flex-auto"
+          />
+        </div>
       </div>
       <div v-else class="skeleton-container">
         <div v-for="n in 4" class="flex flex-row gap-2">

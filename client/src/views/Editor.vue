@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ComputedRef, WritableComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
-import ICharacter from '../models/ICharacter';
-import ICollection from '../models/ICollection';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
+import Toast from 'primevue/toast';
+import { ToastServiceMethods } from 'primevue/toastservice';
+import { useToast } from 'primevue/usetoast';
 import Resizer from '../components/Resizer.vue';
 import Metadata from '../components/Metadata.vue';
+import ICharacter from '../models/ICharacter';
+import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
 
 interface SidebarConfig {
@@ -80,6 +83,8 @@ const displayedLabel: WritableComputedRef<string> = computed({
   },
 });
 
+const toast: ToastServiceMethods = useToast();
+
 async function getCollectionByUuid(): Promise<void> {
   try {
     // TODO: Replace localhost with vite configuration
@@ -122,7 +127,9 @@ async function saveChanges(): Promise<void> {
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
+    showMessage('success');
   } catch (error: unknown) {
+    showMessage('error');
     console.error('Error updating collection:', error);
   }
 }
@@ -190,6 +197,15 @@ function handleMouseUp(event: MouseEvent): void {
   activeResizer.value = '';
   window.removeEventListener('mousemove', handleResize);
 }
+
+function showMessage(result: 'success' | 'error') {
+  toast.add({
+    severity: result,
+    summary: result === 'success' ? 'Changes saved successfully' : 'Changes could not be saved',
+    detail: 'Message Content',
+    life: 2000,
+  });
+}
 </script>
 
 <template>
@@ -208,6 +224,7 @@ function handleMouseUp(event: MouseEvent): void {
       @toggle-sidebar="toggleSidebar"
     />
     <section class="main flex flex-column flex-grow-1" :style="{ width: mainWidth + 'px' }">
+      <Toast />
       <div class="header">
         <div class="header-buttons flex">
           <RouterLink to="/">
