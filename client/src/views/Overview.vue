@@ -59,8 +59,13 @@ function filterCollections(): void {
   });
 }
 
-function handleCollectionCreation(newCollection: ICollection) {
-  showMessage('success', `"${newCollection.label}"`);
+function handleCollectionCreation(newCollection: ICollection): void {
+  showMessage('created', `"${newCollection.label}"`);
+  getCollections();
+}
+
+function handleCollectionDeletion(deletedCollection: ICollection): void {
+  showMessage('deleted', `"${deletedCollection.label}"`);
   getCollections();
 }
 
@@ -68,10 +73,10 @@ function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
 }
 
-function showMessage(result: 'success' | 'error', detail?: string) {
+function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   toast.add({
-    severity: result,
-    summary: result === 'success' ? 'New Collection created' : 'Collection could not be created',
+    severity: 'success',
+    summary: operation === 'created' ? 'New text created' : 'Text deleted',
     detail: detail,
     life: 2000,
   });
@@ -93,7 +98,10 @@ function showMessage(result: 'success' | 'error', detail?: string) {
       <span>{{ filteredCollections.length }} texts</span>
     </div>
 
-    <CollectionList :collections="filteredCollections" @collection-deleted="getCollections" />
+    <CollectionList
+      :collections="filteredCollections"
+      @collection-deleted="handleCollectionDeletion"
+    />
   </div>
 </template>
 

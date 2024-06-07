@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ConfirmDialog from 'primevue/confirmdialog';
+import { useConfirm } from 'primevue/useconfirm';
 import ICollection from '../models/ICollection';
 import Button from 'primevue/button';
 
@@ -8,33 +10,46 @@ defineProps<{
 
 const emit = defineEmits(['collectionDeleted']);
 
-async function deleteCollection(uuid: string): Promise<void> {
-  try {
-    // TODO: Replace localhost with vite configuration
-    const url: string = `http://localhost:8080/api/collections/${uuid}`;
-    const response: Response = await fetch(url, {
-      method: 'DELETE',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify({ uuid: uuid }),
-    });
+const confirm = useConfirm();
 
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
+async function deleteCollection(collection: ICollection): Promise<void> {
+  confirm.require({
+    message: `Are you sure you want to delete "${collection.label}"?`,
+    icon: 'pi pi-exclamation-triangle',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
+    acceptClass: 'p-button-danger ',
+    accept: async (): Promise<void> => {
+      try {
+        // TODO: Replace localhost with vite configuration
+        const url: string = `http://localhost:8080/api/collections/${collection.uuid}`;
+        const response: Response = await fetch(url, {
+          method: 'DELETE',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          referrerPolicy: 'no-referrer',
+          body: JSON.stringify({ uuid: collection.uuid }),
+        });
 
-    emit('collectionDeleted');
-  } catch (error: unknown) {
-    console.error('Error deleting collection:', error);
-  }
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        emit('collectionDeleted', collection);
+      } catch (error: unknown) {
+        console.error('Error deleting collection:', error);
+      }
+    },
+  });
 }
 </script>
 
 <template>
+  <ConfirmDialog :draggable="false" :closable="false" :style="{ width: '25rem' }" />
   <div class="list-container">
     <ul>
       <li
@@ -51,7 +66,7 @@ async function deleteCollection(uuid: string): Promise<void> {
           aria-label="Delete text"
           label=""
           severity="danger"
-          @click="deleteCollection(collection.uuid)"
+          @click="deleteCollection(collection)"
         />
       </li>
     </ul>
