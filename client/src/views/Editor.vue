@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { ComputedRef, WritableComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  ComputedRef,
+  WritableComputedRef,
+  computed,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+} from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+import { useTextSelection } from '@vueuse/core';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
@@ -45,6 +54,7 @@ const collection = ref<ICollection | null>(null);
 const characters = ref<ICharacter[]>([]);
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
+const currentSelection = reactive(useTextSelection());
 
 const mainWidth: ComputedRef<number> = computed(() => {
   const leftSidebarWidth: number = sidebars.value.left.isCollapsed ? 0 : sidebars.value.left.width;
@@ -215,6 +225,77 @@ function showMessage(result: 'success' | 'error') {
     life: 2000,
   });
 }
+
+function insertCharacter(
+  targetUUID: string,
+  position: 'before' | 'after',
+  newCharacter: ICharacter,
+): void {
+  const startTime = performance.now();
+
+  const index: number = characters.value.findIndex(c => c.uuid === targetUUID);
+
+  if (index !== -1) {
+    const indexToInsert: number = position === 'before' ? -1 : 1;
+    characters.value.splice(index + indexToInsert, 0, newCharacter);
+  } else {
+    console.log('UUID not found');
+  }
+
+  const endTime = performance.now();
+  console.log(endTime - startTime);
+}
+
+// TODO: Currently handles only inputs, not deletions, pastes etc.
+function handleInput(event: InputEvent) {
+  event.preventDefault();
+
+  const newCharacter: ICharacter = {
+    text: event.data,
+    letterLabel: collection.value.label,
+    textGuid: '',
+    textUrl: '',
+    uuid: crypto.randomUUID(),
+  };
+
+  const range: Range = currentSelection.ranges[0];
+  const type: string = currentSelection.selection.type;
+
+  if (
+    range.startContainer.nodeType === Node.ELEMENT_NODE &&
+    (range.startContainer as HTMLElement).id === 'text' &&
+    range.endContainer.nodeType === Node.ELEMENT_NODE &&
+    (range.endContainer as HTMLElement).id === 'text'
+  ) {
+    // Nothing selected -> Empty text
+    console.log('no text selected');
+    characters.value.push(newCharacter);
+    return;
+  } else if (
+    range.startContainer.nodeType === Node.TEXT_NODE &&
+    range.endContainer.nodeType === Node.TEXT_NODE
+  ) {
+    // Cursor somewhere in text
+    if (type === 'Caret') {
+      // No text selected
+      console.log('caret');
+      const referenceSpanElement: HTMLSpanElement = range.startContainer.parentElement;
+      if (range.startOffset === 0) {
+        // insert BEFORE reference character
+        insertCharacter(referenceSpanElement.id, 'before', newCharacter);
+      } else {
+        // insert AFTER reference character
+        insertCharacter(referenceSpanElement.id, 'after', newCharacter);
+      }
+    } else {
+      // text is selected -> needs to be deleted
+    }
+  } else {
+    console.log('?');
+  }
+
+  // TODO: Set range AFTER inserted span
+}
 </script>
 
 <template>
@@ -254,7 +335,13 @@ function showMessage(result: 'success' | 'error') {
       <div class="content flex flex-column flex-1 p-3 overflow-auto">
         <small class="character-counter text-right">{{ characters.length }} characters</small>
         <div class="text-container h-full p-2">
-          <div id="text" contenteditable="true" spellcheck="false">
+          <div
+            id="text"
+            contenteditable="true"
+            spellcheck="false"
+            @beforeinput="handleInput"
+            @input.prevent=""
+          >
             <span v-for="character in characters" :key="character.uuid" :id="character.uuid">
               {{ character.text }}
             </span>
@@ -298,6 +385,10 @@ function showMessage(result: 'success' | 'error') {
   background-color: white;
   border-radius: 3px;
   outline: 1px solid green;
+}
+
+#text:focus-visible {
+  outline: none;
 }
 
 .input-label {
