@@ -6,11 +6,9 @@ import {
   onMounted,
   onUnmounted,
   onUpdated,
-  reactive,
   ref,
 } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
-import { useTextSelection } from '@vueuse/core';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Sidebar from '../components/Sidebar.vue';
@@ -46,7 +44,7 @@ onMounted(async (): Promise<void> => {
 onUpdated(() => {
   if (insertedCharacterUUID.value) {
     placeCursorAfterSpan(insertedCharacterUUID.value);
-    // Reset the insertedCharacterUUID ref after focusing
+    // Reset the insertedCharacterUUID ref
     insertedCharacterUUID.value = null;
   }
 });
@@ -63,7 +61,6 @@ const collection = ref<ICollection | null>(null);
 const characters = ref<ICharacter[]>([]);
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
-const currentSelection = reactive(useTextSelection());
 const insertedCharacterUUID = ref<string | null>(null);
 
 const mainWidth: ComputedRef<number> = computed(() => {
@@ -76,12 +73,12 @@ const mainWidth: ComputedRef<number> = computed(() => {
 
 const sidebars = ref<Record<string, SidebarConfig>>({
   left: {
-    isCollapsed: false,
+    isCollapsed: true,
     resizerActive: false,
     width: 350,
   },
   right: {
-    isCollapsed: false,
+    isCollapsed: true,
     resizerActive: false,
     width: 250,
   },
@@ -242,19 +239,17 @@ function insertCharacter(
   position: 'before' | 'after',
   newCharacter: ICharacter,
 ): void {
-  console.time('insertCharacter');
-
   const index: number = characters.value.findIndex(c => c.uuid === targetUUID);
 
   if (index !== -1) {
     const indexToInsert: number = position === 'before' ? -1 : 1;
+    // console.time('splice');
     characters.value.splice(index + indexToInsert, 0, newCharacter);
+    // console.timeEnd('splice');
     insertedCharacterUUID.value = newCharacter.uuid;
   } else {
     console.log('UUID not found');
   }
-
-  console.timeEnd('insertCharacter');
 }
 
 function handleInput(event: InputEvent) {
@@ -321,8 +316,10 @@ function handleInsertText(event: InputEvent): void {
     uuid: crypto.randomUUID(),
   };
 
-  const range: Range = currentSelection.ranges[0];
-  const type: string = currentSelection.selection.type;
+  const selection: Selection = window.getSelection();
+
+  const range: Range = selection.getRangeAt(0);
+  const type: string = selection.type;
 
   if (
     range.startContainer.nodeType === Node.ELEMENT_NODE &&
@@ -449,7 +446,8 @@ function handleDeleteHardLineForward(event: InputEvent): void {
 }
 
 async function handleCopy(): Promise<void> {
-  const text: string = currentSelection.text;
+  const selection: Selection = window.getSelection();
+  const text: string = selection.toString();
 
   if (text.length === 0) {
     return;
@@ -462,9 +460,9 @@ async function handleCopy(): Promise<void> {
   }
 }
 
-// TODO: Improve performance
+// TODO: This takes very long on bigger texts -> improve
 function placeCursorAfterSpan(spanUUID: string): void {
-  const spanElement: HTMLSpanElement = document.getElementById(spanUUID);
+  const spanElement: HTMLSpanElement | null = document.getElementById(spanUUID);
 
   if (!spanElement) {
     return;
@@ -476,10 +474,8 @@ function placeCursorAfterSpan(spanUUID: string): void {
   range.setEnd(spanElement, 1);
   range.collapse(true);
 
-  console.time('cursor');
-  currentSelection.selection.removeAllRanges();
-  currentSelection.selection.addRange(range);
-  console.timeEnd('cursor');
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
 }
 </script>
 
