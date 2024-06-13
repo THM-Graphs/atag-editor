@@ -20,6 +20,7 @@ import Metadata from '../components/Metadata.vue';
 import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
+import { getParentCharacterSpan, isEditorElement } from '../helper/helper';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -235,16 +236,18 @@ function showMessage(result: 'success' | 'error') {
 }
 
 function insertCharacter(
-  targetUUID: string,
-  position: 'before' | 'after',
   newCharacter: ICharacter,
+  position: 'before' | 'after',
+  referenceCharUuid?: string | undefined,
 ): void {
-  const index: number = characters.value.findIndex(c => c.uuid === targetUUID);
+  const indexOfReferenceChar: number = referenceCharUuid
+    ? characters.value.findIndex(c => c.uuid === referenceCharUuid)
+    : 0;
 
-  if (index !== -1) {
-    const indexToInsert: number = position === 'before' ? -1 : 1;
+  if (indexOfReferenceChar !== -1) {
+    const indexToInsert: number = position === 'before' ? 0 : 1;
     // console.time('splice');
-    characters.value.splice(index + indexToInsert, 0, newCharacter);
+    characters.value.splice(indexOfReferenceChar + indexToInsert, 0, newCharacter);
     // console.timeEnd('splice');
     insertedCharacterUUID.value = newCharacter.uuid;
   } else {
@@ -321,47 +324,27 @@ function handleInsertText(event: InputEvent): void {
   const range: Range = selection.getRangeAt(0);
   const type: string = selection.type;
 
-  if (
-    range.startContainer.nodeType === Node.ELEMENT_NODE &&
-    (range.startContainer as HTMLElement).id === 'text' &&
-    range.endContainer.nodeType === Node.ELEMENT_NODE &&
-    (range.endContainer as HTMLElement).id === 'text'
-  ) {
+  console.log(range);
+
+  if (isEditorElement(range.startContainer)) {
     // Nothing selected -> Empty text
-    console.log('no text selected');
-    characters.value.push(newCharacter);
-    return;
+    console.log('No existing text yet');
+    insertCharacter(newCharacter, 'after', undefined);
   } else {
     // The span element after which the new text will be added
     let referenceSpanElement: HTMLSpanElement;
 
-    if (
-      range.startContainer.nodeType === Node.TEXT_NODE &&
-      range.endContainer.nodeType === Node.TEXT_NODE
-    ) {
-      if (type === 'Caret') {
-        referenceSpanElement = range.startContainer.parentElement;
-      } else {
-        // text is selected -> needs to be deleted
-      }
-    } else if (
-      range.startContainer.nodeType === Node.ELEMENT_NODE &&
-      range.endContainer.nodeType === Node.ELEMENT_NODE
-    ) {
-      if (type === 'Caret') {
-        referenceSpanElement = range.startContainer as HTMLSpanElement;
-      } else {
-        // text is selected -> needs to be deleted
-      }
+    if (type === 'Caret') {
+      referenceSpanElement = getParentCharacterSpan(range.startContainer);
+    } else {
+      // TODO: Add handling
+      // text is selected -> needs to be deleted
+      console.log('Some text is selected, handle this please');
+      return;
     }
 
-    if (range.startOffset === 0) {
-      // insert BEFORE reference character
-      insertCharacter(referenceSpanElement.id, 'before', newCharacter);
-    } else {
-      // insert AFTER reference character
-      insertCharacter(referenceSpanElement.id, 'after', newCharacter);
-    }
+    const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
+    insertCharacter(newCharacter, position, referenceSpanElement.id);
   }
 }
 
@@ -379,17 +362,21 @@ function handleInsertReplacementText(event: InputEvent): void {
   // Additional logic for replacement can be added here
 }
 
-function handleInsertFromPaste(event: InputEvent): void {
-  console.log('Paste event:', event);
-  // const pastedData = (event as ClipboardEvent).clipboardData?.getData('text') || '';
-  // const newCharacters = pastedData.split('').map(char => ({
-  //   text: char,
-  //   letterLabel: 'someLabel',
-  //   textGuid: '',
-  //   textUrl: '',
-  //   uuid: crypto.randomUUID(),
-  // }));
-  // characters.value.push(...newCharacters);
+async function handleInsertFromPaste(event: InputEvent): Promise<void> {
+  // console.log('Paste event:', event);
+  // console.log(event);
+
+  const text: string = await navigator.clipboard.readText();
+  text.split('').forEach((c: string) => {
+    const newCharacter: ICharacter = {
+      text: c,
+      letterLabel: collection.value.label,
+      textGuid: '',
+      textUrl: '',
+      uuid: crypto.randomUUID(),
+    };
+    // insert character...
+  });
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
