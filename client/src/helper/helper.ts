@@ -34,3 +34,28 @@ export function getParentCharacterSpan(node: Node): HTMLSpanElement {
 
   throw new Error('The provided node is neither a text node nor a span element.');
 }
+
+/**
+ * Remove images, formatting, newline characters, carriage returns, and escape elements from the input text.
+ * Used for cleaning up the input text before inserting it into the editor via paste.
+ *
+ * @param {string} text - The text from which to remove formatting.
+ * @return {string} The plain text with leading and trailing whitespace trimmed.
+ */
+export function removeFormatting(text: string): string {
+  const plainText: string = text.replace(/<[^>]*>|&[^;]*;|\r\n?|\n/g, '');
+  return plainText.trim(); // Trim leading and trailing whitespace
+}
+
+/**
+ * Retrieves relevant data from the Selection object of the current window.
+ *
+ * @return {Object} An object containing the Selection object itself, the Range object, and the type of the selection ('Caret', 'Range', 'None').
+ */
+export function getSelectionData(): { selection: Selection; range: Range; type: string } {
+  const selection: Selection = window.getSelection();
+  const range: Range = selection.getRangeAt(0);
+  const type: string = selection.type;
+
+  return { selection, range, type };
+}

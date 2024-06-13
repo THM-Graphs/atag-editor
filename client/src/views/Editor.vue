@@ -17,10 +17,15 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import Resizer from '../components/Resizer.vue';
 import Metadata from '../components/Metadata.vue';
+import {
+  getParentCharacterSpan,
+  getSelectionData,
+  isEditorElement,
+  removeFormatting,
+} from '../helper/helper';
 import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
-import { getParentCharacterSpan, isEditorElement } from '../helper/helper';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -235,8 +240,8 @@ function showMessage(result: 'success' | 'error') {
   });
 }
 
-function insertCharacter(
-  newCharacter: ICharacter,
+function insertCharacters(
+  newCharacters: ICharacter[],
   position: 'before' | 'after',
   referenceCharUuid?: string | undefined,
 ): void {
@@ -246,10 +251,9 @@ function insertCharacter(
 
   if (indexOfReferenceChar !== -1) {
     const indexToInsert: number = position === 'before' ? 0 : 1;
-    // console.time('splice');
-    characters.value.splice(indexOfReferenceChar + indexToInsert, 0, newCharacter);
-    // console.timeEnd('splice');
-    insertedCharacterUUID.value = newCharacter.uuid;
+    characters.value.splice(indexOfReferenceChar + indexToInsert, 0, ...newCharacters);
+    // Update the insertedCharacterUUID to set range after it
+    insertedCharacterUUID.value = newCharacters[newCharacters.length - 1].uuid;
   } else {
     console.log('UUID not found');
   }
@@ -305,31 +309,17 @@ function handleInput(event: InputEvent) {
     default:
       console.log('Unhandled input type:', event.inputType);
   }
-
-  // TODO: Set range after each operation, not only after text insertion
 }
 
 function handleInsertText(event: InputEvent): void {
-  // TODO: Reduce this, letterLabel/textUrl/textGuid can be dynamic and should be added on save
-  const newCharacter: ICharacter = {
-    text: event.data || '',
-    letterLabel: collection.value.label,
-    textGuid: '',
-    textUrl: '',
-    uuid: crypto.randomUUID(),
-  };
+  const newCharacter: ICharacter = createNewCharacter(event.data || '');
 
-  const selection: Selection = window.getSelection();
-
-  const range: Range = selection.getRangeAt(0);
-  const type: string = selection.type;
-
-  console.log(range);
+  const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
     // Nothing selected -> Empty text
     console.log('No existing text yet');
-    insertCharacter(newCharacter, 'after', undefined);
+    insertCharacters([newCharacter], 'after', undefined);
   } else {
     // The span element after which the new text will be added
     let referenceSpanElement: HTMLSpanElement;
@@ -344,7 +334,7 @@ function handleInsertText(event: InputEvent): void {
     }
 
     const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
-    insertCharacter(newCharacter, position, referenceSpanElement.id);
+    insertCharacters([newCharacter], position, referenceSpanElement.id);
   }
 }
 
@@ -363,20 +353,30 @@ function handleInsertReplacementText(event: InputEvent): void {
 }
 
 async function handleInsertFromPaste(event: InputEvent): Promise<void> {
-  // console.log('Paste event:', event);
-  // console.log(event);
-
   const text: string = await navigator.clipboard.readText();
-  text.split('').forEach((c: string) => {
-    const newCharacter: ICharacter = {
-      text: c,
-      letterLabel: collection.value.label,
-      textGuid: '',
-      textUrl: '',
-      uuid: crypto.randomUUID(),
-    };
-    // insert character...
-  });
+
+  const newCharacters: ICharacter[] = removeFormatting(text)
+    .split('')
+    .map((c: string): ICharacter => createNewCharacter(c));
+
+  const { range, type } = getSelectionData();
+
+  if (isEditorElement(range.startContainer)) {
+    // Nothing selected -> Empty text
+    console.log('No existing text yet');
+    insertCharacters(newCharacters, 'after', undefined);
+  } else {
+    let referenceSpanElement: HTMLSpanElement;
+
+    if (type === 'Caret') {
+      referenceSpanElement = getParentCharacterSpan(range.startContainer);
+    } else {
+      // text is selected -> needs to be deleted
+    }
+
+    const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
+    insertCharacters(newCharacters, position, referenceSpanElement.id);
+  }
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
@@ -445,6 +445,17 @@ async function handleCopy(): Promise<void> {
   } catch (error: unknown) {
     console.error('Failed to copy text to clipboard:', error);
   }
+}
+
+function createNewCharacter(char: string): ICharacter {
+  // TODO: Reduce this, letterLabel/textUrl/textGuid can be dynamic and should be added on save
+  return {
+    text: char,
+    letterLabel: collection.value.label,
+    textGuid: '',
+    textUrl: '',
+    uuid: crypto.randomUUID(),
+  };
 }
 
 // TODO: This takes very long on bigger texts -> improve
