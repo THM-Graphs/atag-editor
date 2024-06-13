@@ -5,6 +5,7 @@ import {
   computed,
   onMounted,
   onUnmounted,
+  onUpdated,
   reactive,
   ref,
 } from 'vue';
@@ -42,6 +43,14 @@ onMounted(async (): Promise<void> => {
   await getCharacters();
 });
 
+onUpdated(() => {
+  if (insertedCharacterUUID.value) {
+    placeCursorAfterSpan(insertedCharacterUUID.value);
+    // Reset the insertedCharacterUUID ref after focusing
+    insertedCharacterUUID.value = null;
+  }
+});
+
 onUnmounted((): void => {
   window.removeEventListener('mouseup', handleMouseUp);
   window.removeEventListener('mousedown', handleMouseDown);
@@ -55,6 +64,7 @@ const characters = ref<ICharacter[]>([]);
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
 const currentSelection = reactive(useTextSelection());
+const insertedCharacterUUID = ref<string | null>(null);
 
 const mainWidth: ComputedRef<number> = computed(() => {
   const leftSidebarWidth: number = sidebars.value.left.isCollapsed ? 0 : sidebars.value.left.width;
@@ -78,7 +88,8 @@ const sidebars = ref<Record<string, SidebarConfig>>({
 });
 
 const activeResizer = ref<string>('');
-const metadataRef = ref();
+const metadataRef = ref(null);
+const editorRef = ref<HTMLDivElement>(null);
 
 // This allows using v-model for title input changes.
 // TODO: Replace with more generic async handling later
@@ -231,27 +242,79 @@ function insertCharacter(
   position: 'before' | 'after',
   newCharacter: ICharacter,
 ): void {
-  const startTime = performance.now();
+  console.time('insertCharacter');
 
   const index: number = characters.value.findIndex(c => c.uuid === targetUUID);
 
   if (index !== -1) {
     const indexToInsert: number = position === 'before' ? -1 : 1;
     characters.value.splice(index + indexToInsert, 0, newCharacter);
+    insertedCharacterUUID.value = newCharacter.uuid;
   } else {
     console.log('UUID not found');
   }
 
-  const endTime = performance.now();
-  console.log(endTime - startTime);
+  console.timeEnd('insertCharacter');
 }
 
-// TODO: Currently handles only inputs, not deletions, pastes etc.
 function handleInput(event: InputEvent) {
   event.preventDefault();
 
+  switch (event.inputType) {
+    // Text Insertion
+    case 'insertText':
+      handleInsertText(event);
+      break;
+    case 'insertReplacementText':
+      handleInsertReplacementText(event);
+      break;
+    case 'insertFromPaste':
+      handleInsertFromPaste(event);
+      break;
+    case 'insertFromDrop':
+      handleInsertFromDrop(event);
+      break;
+    case 'insertFromYank':
+      handleInsertFromYank(event);
+      break;
+
+    // Text Deletion
+    case 'deleteWordBackward':
+      handleDeleteWordBackward(event);
+      break;
+    case 'deleteWordForward':
+      handleDeleteWordForward(event);
+      break;
+    case 'deleteContentBackward':
+      handleDeleteContentBackward(event);
+      break;
+    case 'deleteContentForward':
+      handleDeleteContentForward(event);
+      break;
+    case 'deleteSoftLineBackward':
+      handleDeleteSoftLineBackward(event);
+      break;
+    case 'deleteSoftLineForward':
+      handleDeleteSoftLineForward(event);
+      break;
+    case 'deleteHardLineBackward':
+      handleDeleteHardLineBackward(event);
+      break;
+    case 'deleteHardLineForward':
+      handleDeleteHardLineForward(event);
+      break;
+
+    default:
+      console.log('Unhandled input type:', event.inputType);
+  }
+
+  // TODO: Set range after each operation, not only after text insertion
+}
+
+function handleInsertText(event: InputEvent): void {
+  // TODO: Reduce this, letterLabel/textUrl/textGuid can be dynamic and should be added on save
   const newCharacter: ICharacter = {
-    text: event.data,
+    text: event.data || '',
     letterLabel: collection.value.label,
     textGuid: '',
     textUrl: '',
@@ -271,30 +334,152 @@ function handleInput(event: InputEvent) {
     console.log('no text selected');
     characters.value.push(newCharacter);
     return;
-  } else if (
-    range.startContainer.nodeType === Node.TEXT_NODE &&
-    range.endContainer.nodeType === Node.TEXT_NODE
-  ) {
-    // Cursor somewhere in text
-    if (type === 'Caret') {
-      // No text selected
-      console.log('caret');
-      const referenceSpanElement: HTMLSpanElement = range.startContainer.parentElement;
-      if (range.startOffset === 0) {
-        // insert BEFORE reference character
-        insertCharacter(referenceSpanElement.id, 'before', newCharacter);
-      } else {
-        // insert AFTER reference character
-        insertCharacter(referenceSpanElement.id, 'after', newCharacter);
-      }
-    } else {
-      // text is selected -> needs to be deleted
-    }
   } else {
-    console.log('?');
+    // The span element after which the new text will be added
+    let referenceSpanElement: HTMLSpanElement;
+
+    if (
+      range.startContainer.nodeType === Node.TEXT_NODE &&
+      range.endContainer.nodeType === Node.TEXT_NODE
+    ) {
+      if (type === 'Caret') {
+        referenceSpanElement = range.startContainer.parentElement;
+      } else {
+        // text is selected -> needs to be deleted
+      }
+    } else if (
+      range.startContainer.nodeType === Node.ELEMENT_NODE &&
+      range.endContainer.nodeType === Node.ELEMENT_NODE
+    ) {
+      if (type === 'Caret') {
+        referenceSpanElement = range.startContainer as HTMLSpanElement;
+      } else {
+        // text is selected -> needs to be deleted
+      }
+    }
+
+    if (range.startOffset === 0) {
+      // insert BEFORE reference character
+      insertCharacter(referenceSpanElement.id, 'before', newCharacter);
+    } else {
+      // insert AFTER reference character
+      insertCharacter(referenceSpanElement.id, 'after', newCharacter);
+    }
+  }
+}
+
+function handleInsertReplacementText(event: InputEvent): void {
+  console.log('Replacement event:', event);
+
+  // const newCharacter: ICharacter = {
+  //   text: event.data || '',
+  //   letterLabel: 'someLabel',
+  //   textGuid: '',
+  //   textUrl: '',
+  //   uuid: crypto.randomUUID(),
+  // };
+  // characters.value.push(newCharacter);
+  // Additional logic for replacement can be added here
+}
+
+function handleInsertFromPaste(event: InputEvent): void {
+  console.log('Paste event:', event);
+  // const pastedData = (event as ClipboardEvent).clipboardData?.getData('text') || '';
+  // const newCharacters = pastedData.split('').map(char => ({
+  //   text: char,
+  //   letterLabel: 'someLabel',
+  //   textGuid: '',
+  //   textUrl: '',
+  //   uuid: crypto.randomUUID(),
+  // }));
+  // characters.value.push(...newCharacters);
+}
+
+function handleInsertFromDrop(event: InputEvent): void {
+  console.log('Drop event:', event);
+  // Handle drop logic
+}
+
+function handleInsertFromYank(event: InputEvent): void {
+  console.log('Yank event:', event);
+  // Handle yank logic
+}
+
+// Text Deletion Handlers
+function handleDeleteWordBackward(event: InputEvent): void {
+  console.log('DeleteWordBackward event:', event);
+  // Handle delete word backward logic
+}
+
+function handleDeleteWordForward(event: InputEvent): void {
+  console.log('DeleteWordForward event:', event);
+  // Handle delete word forward logic
+}
+
+function handleDeleteContentBackward(event: InputEvent): void {
+  console.log('DeleteContentBackward event:', event);
+  if (characters.value.length > 0) {
+    characters.value.pop();
+  }
+}
+
+function handleDeleteContentForward(event: InputEvent): void {
+  console.log('DeleteContentForward event:', event);
+  // Handle delete content forward logic
+}
+
+function handleDeleteSoftLineBackward(event: InputEvent): void {
+  console.log('DeleteSoftLineBackward event:', event);
+  // Handle delete soft line backward logic
+}
+
+function handleDeleteSoftLineForward(event: InputEvent): void {
+  console.log('DeleteSoftLineForward event:', event);
+  // Handle delete soft line forward logic
+}
+
+function handleDeleteHardLineBackward(event: InputEvent): void {
+  console.log('DeleteHardLineBackward event:', event);
+  // Handle delete hard line backward logic
+}
+
+function handleDeleteHardLineForward(event: InputEvent): void {
+  console.log('DeleteHardLineForward event:', event);
+  // Handle delete hard line forward logic
+}
+
+async function handleCopy(): Promise<void> {
+  const text: string = currentSelection.text;
+
+  if (text.length === 0) {
+    return;
   }
 
-  // TODO: Set range AFTER inserted span
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error: unknown) {
+    console.error('Failed to copy text to clipboard:', error);
+  }
+}
+
+// TODO: Improve performance
+function placeCursorAfterSpan(spanUUID: string): void {
+  const spanElement: HTMLSpanElement = document.getElementById(spanUUID);
+
+  if (!spanElement) {
+    return;
+  }
+
+  const range: Range = document.createRange();
+
+  range.setStart(spanElement, 1);
+  range.setEnd(spanElement, 1);
+  range.collapse(true);
+
+  console.time('cursor');
+  currentSelection.selection.removeAllRanges();
+  currentSelection.selection.addRange(range);
+  console.timeEnd('cursor');
 }
 </script>
 
@@ -337,10 +522,11 @@ function handleInput(event: InputEvent) {
         <div class="text-container h-full p-2">
           <div
             id="text"
+            ref="editorRef"
             contenteditable="true"
             spellcheck="false"
             @beforeinput="handleInput"
-            @input.prevent=""
+            @copy="handleCopy"
           >
             <span v-for="character in characters" :key="character.uuid" :id="character.uuid">
               {{ character.text }}
@@ -389,6 +575,10 @@ function handleInput(event: InputEvent) {
 
 #text:focus-visible {
   outline: none;
+}
+
+#text > span {
+  white-space-collapse: break-spaces;
 }
 
 .input-label {
