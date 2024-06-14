@@ -48,11 +48,15 @@ onMounted(async (): Promise<void> => {
 });
 
 onUpdated(() => {
-  if (insertedCharacterUUID.value) {
-    placeCursorAfterSpan(insertedCharacterUUID.value);
-    // Reset the insertedCharacterUUID ref
-    insertedCharacterUUID.value = null;
-  }
+  console.log(newRangeAnchorUuid.value);
+  // if (newRangeAnchorUuid.value) {
+  //   placeCursorAfterSpan(newRangeAnchorUuid.value);
+  //   // Reset the insertedCharacterUUID ref
+  //   newRangeAnchorUuid.value = null;
+  // } else {
+  //   placeCursorInBeginning();
+  // }
+  placeCursor();
 });
 
 onUnmounted((): void => {
@@ -67,7 +71,7 @@ const collection = ref<ICollection | null>(null);
 const characters = ref<ICharacter[]>([]);
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
-const insertedCharacterUUID = ref<string | null>(null);
+const newRangeAnchorUuid = ref<string | null>(null);
 
 const mainWidth: ComputedRef<number> = computed(() => {
   const leftSidebarWidth: number = sidebars.value.left.isCollapsed ? 0 : sidebars.value.left.width;
@@ -250,15 +254,35 @@ function insertCharacters(
     : 0;
 
   if (indexOfReferenceChar !== -1) {
-    const indexToInsert: number = position === 'before' ? 0 : 1;
-    characters.value.splice(indexOfReferenceChar + indexToInsert, 0, ...newCharacters);
-    // Update the insertedCharacterUUID to set range after it
-    insertedCharacterUUID.value = newCharacters[newCharacters.length - 1].uuid;
+    const indexToInsert: number = indexOfReferenceChar + (position === 'before' ? 0 : 1);
+
+    console.time('splice');
+    characters.value.splice(indexToInsert, 0, ...newCharacters);
+    console.timeEnd('splice');
+
+    // Update the newRangeAnchorUuid to set range after it
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid ?? null;
   } else {
     console.log('UUID not found');
   }
 }
 
+// TODO: Use this also for deletion of words or selections
+function deleteCharactersByUUIDs(uuidsToDelete: string[]): void {
+  let newAnchorIndex: number | null = null;
+
+  characters.value = characters.value.filter((c: ICharacter, index: number) => {
+    if (uuidsToDelete.includes(c.uuid) && newAnchorIndex === null) {
+      newAnchorIndex = index - 1;
+    }
+    return !uuidsToDelete.includes(c.uuid);
+  });
+
+  let newAnchorUuid: string | null =
+    newAnchorIndex === -1 ? null : characters.value[newAnchorIndex].uuid;
+
+  newRangeAnchorUuid.value = newAnchorUuid;
+}
 function handleInput(event: InputEvent) {
   event.preventDefault();
 
@@ -317,9 +341,8 @@ function handleInsertText(event: InputEvent): void {
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
-    // Nothing selected -> Empty text
-    console.log('No existing text yet');
-    insertCharacters([newCharacter], 'after', undefined);
+    // Insert character at beginning
+    insertCharacters([newCharacter], 'before', undefined);
   } else {
     // The span element after which the new text will be added
     let referenceSpanElement: HTMLSpanElement;
@@ -401,10 +424,16 @@ function handleDeleteWordForward(event: InputEvent): void {
 }
 
 function handleDeleteContentBackward(event: InputEvent): void {
-  console.log('DeleteContentBackward event:', event);
-  if (characters.value.length > 0) {
-    characters.value.pop();
+  const { range } = getSelectionData();
+
+  if (isEditorElement(range.startContainer)) {
+    // TODO: Any edge cases where this might occur?
+    return;
   }
+
+  const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+  deleteCharactersByUUIDs([spanToDelete.id]);
 }
 
 function handleDeleteContentForward(event: InputEvent): void {
@@ -459,17 +488,22 @@ function createNewCharacter(char: string): ICharacter {
 }
 
 // TODO: This takes very long on bigger texts -> improve
-function placeCursorAfterSpan(spanUUID: string): void {
-  const spanElement: HTMLSpanElement | null = document.getElementById(spanUUID);
+function placeCursor(): void {
+  const range: Range = document.createRange();
+  let element: HTMLDivElement | HTMLSpanElement | null;
 
-  if (!spanElement) {
+  if (newRangeAnchorUuid.value) {
+    element = document.getElementById(newRangeAnchorUuid.value) as HTMLSpanElement;
+  } else {
+    element = document.querySelector('#text') as HTMLDivElement;
+  }
+
+  if (!element) {
     return;
   }
 
-  const range: Range = document.createRange();
-
-  range.setStart(spanElement, 1);
-  range.setEnd(spanElement, 1);
+  range.setStart(element, 1);
+  range.setEnd(element, 1);
   range.collapse(true);
 
   window.getSelection().removeAllRanges();
