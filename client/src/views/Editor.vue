@@ -48,14 +48,6 @@ onMounted(async (): Promise<void> => {
 });
 
 onUpdated(() => {
-  console.log(newRangeAnchorUuid.value);
-  // if (newRangeAnchorUuid.value) {
-  //   placeCursorAfterSpan(newRangeAnchorUuid.value);
-  //   // Reset the insertedCharacterUUID ref
-  //   newRangeAnchorUuid.value = null;
-  // } else {
-  //   placeCursorInBeginning();
-  // }
   placeCursor();
 });
 
@@ -259,9 +251,6 @@ function insertCharacters(
     console.time('splice');
     characters.value.splice(indexToInsert, 0, ...newCharacters);
     console.timeEnd('splice');
-
-    // Update the newRangeAnchorUuid to set range after it
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid ?? null;
   } else {
     console.log('UUID not found');
   }
@@ -277,12 +266,8 @@ function deleteCharactersByUUIDs(uuidsToDelete: string[]): void {
     }
     return !uuidsToDelete.includes(c.uuid);
   });
-
-  let newAnchorUuid: string | null =
-    newAnchorIndex === -1 ? null : characters.value[newAnchorIndex].uuid;
-
-  newRangeAnchorUuid.value = newAnchorUuid;
 }
+
 function handleInput(event: InputEvent) {
   event.preventDefault();
 
@@ -359,6 +344,7 @@ function handleInsertText(event: InputEvent): void {
     const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
     insertCharacters([newCharacter], position, referenceSpanElement.id);
   }
+  newRangeAnchorUuid.value = newCharacter.uuid;
 }
 
 function handleInsertReplacementText(event: InputEvent): void {
@@ -400,6 +386,7 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
     const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
     insertCharacters(newCharacters, position, referenceSpanElement.id);
   }
+  newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
@@ -424,16 +411,25 @@ function handleDeleteWordForward(event: InputEvent): void {
 }
 
 function handleDeleteContentBackward(event: InputEvent): void {
-  const { range } = getSelectionData();
+  const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
     // TODO: Any edge cases where this might occur?
     return;
   }
 
-  const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+  if (type === 'Caret') {
+    const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
+    newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
 
-  deleteCharactersByUUIDs([spanToDelete.id]);
+    deleteCharactersByUUIDs([spanToDelete.id]);
+  } else {
+    // TODO: Add handling
+    // text is selected -> needs to be deleted
+    console.log('Some text is selected, handle this please');
+    return;
+  }
 }
 
 function handleDeleteContentForward(event: InputEvent): void {
