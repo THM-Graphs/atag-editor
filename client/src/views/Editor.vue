@@ -420,6 +420,11 @@ function handleDeleteContentBackward(event: InputEvent): void {
 
   if (type === 'Caret') {
     const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+    if (spanToDelete === editorRef.value.firstElementChild && range.startOffset === 0) {
+      return;
+    }
+
     const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
     newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
 
@@ -433,8 +438,43 @@ function handleDeleteContentBackward(event: InputEvent): void {
 }
 
 function handleDeleteContentForward(event: InputEvent): void {
-  console.log('DeleteContentForward event:', event);
-  // Handle delete content forward logic
+  const { range, type } = getSelectionData();
+
+  let spanToDelete: HTMLSpanElement;
+
+  if (isEditorElement(range.startContainer)) {
+    if (editorRef.value.childElementCount === 0) {
+      return;
+    }
+
+    spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
+    newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
+    deleteCharactersByUUIDs([spanToDelete.id]);
+  } else {
+    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+    if (type === 'Caret') {
+      if (range.startOffset === 0) {
+        spanToDelete = referenceSpanElement;
+      } else {
+        // reference span is last character -> del makes no sense
+        if (referenceSpanElement === editorRef.value.lastElementChild) {
+          return;
+        } else {
+          spanToDelete = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+        }
+      }
+
+      const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
+      newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
+      deleteCharactersByUUIDs([spanToDelete.id]);
+    } else {
+      // TODO: Add handling
+      // text is selected -> needs to be deleted
+      console.log('Some text is selected, handle this please');
+      return;
+    }
+  }
 }
 
 function handleDeleteSoftLineBackward(event: InputEvent): void {
