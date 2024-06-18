@@ -236,30 +236,21 @@ function showMessage(result: 'success' | 'error') {
   });
 }
 
-function insertCharacters(
+function insertCharactersBetweenIndexes(
+  startIndex: number,
+  endIndex: number,
   newCharacters: ICharacter[],
-  position: 'before' | 'after',
-  referenceCharUuid?: string | undefined,
+  action: 'insert' | 'replace',
 ): void {
-  const indexOfReferenceChar: number = referenceCharUuid
-    ? characters.value.findIndex(c => c.uuid === referenceCharUuid)
-    : 0;
+  const charsToDeleteCount: number =
+    action === 'insert' ? endIndex - startIndex : endIndex - startIndex + 1;
+  const from: number = action === 'insert' ? startIndex + 1 : startIndex;
 
-  if (indexOfReferenceChar !== -1) {
-    const indexToInsert: number = indexOfReferenceChar + (position === 'before' ? 0 : 1);
-
-    console.time('splice');
-    characters.value.splice(indexToInsert, 0, ...newCharacters);
-    console.timeEnd('splice');
-  } else {
-    console.log('UUID not found');
-  }
+  characters.value.splice(from, charsToDeleteCount, ...newCharacters);
 }
 
 function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
-  console.time('index');
   characters.value.splice(startIndex, endIndex - startIndex + 1);
-  console.timeEnd('index');
 }
 
 function handleInput(event: InputEvent) {
@@ -319,26 +310,31 @@ function handleInsertText(event: InputEvent): void {
 
   const { range, type } = getSelectionData();
 
+  let startIndex: number;
+  let endIndex: number;
+  let action: 'insert' | 'replace';
+
   if (isEditorElement(range.startContainer)) {
-    // Insert character at beginning
-    insertCharacters([newCharacter], 'before', undefined);
+    startIndex = 0;
+    endIndex = 0;
   } else {
-    // The span element after which the new text will be added
-    let referenceSpanElement: HTMLSpanElement;
-
     if (type === 'Caret') {
-      referenceSpanElement = getParentCharacterSpan(range.startContainer);
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+      endIndex = startIndex;
+      action = 'insert';
     } else {
-      // TODO: Add handling
-      // text is selected -> needs to be deleted
-      console.log('Some text is selected, handle this please');
-      return;
+      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
+        range.startContainer,
+      );
+      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
+      endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      action = 'replace';
     }
-
-    const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
-    insertCharacters([newCharacter], position, referenceSpanElement.id);
   }
   newRangeAnchorUuid.value = newCharacter.uuid;
+  insertCharactersBetweenIndexes(startIndex, endIndex, [newCharacter], action);
 }
 
 function handleInsertReplacementText(event: InputEvent): void {
@@ -364,23 +360,31 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
 
   const { range, type } = getSelectionData();
 
+  let startIndex: number;
+  let endIndex: number;
+  let action: 'insert' | 'replace';
+
   if (isEditorElement(range.startContainer)) {
-    // Nothing selected -> Empty text
-    console.log('No existing text yet');
-    insertCharacters(newCharacters, 'after', undefined);
+    startIndex = 0;
+    endIndex = 0;
   } else {
-    let referenceSpanElement: HTMLSpanElement;
-
     if (type === 'Caret') {
-      referenceSpanElement = getParentCharacterSpan(range.startContainer);
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+      endIndex = startIndex;
+      action = 'insert';
     } else {
-      // text is selected -> needs to be deleted
+      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
+        range.startContainer,
+      );
+      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
+      endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      action = 'replace';
     }
-
-    const position: 'before' | 'after' = range.startOffset === 0 ? 'before' : 'after';
-    insertCharacters(newCharacters, position, referenceSpanElement.id);
   }
   newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
@@ -458,7 +462,6 @@ function handleDeleteContentForward(event: InputEvent): void {
       if (range.startOffset === 0) {
         spanToDelete = referenceSpanElement;
       } else {
-        // reference span is last character -> del makes no sense
         if (referenceSpanElement === editorRef.value.lastElementChild) {
           return;
         } else {
