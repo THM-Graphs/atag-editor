@@ -290,6 +290,9 @@ function handleInput(event: InputEvent) {
     case 'deleteByCut':
       handleDeleteByCut(event);
       break;
+    case 'deleteByDrag':
+      handleDeleteByDrag(event);
+      break;
     case 'deleteSoftLineBackward':
       handleDeleteSoftLineBackward(event);
       break;
@@ -391,8 +394,44 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
-  console.log('Drop event:', event);
-  // Handle drop logic
+  const dataTransfer: DataTransfer = event.dataTransfer;
+
+  if (!dataTransfer) {
+    return;
+  }
+
+  const text: string = dataTransfer.getData('text');
+  const newCharacters: ICharacter[] = removeFormatting(text)
+    .split('')
+    .map((c: string): ICharacter => createNewCharacter(c));
+
+  const { range, type } = getSelectionData();
+
+  let startIndex: number;
+  let endIndex: number;
+  let action: 'insert' | 'replace';
+
+  if (isEditorElement(range.startContainer)) {
+    startIndex = 0;
+    endIndex = 0;
+  } else {
+    if (type === 'Caret') {
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+      endIndex = startIndex;
+      action = 'insert';
+    } else {
+      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
+        range.startContainer,
+      );
+      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
+      endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      action = 'replace';
+    }
+  }
+  newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromYank(event: InputEvent): void {
@@ -510,6 +549,11 @@ function handleDeleteByCut(event: InputEvent): void {
   deleteCharactersBetweenIndexes(startIndex, endIndex);
 
   handleCopy();
+}
+
+function handleDeleteByDrag(event: InputEvent): void {
+  // TODO: Should this be handled? Drag and drop with annotated text will be very complex
+  return;
 }
 
 function handleDeleteSoftLineBackward(event: InputEvent): void {
