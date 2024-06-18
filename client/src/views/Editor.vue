@@ -256,16 +256,10 @@ function insertCharacters(
   }
 }
 
-// TODO: Use this also for deletion of words or selections
-function deleteCharactersByUUIDs(uuidsToDelete: string[]): void {
-  let newAnchorIndex: number | null = null;
-
-  characters.value = characters.value.filter((c: ICharacter, index: number) => {
-    if (uuidsToDelete.includes(c.uuid) && newAnchorIndex === null) {
-      newAnchorIndex = index - 1;
-    }
-    return !uuidsToDelete.includes(c.uuid);
-  });
+function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
+  console.time('index');
+  characters.value.splice(startIndex, endIndex - startIndex + 1);
+  console.timeEnd('index');
 }
 
 function handleInput(event: InputEvent) {
@@ -428,12 +422,18 @@ function handleDeleteContentBackward(event: InputEvent): void {
     const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
     newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
 
-    deleteCharactersByUUIDs([spanToDelete.id]);
+    deleteCharactersBetweenIndexes(charIndex, charIndex);
   } else {
-    // TODO: Add handling
-    // text is selected -> needs to be deleted
-    console.log('Some text is selected, handle this please');
-    return;
+    const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+    const startIndex: number = characters.value.findIndex(
+      c => c.uuid === startReferenceSpanElement.id,
+    );
+    const endIndex: number = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+
+    newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
+
+    deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
 }
 
@@ -449,7 +449,8 @@ function handleDeleteContentForward(event: InputEvent): void {
 
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
     newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
-    deleteCharactersByUUIDs([spanToDelete.id]);
+
+    deleteCharactersBetweenIndexes(0, 1);
   } else {
     const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
@@ -467,12 +468,23 @@ function handleDeleteContentForward(event: InputEvent): void {
 
       const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
       newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
-      deleteCharactersByUUIDs([spanToDelete.id]);
+
+      deleteCharactersBetweenIndexes(charIndex, charIndex);
     } else {
-      // TODO: Add handling
-      // text is selected -> needs to be deleted
-      console.log('Some text is selected, handle this please');
-      return;
+      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
+        range.startContainer,
+      );
+      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      const startIndex: number = characters.value.findIndex(
+        c => c.uuid === startReferenceSpanElement.id,
+      );
+      const endIndex: number = characters.value.findIndex(
+        c => c.uuid === endReferenceSpanElement.id,
+      );
+
+      newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
+
+      deleteCharactersBetweenIndexes(startIndex, endIndex);
     }
   }
 }
