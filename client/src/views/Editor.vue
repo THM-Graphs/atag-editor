@@ -287,6 +287,9 @@ function handleInput(event: InputEvent) {
     case 'deleteContentForward':
       handleDeleteContentForward(event);
       break;
+    case 'deleteByCut':
+      handleDeleteByCut(event);
+      break;
     case 'deleteSoftLineBackward':
       handleDeleteSoftLineBackward(event);
       break;
@@ -492,6 +495,23 @@ function handleDeleteContentForward(event: InputEvent): void {
   }
 }
 
+function handleDeleteByCut(event: InputEvent): void {
+  const { range } = getSelectionData();
+
+  const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+  const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+  const startIndex: number = characters.value.findIndex(
+    c => c.uuid === startReferenceSpanElement.id,
+  );
+  const endIndex: number = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+
+  newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
+
+  deleteCharactersBetweenIndexes(startIndex, endIndex);
+
+  handleCopy();
+}
+
 function handleDeleteSoftLineBackward(event: InputEvent): void {
   console.log('DeleteSoftLineBackward event:', event);
   // Handle delete soft line backward logic
@@ -513,7 +533,7 @@ function handleDeleteHardLineForward(event: InputEvent): void {
 }
 
 async function handleCopy(): Promise<void> {
-  const selection: Selection = window.getSelection();
+  const { selection } = getSelectionData();
   const text: string = selection.toString();
 
   if (text.length === 0) {
