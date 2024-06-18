@@ -1,3 +1,5 @@
+import ICharacter from '../models/ICharacter';
+
 /**
  * Capitalizes the first letter of a given string.
  *
@@ -33,6 +35,52 @@ export function getParentCharacterSpan(node: Node): HTMLSpanElement {
   }
 
   throw new Error('The provided node is neither a text node nor a span element.');
+}
+
+/**
+ * Finds the index of the start of the word that contains the given character index.
+ * Used for word deleting with "Ctrl + Backspace".
+ *
+ * @param {number} charIndex - The index of the character.
+ * @param {ICharacter[]} characters - The array of characters.
+ * @return {number} The index of the character that is the start of a word.
+ */
+export function findStartOfWord(charIndex: number, characters: ICharacter[]): number {
+  let start: number = charIndex;
+
+  while (start > 0 && !isWordBoundary(characters[start - 1].text)) {
+    start--;
+  }
+
+  return start;
+}
+
+/**
+ * Finds the index of the end of the word that contains the given character index.
+ * Used for word deleting with "Ctrl + Delete".
+ *
+ * @param {number} charIndex - The index of the character.
+ * @param {ICharacter[]} characters - The array of characters.
+ * @return {number} The index of the character that is the end of a word.
+ */
+export function findEndOfWord(charIndex: number, characters: ICharacter[]): number {
+  let end: number = charIndex;
+
+  while (end < characters.length && !isWordBoundary(characters[end].text)) {
+    end++;
+  }
+
+  return end;
+}
+
+/**
+ * Determines if the given character is a word boundary, for example whitespace or punctuation.
+ *
+ * @param {string} char - The character to check.
+ * @returns {boolean} True if the character is a word boundary, false otherwise.
+ */
+export function isWordBoundary(char: string): boolean {
+  return /\s/.test(char) || /[.,!?;:(){}[\]"']/g.test(char);
 }
 
 /**

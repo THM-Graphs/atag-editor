@@ -18,6 +18,8 @@ import { useToast } from 'primevue/usetoast';
 import Resizer from '../components/Resizer.vue';
 import Metadata from '../components/Metadata.vue';
 import {
+  findEndOfWord,
+  findStartOfWord,
   getParentCharacterSpan,
   getSelectionData,
   isEditorElement,
@@ -441,13 +443,57 @@ function handleInsertFromYank(event: InputEvent): void {
 
 // Text Deletion Handlers
 function handleDeleteWordBackward(event: InputEvent): void {
-  console.log('DeleteWordBackward event:', event);
-  // Handle delete word backward logic
+  const { range, type } = getSelectionData();
+
+  if (isEditorElement(range.startContainer)) {
+    return;
+  }
+
+  if (type === 'Caret') {
+    const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+    if (spanToDelete === editorRef.value.firstElementChild && range.startOffset === 0) {
+      return;
+    }
+
+    const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
+    const startWordIndex: number = findStartOfWord(charIndex, characters.value);
+
+    newRangeAnchorUuid.value = characters.value[startWordIndex - 1]?.uuid ?? null;
+
+    deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+  } else {
+    handleDeleteContentBackward(event);
+  }
 }
 
 function handleDeleteWordForward(event: InputEvent): void {
-  console.log('DeleteWordForward event:', event);
-  // Handle delete word forward logic
+  const { range, type } = getSelectionData();
+
+  let spanToDelete: HTMLSpanElement;
+
+  if (isEditorElement(range.startContainer)) {
+    if (editorRef.value.childElementCount === 0) {
+      return;
+    }
+
+    spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
+    newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
+
+    deleteCharactersBetweenIndexes(0, findEndOfWord(0, characters.value));
+  } else {
+    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+    if (type === 'Caret') {
+      const charIndex: number = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+      const endWordIndex: number = findEndOfWord(charIndex, characters.value);
+
+      newRangeAnchorUuid.value = characters.value[charIndex]?.uuid ?? null;
+      deleteCharactersBetweenIndexes(charIndex + 1, endWordIndex);
+    } else {
+      handleDeleteContentForward(event);
+    }
+  }
 }
 
 function handleDeleteContentBackward(event: InputEvent): void {
