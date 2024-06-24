@@ -9,7 +9,6 @@ import {
   ref,
 } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import { useCharactersStore } from '../store/characters';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -57,7 +56,7 @@ onUpdated(() => {
 });
 
 onUnmounted((): void => {
-  charactersStore.$reset();
+  resetCharacters();
 
   window.removeEventListener('mouseup', handleMouseUp);
   window.removeEventListener('mousedown', handleMouseDown);
@@ -67,9 +66,15 @@ const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
 
 const collection = ref<ICollection | null>(null);
-const charactersStore = useCharactersStore();
 
-const { characters } = storeToRefs(charactersStore);
+const {
+  characters,
+  deleteCharactersBetweenIndexes,
+  initializeCharacters,
+  insertCharactersBetweenIndexes,
+  resetCharacters,
+} = useCharactersStore();
+
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -187,8 +192,7 @@ async function getCharacters(): Promise<void> {
     // TODO: This should come from the database
     fetchedCharacters.forEach((c: ICharacter) => (c.uuid = crypto.randomUUID()));
 
-    // Initialize store
-    charactersStore.initialize(fetchedCharacters);
+    initializeCharacters(fetchedCharacters);
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
   }
@@ -340,7 +344,7 @@ function handleInsertText(event: InputEvent): void {
   }
 
   newRangeAnchorUuid.value = newCharacter.uuid;
-  charactersStore.insertCharactersBetweenIndexes(startIndex, endIndex, [newCharacter], action);
+  insertCharactersBetweenIndexes(startIndex, endIndex, [newCharacter], action);
 }
 
 function handleInsertReplacementText(event: InputEvent): void {
@@ -399,7 +403,7 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
   }
 
   newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
-  charactersStore.insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
+  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
@@ -447,7 +451,7 @@ function handleInsertFromDrop(event: InputEvent): void {
   }
 
   newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
-  charactersStore.insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
+  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromYank(event: InputEvent): void {
@@ -475,7 +479,7 @@ function handleDeleteWordBackward(event: InputEvent): void {
 
     newRangeAnchorUuid.value = characters.value[startWordIndex - 1]?.uuid ?? null;
 
-    charactersStore.deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+    deleteCharactersBetweenIndexes(startWordIndex, charIndex);
   } else {
     handleDeleteContentBackward(event);
   }
@@ -494,7 +498,7 @@ function handleDeleteWordForward(event: InputEvent): void {
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
     newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
 
-    charactersStore.deleteCharactersBetweenIndexes(0, findEndOfWord(0, characters.value));
+    deleteCharactersBetweenIndexes(0, findEndOfWord(0, characters.value));
   } else {
     const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
@@ -503,7 +507,7 @@ function handleDeleteWordForward(event: InputEvent): void {
       const endWordIndex: number = findEndOfWord(charIndex, characters.value);
 
       newRangeAnchorUuid.value = characters.value[charIndex]?.uuid ?? null;
-      charactersStore.deleteCharactersBetweenIndexes(charIndex + 1, endWordIndex);
+      deleteCharactersBetweenIndexes(charIndex + 1, endWordIndex);
     } else {
       handleDeleteContentForward(event);
     }
@@ -528,7 +532,7 @@ function handleDeleteContentBackward(event: InputEvent): void {
     const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
     newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
 
-    charactersStore.deleteCharactersBetweenIndexes(charIndex, charIndex);
+    deleteCharactersBetweenIndexes(charIndex, charIndex);
   } else {
     const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
     const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
@@ -539,7 +543,7 @@ function handleDeleteContentBackward(event: InputEvent): void {
 
     newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
 
-    charactersStore.deleteCharactersBetweenIndexes(startIndex, endIndex);
+    deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
 }
 
@@ -556,7 +560,7 @@ function handleDeleteContentForward(event: InputEvent): void {
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
     newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
 
-    charactersStore.deleteCharactersBetweenIndexes(0, 1);
+    deleteCharactersBetweenIndexes(0, 1);
   } else {
     const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
@@ -574,7 +578,7 @@ function handleDeleteContentForward(event: InputEvent): void {
       const charIndex: number = characters.value.findIndex(c => c.uuid === spanToDelete.id);
       newRangeAnchorUuid.value = characters.value[charIndex - 1]?.uuid ?? null;
 
-      charactersStore.deleteCharactersBetweenIndexes(charIndex, charIndex);
+      deleteCharactersBetweenIndexes(charIndex, charIndex);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
         range.startContainer,
@@ -589,7 +593,7 @@ function handleDeleteContentForward(event: InputEvent): void {
 
       newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
 
-      charactersStore.deleteCharactersBetweenIndexes(startIndex, endIndex);
+      deleteCharactersBetweenIndexes(startIndex, endIndex);
     }
   }
 }
@@ -606,7 +610,7 @@ function handleDeleteByCut(event: InputEvent): void {
 
   newRangeAnchorUuid.value = characters.value[startIndex - 1]?.uuid ?? null;
 
-  charactersStore.deleteCharactersBetweenIndexes(startIndex, endIndex);
+  deleteCharactersBetweenIndexes(startIndex, endIndex);
 
   handleCopy();
 }

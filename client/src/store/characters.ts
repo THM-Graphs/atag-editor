@@ -1,17 +1,16 @@
 import { ref } from 'vue';
-import { defineStore } from 'pinia';
 import ICharacter from '../models/ICharacter';
 
-export const useCharactersStore = defineStore('characters', () => {
+/**
+ * Store for managing the state of characters inside an editor instance. When the component is mounted,
+ * the store is initialized with the fetched characters from the database. When the component is unmounted,
+ * the store is reset (character array is emptied).
+ */
+export const useCharactersStore = () => {
   const characters = ref<ICharacter[]>([]);
 
-  function initialize(initialCharacters: ICharacter[]): void {
+  function initializeCharacters(initialCharacters: ICharacter[]): void {
     characters.value = initialCharacters;
-  }
-
-  // TODO: Replace with $patch?
-  function update(newCharacters): void {
-    characters.value = newCharacters;
   }
 
   function insertCharactersBetweenIndexes(
@@ -33,17 +32,15 @@ export const useCharactersStore = defineStore('characters', () => {
     characters.value.splice(startIndex, endIndex - startIndex + 1);
   }
 
-  function $reset(): void {
+  function resetCharacters(): void {
     characters.value = [];
-    console.log(characters.value);
   }
 
   return {
     characters,
     deleteCharactersBetweenIndexes,
-    initialize,
+    initializeCharacters,
     insertCharactersBetweenIndexes,
-    $reset,
-    update,
+    resetCharacters,
   };
-});
+};
