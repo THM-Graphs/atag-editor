@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ModelRef, computed, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useCollectionStore } from '../store/collection';
+import { capitalize } from '../helper/helper';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
 import Skeleton from 'primevue/skeleton';
-import { capitalize } from '../helper/helper';
-import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
 
 defineExpose({
   validate,
 });
 
-const collectionData: ModelRef<ICollection | null> = defineModel();
+const { collection } = useCollectionStore();
+
 const props = defineProps<{
   guidelines: IGuidelines | null;
 }>();
@@ -29,16 +30,12 @@ function validate(): boolean {
 
 <template>
   <Panel header="Metadata" toggleable>
-    <template v-if="collectionData && guidelines">
+    <template v-if="collection && guidelines">
+      {{ collection }}
       <form ref="formRef" @submit.prevent="validate">
         <div class="flex align-items-center gap-3 mb-3">
           <label for="uuid" class="w-10rem font-semibold">UUID </label>
-          <InputText
-            id="uuid"
-            :disabled="true"
-            :value="collectionData.uuid"
-            class="flex-auto w-full"
-          />
+          <InputText id="uuid" :disabled="true" :value="collection.uuid" class="flex-auto w-full" />
         </div>
         <div v-for="field in displayedFields" class="flex align-items-center gap-3 mb-3">
           <label :for="field.name" class="w-10rem font-semibold"
@@ -48,9 +45,9 @@ function validate(): boolean {
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
-            :invalid="field.required && !collectionData[field.name]"
+            :invalid="field.required && !collection[field.name]"
             :key="field.name"
-            v-model="collectionData[field.name]"
+            v-model="collection[field.name]"
             class="flex-auto w-full"
           />
         </div>
