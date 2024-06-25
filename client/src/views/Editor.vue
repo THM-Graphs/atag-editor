@@ -324,7 +324,7 @@ function handleInsertText(event: InputEvent): void {
     if (type === 'Caret') {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
-        startIndex = -1;
+        startIndex = 0;
       } else {
         startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
       }
@@ -335,7 +335,7 @@ function handleInsertText(event: InputEvent): void {
       );
       const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
       if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
-        startIndex = -1;
+        startIndex = 0;
       } else {
         startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
       }
