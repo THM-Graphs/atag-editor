@@ -65,7 +65,7 @@ export function findStartOfWord(charIndex: number, characters: ICharacter[]): nu
  * @return {number} The index of the character that is the end of a word.
  */
 export function findEndOfWord(charIndex: number, characters: ICharacter[]): number {
-  let end: number = charIndex;
+  let end: number = charIndex + 1;
 
   while (end < characters.length && !isWordBoundary(characters[end].text)) {
     end++;

@@ -506,8 +506,12 @@ function handleDeleteWordForward(event: InputEvent): void {
       const charIndex: number = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
       const endWordIndex: number = findEndOfWord(charIndex, characters.value);
 
+      const deletionStartIndex: number = isCursorAtBeginning(referenceSpanElement, editorRef)
+        ? charIndex
+        : charIndex + 1;
+
       newRangeAnchorUuid.value = characters.value[charIndex]?.uuid ?? null;
-      deleteCharactersBetweenIndexes(charIndex + 1, endWordIndex);
+      deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
     } else {
       handleDeleteContentForward(event);
     }
@@ -560,7 +564,7 @@ function handleDeleteContentForward(event: InputEvent): void {
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
     newRangeAnchorUuid.value = characters.value[0]?.uuid ?? null;
 
-    deleteCharactersBetweenIndexes(0, 1);
+    deleteCharactersBetweenIndexes(0, 0);
   } else {
     const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 

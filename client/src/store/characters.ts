@@ -28,8 +28,17 @@ export const useCharactersStore = () => {
     console.timeEnd('insert');
   }
 
+  /**
+   * Deletes characters between the specified start and end indexes (both inclusive).
+   *
+   * @param {number} startIndex - The index of the first character to delete.
+   * @param {number} endIndex - The index of the last character to delete.
+   * @return {void} This function does not return anything.
+   */
   function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
-    characters.value.splice(startIndex, endIndex - startIndex + 1);
+    const charsToDeleteCount: number = endIndex - startIndex;
+
+    characters.value.splice(startIndex, charsToDeleteCount + 1);
   }
 
   function resetCharacters(): void {
