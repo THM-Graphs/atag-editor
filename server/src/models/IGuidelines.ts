@@ -2,7 +2,7 @@ export interface IGuidelines {
   collections: {
     [index: string] /* letter, document etc. */ : {
       additionalLabels: string[] /* "Letter" etc. */;
-      properties?: {
+      properties: {
         name: string /* folioEnd, label, websiteUrl */;
         type: string /* raw string, dropdown, multiple options */;
         required: boolean /* required or optional */;

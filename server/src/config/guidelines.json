@@ -7,8 +7,8 @@
           "name": "label",
           "type": "string",
           "required": true,
-          "editable": true,
-          "visible": true
+          "editable": false,
+          "visible": false
         },
         {
           "name": "sender",
@@ -27,7 +27,7 @@
         {
           "name": "websiteUrl",
           "type": "string",
-          "required": true,
+          "required": false,
           "editable": true,
           "visible": true
         }

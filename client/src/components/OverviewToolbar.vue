@@ -23,6 +23,7 @@ const guidelinesAreLoaded = ref<boolean>(false);
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
+  console.log(JSON.parse(JSON.stringify(newCollectionData.value)));
   try {
     // TODO: Replace localhost with vite configuration
     const url: string = 'http://localhost:8080/api/collections';
@@ -116,14 +117,14 @@ function handleSearchInput(): void {
         v-if="guidelinesAreLoaded"
         class="input-container"
         v-for="(property, index) in guidelines.collections['text'].properties"
+        v-show="property.required === true"
       >
-        <div v-if="property.required" class="flex align-items-center gap-3 mb-3">
+        <div class="flex align-items-center gap-3 mb-3">
           <label :for="property.name" class="font-semibold w-6rem"
             >{{ capitalize(property.name) }}
           </label>
           <InputText
             :id="property.name"
-            :disabled="!property.editable"
             :required="property.required"
             :autofocus="index === 0"
             :key="property.name"

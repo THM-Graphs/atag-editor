@@ -17,10 +17,6 @@ const props = defineProps<{
   guidelines: IGuidelines | null;
 }>();
 
-const displayedFields = computed(() =>
-  props.guidelines.collections['text'].properties.filter(p => p.visible === true),
-);
-
 const formRef = ref<HTMLFormElement | null>(null);
 
 function validate(): boolean {
@@ -37,19 +33,25 @@ function validate(): boolean {
           <label for="uuid" class="w-10rem font-semibold">UUID </label>
           <InputText id="uuid" :disabled="true" :value="collection.uuid" class="flex-auto w-full" />
         </div>
-        <div v-for="field in displayedFields" class="flex align-items-center gap-3 mb-3">
-          <label :for="field.name" class="w-10rem font-semibold"
-            >{{ capitalize(field.name) }}
-          </label>
-          <InputText
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !collection[field.name]"
-            :key="field.name"
-            v-model="collection[field.name]"
-            class="flex-auto w-full"
-          />
+        <div
+          class="input-container"
+          v-for="field in props.guidelines.collections['text'].properties"
+          v-show="field.visible"
+        >
+          <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
+            <label :for="field.name" class="w-10rem font-semibold"
+              >{{ capitalize(field.name) }}
+            </label>
+            <InputText
+              :id="field.name"
+              :disabled="!field.editable"
+              :required="field.required"
+              :invalid="field.required && !collection[field.name]"
+              :key="field.name"
+              v-model="collection[field.name]"
+              class="flex-auto w-full"
+            />
+          </div>
         </div>
       </form>
     </template>
