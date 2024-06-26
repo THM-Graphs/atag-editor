@@ -119,15 +119,23 @@ async function handleSaveChanges(): Promise<void> {
 
   const startNodeIndex = uuidStart
     ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
-    : 0;
-  const endNodeIndex = uuidEnd
+    : -1;
+
+  let endNodeIndex = uuidEnd
     ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidEnd)
     : characters.value.length;
+
+  if (endNodeIndex === -1) {
+    endNodeIndex = characters.value.length;
+  }
 
   console.log(startNodeIndex);
   console.log(endNodeIndex);
 
-  const characterSnippet: ICharacter[] = characters.value.slice(startNodeIndex, endNodeIndex);
+  const sliceStart = startNodeIndex + 1;
+  const sliceEnd = endNodeIndex;
+
+  const characterSnippet: ICharacter[] = characters.value.slice(sliceStart, sliceEnd);
   console.log(characterSnippet.map((c: ICharacter) => c.text));
 
   try {
