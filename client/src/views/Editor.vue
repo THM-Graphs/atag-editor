@@ -52,8 +52,9 @@ onUnmounted((): void => {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
 
-const { collection, initializeCollection } = useCollectionStore();
-const { characters, initializeCharacters, resetCharacters } = useCharactersStore();
+const { collection, initialCollection, initializeCollection } = useCollectionStore();
+const { characters, initialCharacters, initializeCharacters, resetCharacters } =
+  useCharactersStore();
 
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
@@ -111,6 +112,24 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
+  const { uuidStart, uuidEnd } = findChangesetBoundaries();
+
+  console.log('startUuid:', uuidStart);
+  console.log('endUuid:', uuidEnd);
+
+  const startNodeIndex = uuidStart
+    ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
+    : 0;
+  const endNodeIndex = uuidEnd
+    ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidEnd)
+    : characters.value.length;
+
+  console.log(startNodeIndex);
+  console.log(endNodeIndex);
+
+  const characterSnippet: ICharacter[] = characters.value.slice(startNodeIndex, endNodeIndex);
+  console.log(characterSnippet.map((c: ICharacter) => c.text));
+
   try {
     // TODO: Replace localhost with vite configuration
     let url: string = `http://localhost:8080/api/collections/${uuid}`;
@@ -130,9 +149,9 @@ async function handleSaveChanges(): Promise<void> {
 
     const characterPostData: CharacterPostData = {
       collectionUuid: collection.value.uuid,
-      uuidStart: null,
-      uuidEnd: null,
-      characters: characters.value,
+      uuidStart: uuidStart,
+      uuidEnd: uuidEnd,
+      characters: characterSnippet,
     };
 
     url = `http://localhost:8080/api/collections/${uuid}/characters`;
@@ -239,6 +258,59 @@ function showMessage(result: 'success' | 'error') {
     detail: 'Message Content',
     life: 2000,
   });
+}
+
+function findChangesetBoundaries(): {
+  uuidStart: string | null;
+  uuidEnd: string | null;
+} {
+  let uuidStart: string | null = null;
+  let uuidEnd: string | null = null;
+
+  for (let index = 0; index < characters.value.length; index++) {
+    if (characters.value[index].uuid !== initialCharacters.value[index]?.uuid) {
+      break;
+    }
+
+    uuidStart = characters.value[index].uuid;
+
+    if (
+      index === characters.value.length - 1 &&
+      characters.value.length >= initialCharacters.value.length
+    ) {
+      uuidStart = null;
+    }
+  }
+
+  const reversedCharacters: ICharacter[] = [...characters.value].reverse();
+  const reversedInitialCharacters: ICharacter[] = [...initialCharacters.value].reverse();
+
+  for (let index = 0; index < reversedCharacters.length; index++) {
+    if (reversedCharacters[index].uuid !== reversedInitialCharacters[index]?.uuid) {
+      break;
+    }
+
+    uuidEnd = reversedCharacters[index].uuid;
+
+    if (
+      index === reversedCharacters.length - 1 &&
+      reversedCharacters.length >= reversedInitialCharacters.length
+    ) {
+      uuidEnd = null;
+    }
+  }
+
+  const startSpan = document.querySelector(`[data-uuid="${uuidStart}"]`);
+  if (startSpan) {
+    (startSpan as HTMLSpanElement).style.backgroundColor = 'green';
+  }
+
+  const endSpan = document.querySelector(`[data-uuid="${uuidEnd}"]`);
+  if (endSpan) {
+    (endSpan as HTMLSpanElement).style.backgroundColor = 'red';
+  }
+
+  return { uuidStart, uuidEnd };
 }
 </script>
 
