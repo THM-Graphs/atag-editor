@@ -1,6 +1,8 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
+import GuidelinesService from './guidelines.service.js';
 import ICollection from '../models/ICollection.js';
+import { IGuidelines } from '../models/IGuidelines.js';
 
 export default class CollectionService {
   /**
@@ -57,12 +59,23 @@ export default class CollectionService {
    * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
    */
   // TODO: Make additional label(s) dynamic
-  // TODO: Set default fields from guidelines.json as empty strings?
   public async createNewCollection(
     data: Record<string, string>,
     additionalLabel: string,
   ): Promise<ICollection | undefined> {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
     const textUuid: string = crypto.randomUUID();
+
+    // Add default properties if they are not sent in the request
+    guidelines.collections['text'].properties.forEach(property => {
+      if (!data[property.name]) {
+        data[property.name] = '';
+      }
+    });
+
+    data = { ...data, uuid: crypto.randomUUID() };
 
     const query: string = `
     CREATE (c:Collection:${additionalLabel} $data)-[:HAS_TEXT]->(t:Text {uuid: $textUuid})

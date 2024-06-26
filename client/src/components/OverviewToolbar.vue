@@ -75,6 +75,13 @@ async function getGuidelines(): Promise<void> {
 
     const fetchedGuidelines: IGuidelines = await response.json();
     guidelines.value = fetchedGuidelines;
+
+    // TODO: Load guidelines only once? Should be enough...
+    // Initialize newCollectionData with empty strings to include them in form data
+    guidelines.value.collections['text'].properties.forEach(property => {
+      newCollectionData.value[property.name] = '';
+    });
+
     guidelinesAreLoaded.value = true;
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);

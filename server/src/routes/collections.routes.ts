@@ -18,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 router.post('/', async (req: Request, res: Response) => {
-  const data: Record<string, string> = { ...req.body, uuid: crypto.randomUUID() };
+  const data: Record<string, string> = { ...req.body };
 
   try {
     const collectionService: CollectionService = new CollectionService();
