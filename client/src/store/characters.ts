@@ -2,9 +2,11 @@ import { ref } from 'vue';
 import ICharacter from '../models/ICharacter';
 
 const characters = ref<ICharacter[]>([]);
+const initialCharacters = ref<ICharacter[]>([]);
 
-function initializeCharacters(initialCharacters: ICharacter[]): void {
-  characters.value = initialCharacters;
+function initializeCharacters(characterData: ICharacter[]): void {
+  characters.value = characterData;
+  initialCharacters.value = [...characterData];
 }
 
 function insertCharactersBetweenIndexes(
@@ -47,6 +49,7 @@ function resetCharacters(): void {
 export function useCharactersStore() {
   return {
     characters,
+    initialCharacters,
     deleteCharactersBetweenIndexes,
     initializeCharacters,
     insertCharactersBetweenIndexes,
