@@ -105,6 +105,7 @@ async function getCollectionByUuid(): Promise<void> {
   }
 }
 
+// TODO: Reset initialCharacters.value if state history in frontend should be applied
 async function handleSaveChanges(): Promise<void> {
   const metadataAreValid: boolean = metadataRef.value.validate();
 
@@ -162,6 +163,8 @@ async function handleSaveChanges(): Promise<void> {
       characters: characterSnippet,
     };
 
+    console.log(JSON.parse(JSON.stringify(characterPostData)));
+
     url = `http://localhost:8080/api/collections/${uuid}/characters`;
     response = await fetch(url, {
       method: 'POST',
@@ -189,13 +192,12 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 async function handleCancelChanges(): Promise<void> {
-  console.log('cancel');
-  // try {
-  //   await getCollectionByUuid();
-  //   await getCharacters();
-  // } catch (error: unknown) {
-  //   console.error('Error discarding changes:', error);
-  // }
+  try {
+    await getCollectionByUuid();
+    await getCharacters();
+  } catch (error: unknown) {
+    console.error('Error discarding changes:', error);
+  }
 }
 
 async function getCharacters(): Promise<void> {
