@@ -14,7 +14,19 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 router.post('/', async (req: Request, res: Response) => {
-  //   TODO: Implement
+  const collectionUuid: string = req.params.uuid;
+
+  const { uuidStart, uuidEnd, characters } = req.body;
+
+  const characterService: CharacterService = new CharacterService();
+  const createdCharacters: ICharacter[] = await characterService.saveCharacters(
+    collectionUuid,
+    uuidStart,
+    uuidEnd,
+    characters,
+  );
+
+  res.status(200).json(createdCharacters);
 });
 
 export default router;

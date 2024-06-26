@@ -3,18 +3,19 @@ import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
-import Sidebar from '../components/EditorSidebar.vue';
+import EditorSidebar from '../components/EditorSidebar.vue';
+import EditorHeader from '../components/EditorHeader.vue';
+import EditorText from '../components/EditorText.vue';
+import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
-import Resizer from '../components/EditorResizer.vue';
+import EditorResizer from '../components/EditorResizer.vue';
 import Metadata from '../components/EditorMetadata.vue';
 import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
-import EditorHeader from '../components/EditorHeader.vue';
-import EditorText from '../components/EditorText.vue';
-import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
+import { CharacterPostData } from '../models/types';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -104,32 +105,60 @@ async function getCollectionByUuid(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  console.log('save');
-  // const metadataAreValid: boolean = metadataRef.value.validate();
-  // if (!metadataAreValid) {
-  //   return;
-  // }
-  // try {
-  //   // TODO: Replace localhost with vite configuration
-  //   const url: string = `http://localhost:8080/api/collections/${uuid}`;
-  //   const response: Response = await fetch(url, {
-  //     method: 'POST',
-  //     cache: 'no-cache',
-  //     credentials: 'same-origin',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     referrerPolicy: 'no-referrer',
-  //     body: JSON.stringify(collection.value),
-  //   });
-  //   if (!response.ok) {
-  //     throw new Error('Network response was not ok');
-  //   }
-  //   showMessage('success');
-  // } catch (error: unknown) {
-  //   showMessage('error');
-  //   console.error('Error updating collection:', error);
-  // }
+  const metadataAreValid: boolean = metadataRef.value.validate();
+
+  if (!metadataAreValid) {
+    return;
+  }
+
+  try {
+    // TODO: Replace localhost with vite configuration
+    let url: string = `http://localhost:8080/api/collections/${uuid}`;
+    let response: Response = await fetch(url, {
+      method: 'POST',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(collection.value),
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const characterPostData: CharacterPostData = {
+      collectionUuid: collection.value.uuid,
+      uuidStart: null,
+      uuidEnd: null,
+      characters: characters.value,
+    };
+
+    url = `http://localhost:8080/api/collections/${uuid}/characters`;
+    response = await fetch(url, {
+      method: 'POST',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(characterPostData),
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const updatedCharacters: ICharacter[] = await response.json();
+    console.log('UPDATE');
+    console.log(updatedCharacters);
+
+    showMessage('success');
+  } catch (error: unknown) {
+    showMessage('error');
+    console.error('Error updating collection:', error);
+  }
 }
 
 async function handleCancelChanges(): Promise<void> {
@@ -153,9 +182,6 @@ async function getCharacters(): Promise<void> {
     }
 
     const fetchedCharacters: ICharacter[] = await response.json();
-
-    // TODO: This should come from the database
-    fetchedCharacters.forEach((c: ICharacter) => (c.uuid = crypto.randomUUID()));
 
     initializeCharacters(fetchedCharacters);
   } catch (error: unknown) {
@@ -218,14 +244,14 @@ function showMessage(result: 'success' | 'error') {
 
 <template>
   <div class="container flex h-screen">
-    <Sidebar
+    <EditorSidebar
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
     >
       <Metadata :guidelines="guidelines" ref="metadataRef" />
-    </Sidebar>
-    <Resizer
+    </EditorSidebar>
+    <EditorResizer
       position="left"
       :width="resizerWidth"
       :sidebarIsCollapsed="sidebars['left'].isCollapsed === true"
@@ -237,13 +263,13 @@ function showMessage(result: 'success' | 'error') {
       <EditorText ref="editorRef" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
-    <Resizer
+    <EditorResizer
       position="right"
       :width="resizerWidth"
       :sidebarIsCollapsed="sidebars['right'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
-    <Sidebar
+    <EditorSidebar
       position="right"
       :isCollapsed="sidebars['right'].isCollapsed === true"
       :width="sidebars['right'].width"
