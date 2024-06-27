@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { WritableComputedRef, computed } from 'vue';
+import { WritableComputedRef, computed, ref } from 'vue';
 import { useCollectionStore } from '../store/collection';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
+
+defineExpose({
+  validate,
+});
 
 const { collection } = useCollectionStore();
 
@@ -18,6 +22,12 @@ const displayedLabel: WritableComputedRef<string> = computed({
     }
   },
 });
+
+const formRef = ref<HTMLFormElement | null>(null);
+
+function validate(): boolean {
+  return formRef.value.reportValidity();
+}
 </script>
 
 <template>
@@ -28,14 +38,17 @@ const displayedLabel: WritableComputedRef<string> = computed({
       </RouterLink>
     </div>
     <div class="label flex justify-content-center text-center">
-      <InputText
-        id="label"
-        v-model="displayedLabel"
-        spellcheck="false"
-        :invalid="displayedLabel.length === 0"
-        placeholder="No label provided"
-        class="input-label text-center w-full text-xl font-bold"
-      />
+      <form ref="formRef" action="" class="w-full">
+        <InputText
+          id="label"
+          v-model="displayedLabel"
+          required
+          spellcheck="false"
+          :invalid="displayedLabel.length === 0"
+          placeholder="No label provided"
+          class="input-label text-center w-full text-xl font-bold"
+        />
+      </form>
     </div>
   </div>
 </template>

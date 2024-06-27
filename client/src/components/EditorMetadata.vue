@@ -27,7 +27,6 @@ function validate(): boolean {
 <template>
   <Panel header="Metadata" toggleable>
     <template v-if="collection && guidelines">
-      {{ collection }}
       <form ref="formRef" @submit.prevent="validate">
         <div class="flex align-items-center gap-3 mb-3">
           <label for="uuid" class="w-10rem font-semibold">UUID </label>

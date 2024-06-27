@@ -82,6 +82,7 @@ const sidebars = ref<Record<string, SidebarConfig>>({
 
 const activeResizer = ref<string>('');
 const metadataRef = ref(null);
+const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
 const toast: ToastServiceMethods = useToast();
@@ -108,8 +109,9 @@ async function getCollectionByUuid(): Promise<void> {
 // TODO: Reset initialCharacters.value if state history in frontend should be applied
 async function handleSaveChanges(): Promise<void> {
   const metadataAreValid: boolean = metadataRef.value.validate();
+  const labelInputIsValid: boolean = labelInputRef.value.validate();
 
-  if (!metadataAreValid) {
+  if (!metadataAreValid || !labelInputIsValid) {
     return;
   }
 
@@ -341,7 +343,7 @@ function findChangesetBoundaries(): {
     />
     <section class="main flex flex-column flex-grow-1" :style="{ width: mainWidth + 'px' }">
       <Toast />
-      <EditorHeader />
+      <EditorHeader ref="labelInputRef" />
       <EditorText ref="editorRef" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
