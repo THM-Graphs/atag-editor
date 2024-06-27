@@ -14,13 +14,16 @@ import {
 import ICharacter from '../models/ICharacter';
 
 onUpdated(() => {
-  console.log('update');
   placeCursor();
 });
 
 const { collection } = useCollectionStore();
-const { characters, deleteCharactersBetweenIndexes, insertCharactersBetweenIndexes } =
-  useCharactersStore();
+const {
+  characters,
+  deleteCharactersBetweenIndexes,
+  insertCharactersAtIndex,
+  replaceCharactersBetweenIndizes,
+} = useCharactersStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
 
@@ -88,39 +91,43 @@ function handleInsertText(event: InputEvent): void {
   const newCharacter: ICharacter = createNewCharacter(event.data || '');
 
   const { range, type } = getSelectionData();
-  const action: 'insert' | 'replace' = type === 'Caret' ? 'insert' : 'replace';
-
-  let startIndex: number;
-  let endIndex: number;
 
   if (isEditorElement(range.startContainer)) {
-    startIndex = -1;
-    endIndex = -1;
+    newRangeAnchorUuid.value = newCharacter.uuid;
+    insertCharactersAtIndex(0, [newCharacter]);
   } else {
     if (type === 'Caret') {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      let index: number;
+
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
-        startIndex = 0;
+        index = 0;
       } else {
-        startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+        index = characters.value.findIndex(c => c.uuid === referenceSpanElement.id) + 1;
       }
-      endIndex = startIndex;
+
+      newRangeAnchorUuid.value = newCharacter.uuid;
+      insertCharactersAtIndex(index, [newCharacter]);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
         range.startContainer,
       );
       const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      let startIndex: number;
+      let endIndex: number;
+
       if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
         startIndex = 0;
       } else {
         startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
       }
+
       endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+
+      newRangeAnchorUuid.value = newCharacter.uuid;
+      replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
     }
   }
-
-  newRangeAnchorUuid.value = newCharacter.uuid;
-  insertCharactersBetweenIndexes(startIndex, endIndex, [newCharacter], action);
 }
 
 function handleInsertReplacementText(event: InputEvent): void {
@@ -145,41 +152,43 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
     .map((c: string): ICharacter => createNewCharacter(c));
 
   const { range, type } = getSelectionData();
-  const action: 'insert' | 'replace' = type === 'Caret' ? 'insert' : 'replace';
-
-  let startIndex: number;
-  let endIndex: number;
-
-  console.log('paste');
 
   if (isEditorElement(range.startContainer)) {
-    startIndex = -1;
-    endIndex = -1;
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+    insertCharactersAtIndex(0, newCharacters);
   } else {
     if (type === 'Caret') {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      let index: number;
+
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
-        startIndex = -1;
+        index = 0;
       } else {
-        startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+        index = characters.value.findIndex(c => c.uuid === referenceSpanElement.id) + 1;
       }
-      endIndex = startIndex;
+
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      insertCharactersAtIndex(index, newCharacters);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
         range.startContainer,
       );
       const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      let startIndex: number;
+      let endIndex: number;
+
       if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
-        startIndex = -1;
+        startIndex = 0;
       } else {
         startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
       }
+
       endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
     }
   }
-
-  newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
-  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromDrop(event: InputEvent): void {
@@ -195,39 +204,43 @@ function handleInsertFromDrop(event: InputEvent): void {
     .map((c: string): ICharacter => createNewCharacter(c));
 
   const { range, type } = getSelectionData();
-  let action: 'insert' | 'replace' = type === 'Caret' ? 'insert' : 'replace';
-
-  let startIndex: number;
-  let endIndex: number;
 
   if (isEditorElement(range.startContainer)) {
-    startIndex = -1;
-    endIndex = -1;
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+    insertCharactersAtIndex(0, newCharacters);
   } else {
     if (type === 'Caret') {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      let index: number;
+
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
-        startIndex = -1;
+        index = 0;
       } else {
-        startIndex = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+        index = characters.value.findIndex(c => c.uuid === referenceSpanElement.id);
       }
-      endIndex = startIndex;
+
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      insertCharactersAtIndex(index, newCharacters);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
         range.startContainer,
       );
       const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+      let startIndex: number;
+      let endIndex: number;
+
       if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
-        startIndex = -1;
+        startIndex = 0;
       } else {
         startIndex = characters.value.findIndex(c => c.uuid === startReferenceSpanElement.id);
       }
+
       endIndex = characters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
     }
   }
-
-  newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
-  insertCharactersBetweenIndexes(startIndex, endIndex, newCharacters, action);
 }
 
 function handleInsertFromYank(event: InputEvent): void {
@@ -482,7 +495,12 @@ function placeCursor(): void {
         @beforeinput="handleInput"
         @copy="handleCopy"
       >
-        <span v-for="character in characters" :key="character.uuid" :id="character.uuid">
+        <span
+          v-for="character in characters"
+          :key="character.uuid"
+          :id="character.uuid"
+          :data-uuid="character.uuid"
+        >
           {{ character.text }}
         </span>
       </div>

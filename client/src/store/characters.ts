@@ -9,19 +9,33 @@ function initializeCharacters(characterData: ICharacter[]): void {
   initialCharacters.value = [...characterData];
 }
 
-function insertCharactersBetweenIndexes(
+/**
+ * Replaces characters between the specified start and end indexes with the given array of new characters.
+ * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
+ *
+ * @param {number} startIndex - The index of the first character to replace.
+ * @param {number} endIndex - The index of the last character to replace.
+ * @param {ICharacter[]} newCharacters - The array of new characters to insert.
+ * @return {void} This function does not return anything.
+ */
+function replaceCharactersBetweenIndizes(
   startIndex: number,
   endIndex: number,
   newCharacters: ICharacter[],
-  action: 'insert' | 'replace',
 ): void {
-  const charsToDeleteCount: number =
-    action === 'insert' ? endIndex - startIndex : endIndex - startIndex + 1;
-  const from: number = action === 'insert' ? startIndex + 1 : startIndex;
+  const charsToDeleteCount: number = endIndex - startIndex + 1;
+  characters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
+}
 
-  console.time('insert');
-  characters.value.splice(from, charsToDeleteCount, ...newCharacters);
-  console.timeEnd('insert');
+/**
+ * Inserts new characters at the specified index in the characters array. Indexes are calculated during input event handling.
+ *
+ * @param {number} index - The index at which to insert the new characters.
+ * @param {ICharacter[]} newCharacters - The array of new characters to insert.
+ * @return {void} This function does not return anything.
+ */
+function insertCharactersAtIndex(index: number, newCharacters: ICharacter[]): void {
+  characters.value.splice(index, 0, ...newCharacters);
 }
 
 /**
@@ -52,7 +66,8 @@ export function useCharactersStore() {
     initialCharacters,
     deleteCharactersBetweenIndexes,
     initializeCharacters,
-    insertCharactersBetweenIndexes,
+    insertCharactersAtIndex,
+    replaceCharactersBetweenIndizes,
     resetCharacters,
   };
 }
