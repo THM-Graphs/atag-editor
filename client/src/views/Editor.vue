@@ -10,6 +10,8 @@ import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
+import EditorError from '../components/EditorError.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import Metadata from '../components/EditorMetadata.vue';
 import ICharacter from '../models/ICharacter';
@@ -23,24 +25,21 @@ interface SidebarConfig {
   width: number;
 }
 
-// TODO: Fix route param passing...
-defineProps({
-  uuid: String,
-});
-
 onMounted(async (): Promise<void> => {
   window.addEventListener('mouseup', handleMouseUp);
   window.addEventListener('mousedown', handleMouseDown);
 
   await getCollectionByUuid();
-  await getGuidelines();
-  await getCharacters();
-});
 
-// onUpdated(() => {
-//   console.log('update');
-//   placeCursor();
-// });
+  // TODO: Improve valid collection checking, use information from backend
+  if (Object.keys(collection.value).length > 0) {
+    await getGuidelines();
+    await getCharacters();
+    isValidCollection.value = true;
+  }
+
+  isLoading.value = false;
+});
 
 onUnmounted((): void => {
   resetCharacters();
@@ -51,6 +50,9 @@ onUnmounted((): void => {
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
+
+const isLoading = ref<boolean>(true);
+const isValidCollection = ref<boolean>(false);
 
 const { collection, initialCollection, initializeCollection } = useCollectionStore();
 const { characters, initialCharacters, initializeCharacters, resetCharacters } =
@@ -327,7 +329,9 @@ function findChangesetBoundaries(): {
 </script>
 
 <template>
-  <div class="container flex h-screen">
+  <LoadingSpinner v-if="isLoading === true" />
+  <EditorError v-else-if="isValidCollection === false" :uuid="uuid" />
+  <div v-else class="container flex h-screen">
     <EditorSidebar
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
