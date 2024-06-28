@@ -121,7 +121,7 @@ export function isWordBoundary(char: string): boolean {
  */
 export function removeFormatting(text: string): string {
   const plainText: string = text.replace(/<[^>]*>|&[^;]*;|\r\n?|\n/g, '');
-  return plainText.trim(); // Trim leading and trailing whitespace
+  return plainText;
 }
 
 /**
