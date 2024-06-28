@@ -41,7 +41,11 @@ router.get('/:uuid', async (req: Request, res: Response) => {
     const collectionService: CollectionService = new CollectionService();
     const collection: ICollection | undefined = await collectionService.getCollectionById(uuid);
 
-    res.status(200).json(collection ?? {});
+    if (collection) {
+      res.status(200).json(collection);
+    } else {
+      res.status(404).json({ error: 'Collection not found' });
+    }
   } catch (error: unknown) {
     console.log(error);
     res.status(500).json({ error: error }); // Handle error appropriately

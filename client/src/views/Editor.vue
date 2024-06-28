@@ -31,11 +31,9 @@ onMounted(async (): Promise<void> => {
 
   await getCollectionByUuid();
 
-  // TODO: Improve valid collection checking, use information from backend
-  if (Object.keys(collection.value).length > 0) {
+  if (isValidCollection.value) {
     await getGuidelines();
     await getCharacters();
-    isValidCollection.value = true;
   }
 
   isLoading.value = false;
@@ -101,7 +99,7 @@ async function getCollectionByUuid(): Promise<void> {
 
     const fetchedCollection: ICollection = await response.json();
 
-    collection.value = fetchedCollection;
+    isValidCollection.value = true;
     initializeCollection(fetchedCollection);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
