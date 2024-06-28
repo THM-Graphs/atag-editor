@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
-import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import EditorSidebar from '../components/EditorSidebar.vue';
@@ -14,6 +14,7 @@ import EditorError from '../components/EditorError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import Metadata from '../components/EditorMetadata.vue';
+import { objectsAreEqual } from '../helper/helper';
 import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
@@ -26,14 +27,17 @@ interface SidebarConfig {
 }
 
 onMounted(async (): Promise<void> => {
-  window.addEventListener('mouseup', handleMouseUp);
-  window.addEventListener('mousedown', handleMouseDown);
-
   await getCollectionByUuid();
 
   if (isValidCollection.value) {
     await getGuidelines();
     await getCharacters();
+
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('beforeunload', (event: BeforeUnloadEvent) =>
+      preventUserFromPageLeaving(event),
+    );
   }
 
   isLoading.value = false;
@@ -44,7 +48,12 @@ onUnmounted((): void => {
 
   window.removeEventListener('mouseup', handleMouseUp);
   window.removeEventListener('mousedown', handleMouseDown);
+  window.addEventListener('beforeunload', (event: BeforeUnloadEvent) =>
+    preventUserFromPageLeaving(event),
+  );
 });
+
+onBeforeRouteLeave((to, from) => preventUserFromRouteLeaving());
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
@@ -182,9 +191,8 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const updatedCharacters: ICharacter[] = await response.json();
-    console.log('UPDATE');
-    console.log(updatedCharacters);
+    initialCollection.value = collection.value;
+    initialCharacters.value = characters.value;
 
     showMessage('success');
   } catch (error: unknown) {
@@ -323,6 +331,62 @@ function findChangesetBoundaries(): {
   }
 
   return { uuidStart, uuidEnd };
+}
+
+function hasUnsavedChanges(): boolean {
+  // Compare collection properties
+  if (!objectsAreEqual(collection.value, initialCollection.value)) {
+    return true;
+  }
+
+  // Compare characters length
+  if (characters.value.length !== initialCharacters.value.length) {
+    return true;
+  }
+
+  // Compare characters values
+  for (let index = 0; index < characters.value.length; index++) {
+    if (!objectsAreEqual(characters.value[index], initialCharacters.value[index])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
+  if (!isValidCollection.value) {
+    return;
+  }
+
+  if (!hasUnsavedChanges()) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const confirmationMessage = 'Do you really want to leave? You have unsaved changes.';
+  event.returnValue = confirmationMessage;
+
+  return confirmationMessage;
+}
+
+function preventUserFromRouteLeaving(): boolean {
+  if (!isValidCollection.value) {
+    return true;
+  }
+
+  if (!hasUnsavedChanges()) {
+    return true;
+  }
+
+  // TODO: Use PrimeVue confirmation dialog instead of browser default?
+  const answer: boolean = window.confirm('Do you really want to leave? you have unsaved changes');
+
+  // cancel the navigation and stay on the same page
+  if (!answer) {
+    return false;
+  }
 }
 </script>
 

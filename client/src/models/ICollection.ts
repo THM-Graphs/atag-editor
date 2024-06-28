@@ -1,4 +1,5 @@
 export default interface ICollection {
+  [keyof: string]: string | number;
   doctype: string;
   explicit: string;
   folioEnd: string;

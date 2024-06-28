@@ -12,6 +12,34 @@ export function capitalize(inputString: string): string {
 }
 
 /**
+ * A function that compares two objects to check if they are equal. Works only for non-nested objects
+ * where values are strings or numbers.
+ *
+ * @param {Record<string, string | number>} obj1 - The first object to compare.
+ * @param {Record<string, string | number>} obj2 - The second object to compare.
+ * @return {boolean} Returns true if the objects are equal, otherwise false.
+ */
+export function objectsAreEqual(
+  obj1: Record<string, string | number>,
+  obj2: Record<string, string | number>,
+): boolean {
+  const keys1: string[] = Object.keys(obj1);
+  const keys2: string[] = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+
+  for (const key of keys1) {
+    if (!keys2.includes(key) || obj1[key] !== obj2[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Checks if the given node is the text container element with id "text".
  *
  * @param {Node} node - The node to check.
