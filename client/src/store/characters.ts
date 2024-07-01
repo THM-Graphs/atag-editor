@@ -53,6 +53,7 @@ function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
 
 function resetCharacters(): void {
   characters.value = [];
+  initialCharacters.value = [];
 }
 
 /**

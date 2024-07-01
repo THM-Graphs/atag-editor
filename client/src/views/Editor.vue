@@ -35,9 +35,7 @@ onMounted(async (): Promise<void> => {
 
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('beforeunload', (event: BeforeUnloadEvent) =>
-      preventUserFromPageLeaving(event),
-    );
+    window.addEventListener('beforeunload', handleBeforeUnload);
   }
 
   isLoading.value = false;
@@ -46,11 +44,10 @@ onMounted(async (): Promise<void> => {
 onUnmounted((): void => {
   resetCharacters();
 
+  console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
   window.removeEventListener('mousedown', handleMouseDown);
-  window.addEventListener('beforeunload', (event: BeforeUnloadEvent) =>
-    preventUserFromPageLeaving(event),
-  );
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeRouteLeave((to, from) => preventUserFromRouteLeaving());
@@ -271,6 +268,10 @@ function handleMouseUp(event: MouseEvent): void {
   window.removeEventListener('mousemove', handleResize);
 }
 
+function handleBeforeUnload(event: BeforeUnloadEvent): void {
+  preventUserFromPageLeaving(event);
+}
+
 function showMessage(result: 'success' | 'error') {
   toast.add({
     severity: result,
@@ -339,7 +340,7 @@ function hasUnsavedChanges(): boolean {
     return true;
   }
 
-  // Compare characters length
+  // Compare charactfers length
   if (characters.value.length !== initialCharacters.value.length) {
     return true;
   }
