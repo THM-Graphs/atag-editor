@@ -8,7 +8,7 @@ export default class CollectionService {
   /**
    * Retrieves collection nodes based on the additional label provided.
    *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "METADATA" for collection nodes containing text metadata.
+   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
    * @return {Promise<ICollection[]>} A promise that resolves to an array of collections.
    */
   public async getCollections(additionalLabel: string): Promise<ICollection[]> {

@@ -1,14 +1,20 @@
 import express, { Request, Response, Router } from 'express';
 import characterRoutes from './characters.routes.js';
 import CollectionService from '../services/collection.service.js';
+import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
+import { IGuidelines } from '../models/IGuidelines.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+    const additionalLabel = guidelines.collections['text'].additionalLabel;
+
     const collectionService: CollectionService = new CollectionService();
-    const collections: ICollection[] = await collectionService.getCollections('Metadata');
+    const collections: ICollection[] = await collectionService.getCollections(additionalLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -21,10 +27,14 @@ router.post('/', async (req: Request, res: Response) => {
   const data: Record<string, string> = { ...req.body };
 
   try {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+    const additionalLabel = guidelines.collections['text'].additionalLabel;
+
     const collectionService: CollectionService = new CollectionService();
     const newCollection: ICollection | undefined = await collectionService.createNewCollection(
       data,
-      'Metadata',
+      additionalLabel,
     );
 
     res.status(201).json(newCollection);

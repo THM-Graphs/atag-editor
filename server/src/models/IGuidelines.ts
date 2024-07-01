@@ -1,7 +1,7 @@
 export interface IGuidelines {
   collections: {
     [index: string] /* letter, document etc. */ : {
-      additionalLabels: string[] /* "Letter" etc. */;
+      additionalLabel: string /* "Letter" etc. */;
       properties: {
         name: string /* folioEnd, label, websiteUrl */;
         type: string /* raw string, dropdown, multiple options */;
