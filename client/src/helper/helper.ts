@@ -113,14 +113,13 @@ export function isWordBoundary(char: string): boolean {
 }
 
 /**
- * Remove images, formatting, newline characters, carriage returns, and escape elements from the input text.
- * Used for cleaning up the input text before inserting it into the editor via paste.
+ * Removes formatting characters from the input text.
  *
- * @param {string} text - The text from which to remove formatting.
- * @return {string} The plain text with leading and trailing whitespace trimmed.
+ * @param {string} text - The text containing formatting characters.
+ * @return {string} The text with formatting characters removed.
  */
 export function removeFormatting(text: string): string {
-  const plainText: string = text.replace(/<[^>]*>|&[^;]*;|\r\n?|\n/g, '');
+  const plainText: string = text.replace(/\r\n?|\n/g, '');
   return plainText;
 }
 
