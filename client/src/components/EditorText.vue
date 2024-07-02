@@ -433,6 +433,14 @@ function handleDeleteHardLineForward(event: InputEvent): void {
   // Handle delete hard line forward logic
 }
 
+function handleUndo(event: KeyboardEvent): void {
+  alert('undo (Ctrl + Z) is not yet implemented');
+}
+
+function handleRedo(event: KeyboardEvent): void {
+  alert('redo (Ctrl + Shift + Z) is not yet implemented');
+}
+
 async function handleCopy(): Promise<void> {
   const { selection } = getSelectionData();
   const text: string = selection.toString();
@@ -494,6 +502,8 @@ function placeCursor(): void {
         spellcheck="false"
         @beforeinput="handleInput"
         @copy="handleCopy"
+        @keydown.ctrl.z.exact="handleUndo"
+        @keydown.ctrl.shift.z.exact="handleRedo"
       >
         <span
           v-for="character in characters"
