@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import ConfirmDialog from 'primevue/confirmdialog';
+import LoadingSpinner from './LoadingSpinner.vue';
+import Button from 'primevue/button';
 import { useConfirm } from 'primevue/useconfirm';
 import ICollection from '../models/ICollection';
-import Button from 'primevue/button';
 
 defineProps<{
-  collections: ICollection[];
+  collections: ICollection[] | null;
 }>();
 
 const emit = defineEmits(['collectionDeleted']);
@@ -51,7 +52,8 @@ async function deleteCollection(collection: ICollection): Promise<void> {
 <template>
   <ConfirmDialog :draggable="false" :closable="false" :style="{ width: '25rem' }" />
   <div class="list-container">
-    <ul>
+    <LoadingSpinner v-if="!collections" />
+    <ul v-else>
       <li
         class="list-item flex justify-content-between gap-6 flex-grow-1 text-xl m-3 p-3"
         v-for="collection in collections"

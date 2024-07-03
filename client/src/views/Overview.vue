@@ -7,8 +7,8 @@ import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionList from '../components/CollectionList.vue';
 import ICollection from '../models/ICollection';
 
-const collections = ref<ICollection[]>([]);
-const filteredCollections = ref<ICollection[]>([]);
+const collections = ref<ICollection[] | null>(null);
+const filteredCollections = ref<ICollection[] | null>(null);
 const searchInput = ref<string>('');
 
 const toast: ToastServiceMethods = useToast();
@@ -95,7 +95,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     />
 
     <div class="counter text-right">
-      <span>{{ filteredCollections.length }} texts</span>
+      <span>{{ filteredCollections ? filteredCollections.length : 0 }} texts</span>
     </div>
 
     <CollectionList
