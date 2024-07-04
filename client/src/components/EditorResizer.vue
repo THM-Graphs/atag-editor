@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ComputedRef, computed } from 'vue';
 import Button from 'primevue/button';
 
-const props = defineProps({
-  position: String,
-  sidebarIsCollapsed: Boolean,
-  width: Number,
-});
+const props = defineProps<{
+  position: string;
+  sidebarIsCollapsed: boolean;
+  defaultWidth: number;
+}>();
 
 const emit = defineEmits(['toggleSidebar']);
 
-const { position, width } = props;
+const { position, defaultWidth } = props;
+// Can not be destructured since reactivity would be lost
+const sidebarIsCollapsed: ComputedRef<boolean> = computed(() => props.sidebarIsCollapsed);
 
-const sidebarIsCollapsed = computed(() => props.sidebarIsCollapsed);
+const width: ComputedRef<number> = computed(() => (sidebarIsCollapsed.value ? 0 : defaultWidth));
 
 function toggleSidebar() {
   // This sends the OLD value to the parent element where the state is updated and passed into here.
