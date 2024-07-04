@@ -50,41 +50,38 @@ const arrowDirection = computed(() => {
   background-color: black;
   position: relative;
 
-  --height: 2.5rem;
-  --width: 1.25rem;
+  --height: 3.5rem;
+  --width: 1.5rem;
 
   .handle {
-    /* display: flex; */
-    /* justify-content: center; */
-    /* align-items: center; */
-    /* background-color: #b2b2d7; */
-    /* color: #fff; */
-    /* border: 1px solid #b2b2d7; */
+    background-color: hsla(240, 100%, 27%, 0.5);
+    border-color: hsla(240, 100%, 27%, 0.5);
+    color: white;
     position: absolute;
     height: var(--height);
     width: var(--width);
     top: 50%;
     cursor: pointer;
     /* z-index: 5; */
-    /* transition: background-color 100ms; */
+    transition: background-color 100ms;
 
     &.handle-left {
       left: 100%;
       transform: translateY(-50%);
-      /* border-radius: 0 var(--width) var(--width) 0; */
+      border-radius: 0 calc(var(--width) / 2) calc(var(--width) / 2) 0;
     }
 
     &.handle-right {
       right: 100%;
       transform: translateY(-50%);
-      /* border-radius: var(--width) 0 0 var(--width); */
+      border-radius: calc(var(--width) / 2) 0 0 calc(var(--width) / 2);
     }
 
-    /* &:hover {
-      background-color: darkblue;
-      border: 1px solid darkblue;
+    &:hover {
+      background-color: var;
+      border-color: var;
       transition: background-color 100ms;
-    } */
+    }
   }
 }
 </style>
