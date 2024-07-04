@@ -492,11 +492,12 @@ function placeCursor(): void {
 </script>
 
 <template>
-  <div class="content flex flex-column flex-1 p-3 overflow-auto">
-    <small class="character-counter text-right">{{ characters.length }} characters</small>
-    <div class="text-container h-full p-2">
+  <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
+    <small class="character-counter text-right mb-1">{{ characters.length }} characters</small>
+    <div class="text-container h-full p-2 overflow-auto">
       <div
         id="text"
+        class="min-h-full"
         ref="editorRef"
         contenteditable="true"
         spellcheck="false"
@@ -519,18 +520,19 @@ function placeCursor(): void {
 </template>
 
 <style scoped>
-.content {
-  outline: 1px solid red;
-}
-
 .text-container {
   background-color: white;
   border-radius: 3px;
-  outline: 1px solid green;
+  outline: 1px solid var(--color-focus);
+
+  &:has(:focus-visible) {
+    box-shadow: var(--box-shadow-focus);
+    outline: 0;
+  }
 }
 
-#text:focus-visible {
-  outline: none;
+#text {
+  outline: 0;
 }
 
 #text > span {

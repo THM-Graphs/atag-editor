@@ -408,7 +408,10 @@ function preventUserFromRouteLeaving(): boolean {
       :sidebarIsCollapsed="sidebars['left'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
     />
-    <section class="main flex flex-column flex-grow-1" :style="{ width: mainWidth + 'px' }">
+    <section
+      class="main flex flex-column flex-grow-1 px-3 pb-0 pt-3"
+      :style="{ width: mainWidth + 'px' }"
+    >
       <Toast />
       <EditorHeader ref="labelInputRef" />
       <EditorText ref="editorRef" />

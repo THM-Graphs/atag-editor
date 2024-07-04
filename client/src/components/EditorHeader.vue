@@ -32,13 +32,13 @@ function validate(): boolean {
 
 <template>
   <div class="header">
-    <div class="header-buttons flex">
+    <div class="header-buttons flex mb-2">
       <RouterLink to="/">
-        <Button icon="pi pi-home" aria-label="Home"></Button>
+        <Button icon="pi pi-home" aria-label="Home" class="w-2rem h-2rem"></Button>
       </RouterLink>
     </div>
     <div class="label flex justify-content-center text-center">
-      <form ref="formRef" action="" class="w-full">
+      <form ref="formRef" action="" class="w-full px-3">
         <InputText
           id="label"
           v-model="displayedLabel"
@@ -55,15 +55,21 @@ function validate(): boolean {
 
 <style scoped>
 .input-label {
+  border: none;
+  outline: 0;
+  box-shadow: none;
+
+  &[aria-invalid='true'] {
+    outline: 1px solid var(--color-input-invalid);
+  }
+
   &::placeholder {
     color: rgb(255, 173, 173);
     font-weight: normal;
   }
 
-  &:not(:focus-visible):not(:hover):not([aria-invalid='true']) {
-    outline: none;
-    box-shadow: none;
-    border-color: white;
+  &:focus-visible {
+    box-shadow: var(--box-shadow-focus);
   }
 }
 </style>
