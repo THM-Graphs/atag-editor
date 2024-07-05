@@ -35,6 +35,10 @@ h1 {
   line-height: 1.1;
 }
 
+ul {
+  padding: 0;
+}
+
 li {
   list-style-type: none;
 }

@@ -64,11 +64,6 @@ function handleCollectionCreation(newCollection: ICollection): void {
   getCollections();
 }
 
-function handleCollectionDeletion(deletedCollection: ICollection): void {
-  showMessage('deleted', `"${deletedCollection.label}"`);
-  getCollections();
-}
-
 function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
 }
@@ -94,14 +89,11 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       @search-input-changed="handleSearchInputChange"
     />
 
-    <div class="counter text-right">
+    <div class="counter text-right mx-3">
       <span>{{ filteredCollections ? filteredCollections.length : 0 }} texts</span>
     </div>
 
-    <CollectionList
-      :collections="filteredCollections"
-      @collection-deleted="handleCollectionDeletion"
-    />
+    <CollectionList :collections="filteredCollections" />
   </div>
 </template>
 
