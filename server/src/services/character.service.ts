@@ -15,16 +15,9 @@ export default class CharacterService {
     RETURN COLLECT(char {.*}) as characters
     `;
 
-    let characters: ICharacter[] = [];
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid });
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid });
-      characters = result.records[0]?.get('characters');
-    } catch (error: unknown) {
-      console.log(error);
-    }
-
-    return characters;
+    return result.records[0]?.get('characters');
   }
 
   /**
@@ -54,27 +47,13 @@ export default class CharacterService {
     RETURN COLLECT(n {.*}) as characters
     `;
 
-    // console.log('query:');
-    // console.log(collectionUuid, uuidStart, uuidEnd, characters.map(c => c.text).join('').length);
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      collectionUuid,
+      uuidStart,
+      uuidEnd,
+      characters,
+    });
 
-    let updatedCharacters: ICharacter[] = [];
-
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, {
-        collectionUuid,
-        uuidStart,
-        uuidEnd,
-        characters,
-      });
-
-      updatedCharacters = result.records[0]?.get('characters');
-
-      // console.log('result:');
-      // console.log(createdCharacters.map(c => c.text).join(''));
-    } catch (error: unknown) {
-      console.log(error);
-    }
-
-    return updatedCharacters;
+    return result.records[0]?.get('characters');
   }
 }

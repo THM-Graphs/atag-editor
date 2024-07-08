@@ -1,4 +1,4 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
@@ -7,90 +7,74 @@ import { IGuidelines } from '../models/IGuidelines.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
-router.get('/', async (req: Request, res: Response) => {
+const collectionService: CollectionService = new CollectionService();
+const guidelineService: GuidelinesService = new GuidelinesService();
+
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const additionalLabel = guidelines.collections['text'].additionalLabel;
 
-    const collectionService: CollectionService = new CollectionService();
     const collections: ICollection[] = await collectionService.getCollections(additionalLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
-    console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
+    next(error);
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const data: Record<string, string> = { ...req.body };
 
   try {
-    const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const additionalLabel = guidelines.collections['text'].additionalLabel;
 
-    const collectionService: CollectionService = new CollectionService();
-    const newCollection: ICollection | undefined = await collectionService.createNewCollection(
+    const newCollection: ICollection = await collectionService.createNewCollection(
       data,
       additionalLabel,
     );
 
     res.status(201).json(newCollection);
   } catch (error: unknown) {
-    console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
+    next(error);
   }
 });
 
-router.get('/:uuid', async (req: Request, res: Response) => {
+router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
 
   try {
-    const collectionService: CollectionService = new CollectionService();
-    const collection: ICollection | undefined = await collectionService.getCollectionById(uuid);
+    const collection: ICollection = await collectionService.getCollectionById(uuid);
 
-    if (collection) {
-      res.status(200).json(collection);
-    } else {
-      res.status(404).json({ error: 'Collection not found' });
-    }
+    res.status(200).json(collection);
   } catch (error: unknown) {
-    console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
+    next(error);
   }
 });
 
-router.post('/:uuid', async (req: Request, res: Response) => {
+router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
   const data: Record<string, string> = req.body;
 
   try {
-    const collectionService: CollectionService = new CollectionService();
-    const collection: ICollection | undefined = await collectionService.updateCollection(
-      uuid,
-      data,
-    );
+    const collection: ICollection = await collectionService.updateCollection(uuid, data);
 
-    res.status(200).json(collection ?? {});
+    res.status(200).json(collection);
   } catch (error: unknown) {
-    console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
+    next(error);
   }
 });
 
-router.delete('/:uuid', async (req: Request, res: Response) => {
+router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
 
   try {
-    const collectionService: CollectionService = new CollectionService();
-    const collection: ICollection | undefined = await collectionService.deleteCollection(uuid);
+    const collection: ICollection = await collectionService.deleteCollection(uuid);
 
-    res.status(200).json(collection ?? {});
+    res.status(200).json(collection);
   } catch (error: unknown) {
-    console.log(error);
-    res.status(500).json({ error: error }); // Handle error appropriately
+    next(error);
   }
 });
 

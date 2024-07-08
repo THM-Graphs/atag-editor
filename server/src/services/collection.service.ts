@@ -1,6 +1,7 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
+import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 
@@ -16,37 +17,29 @@ export default class CollectionService {
     MATCH (n:Collection:${additionalLabel}) RETURN COLLECT(n {.*}) as collections
     `;
 
-    let collections: ICollection[] = [];
+    const result: QueryResult = await Neo4jDriver.runQuery(query);
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query);
-      collections = result.records[0]?.get('collections');
-    } catch (error: unknown) {
-      console.log(error);
-    }
-
-    return collections;
+    return result.records[0]?.get('collections');
   }
 
   /**
    * Retrieves data of a specified collection node.
    *
    * @param {string} uuid - The UUID of the collection node to retrieve.
-   * @return {Promise<ICollection | undefined>} A promise that resolves to the retrieved collection or undefined if not found.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<ICollection>} A promise that resolves to the retrieved collection.
    */
-  public async getCollectionById(uuid: string): Promise<ICollection | undefined> {
+  public async getCollectionById(uuid: string): Promise<ICollection> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
     RETURN c {.*} AS collection
     `;
 
-    let collection: ICollection | undefined = undefined;
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+    const collection: ICollection = result.records[0]?.get('collection');
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-      collection = result.records[0]?.get('collection');
-    } catch (error: unknown) {
-      console.log(error);
+    if (!collection) {
+      throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
     return collection;
@@ -56,13 +49,13 @@ export default class CollectionService {
    * Creates a new collection node with given data as properties, along with an associated text node.
    *
    * @param {Record<string, string>} data - JSON data for the new collection node.
-   * @return {Promise<ICollection | undefined>} A promise that resolves to the newly created collection or undefined.
+   * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
    */
   // TODO: Make additional label(s) dynamic
   public async createNewCollection(
     data: Record<string, string>,
     additionalLabel: string,
-  ): Promise<ICollection | undefined> {
+  ): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
@@ -82,16 +75,9 @@ export default class CollectionService {
     RETURN c {.*} AS collection
     `;
 
-    let collection: ICollection | undefined = undefined;
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, textUuid });
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { data, textUuid });
-      collection = result.records[0]?.get('collection');
-    } catch (error: unknown) {
-      console.log(error);
-    }
-
-    return collection;
+    return result.records[0]?.get('collection');
   }
 
   /**
@@ -99,25 +85,21 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the collection node to update.
    * @param {Record<string, string>} data - The data for the collection node.
-   * @return {Promise<ICollection | undefined>} A promise that resolves to the updated collection node or undefined if not found.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
    */
-  public async updateCollection(
-    uuid: string,
-    data: Record<string, string>,
-  ): Promise<ICollection | undefined> {
+  public async updateCollection(uuid: string, data: Record<string, string>): Promise<ICollection> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
     SET c = $data
     RETURN c {.*} AS collection
     `;
 
-    let updatedCollection: ICollection | undefined = undefined;
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data });
+    const updatedCollection: ICollection = result.records[0]?.get('collection');
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data });
-      updatedCollection = result.records[0]?.get('collection');
-    } catch (error) {
-      console.error(error);
+    if (!updatedCollection) {
+      throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
     return updatedCollection;
@@ -127,9 +109,9 @@ export default class CollectionService {
    * Deletes a collection node with given UUID, along with an associated text node.
    *
    * @param {string} uuid - The UUID of the collection node to delete.
-   * @return {Promise<ICollection | undefined>} A promise that resolves to the deleted collection or undefined.
+   * @return {Promise<ICollection>} A promise that resolves to the deleted collection.
    */
-  public async deleteCollection(uuid: string): Promise<ICollection | undefined> {
+  public async deleteCollection(uuid: string): Promise<ICollection> {
     // TODO: Delete Character nodes, too
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})-[:HAS_TEXT]->(t:Text)
@@ -138,13 +120,11 @@ export default class CollectionService {
     RETURN collection
     `;
 
-    let deletedCollection: ICollection | undefined = undefined;
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+    const deletedCollection: ICollection = result.records[0]?.get('collection');
 
-    try {
-      const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-      deletedCollection = result.records[0]?.get('collection');
-    } catch (error) {
-      console.error(error);
+    if (!deletedCollection) {
+      throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
     return deletedCollection;

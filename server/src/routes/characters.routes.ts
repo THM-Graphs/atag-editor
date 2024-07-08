@@ -1,32 +1,40 @@
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import CharacterService from '../services/character.service.js';
 import ICharacter from '../models/ICharacter.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
-router.get('/', async (req: Request, res: Response) => {
+const characterService: CharacterService = new CharacterService();
+
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const collectionUuid: string = req.params.uuid;
 
-  const characterService: CharacterService = new CharacterService();
-  const characters: ICharacter[] = await characterService.getCharacters(collectionUuid);
+  try {
+    const characters: ICharacter[] = await characterService.getCharacters(collectionUuid);
 
-  res.json(characters);
+    res.status(200).json(characters);
+  } catch (error: unknown) {
+    next(error);
+  }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const collectionUuid: string = req.params.uuid;
 
   const { uuidStart, uuidEnd, characters } = req.body;
 
-  const characterService: CharacterService = new CharacterService();
-  const createdCharacters: ICharacter[] = await characterService.saveCharacters(
-    collectionUuid,
-    uuidStart,
-    uuidEnd,
-    characters,
-  );
+  try {
+    const updatedCharacters: ICharacter[] = await characterService.saveCharacters(
+      collectionUuid,
+      uuidStart,
+      uuidEnd,
+      characters,
+    );
 
-  res.status(200).json(createdCharacters);
+    res.status(200).json(updatedCharacters);
+  } catch (error: unknown) {
+    next(error);
+  }
 });
 
 export default router;
