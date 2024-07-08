@@ -141,8 +141,8 @@ async function handleSaveChanges(): Promise<void> {
   console.log(startNodeIndex);
   console.log(endNodeIndex);
 
-  const sliceStart = startNodeIndex + 1;
-  const sliceEnd = endNodeIndex;
+  const sliceStart: number = startNodeIndex + 1;
+  const sliceEnd: number = endNodeIndex;
 
   const characterSnippet: ICharacter[] = characters.value.slice(sliceStart, sliceEnd);
   console.log(characterSnippet.map((c: ICharacter) => c.text));
@@ -171,8 +171,6 @@ async function handleSaveChanges(): Promise<void> {
       characters: characterSnippet,
     };
 
-    console.log(JSON.parse(JSON.stringify(characterPostData)));
-
     url = `http://localhost:8080/api/collections/${uuid}/characters`;
     response = await fetch(url, {
       method: 'POST',
@@ -188,8 +186,8 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    initialCollection.value = collection.value;
-    initialCharacters.value = characters.value;
+    initialCollection.value = { ...collection.value };
+    initialCharacters.value = [...characters.value];
 
     showMessage('success');
   } catch (error: unknown) {
