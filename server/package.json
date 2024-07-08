@@ -19,7 +19,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "neo4j-driver": "^5.20.0"
+    "neo4j-driver": "^5.22.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
