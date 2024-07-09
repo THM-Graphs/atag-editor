@@ -112,7 +112,6 @@ async function getCollectionByUuid(): Promise<void> {
   }
 }
 
-// TODO: Reset initialCharacters.value if state history in frontend should be applied
 async function handleSaveChanges(): Promise<void> {
   const metadataAreValid: boolean = metadataRef.value.validate();
   const labelInputIsValid: boolean = labelInputRef.value.validate();
@@ -122,9 +121,6 @@ async function handleSaveChanges(): Promise<void> {
   }
 
   const { uuidStart, uuidEnd } = findChangesetBoundaries();
-
-  console.log('startUuid:', uuidStart);
-  console.log('endUuid:', uuidEnd);
 
   const startNodeIndex = uuidStart
     ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
@@ -137,9 +133,6 @@ async function handleSaveChanges(): Promise<void> {
   if (endNodeIndex === -1) {
     endNodeIndex = characters.value.length;
   }
-
-  console.log(startNodeIndex);
-  console.log(endNodeIndex);
 
   const sliceStart: number = startNodeIndex + 1;
   const sliceEnd: number = endNodeIndex;
@@ -317,16 +310,6 @@ function findChangesetBoundaries(): {
     ) {
       uuidEnd = null;
     }
-  }
-
-  const startSpan = document.querySelector(`[data-uuid="${uuidStart}"]`);
-  if (startSpan) {
-    (startSpan as HTMLSpanElement).style.backgroundColor = 'green';
-  }
-
-  const endSpan = document.querySelector(`[data-uuid="${uuidEnd}"]`);
-  if (endSpan) {
-    (endSpan as HTMLSpanElement).style.backgroundColor = 'red';
   }
 
   return { uuidStart, uuidEnd };
