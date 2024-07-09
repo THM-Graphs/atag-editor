@@ -23,13 +23,6 @@
           "required": false,
           "editable": true,
           "visible": true
-        },
-        {
-          "name": "websiteUrl",
-          "type": "string",
-          "required": false,
-          "editable": true,
-          "visible": true
         }
       ]
     }
