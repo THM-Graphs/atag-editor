@@ -457,12 +457,9 @@ async function handleCopy(): Promise<void> {
 }
 
 function createNewCharacter(char: string): ICharacter {
-  // TODO: Reduce this, letterLabel/textUrl/textGuid can be dynamic and should be added on save
   return {
     text: char,
     letterLabel: collection.value.label,
-    textGuid: '',
-    textUrl: '',
     uuid: crypto.randomUUID(),
   };
 }
