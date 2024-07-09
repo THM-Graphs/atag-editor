@@ -490,7 +490,9 @@ function placeCursor(): void {
 
 <template>
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    <small class="character-counter text-right mb-1">{{ characters.length }} characters</small>
+    <div class="counter text-right mb-1">
+      <small>{{ characters.length }} character{{ characters.length !== 1 ? 's' : '' }}</small>
+    </div>
     <div class="text-container h-full p-2 overflow-auto">
       <div
         id="text"
