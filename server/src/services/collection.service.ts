@@ -112,11 +112,11 @@ export default class CollectionService {
    * @return {Promise<ICollection>} A promise that resolves to the deleted collection.
    */
   public async deleteCollection(uuid: string): Promise<ICollection> {
-    // TODO: Delete Character nodes, too
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})-[:HAS_TEXT]->(t:Text)
-    WITH c, t, c {.*} as collection
-    DETACH DELETE c, t
+    OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(chars:Character)
+    WITH c, t, chars, c {.*} as collection
+    DETACH DELETE c, t, chars
     RETURN collection
     `;
 
