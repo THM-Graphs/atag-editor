@@ -140,6 +140,8 @@ async function handleSaveChanges(): Promise<void> {
   const characterSnippet: ICharacter[] = characters.value.slice(sliceStart, sliceEnd);
   console.log(characterSnippet.map((c: ICharacter) => c.text));
 
+  // TODO: Send only one request? Would simplify error handling
+
   try {
     // TODO: Replace localhost with vite configuration
     let url: string = `http://localhost:8080/api/collections/${uuid}`;
@@ -153,8 +155,9 @@ async function handleSaveChanges(): Promise<void> {
       referrerPolicy: 'no-referrer',
       body: JSON.stringify(collection.value),
     });
+
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error('Neither metadata nor text could be saved');
     }
 
     const characterPostData: CharacterPostData = {
@@ -175,16 +178,16 @@ async function handleSaveChanges(): Promise<void> {
       referrerPolicy: 'no-referrer',
       body: JSON.stringify(characterPostData),
     });
+
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error('Metadata could be saved, text not');
     }
 
     initialCollection.value = { ...collection.value };
     initialCharacters.value = [...characters.value];
-
     showMessage('success');
   } catch (error: unknown) {
-    showMessage('error');
+    showMessage('error', error as Error);
     console.error('Error updating collection:', error);
   }
 }
@@ -263,11 +266,11 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
   preventUserFromPageLeaving(event);
 }
 
-function showMessage(result: 'success' | 'error') {
+function showMessage(result: 'success' | 'error', error?: Error) {
   toast.add({
     severity: result,
-    summary: result === 'success' ? 'Changes saved successfully' : 'Changes could not be saved',
-    detail: 'Message Content',
+    summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
+    detail: error?.message ?? '',
     life: 2000,
   });
 }
