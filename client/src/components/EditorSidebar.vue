@@ -18,7 +18,7 @@ const sidebarWidth = computed(() => props.width);
     :sidebar-id="position"
     :class="['sidebar', 'sidebar-' + position]"
     class="p-3"
-    :style="{ width: sidebarWidth + 'px', background: 'gray' }"
+    :style="{ width: sidebarWidth + 'px', background: '#e9e9e9' }"
     v-show="!isCollapsed"
   >
     <slot></slot>

@@ -1,7 +1,7 @@
 :root {
   /* Colors */
-  --color-blue-base: hsl(240, 100%, 27%);
-  --color-focus: hsla(240, 100%, 27%, 0.15);
+  --color-blue-base: 0, 0, 138;
+  --color-focus: rgba(var(--color-blue-base), 0.15);
   --color-input-invalid: hsl(0, 91%, 71%);
 
   /* Other */

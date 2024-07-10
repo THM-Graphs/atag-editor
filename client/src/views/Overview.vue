@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, ComputedRef } from 'vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -11,10 +11,10 @@ const collections = ref<ICollection[] | null>(null);
 const filteredCollections = ref<ICollection[] | null>(null);
 const searchInput = ref<string>('');
 
-const collectionsCount: ComputedRef<string> = computed(() =>
+const collectionsCount: ComputedRef<number> = computed(() =>
   collections.value ? collections.value.length : 0,
 );
-const filteredCollectionsCount: ComputedRef<string> = computed(() =>
+const filteredCollectionsCount: ComputedRef<number> = computed(() =>
   filteredCollections.value ? filteredCollections.value.length : 0,
 );
 
@@ -89,7 +89,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
 
-    <h1 class="text-center">Available texts</h1>
+    <h1 class="text-center text-5xl line-height-2">Texts</h1>
 
     <OverviewToolbar
       @collection-created="handleCollectionCreation"

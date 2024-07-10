@@ -63,6 +63,10 @@ function validate(): boolean {
     outline: 1px solid var(--color-input-invalid);
   }
 
+  &:hover:not(:focus-visible) {
+    background-color: rgba(var(--color-blue-base), 0.05);
+  }
+
   &::placeholder {
     color: rgb(255, 173, 173);
     font-weight: normal;

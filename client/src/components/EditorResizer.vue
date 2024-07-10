@@ -47,42 +47,39 @@ const arrowDirection = computed(() => {
 
 <style scoped>
 .resizer {
-  /* width: 20px; */
   cursor: col-resize;
-  background-color: black;
   position: relative;
+  background-color: whitesmoke;
 
   --height: 3.5rem;
   --width: 1.5rem;
 
+  &:hover {
+    background-color: var(--p-primary-color);
+    transition: background-color 200ms;
+  }
+
   .handle {
-    background-color: hsla(240, 100%, 27%, 0.5);
-    border-color: hsla(240, 100%, 27%, 0.5);
-    color: white;
+    color: black;
+    border-color: gray;
     position: absolute;
     height: var(--height);
     width: var(--width);
     top: 50%;
     cursor: pointer;
-    /* z-index: 5; */
-    transition: background-color 100ms;
 
     &.handle-left {
       left: 100%;
+      border-left: none;
       transform: translateY(-50%);
       border-radius: 0 calc(var(--width) / 2) calc(var(--width) / 2) 0;
     }
 
     &.handle-right {
       right: 100%;
+      border-right: none;
       transform: translateY(-50%);
       border-radius: calc(var(--width) / 2) 0 0 calc(var(--width) / 2);
-    }
-
-    &:hover {
-      background-color: var;
-      border-color: var;
-      transition: background-color 100ms;
     }
   }
 }

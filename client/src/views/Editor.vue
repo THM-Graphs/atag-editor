@@ -408,7 +408,9 @@ function preventUserFromRouteLeaving(): boolean {
       position="right"
       :isCollapsed="sidebars['right'].isCollapsed === true"
       :width="sidebars['right'].width"
-    />
+    >
+      Pane for annotation details
+    </EditorSidebar>
   </div>
 </template>
 

@@ -29,7 +29,7 @@ function validate(): boolean {
 </script>
 
 <template>
-  <Panel header="Metadata" toggleable>
+  <Panel header="Metadata" class="metadata-container" toggleable>
     <div class="flex align-items-center gap-3 mb-3">
       <InputText
         id="uuid"
@@ -73,4 +73,8 @@ function validate(): boolean {
   </Panel>
 </template>
 
-<style scoped></style>
+<style scoped>
+.metadata-container {
+  outline: 1px solid var(--p-primary-color);
+}
+</style>
