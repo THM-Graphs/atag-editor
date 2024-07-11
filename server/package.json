@@ -7,7 +7,7 @@
     "dev": "concurrently \"nodemon node ./dist/start.js\" \"npm run compile:watch\"",
     "compile": "tsc -p ./",
     "compile:watch": "tsc -p ./ --watch",
-    "start": "node ./start.js",
+    "start": "node ./dist/start.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

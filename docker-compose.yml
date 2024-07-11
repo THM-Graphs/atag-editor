@@ -52,7 +52,6 @@ services:
    - NEO4J_HTTPS_PORT=${NEO4J_HTTPS_PORT}
    - NEO4J_USER=${NEO4J_USER}
    - NEO4J_PW=${NEO4J_PW}
-   - TEST=${TEST}
   depends_on:
    - neo4j
 
