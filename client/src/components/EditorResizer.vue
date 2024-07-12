@@ -6,6 +6,7 @@ const props = defineProps<{
   position: string;
   sidebarIsCollapsed: boolean;
   defaultWidth: number;
+  isActive: boolean;
 }>();
 
 const emit = defineEmits(['toggleSidebar']);
@@ -13,29 +14,29 @@ const emit = defineEmits(['toggleSidebar']);
 const { position, defaultWidth } = props;
 // Can not be destructured since reactivity would be lost
 const sidebarIsCollapsed: ComputedRef<boolean> = computed(() => props.sidebarIsCollapsed);
-
+const isActive: ComputedRef<boolean> = computed(() => props.isActive);
 const width: ComputedRef<number> = computed(() => (sidebarIsCollapsed.value ? 0 : defaultWidth));
 
-function toggleSidebar() {
-  // This sends the OLD value to the parent element where the state is updated and passed into here.
-  emit('toggleSidebar', position, sidebarIsCollapsed.value);
-}
-
-const arrowDirection = computed(() => {
+const arrowDirection: ComputedRef<string> = computed(() => {
   if (position === 'left') {
     return sidebarIsCollapsed.value ? 'pi pi-arrow-right' : 'pi pi-arrow-left';
   } else {
     return sidebarIsCollapsed.value ? 'pi pi-arrow-left' : 'pi pi-arrow-right';
   }
 });
+
+const resizerClasses: ComputedRef<string> = computed(() => {
+  return ['resizer', `resizer-${position}`, `${isActive.value ? 'active' : ''}`].join(' ');
+});
+
+function toggleSidebar() {
+  // This sends the OLD value to the parent element where the state is updated and passed into here.
+  emit('toggleSidebar', position, sidebarIsCollapsed.value);
+}
 </script>
 
 <template>
-  <div
-    :resizer-id="position"
-    :class="['resizer', `resizer-${position}`]"
-    :style="{ minWidth: width + 'px' }"
-  >
+  <div :resizer-id="position" :class="resizerClasses" :style="{ minWidth: width + 'px' }">
     <Button
       :class="['handle', `handle-${position}`]"
       :icon="arrowDirection"
@@ -54,7 +55,8 @@ const arrowDirection = computed(() => {
   --height: 3.5rem;
   --width: 1.5rem;
 
-  &:hover {
+  &:hover:not(:has(.handle:hover)),
+  &.active {
     background-color: var(--p-primary-color);
     transition: background-color 200ms;
   }

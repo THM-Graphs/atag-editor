@@ -388,6 +388,7 @@ function preventUserFromRouteLeaving(): boolean {
     </EditorSidebar>
     <EditorResizer
       position="left"
+      :isActive="activeResizer === 'left'"
       :defaultWidth="resizerWidth"
       :sidebarIsCollapsed="sidebars['left'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
@@ -403,6 +404,7 @@ function preventUserFromRouteLeaving(): boolean {
     </section>
     <EditorResizer
       position="right"
+      :isActive="activeResizer === 'right'"
       :defaultWidth="resizerWidth"
       :sidebarIsCollapsed="sidebars['right'].isCollapsed === true"
       @toggle-sidebar="toggleSidebar"
