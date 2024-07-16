@@ -55,8 +55,11 @@ onBeforeRouteLeave((to, from) => preventUserFromRouteLeaving());
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
 
+// Initial page load
 const isLoading = ref<boolean>(true);
 const isValidCollection = ref<boolean>(false);
+// For fetch during save/cancel action
+const asyncOperationRunning = ref<boolean>(false);
 
 const { collection, initialCollection, initializeCollection } = useCollectionStore();
 const { characters, initialCharacters, initializeCharacters, resetCharacters } =
@@ -113,6 +116,12 @@ async function getCollectionByUuid(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
+  if (!hasUnsavedChanges()) {
+    return;
+  }
+
+  asyncOperationRunning.value = true;
+
   const metadataAreValid: boolean = metadataRef.value.validate();
   const labelInputIsValid: boolean = labelInputRef.value.validate();
 
@@ -189,15 +198,22 @@ async function handleSaveChanges(): Promise<void> {
   } catch (error: unknown) {
     showMessage('error', error as Error);
     console.error('Error updating collection:', error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
 }
 
 async function handleCancelChanges(): Promise<void> {
+  asyncOperationRunning.value = true;
+
   try {
     await getCollectionByUuid();
     await getCharacters();
+    asyncOperationRunning.value = false;
   } catch (error: unknown) {
     console.error('Error discarding changes:', error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
 }
 
@@ -379,6 +395,7 @@ function preventUserFromRouteLeaving(): boolean {
   <LoadingSpinner v-if="isLoading === true" />
   <EditorError v-else-if="isValidCollection === false" :uuid="uuid" />
   <div v-else class="container flex h-screen">
+    <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning"></div>
     <EditorSidebar
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
@@ -420,10 +437,7 @@ function preventUserFromRouteLeaving(): boolean {
 </template>
 
 <style scoped>
-.main {
-  /* TODO: Fix this */
-  /* flex-basis: 60%; */
-  /* flex-grow: 1;
-  flex-shrink: 1; */
+.overlay {
+  z-index: 99999;
 }
 </style>
