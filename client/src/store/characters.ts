@@ -10,6 +10,8 @@ const snippetCharacters = ref<ICharacter[]>([]);
 const initialCharacters = ref<ICharacter[]>([]);
 
 function initializeCharacters(characterData: ICharacter[]): void {
+  resetCharacters();
+
   totalCharacters.value = characterData;
 
   if (totalCharacters.value.length === 0) {
