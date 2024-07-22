@@ -62,8 +62,14 @@ const isValidCollection = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
 const { collection, initialCollection, initializeCollection } = useCollectionStore();
-const { characters, initialCharacters, initializeCharacters, resetCharacters } =
-  useCharactersStore();
+const {
+  snippetCharacters,
+  initialCharacters,
+  totalCharacters,
+  initializeCharacters,
+  resetCharacters,
+  insertSnippetIntoChain,
+} = useCharactersStore();
 
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
@@ -120,6 +126,8 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
+  insertSnippetIntoChain();
+
   asyncOperationRunning.value = true;
 
   const metadataAreValid: boolean = metadataRef.value.validate();
@@ -132,22 +140,22 @@ async function handleSaveChanges(): Promise<void> {
   const { uuidStart, uuidEnd } = findChangesetBoundaries();
 
   const startNodeIndex = uuidStart
-    ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
+    ? totalCharacters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
     : -1;
 
   let endNodeIndex = uuidEnd
-    ? characters.value.findIndex((c: ICharacter) => c.uuid === uuidEnd)
-    : characters.value.length;
+    ? totalCharacters.value.findIndex((c: ICharacter) => c.uuid === uuidEnd)
+    : totalCharacters.value.length;
 
   if (endNodeIndex === -1) {
-    endNodeIndex = characters.value.length;
+    endNodeIndex = totalCharacters.value.length;
   }
 
   const sliceStart: number = startNodeIndex + 1;
   const sliceEnd: number = endNodeIndex;
 
-  const characterSnippet: ICharacter[] = characters.value.slice(sliceStart, sliceEnd);
-  console.log(characterSnippet.map((c: ICharacter) => c.text));
+  const snippetToUpdate: ICharacter[] = totalCharacters.value.slice(sliceStart, sliceEnd);
+  console.log(snippetToUpdate.map((c: ICharacter) => c.text));
 
   // TODO: Send only one request? Would simplify error handling
 
@@ -173,7 +181,7 @@ async function handleSaveChanges(): Promise<void> {
       collectionUuid: collection.value.uuid,
       uuidStart: uuidStart,
       uuidEnd: uuidEnd,
-      characters: characterSnippet,
+      characters: snippetToUpdate,
     };
 
     url = `http://localhost:8080/api/collections/${uuid}/characters`;
@@ -193,7 +201,7 @@ async function handleSaveChanges(): Promise<void> {
     }
 
     initialCollection.value = { ...collection.value };
-    initialCharacters.value = [...characters.value];
+    initialCharacters.value = [...snippetCharacters.value];
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);
@@ -298,22 +306,22 @@ function findChangesetBoundaries(): {
   let uuidStart: string | null = null;
   let uuidEnd: string | null = null;
 
-  for (let index = 0; index < characters.value.length; index++) {
-    if (characters.value[index].uuid !== initialCharacters.value[index]?.uuid) {
+  for (let index = 0; index < snippetCharacters.value.length; index++) {
+    if (snippetCharacters.value[index].uuid !== initialCharacters.value[index]?.uuid) {
       break;
     }
 
-    uuidStart = characters.value[index].uuid;
+    uuidStart = snippetCharacters.value[index].uuid;
 
     if (
-      index === characters.value.length - 1 &&
-      characters.value.length >= initialCharacters.value.length
+      index === snippetCharacters.value.length - 1 &&
+      snippetCharacters.value.length >= initialCharacters.value.length
     ) {
       uuidStart = null;
     }
   }
 
-  const reversedCharacters: ICharacter[] = [...characters.value].reverse();
+  const reversedCharacters: ICharacter[] = [...snippetCharacters.value].reverse();
   const reversedInitialCharacters: ICharacter[] = [...initialCharacters.value].reverse();
 
   for (let index = 0; index < reversedCharacters.length; index++) {
@@ -341,13 +349,13 @@ function hasUnsavedChanges(): boolean {
   }
 
   // Compare charactfers length
-  if (characters.value.length !== initialCharacters.value.length) {
+  if (snippetCharacters.value.length !== initialCharacters.value.length) {
     return true;
   }
 
   // Compare characters values
-  for (let index = 0; index < characters.value.length; index++) {
-    if (!objectsAreEqual(characters.value[index], initialCharacters.value[index])) {
+  for (let index = 0; index < snippetCharacters.value.length; index++) {
+    if (!objectsAreEqual(snippetCharacters.value[index], initialCharacters.value[index])) {
       return true;
     }
   }
