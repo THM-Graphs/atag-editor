@@ -13,6 +13,7 @@ import {
   removeFormatting,
 } from '../helper/helper';
 import Button from 'primevue/button';
+import ToggleSwitch from 'primevue/toggleswitch';
 import ICharacter from '../models/ICharacter';
 
 onUpdated(() => {
@@ -33,8 +34,9 @@ const {
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
 
-const newRangeAnchorUuid = ref<string | null>(null);
+const keepTextOnPagination = ref<boolean>(false);
 
+const newRangeAnchorUuid = ref<string | null>(null);
 const editorRef = ref<HTMLDivElement>(null);
 
 function handleInput(event: InputEvent) {
@@ -467,7 +469,9 @@ function handlePaginationUp(event: MouseEvent): void {
     return;
   }
 
-  previousCharacters();
+  const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
+
+  previousCharacters(mode);
 }
 
 function handlePaginationDown(event: MouseEvent): void {
@@ -476,7 +480,9 @@ function handlePaginationDown(event: MouseEvent): void {
     return;
   }
 
-  nextCharacters();
+  const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
+
+  nextCharacters(mode);
 }
 
 async function handleCopy(): Promise<void> {
@@ -550,10 +556,16 @@ function placeCursor(): void {
 
 <template>
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    Total: {{ totalCharacters.length }} <br />
-    Current snippet: {{ snippetCharacters.length }} <br />
-    beforeStartIndex: {{ beforeStartIndex }} <br />
-    afterEndIndex: {{ afterEndIndex }}
+    <div>
+      Total: {{ totalCharacters.length }} <br />
+      Current snippet: {{ snippetCharacters.length }} <br />
+      beforeStartIndex: {{ beforeStartIndex }} <br />
+      afterEndIndex: {{ afterEndIndex }}
+    </div>
+    <div class="flex justify-content-end">
+      <label class="label">Keep text on pagination</label>
+      <ToggleSwitch v-model="keepTextOnPagination" />
+    </div>
     <div class="counter text-right mb-1">
       <small
         >{{ snippetCharacters.length }} character{{

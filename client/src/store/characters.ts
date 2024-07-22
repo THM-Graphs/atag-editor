@@ -31,17 +31,19 @@ function initializeCharacters(characterData: ICharacter[]): void {
   initialCharacters.value = [...snippetCharacters.value];
 }
 
-function previousCharacters() {
+function previousCharacters(mode: 'keep' | 'replace') {
   if (beforeStartIndex.value === null) {
     console.log('Already at first character');
     return;
   }
 
-  // Set afterEndIndex to the first index of the current snippet
-  if (beforeStartIndex.value + 1 >= totalCharacters.value.length) {
-    afterEndIndex.value = null;
-  } else {
-    afterEndIndex.value = beforeStartIndex.value + 1;
+  if (mode === 'replace') {
+    // Set afterEndIndex to the first index of the current snippet
+    if (beforeStartIndex.value + 1 >= totalCharacters.value.length) {
+      afterEndIndex.value = null;
+    } else {
+      afterEndIndex.value = beforeStartIndex.value + 1;
+    }
   }
 
   if (beforeStartIndex.value - PAGINATION_SIZE < 0) {
@@ -58,18 +60,20 @@ function previousCharacters() {
   initialCharacters.value = [...snippetCharacters.value];
 }
 
-function nextCharacters() {
+function nextCharacters(mode: 'keep' | 'replace') {
   if (afterEndIndex.value === null) {
     console.log('No more characters');
     return;
   }
 
-  beforeStartIndex.value = afterEndIndex.value - 1;
+  if (mode === 'replace') {
+    beforeStartIndex.value = afterEndIndex.value - 1;
 
-  // This is the case when the first snippet of a text is completely deleted by the editor -> afterIndex is 0 since the next snippet is
-  // the new beginning of the text
-  if (beforeStartIndex.value < 0) {
-    beforeStartIndex.value = null;
+    // This is the case when the first snippet of a text is completely deleted by the editor -> afterIndex is 0 since the next snippet is
+    // the new beginning of the text
+    if (beforeStartIndex.value < 0) {
+      beforeStartIndex.value = null;
+    }
   }
 
   if (afterEndIndex.value + PAGINATION_SIZE >= totalCharacters.value.length) {
