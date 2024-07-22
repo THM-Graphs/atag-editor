@@ -29,6 +29,33 @@ function initializeCharacters(characterData: ICharacter[]): void {
   initialCharacters.value = [...snippetCharacters.value];
 }
 
+function previousCharacters() {
+  if (beforeStartIndex.value === null) {
+    console.log('Already at first character');
+    return;
+  }
+
+  // Set afterEndIndex to the first index of the current snippet
+  if (beforeStartIndex.value + 1 >= totalCharacters.value.length) {
+    afterEndIndex.value = null;
+  } else {
+    afterEndIndex.value = beforeStartIndex.value + 1;
+  }
+
+  if (beforeStartIndex.value - PAGINATION_SIZE < 0) {
+    beforeStartIndex.value = null;
+  } else {
+    beforeStartIndex.value -= PAGINATION_SIZE;
+  }
+
+  const startSliceAt: number = beforeStartIndex.value === null ? 0 : beforeStartIndex.value + 1;
+  const endSliceAt: number = afterEndIndex.value ?? totalCharacters.value.length;
+
+  // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
+  snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
+  initialCharacters.value = [...snippetCharacters.value];
+}
+
 function nextCharacters() {
   if (afterEndIndex.value === null) {
     console.log('No more characters');
@@ -136,17 +163,18 @@ function resetCharacters(): void {
  */
 export function useCharactersStore() {
   return {
-    snippetCharacters,
-    initialCharacters,
-    beforeStartIndex,
     afterEndIndex,
+    beforeStartIndex,
+    initialCharacters,
+    snippetCharacters,
     totalCharacters,
     deleteCharactersBetweenIndexes,
     initializeCharacters,
     insertCharactersAtIndex,
     insertSnippetIntoChain,
+    nextCharacters,
+    previousCharacters,
     replaceCharactersBetweenIndizes,
     resetCharacters,
-    nextCharacters,
   };
 }

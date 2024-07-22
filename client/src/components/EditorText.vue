@@ -21,15 +21,16 @@ onUpdated(() => {
 
 const { collection, initialCollection } = useCollectionStore();
 const {
+  afterEndIndex,
+  beforeStartIndex,
+  initialCharacters,
   snippetCharacters,
   totalCharacters,
-  initialCharacters,
-  beforeStartIndex,
-  afterEndIndex,
   deleteCharactersBetweenIndexes,
   insertCharactersAtIndex,
-  replaceCharactersBetweenIndizes,
   nextCharacters,
+  previousCharacters,
+  replaceCharactersBetweenIndizes,
 } = useCharactersStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -465,6 +466,8 @@ function handlePaginationUp(event: MouseEvent): void {
     console.log('SAVE YOUR CHANGES');
     return;
   }
+
+  previousCharacters();
 }
 
 function handlePaginationDown(event: MouseEvent): void {
