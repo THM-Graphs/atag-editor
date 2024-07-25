@@ -15,10 +15,9 @@ import LoadingSpinner from '../components/LoadingSpinner.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import Metadata from '../components/EditorMetadata.vue';
 import { objectsAreEqual } from '../helper/helper';
-import ICharacter from '../models/ICharacter';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
-import { CharacterPostData } from '../models/types';
+import { Character, CharacterPostData } from '../models/types';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -140,11 +139,11 @@ async function handleSaveChanges(): Promise<void> {
   const { uuidStart, uuidEnd } = findChangesetBoundaries();
 
   const startNodeIndex = uuidStart
-    ? totalCharacters.value.findIndex((c: ICharacter) => c.uuid === uuidStart)
+    ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidStart)
     : -1;
 
   let endNodeIndex = uuidEnd
-    ? totalCharacters.value.findIndex((c: ICharacter) => c.uuid === uuidEnd)
+    ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidEnd)
     : totalCharacters.value.length;
 
   if (endNodeIndex === -1) {
@@ -154,10 +153,8 @@ async function handleSaveChanges(): Promise<void> {
   const sliceStart: number = startNodeIndex + 1;
   const sliceEnd: number = endNodeIndex;
 
-  const snippetToUpdate: ICharacter[] = totalCharacters.value.slice(sliceStart, sliceEnd);
-  console.log(snippetToUpdate.map((c: ICharacter) => c.text));
-
-  // TODO: Send only one request? Would simplify error handling
+  const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
+  console.log(snippetToUpdate.map((c: Character) => c.data.text));
 
   try {
     // TODO: Replace localhost with vite configuration
@@ -181,7 +178,8 @@ async function handleSaveChanges(): Promise<void> {
       collectionUuid: collection.value.uuid,
       uuidStart: uuidStart,
       uuidEnd: uuidEnd,
-      characters: snippetToUpdate,
+      // TODO: This array.map is a workaround since saving does not work currently
+      characters: snippetToUpdate.map((c: Character) => c.data),
     };
 
     url = `http://localhost:8080/api/collections/${uuid}/characters`;
@@ -235,7 +233,11 @@ async function getCharacters(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCharacters: ICharacter[] = await response.json();
+    const fetchedCharacters: Character[] = await response.json();
+
+    const filteredCharacters: Character[] = fetchedCharacters.filter(
+      (c: Character) => c.annotations.length > 0,
+    );
 
     initializeCharacters(fetchedCharacters);
   } catch (error: unknown) {
@@ -307,11 +309,11 @@ function findChangesetBoundaries(): {
   let uuidEnd: string | null = null;
 
   for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (snippetCharacters.value[index].uuid !== initialCharacters.value[index]?.uuid) {
+    if (snippetCharacters.value[index].data.uuid !== initialCharacters.value[index]?.data.uuid) {
       break;
     }
 
-    uuidStart = snippetCharacters.value[index].uuid;
+    uuidStart = snippetCharacters.value[index].data.uuid;
 
     if (
       index === snippetCharacters.value.length - 1 &&
@@ -321,15 +323,15 @@ function findChangesetBoundaries(): {
     }
   }
 
-  const reversedCharacters: ICharacter[] = [...snippetCharacters.value].reverse();
-  const reversedInitialCharacters: ICharacter[] = [...initialCharacters.value].reverse();
+  const reversedCharacters: Character[] = [...snippetCharacters.value].reverse();
+  const reversedInitialCharacters: Character[] = [...initialCharacters.value].reverse();
 
   for (let index = 0; index < reversedCharacters.length; index++) {
-    if (reversedCharacters[index].uuid !== reversedInitialCharacters[index]?.uuid) {
+    if (reversedCharacters[index].data.uuid !== reversedInitialCharacters[index]?.data.uuid) {
       break;
     }
 
-    uuidEnd = reversedCharacters[index].uuid;
+    uuidEnd = reversedCharacters[index].data.uuid;
 
     if (
       index === reversedCharacters.length - 1 &&
@@ -342,6 +344,7 @@ function findChangesetBoundaries(): {
   return { uuidStart, uuidEnd };
 }
 
+// TODO: Implement comparing for changed annotations
 function hasUnsavedChanges(): boolean {
   // Compare collection properties
   if (!objectsAreEqual(collection.value, initialCollection.value)) {
@@ -355,7 +358,9 @@ function hasUnsavedChanges(): boolean {
 
   // Compare characters values
   for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (!objectsAreEqual(snippetCharacters.value[index], initialCharacters.value[index])) {
+    if (
+      !objectsAreEqual(snippetCharacters.value[index].data, initialCharacters.value[index].data)
+    ) {
       return true;
     }
   }

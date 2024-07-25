@@ -6,9 +6,7 @@
     "esModuleInterop": true,
     "strict": true,
     "outDir": "./dist",
-    "typeRoots": [
-      "./node_modules/@types"
-    ] /* List of folders to include type definitions from. */
+    "typeRoots": ["./node_modules/@types"] /* List of folders to include type definitions from. */
   },
   "include": ["./**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]

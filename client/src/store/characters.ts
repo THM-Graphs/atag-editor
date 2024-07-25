@@ -1,15 +1,15 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../models/constants';
-import ICharacter from '../models/ICharacter';
+import { Character } from '../models/types';
 
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
 
-const totalCharacters = ref<ICharacter[]>([]);
-const snippetCharacters = ref<ICharacter[]>([]);
-const initialCharacters = ref<ICharacter[]>([]);
+const totalCharacters = ref<Character[]>([]);
+const snippetCharacters = ref<Character[]>([]);
+const initialCharacters = ref<Character[]>([]);
 
-function initializeCharacters(characterData: ICharacter[]): void {
+function initializeCharacters(characterData: Character[]): void {
   resetCharacters();
 
   totalCharacters.value = characterData;
@@ -96,13 +96,13 @@ function nextCharacters(mode: 'keep' | 'replace') {
  *
  * @param {number} startIndex - The index of the first character to replace.
  * @param {number} endIndex - The index of the last character to replace.
- * @param {ICharacter[]} newCharacters - The array of new characters to insert.
+ * @param {Character[]} newCharacters - The array of new characters to insert.
  * @return {void} This function does not return anything.
  */
 function replaceCharactersBetweenIndizes(
   startIndex: number,
   endIndex: number,
-  newCharacters: ICharacter[],
+  newCharacters: Character[],
 ): void {
   const charsToDeleteCount: number = endIndex - startIndex + 1;
   snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
@@ -112,10 +112,10 @@ function replaceCharactersBetweenIndizes(
  * Inserts new characters at the specified index in the characters array. Indexes are calculated during input event handling.
  *
  * @param {number} index - The index at which to insert the new characters.
- * @param {ICharacter[]} newCharacters - The array of new characters to insert.
+ * @param {Character[]} newCharacters - The array of new characters to insert.
  * @return {void} This function does not return anything.
  */
-function insertCharactersAtIndex(index: number, newCharacters: ICharacter[]): void {
+function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
   snippetCharacters.value.splice(index, 0, ...newCharacters);
 }
 

@@ -1,18 +1,28 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import ICharacter from '../models/ICharacter.js';
+import { Character } from '../models/types.js';
 
 export default class CharacterService {
   /**
    * Retrieves chain of characters that belong to a collection's text node.
    *
    * @param {string} collectionUuid - The UUID of the collection to retrieve characters for.
-   * @return {Promise<ICharacter[]>} A promise that resolves to an array of characters.
+   * @return {Promise<Character[]>} A promise that resolves to an array of characters.
    */
-  public async getCharacters(collectionUuid: string): Promise<ICharacter[]> {
+  public async getCharacters(collectionUuid: string): Promise<Character[]> {
     const query: string = `
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:NEXT_CHARACTER*]->(char:Character)
-    RETURN COLLECT(char {.*}) as characters
+    WITH char, [(char)-[:CHARACTER_HAS_ANNOTATION]->(a:Annotation) | 
+      {
+        uuid: a.uuid,
+        isFirstCharacter: EXISTS((a)-[:STANDOFF_START]->(char)),
+        isLastCharacter: EXISTS((a)-[:STANDOFF_END]->(char))
+      }] AS annotations
+    RETURN COLLECT({
+      data: char {.*},
+      annotations: annotations
+    }) AS characters
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid });

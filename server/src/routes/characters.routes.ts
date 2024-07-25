@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import CharacterService from '../services/character.service.js';
 import ICharacter from '../models/ICharacter.js';
+import { Character } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -10,7 +11,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const collectionUuid: string = req.params.uuid;
 
   try {
-    const characters: ICharacter[] = await characterService.getCharacters(collectionUuid);
+    const characters: Character[] = await characterService.getCharacters(collectionUuid);
 
     res.status(200).json(characters);
   } catch (error: unknown) {

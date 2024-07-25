@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import ICharacter from '../models/ICharacter';
+import { Character } from '../models/types';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -71,13 +71,13 @@ export function getParentCharacterSpan(node: Node): HTMLSpanElement {
  * Used for word deleting with "Ctrl + Backspace".
  *
  * @param {number} charIndex - The index of the character.
- * @param {ICharacter[]} characters - The array of characters.
+ * @param {Character[]} characters - The array of characters.
  * @return {number} The index of the character that is the start of a word.
  */
-export function findStartOfWord(charIndex: number, characters: ICharacter[]): number {
+export function findStartOfWord(charIndex: number, characters: Character[]): number {
   let start: number = charIndex;
 
-  while (start > 0 && !isWordBoundary(characters[start - 1].text)) {
+  while (start > 0 && !isWordBoundary(characters[start - 1].data.text)) {
     start--;
   }
 
@@ -89,13 +89,13 @@ export function findStartOfWord(charIndex: number, characters: ICharacter[]): nu
  * Used for word deleting with "Ctrl + Delete".
  *
  * @param {number} charIndex - The index of the character.
- * @param {ICharacter[]} characters - The array of characters.
+ * @param {Character[]} characters - The array of characters.
  * @return {number} The index of the character that is the end of a word.
  */
-export function findEndOfWord(charIndex: number, characters: ICharacter[]): number {
+export function findEndOfWord(charIndex: number, characters: Character[]): number {
   let end: number = charIndex + 1;
 
-  while (end < characters.length && !isWordBoundary(characters[end].text)) {
+  while (end < characters.length && !isWordBoundary(characters[end].data.text)) {
     end++;
   }
 

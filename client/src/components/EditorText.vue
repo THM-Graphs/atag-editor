@@ -14,7 +14,7 @@ import {
 } from '../helper/helper';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
-import ICharacter from '../models/ICharacter';
+import { Character } from '../models/types';
 
 onUpdated(() => {
   placeCursor();
@@ -98,12 +98,12 @@ function handleInput(event: InputEvent) {
 }
 
 function handleInsertText(event: InputEvent): void {
-  const newCharacter: ICharacter = createNewCharacter(event.data || '');
+  const newCharacter: Character = createNewCharacter(event.data || '');
 
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacter.uuid;
+    newRangeAnchorUuid.value = newCharacter.data.uuid;
     insertCharactersAtIndex(0, [newCharacter]);
   } else {
     if (type === 'Caret') {
@@ -113,10 +113,10 @@ function handleInsertText(event: InputEvent): void {
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.uuid === referenceSpanElement.id) + 1;
+        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
       }
 
-      newRangeAnchorUuid.value = newCharacter.uuid;
+      newRangeAnchorUuid.value = newCharacter.data.uuid;
       insertCharactersAtIndex(index, [newCharacter]);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
@@ -130,13 +130,13 @@ function handleInsertText(event: InputEvent): void {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
-          c => c.uuid === startReferenceSpanElement.id,
+          c => c.data.uuid === startReferenceSpanElement.id,
         );
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
 
-      newRangeAnchorUuid.value = newCharacter.uuid;
+      newRangeAnchorUuid.value = newCharacter.data.uuid;
       replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
     }
   }
@@ -159,14 +159,14 @@ function handleInsertReplacementText(event: InputEvent): void {
 async function handleInsertFromPaste(event: InputEvent): Promise<void> {
   const text: string = await navigator.clipboard.readText();
 
-  const newCharacters: ICharacter[] = removeFormatting(text)
+  const newCharacters: Character[] = removeFormatting(text)
     .split('')
-    .map((c: string): ICharacter => createNewCharacter(c));
+    .map((c: string): Character => createNewCharacter(c));
 
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     insertCharactersAtIndex(0, newCharacters);
   } else {
     if (type === 'Caret') {
@@ -176,10 +176,10 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.uuid === referenceSpanElement.id) + 1;
+        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
       }
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
       insertCharactersAtIndex(index, newCharacters);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
@@ -193,13 +193,13 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
-          c => c.uuid === startReferenceSpanElement.id,
+          c => c.data.uuid === startReferenceSpanElement.id,
         );
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
       replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
     }
   }
@@ -213,14 +213,14 @@ function handleInsertFromDrop(event: InputEvent): void {
   }
 
   const text: string = dataTransfer.getData('text');
-  const newCharacters: ICharacter[] = removeFormatting(text)
+  const newCharacters: Character[] = removeFormatting(text)
     .split('')
-    .map((c: string): ICharacter => createNewCharacter(c));
+    .map((c: string): Character => createNewCharacter(c));
 
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     insertCharactersAtIndex(0, newCharacters);
   } else {
     if (type === 'Caret') {
@@ -230,10 +230,10 @@ function handleInsertFromDrop(event: InputEvent): void {
       if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.uuid === referenceSpanElement.id);
+        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id);
       }
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
       insertCharactersAtIndex(index, newCharacters);
     } else {
       const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
@@ -247,13 +247,13 @@ function handleInsertFromDrop(event: InputEvent): void {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
-          c => c.uuid === startReferenceSpanElement.id,
+          c => c.data.uuid === startReferenceSpanElement.id,
         );
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.uuid === endReferenceSpanElement.id);
+      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].uuid;
+      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
       replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
     }
   }
@@ -279,10 +279,12 @@ function handleDeleteWordBackward(event: InputEvent): void {
       return;
     }
 
-    const charIndex: number = snippetCharacters.value.findIndex(c => c.uuid === spanToDelete.id);
+    const charIndex: number = snippetCharacters.value.findIndex(
+      c => c.data.uuid === spanToDelete.id,
+    );
     const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
 
-    newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.uuid ?? null;
+    newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(startWordIndex, charIndex);
   } else {
@@ -301,7 +303,7 @@ function handleDeleteWordForward(event: InputEvent): void {
     }
 
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
-    newRangeAnchorUuid.value = snippetCharacters.value[0]?.uuid ?? null;
+    newRangeAnchorUuid.value = snippetCharacters.value[0]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(0, findEndOfWord(0, snippetCharacters.value));
   } else {
@@ -309,7 +311,7 @@ function handleDeleteWordForward(event: InputEvent): void {
 
     if (type === 'Caret') {
       const charIndex: number = snippetCharacters.value.findIndex(
-        c => c.uuid === referenceSpanElement.id,
+        c => c.data.uuid === referenceSpanElement.id,
       );
       const endWordIndex: number = findEndOfWord(charIndex, snippetCharacters.value);
 
@@ -317,7 +319,7 @@ function handleDeleteWordForward(event: InputEvent): void {
         ? charIndex
         : charIndex + 1;
 
-      newRangeAnchorUuid.value = snippetCharacters.value[charIndex]?.uuid ?? null;
+      newRangeAnchorUuid.value = snippetCharacters.value[charIndex]?.data.uuid ?? null;
       deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
     } else {
       handleDeleteContentForward(event);
@@ -340,21 +342,23 @@ function handleDeleteContentBackward(event: InputEvent): void {
       return;
     }
 
-    const charIndex: number = snippetCharacters.value.findIndex(c => c.uuid === spanToDelete.id);
-    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.uuid ?? null;
+    const charIndex: number = snippetCharacters.value.findIndex(
+      c => c.data.uuid === spanToDelete.id,
+    );
+    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(charIndex, charIndex);
   } else {
     const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
     const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
     const startIndex: number = snippetCharacters.value.findIndex(
-      c => c.uuid === startReferenceSpanElement.id,
+      c => c.data.uuid === startReferenceSpanElement.id,
     );
     const endIndex: number = snippetCharacters.value.findIndex(
-      c => c.uuid === endReferenceSpanElement.id,
+      c => c.data.uuid === endReferenceSpanElement.id,
     );
 
-    newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.uuid ?? null;
+    newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
@@ -371,7 +375,7 @@ function handleDeleteContentForward(event: InputEvent): void {
     }
 
     spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
-    newRangeAnchorUuid.value = snippetCharacters.value[0]?.uuid ?? null;
+    newRangeAnchorUuid.value = snippetCharacters.value[0]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(0, 0);
   } else {
@@ -388,8 +392,10 @@ function handleDeleteContentForward(event: InputEvent): void {
         }
       }
 
-      const charIndex: number = snippetCharacters.value.findIndex(c => c.uuid === spanToDelete.id);
-      newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.uuid ?? null;
+      const charIndex: number = snippetCharacters.value.findIndex(
+        c => c.data.uuid === spanToDelete.id,
+      );
+      newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
 
       deleteCharactersBetweenIndexes(charIndex, charIndex);
     } else {
@@ -398,13 +404,13 @@ function handleDeleteContentForward(event: InputEvent): void {
       );
       const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
       const startIndex: number = snippetCharacters.value.findIndex(
-        c => c.uuid === startReferenceSpanElement.id,
+        c => c.data.uuid === startReferenceSpanElement.id,
       );
       const endIndex: number = snippetCharacters.value.findIndex(
-        c => c.uuid === endReferenceSpanElement.id,
+        c => c.data.uuid === endReferenceSpanElement.id,
       );
 
-      newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.uuid ?? null;
+      newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
       deleteCharactersBetweenIndexes(startIndex, endIndex);
     }
@@ -417,13 +423,13 @@ function handleDeleteByCut(event: InputEvent): void {
   const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
   const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
   const startIndex: number = snippetCharacters.value.findIndex(
-    c => c.uuid === startReferenceSpanElement.id,
+    c => c.data.uuid === startReferenceSpanElement.id,
   );
   const endIndex: number = snippetCharacters.value.findIndex(
-    c => c.uuid === endReferenceSpanElement.id,
+    c => c.data.uuid === endReferenceSpanElement.id,
   );
 
-  newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.uuid ?? null;
+  newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
   deleteCharactersBetweenIndexes(startIndex, endIndex);
 
@@ -500,11 +506,14 @@ async function handleCopy(): Promise<void> {
   }
 }
 
-function createNewCharacter(char: string): ICharacter {
+function createNewCharacter(char: string): Character {
   return {
-    text: char,
-    letterLabel: collection.value.label,
-    uuid: crypto.randomUUID(),
+    data: {
+      text: char,
+      letterLabel: collection.value.label,
+      uuid: crypto.randomUUID(),
+    },
+    annotations: [],
   };
 }
 
@@ -522,7 +531,9 @@ function hasUnsavedChanges(): boolean {
 
   // Compare characters values
   for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (!objectsAreEqual(snippetCharacters.value[index], initialCharacters.value[index])) {
+    if (
+      !objectsAreEqual(snippetCharacters.value[index].data, initialCharacters.value[index].data)
+    ) {
       return true;
     }
   }
@@ -597,11 +608,17 @@ function placeCursor(): void {
       >
         <span
           v-for="character in snippetCharacters"
-          :key="character.uuid"
-          :id="character.uuid"
-          :data-uuid="character.uuid"
+          :key="character.data.uuid"
+          :id="character.data.uuid"
+          :data-uuid="character.data.uuid"
+          :class="[
+            character.annotations.length > 0 ? 'annotated' : '',
+            character.annotations.some(a => a.isFirstCharacter || a.isLastCharacter)
+              ? 'boundary'
+              : '',
+          ]"
         >
-          {{ character.text }}
+          {{ character.data.text }}
         </span>
       </div>
     </div>
@@ -628,6 +645,14 @@ function placeCursor(): void {
     box-shadow: var(--box-shadow-focus);
     outline: 0;
   }
+}
+
+span.annotated {
+  background-color: rgb(233, 197, 89);
+}
+
+span.boundary {
+  background-color: rgb(166, 125, 0);
 }
 
 #text {
