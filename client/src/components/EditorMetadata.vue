@@ -29,7 +29,7 @@ function validate(): boolean {
 </script>
 
 <template>
-  <Panel header="Metadata" class="metadata-container" toggleable>
+  <Panel header="Metadata" class="metadata-container mb-3" toggleable>
     <div class="flex align-items-center gap-3 mb-3">
       <InputText
         id="uuid"

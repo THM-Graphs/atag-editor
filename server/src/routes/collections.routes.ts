@@ -1,5 +1,6 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
+import annotationRoutes from './annotations.routes.js';
 import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
@@ -79,5 +80,6 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
 });
 
 router.use('/:uuid/characters', characterRoutes);
+router.use('/:uuid/annotations', annotationRoutes);
 
 export default router;

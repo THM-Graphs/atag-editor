@@ -13,11 +13,14 @@ import { useToast } from 'primevue/usetoast';
 import EditorError from '../components/EditorError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import EditorResizer from '../components/EditorResizer.vue';
-import Metadata from '../components/EditorMetadata.vue';
+import EditorMetadata from '../components/EditorMetadata.vue';
+import EditorAnnotations from '../components/EditorAnnotations.vue';
 import { objectsAreEqual } from '../helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../../../server/src/models/IGuidelines';
 import { Character, CharacterPostData } from '../models/types';
+import IAnnotation from '../models/IAnnotation';
+import { useAnnotationStore } from '../store/annotations';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -31,6 +34,7 @@ onMounted(async (): Promise<void> => {
   if (isValidCollection.value) {
     await getGuidelines();
     await getCharacters();
+    await getAnnotations();
 
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
@@ -42,6 +46,7 @@ onMounted(async (): Promise<void> => {
 
 onUnmounted((): void => {
   resetCharacters();
+  resetAnnotations();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -69,6 +74,7 @@ const {
   resetCharacters,
   insertSnippetIntoChain,
 } = useCharactersStore();
+const { initializeAnnotations, resetAnnotations } = useAnnotationStore();
 
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
@@ -215,6 +221,7 @@ async function handleCancelChanges(): Promise<void> {
   try {
     await getCollectionByUuid();
     await getCharacters();
+    await getAnnotations();
     asyncOperationRunning.value = false;
   } catch (error: unknown) {
     console.error('Error discarding changes:', error);
@@ -235,13 +242,27 @@ async function getCharacters(): Promise<void> {
 
     const fetchedCharacters: Character[] = await response.json();
 
-    const filteredCharacters: Character[] = fetchedCharacters.filter(
-      (c: Character) => c.annotations.length > 0,
-    );
-
     initializeCharacters(fetchedCharacters);
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
+  }
+}
+
+async function getAnnotations(): Promise<void> {
+  try {
+    // TODO: Replace localhost with vite configuration
+    const url: string = `http://localhost:8080/api/collections/${uuid}/annotations`;
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedAnnotations: IAnnotation[] = await response.json();
+
+    initializeAnnotations(fetchedAnnotations);
+  } catch (error: unknown) {
+    console.error('Error fetching annotations:', error);
   }
 }
 
@@ -414,7 +435,8 @@ function preventUserFromRouteLeaving(): boolean {
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
     >
-      <Metadata :guidelines="guidelines" ref="metadataRef" />
+      <EditorMetadata :guidelines="guidelines" ref="metadataRef" />
+      <EditorAnnotations />
     </EditorSidebar>
     <EditorResizer
       position="left"
