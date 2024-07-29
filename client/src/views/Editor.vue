@@ -4,6 +4,7 @@ import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
+import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
 import EditorText from '../components/EditorText.vue';
@@ -95,9 +96,9 @@ const sidebars = ref<Record<string, SidebarConfig>>({
     width: 350,
   },
   right: {
-    isCollapsed: true,
+    isCollapsed: false,
     resizerActive: false,
-    width: 250,
+    width: 350,
   },
 });
 
@@ -468,7 +469,7 @@ function preventUserFromRouteLeaving(): boolean {
       :isCollapsed="sidebars['right'].isCollapsed === true"
       :width="sidebars['right'].width"
     >
-      Pane for annotation details
+      <EditorAnnotationPanel :guidelines="guidelines" />
     </EditorSidebar>
   </div>
 </template>
