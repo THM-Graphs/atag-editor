@@ -10,11 +10,11 @@ const { snippetCharacters } = useCharactersStore();
 <template>
   <Panel header="Annotations" class="annotations-container mb-3" toggleable>
     <div v-for="(annotation, index) in annotations" class="annotation-entry flex gap-2">
-      <span>({{ index + 1 }}) {{ annotation.teiType }}</span>
+      <span>({{ index + 1 }}) {{ annotation.data.type }}</span>
       <span>
         {{
           snippetCharacters
-            .filter(c => c.annotations.some(a => a.uuid === annotation.uuid))
+            .filter(c => c.annotations.some(a => a.uuid === annotation.data.uuid))
             .map(c => c.data.text)
             .join('')
         }}</span
