@@ -5,7 +5,7 @@ import { capitalize } from '../helper/helper';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
-import { IGuidelines } from '../../../server/src/models/IGuidelines';
+import { IGuidelines } from '../models/IGuidelines';
 
 defineExpose({
   validate,

@@ -9,7 +9,7 @@ import Skeleton from 'primevue/skeleton';
 import Toolbar from 'primevue/toolbar';
 import { capitalize } from '../helper/helper';
 import ICollection from '../models/ICollection';
-import { IGuidelines } from '../../../server/src/models/IGuidelines';
+import { IGuidelines } from '../models/IGuidelines';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 

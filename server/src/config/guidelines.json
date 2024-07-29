@@ -26,5 +26,146 @@
         }
       ]
     }
+  },
+
+  "annotations": {
+    "types": [
+      {
+        "type": "emphasised",
+        "category": "edition",
+        "text": "in rubro"
+      },
+      {
+        "type": "expansion",
+        "category": "edition",
+        "text": "expansio"
+      },
+      {
+        "type": "nonLinear",
+        "category": "edition",
+        "text": "supra lineam"
+      },
+      {
+        "type": "marginNote",
+        "category": "edition",
+        "text": "in margine"
+      },
+      {
+        "type": "intervention",
+        "category": "edition",
+        "text": "correxit"
+      },
+      {
+        "type": "inRasura",
+        "category": "edition",
+        "text": "in rasura"
+      },
+      {
+        "type": "deleted",
+        "category": "edition",
+        "text": "delevit"
+      },
+      {
+        "type": "unreadable",
+        "category": "edition",
+        "text": "legi nequit"
+      },
+      {
+        "type": "repeated",
+        "category": "edition",
+        "text": "repetitio"
+      },
+      {
+        "type": "gap",
+        "category": "edition",
+        "text": "lacuna"
+      },
+      {
+        "type": "addition",
+        "category": "edition",
+        "text": "recensi manu"
+      },
+      {
+        "type": "inscription",
+        "category": "layout",
+        "text": "inscriptio"
+      },
+      {
+        "type": "page",
+        "category": "layout",
+        "text": "page"
+      },
+      {
+        "type": "column",
+        "category": "layout",
+        "text": "columna"
+      },
+      {
+        "type": "line",
+        "category": "layout",
+        "text": "linea"
+      },
+      {
+        "type": "transposition",
+        "category": "layout",
+        "text": "transpositio"
+      },
+      {
+        "type": "initial",
+        "category": "edition",
+        "text": "initial"
+      }
+    ],
+    "properties": [
+      {
+        "name": "type",
+        "type": "string",
+        "required": true,
+        "editable": false,
+        "visible": true
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "required": true,
+        "editable": false,
+        "visible": true
+      },
+      {
+        "name": "originalText",
+        "type": "string",
+        "required": false,
+        "editable": true,
+        "visible": true
+      },
+      {
+        "name": "comment",
+        "type": "string",
+        "required": false,
+        "editable": true,
+        "visible": true
+      },
+      {
+        "name": "commentInternal",
+        "type": "string",
+        "required": false,
+        "editable": true,
+        "visible": true
+      },
+      {
+        "name": "subtype",
+        "type": "string",
+        "required": false,
+        "editable": true,
+        "visible": true
+      },
+      {
+        "name": "url",
+        "type": "string",
+        "required": false,
+        "editable": true,
+        "visible": true
+      }
+    ]
   }
 }

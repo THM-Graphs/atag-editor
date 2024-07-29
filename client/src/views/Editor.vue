@@ -3,6 +3,7 @@ import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
+import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
 import EditorText from '../components/EditorText.vue';
@@ -17,7 +18,7 @@ import EditorMetadata from '../components/EditorMetadata.vue';
 import EditorAnnotations from '../components/EditorAnnotations.vue';
 import { objectsAreEqual } from '../helper/helper';
 import ICollection from '../models/ICollection';
-import { IGuidelines } from '../../../server/src/models/IGuidelines';
+import { IGuidelines } from '../models/IGuidelines';
 import { Character, CharacterPostData } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
@@ -451,6 +452,7 @@ function preventUserFromRouteLeaving(): boolean {
     >
       <Toast />
       <EditorHeader ref="labelInputRef" />
+      <EditorAnnotationButtonPane :guidelines="guidelines" />
       <EditorText ref="editorRef" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
