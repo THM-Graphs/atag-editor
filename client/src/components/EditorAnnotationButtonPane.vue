@@ -8,8 +8,8 @@ import { Annotation, Character } from '../models/types';
 
 defineProps<{ guidelines: IGuidelines }>();
 
-const { snippetCharacters } = useCharactersStore();
-const { annotations } = useAnnotationStore();
+const { snippetCharacters, annotateCharacters } = useCharactersStore();
+const { addAnnotation } = useAnnotationStore();
 
 function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
@@ -24,7 +24,8 @@ function handleCreateAnnotation(event: MouseEvent) {
   const selectedCharacters: Character[] = getSelectedCharacters();
   const newAnnotation: Annotation = createNewAnnotation(annotationType, selectedCharacters);
 
-  annotations.value.push(newAnnotation);
+  addAnnotation(newAnnotation);
+  annotateCharacters(selectedCharacters, newAnnotation);
 }
 
 function getSelectedCharacters(): Character[] {

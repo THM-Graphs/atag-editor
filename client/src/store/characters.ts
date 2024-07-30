@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../models/constants';
-import { Character } from '../models/types';
+import { Annotation, Character } from '../models/types';
 
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
@@ -160,6 +160,30 @@ export function useCharactersStore() {
     }
   }
 
+  function annotateCharacters(characters: Character[], annotation: Annotation) {
+    console.time('chars');
+    characters.forEach((c: Character, index: number, arr: Character[]) =>
+      c.annotations.push({
+        uuid: annotation.data.uuid,
+        isFirstCharacter: index === 0 ? true : false,
+        isLastCharacter: index === arr.length - 1 ? true : false,
+      }),
+    );
+    console.timeEnd('chars');
+  }
+
+  function removeAnnotationFromCharacters(annotationUuid: string) {
+    // TODO: Reduce loops/duplicate method chaining
+    console.time('deannotate characters');
+    const annotatedCharacters: Character[] = totalCharacters.value.filter(c =>
+      c.annotations.some(a => a.uuid === annotationUuid),
+    );
+    annotatedCharacters.forEach(
+      c => (c.annotations = c.annotations.filter(a => a.uuid !== annotationUuid)),
+    );
+    console.timeEnd('deannotate characters');
+  }
+
   function resetCharacters(): void {
     snippetCharacters.value = [];
     totalCharacters.value = [];
@@ -174,12 +198,14 @@ export function useCharactersStore() {
     initialCharacters,
     snippetCharacters,
     totalCharacters,
+    annotateCharacters,
     deleteCharactersBetweenIndexes,
     initializeCharacters,
     insertCharactersAtIndex,
     insertSnippetIntoChain,
     nextCharacters,
     previousCharacters,
+    removeAnnotationFromCharacters,
     replaceCharactersBetweenIndizes,
     resetCharacters,
   };

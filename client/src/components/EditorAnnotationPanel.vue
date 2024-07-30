@@ -1,21 +1,57 @@
 <script setup lang="ts">
+import { computed, ComputedRef } from 'vue';
+import { useAnnotationStore } from '../store/annotations';
+import { Annotation } from '../models/types';
+import { useCharactersStore } from '../store/characters';
 import { capitalize } from '../helper/helper';
+import Button from 'primevue/button';
+import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
+import { useConfirm } from 'primevue/useconfirm';
 import { IGuidelines } from '../models/IGuidelines';
-import { useAnnotationStore } from '../store/annotations';
 
 const props = defineProps<{
   guidelines: IGuidelines | null;
 }>();
 
-const { annotations } = useAnnotationStore();
+const confirm = useConfirm();
+
+const { annotations, deleteAnnotation } = useAnnotationStore();
+const { removeAnnotationFromCharacters } = useCharactersStore();
+
+// TODO: Use this for displaying forms. Currently all visible for debugging purposes
+const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
+  annotations.value.filter(a => a.status !== 'deleted'),
+);
+
+function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
+  confirm.require({
+    target: event.currentTarget as HTMLButtonElement,
+    message: 'Do you want to delete this annotation?',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+    },
+    accept: () => {
+      deleteAnnotation(uuid);
+      removeAnnotationFromCharacters(uuid);
+    },
+    reject: () => {},
+  });
+}
 </script>
 
 <template>
   <div class="annotation-details-panel h-full flex flex-column">
-    <h3>Annotation Details</h3>
-    <div class="annotation-list overflow-y-scroll p-1">
+    <h3>Annotations [{{ displayedAnnotations.length }}]</h3>
+    <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
       <Panel
         v-for="annotation in annotations"
         :key="annotation.data.uuid"
@@ -46,6 +82,16 @@ const { annotations } = useAnnotationStore();
             </div>
           </div>
         </form>
+        <div class="flex justify-content-center">
+          <Button
+            label="Delete"
+            severity="danger"
+            icon="pi pi-trash"
+            size="small"
+            @click="handleDeleteAnnotation($event, annotation.data.uuid)"
+          />
+          <ConfirmPopup></ConfirmPopup>
+        </div>
       </Panel>
     </div>
   </div>

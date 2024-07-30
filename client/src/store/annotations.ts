@@ -34,12 +34,23 @@ export function useAnnotationStore() {
     });
   }
 
+  function addAnnotation(annotation: Annotation): void {
+    annotations.value.push(annotation);
+  }
+
+  function deleteAnnotation(uuid: string): void {
+    const annotation: Annotation = annotations.value.find(a => a.data.uuid === uuid);
+    annotation.status = 'deleted';
+  }
+
   function resetAnnotations(): void {
     annotations.value = [];
   }
 
   return {
     annotations,
+    addAnnotation,
+    deleteAnnotation,
     initializeAnnotations,
     resetAnnotations,
   };
