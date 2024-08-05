@@ -47,11 +47,28 @@ export function useAnnotationStore() {
     annotations.value = [];
   }
 
+  /**
+   * Updates the statuses of the annotations in the `annotations` value after changes were saved.
+   * This function filters out the annotations with a status of 'deleted' to remove them permanently
+   * and sets the status of all remaining annotations to 'existing'.
+   *
+   * @return {void} This function does not return a value.
+   *
+   */
+  function updateAnnotationStatuses(): void {
+    annotations.value = annotations.value.filter((a: Annotation) => a.status !== 'deleted');
+
+    annotations.value.forEach((a: Annotation) => {
+      a.status = 'existing';
+    });
+  }
+
   return {
     annotations,
     addAnnotation,
     deleteAnnotation,
     initializeAnnotations,
     resetAnnotations,
+    updateAnnotationStatuses,
   };
 }

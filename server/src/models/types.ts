@@ -1,4 +1,13 @@
+import IAnnotation from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
+
+export type Annotation = {
+  characterUuids: string[];
+  data: IAnnotation;
+  endUuid: string;
+  startUuid: string;
+  status: 'existing' | 'created' | 'deleted' | 'edited';
+};
 
 export type Character = {
   data: ICharacter;

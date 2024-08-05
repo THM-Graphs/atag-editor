@@ -19,8 +19,8 @@ import EditorMetadata from '../components/EditorMetadata.vue';
 import EditorAnnotations from '../components/EditorAnnotations.vue';
 import { objectsAreEqual } from '../helper/helper';
 import ICollection from '../models/ICollection';
+import { Annotation, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
-import { Character, CharacterPostData } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
 
@@ -76,7 +76,8 @@ const {
   resetCharacters,
   insertSnippetIntoChain,
 } = useCharactersStore();
-const { initializeAnnotations, resetAnnotations } = useAnnotationStore();
+const { annotations, initializeAnnotations, resetAnnotations, updateAnnotationStatuses } =
+  useAnnotationStore();
 
 const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
@@ -129,9 +130,10 @@ async function getCollectionByUuid(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  if (!hasUnsavedChanges()) {
-    return;
-  }
+  // TODO: Temporarily disabled because annotations are not yet checked in the function
+  // if (!hasUnsavedChanges()) {
+  //   return;
+  // }
 
   insertSnippetIntoChain();
 
@@ -206,6 +208,34 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Metadata could be saved, text not');
     }
 
+    const annotationPostData: Annotation[] = annotations.value.map((a: Annotation) => {
+      return {
+        ...a,
+        characterUuids: totalCharacters.value
+          .filter((c: Character) => c.annotations.some(ca => ca.uuid === a.data.uuid))
+          .map((c: Character) => c.data.uuid),
+      };
+    });
+
+    url = `http://localhost:8080/api/collections/${uuid}/annotations`;
+    response = await fetch(url, {
+      method: 'POST',
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify(annotationPostData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Neither metadata nor text could be saved');
+    }
+
+    updateAnnotationStatuses();
+
+    // TODO: Add initial state to annotationsStore?
     initialCollection.value = { ...collection.value };
     initialCharacters.value = [...snippetCharacters.value];
     showMessage('success');
@@ -224,7 +254,6 @@ async function handleCancelChanges(): Promise<void> {
     await getCollectionByUuid();
     await getCharacters();
     await getAnnotations();
-    asyncOperationRunning.value = false;
   } catch (error: unknown) {
     console.error('Error discarding changes:', error);
   } finally {
