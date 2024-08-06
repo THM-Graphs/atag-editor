@@ -17,10 +17,10 @@ export function useAnnotationStore() {
     resetAnnotations();
 
     // TODO: This might be slow...are characters, start and end really needed before saving?
-    annotations.value = annotationData.map((annotation: IAnnotation) => {
+    annotations.value = annotationData.map((annotation: IAnnotation, index: number) => {
       const charUuids: string[] = [
         ...totalCharacters.value
-          .filter(c => c.annotations.some(a => a.uuid === annotationData[0].uuid))
+          .filter(c => c.annotations.some(a => a.uuid === annotationData[index].uuid))
           .map(cc => cc.data.uuid),
       ];
 
