@@ -18,9 +18,10 @@ export type AnnotationType = {
 export type Character = {
   data: ICharacter;
   annotations: {
-    uuid: string;
     isFirstCharacter: boolean;
     isLastCharacter: boolean;
+    type: string;
+    uuid: string;
   }[];
 };
 

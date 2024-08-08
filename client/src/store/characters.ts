@@ -165,6 +165,7 @@ export function useCharactersStore() {
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
         uuid: annotation.data.uuid,
+        type: annotation.data.type,
         isFirstCharacter: index === 0 ? true : false,
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),

@@ -16,6 +16,7 @@ export default class CharacterService {
     WITH char, [(char)-[:CHARACTER_HAS_ANNOTATION]->(a:Annotation) | 
       {
         uuid: a.uuid,
+        type: a.type,
         isFirstCharacter: EXISTS((a)-[:STANDOFF_START]->(char)),
         isLastCharacter: EXISTS((a)-[:STANDOFF_END]->(char))
       }] AS annotations
