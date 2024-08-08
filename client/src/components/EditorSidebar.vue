@@ -17,7 +17,7 @@ const sidebarWidth = computed(() => props.width);
   <section
     :sidebar-id="position"
     :class="['sidebar', 'sidebar-' + position]"
-    class="p-3"
+    class="p-3 flex flex-column"
     :style="{ width: sidebarWidth + 'px', background: '#e9e9e9' }"
     v-show="!isCollapsed"
   >

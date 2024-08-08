@@ -46,7 +46,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
 </script>
 
 <template>
-  <div class="annotation-details-panel h-full flex flex-column">
+  <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
     <h3>Annotations [{{ displayedAnnotations.length }}]</h3>
     <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
       <Panel

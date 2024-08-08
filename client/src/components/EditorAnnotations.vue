@@ -14,7 +14,7 @@ const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
 </script>
 
 <template>
-  <Panel header="Annotations" class="annotations-container mb-3" toggleable>
+  <Panel header="Annotations" class="annotations-container mb-3 overflow-y-auto" toggleable>
     <div v-for="(annotation, index) in displayedAnnotations" class="annotation-entry flex gap-2">
       <span :style="{ textWrap: 'nowrap' }">({{ index + 1 }}) {{ annotation.data.type }}</span>
       <span class="preview">

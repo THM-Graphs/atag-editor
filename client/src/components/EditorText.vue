@@ -567,12 +567,6 @@ function placeCursor(): void {
 
 <template>
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    <div>
-      Total: {{ totalCharacters.length }} <br />
-      Current snippet: {{ snippetCharacters.length }} <br />
-      beforeStartIndex: {{ beforeStartIndex }} <br />
-      afterEndIndex: {{ afterEndIndex }}
-    </div>
     <div class="flex justify-content-end">
       <label class="label">Keep text on pagination</label>
       <ToggleSwitch v-model="keepTextOnPagination" />
@@ -612,13 +606,22 @@ function placeCursor(): void {
           :id="character.data.uuid"
           :data-uuid="character.data.uuid"
           :class="[
-            character.annotations.length > 0 ? 'annotated' : '',
             character.annotations.some(a => a.isFirstCharacter || a.isLastCharacter)
               ? 'boundary'
               : '',
           ]"
         >
-          {{ character.data.text }}
+          {{ character.data.text
+          }}<span
+            v-for="annotation in character.annotations"
+            :key="annotation.uuid"
+            :class="[
+              'anno',
+              annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
+              annotation.type,
+            ]"
+          >
+          </span>
         </span>
       </div>
     </div>
@@ -647,19 +650,12 @@ function placeCursor(): void {
   }
 }
 
-span.annotated {
-  background-color: rgb(233, 197, 89);
-}
-
-span.boundary {
-  background-color: rgb(166, 125, 0);
-}
-
 #text {
   outline: 0;
 }
 
 #text > span {
   white-space-collapse: break-spaces;
+  position: relative;
 }
 </style>

@@ -1,0 +1,99 @@
+:root {
+  --addition-color: hsla(39, 29%, 85%, 0.6);
+  --addition-opacity: 0.9;
+  --addition-transition: var(--addition-opacity) ease-in-out 1s;
+  --deleted-text-decoration: line-through;
+  --emphasised-clr: hsl(0, 76%, 38%);
+  --emphasised-font-weight: 700;
+  --expansion-clr: hsl(201, 22%, 87%);
+  --expansion-opacity: 0.7;
+  --gap-text-decoration: underline dotted;
+  --inscription-font-weight: 700;
+  --inRasura-clr: hsl(36, 85%, 76%);
+  --inRasura-opacity: 0.5;
+  --intervention-clr: hsl(292, 100%, 62%);
+  --marginNote-clr: hsl(34, 100%, 47%);
+  --nonLinear-clr: hsl(22, 81%, 35%);
+  --repeated-clr: #cbcbcb;
+  --repeated-text-decoration: line-through;
+  --transposition-clr: #ccc;
+  --unreadable-clr: hsl(328, 98%, 47%);
+}
+
+#text > span:has(span.emphasised) {
+  font-weight: var(--emphasised-font-weight);
+  color: var(--emphasised-clr);
+}
+
+#text > span:has(span.expansion) {
+  background-color: var(--expansion-clr);
+  opacity: var(--expansion-opacity);
+}
+
+#text > span:has(span.nonLinear) {
+  color: var(--nonLinear-clr);
+}
+
+#text > span:has(span.marginNote) {
+  color: var(--marginNote-clr);
+}
+
+#text > span:has(span.intervention) {
+  color: var(--intervention-clr);
+}
+
+#text > span:has(span.inRasura) {
+  background-color: var(--inRasura-clr);
+  opacity: var(--inRasura-opacity);
+}
+
+#text > span:has(span.deleted) {
+  text-decoration: var(--deleted-text-decoration);
+}
+
+#text > span:has(span.unreadable) {
+  color: var(--unreadable-clr);
+}
+
+#text > span:has(span.repeated) {
+  background-color: var(--repeated-clr);
+  text-decoration: var(--repeated-text-decoration);
+}
+
+#text > span:has(span.gap) {
+  text-decoration: var(--gap-text-decoration);
+}
+
+#text > span:has(span.addition) {
+  background-color: var(--addition-color);
+  opacity: var(--addition-opacity);
+  transition: var(--addition-transition);
+}
+
+#text > span:has(span.inscription) {
+  font-weight: var(--inscription-font-weight);
+}
+
+#text > span:has(span.page) {
+  /* TODO: Improve styling */
+  text-decoration: double underline;
+}
+
+#text > span:has(span.column) {
+  /* TODO: Improve styling */
+  text-decoration: double underline;
+}
+
+#text > span:has(span.line) {
+  /* TODO: Improve styling */
+  text-decoration: double underline;
+}
+
+#text > span:has(span.transposition) {
+  background-color: var(--transposition-clr);
+}
+
+#text > span:has(span.initial) {
+  color: orange;
+  font-weight: bold;
+}
