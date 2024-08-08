@@ -1,3 +1,5 @@
+import { AnnotationType } from './types';
+
 export interface IGuidelines {
   collections: {
     [index: string] /* letter, document etc. */ : {
@@ -13,11 +15,7 @@ export interface IGuidelines {
     };
   };
   annotations: {
-    types: {
-      type: string;
-      category: string;
-      text: string;
-    }[];
+    types: AnnotationType[];
     properties: {
       name: string /* type, subtype, text, url */;
       type: string /* raw string, dropdown, multiple options */;

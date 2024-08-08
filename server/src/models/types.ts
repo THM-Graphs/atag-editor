@@ -9,6 +9,12 @@ export type Annotation = {
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
+export type AnnotationType = {
+  type: string;
+  category: string;
+  text: string;
+};
+
 export type Character = {
   data: ICharacter;
   annotations: {
