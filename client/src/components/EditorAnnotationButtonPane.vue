@@ -2,14 +2,13 @@
 import Button from 'primevue/button';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
-import { getParentCharacterSpan, getSelectionData } from '../helper/helper';
-import { IGuidelines } from '../models/IGuidelines';
+import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/helper';
 import { Annotation, Character } from '../models/types';
-
-defineProps<{ guidelines: IGuidelines }>();
+import { useGuidelinesStore } from '../store/guidelines';
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
+const { groupedAnnotationTypes } = useGuidelinesStore();
 
 function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
@@ -100,14 +99,24 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
 
 <template>
   <div class="annotation-button-pane flex flex-wrap gap-1">
-    <Button
-      class="button-annotation"
-      v-for="annotation in guidelines.annotations.types"
-      :label="annotation.text"
-      size="small"
-      :data-annotation-type="annotation.type"
-      @click="handleCreateAnnotation"
-    />
+    <div
+      class="group"
+      v-for="(annotationTypes, category) in groupedAnnotationTypes"
+      :key="category"
+    >
+      <div class="name">{{ capitalize(category) }}</div>
+      <div class="buttons">
+        <Button
+          class="button-annotation"
+          v-for="type in annotationTypes"
+          :key="type.type"
+          :label="type.text"
+          size="small"
+          :data-annotation-type="type.type"
+          @click="handleCreateAnnotation"
+        />
+      </div>
+    </div>
   </div>
 </template>
 

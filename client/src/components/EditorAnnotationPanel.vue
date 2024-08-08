@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { computed, ComputedRef } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
-import { Annotation } from '../models/types';
 import { useCharactersStore } from '../store/characters';
+import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../helper/helper';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
 import { useConfirm } from 'primevue/useconfirm';
-import { IGuidelines } from '../models/IGuidelines';
-
-const props = defineProps<{
-  guidelines: IGuidelines | null;
-}>();
+import { Annotation } from '../models/types';
 
 const confirm = useConfirm();
 
 const { annotations, deleteAnnotation } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
+const { guidelines } = useGuidelinesStore();
 
 // TODO: Use this for displaying forms. Currently all visible for debugging purposes
 const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
@@ -63,7 +60,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         <form>
           <div
             class="input-container"
-            v-for="field in props.guidelines.annotations.properties"
+            v-for="field in guidelines.annotations.properties"
             v-show="field.visible"
           >
             <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">

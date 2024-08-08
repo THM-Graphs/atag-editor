@@ -12,17 +12,19 @@ import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
+import EditorAnnotations from '../components/EditorAnnotations.vue';
 import EditorError from '../components/EditorError.vue';
-import LoadingSpinner from '../components/LoadingSpinner.vue';
+import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
-import EditorAnnotations from '../components/EditorAnnotations.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { objectsAreEqual } from '../helper/helper';
 import ICollection from '../models/ICollection';
 import { Annotation, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
+import { useGuidelinesStore } from '../store/guidelines';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -78,8 +80,8 @@ const {
 } = useCharactersStore();
 const { annotations, initializeAnnotations, resetAnnotations, updateAnnotationStatuses } =
   useAnnotationStore();
+const { initializeGuidelines } = useGuidelinesStore();
 
-const guidelines = ref<IGuidelines | null>(null);
 const resizerWidth = 5;
 
 const mainWidth: ComputedRef<number> = computed(() => {
@@ -308,7 +310,8 @@ async function getGuidelines(): Promise<void> {
     }
 
     const fetchedGuidelines: IGuidelines = await response.json();
-    guidelines.value = fetchedGuidelines;
+
+    initializeGuidelines(fetchedGuidelines);
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);
   }
@@ -466,7 +469,7 @@ function preventUserFromRouteLeaving(): boolean {
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
     >
-      <EditorMetadata :guidelines="guidelines" ref="metadataRef" />
+      <EditorMetadata ref="metadataRef" />
       <EditorAnnotations />
     </EditorSidebar>
     <EditorResizer
@@ -482,7 +485,7 @@ function preventUserFromRouteLeaving(): boolean {
     >
       <Toast />
       <EditorHeader ref="labelInputRef" />
-      <EditorAnnotationButtonPane :guidelines="guidelines" />
+      <EditorAnnotationButtonPane />
       <EditorText ref="editorRef" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
@@ -498,7 +501,8 @@ function preventUserFromRouteLeaving(): boolean {
       :isCollapsed="sidebars['right'].isCollapsed === true"
       :width="sidebars['right'].width"
     >
-      <EditorAnnotationPanel :guidelines="guidelines" />
+      <EditorFilter />
+      <EditorAnnotationPanel />
     </EditorSidebar>
   </div>
 </template>

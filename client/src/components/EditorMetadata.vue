@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useCollectionStore } from '../store/collection';
+import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../helper/helper';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -12,10 +13,7 @@ defineExpose({
 });
 
 const { collection } = useCollectionStore();
-
-const props = defineProps<{
-  guidelines: IGuidelines | null;
-}>();
+const { guidelines } = useGuidelinesStore();
 
 const formRef = ref<HTMLFormElement | null>(null);
 
@@ -51,7 +49,7 @@ function validate(): boolean {
     <form ref="formRef" @submit.prevent="validate">
       <div
         class="input-container"
-        v-for="field in props.guidelines.collections['text'].properties"
+        v-for="field in guidelines.collections['text'].properties"
         v-show="field.visible"
       >
         <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
