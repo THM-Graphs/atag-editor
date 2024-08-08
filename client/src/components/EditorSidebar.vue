@@ -16,13 +16,16 @@ const sidebarWidth = computed(() => props.width);
 <template>
   <section
     :sidebar-id="position"
-    :class="['sidebar', 'sidebar-' + position]"
+    :class="['sidebar', 'sidebar-' + position, isCollapsed ? 'collapsed' : '']"
     class="p-3 flex flex-column"
     :style="{ width: sidebarWidth + 'px', background: '#e9e9e9' }"
-    v-show="!isCollapsed"
   >
     <slot></slot>
   </section>
 </template>
 
-<style scoped></style>
+<style scoped>
+.collapsed {
+  display: none !important;
+}
+</style>
