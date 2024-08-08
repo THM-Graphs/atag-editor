@@ -122,6 +122,44 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
+    if (index !== 0) {
+      const previousChar: Character = snippetCharacters.value[index - 1];
+      const annotations = previousChar.annotations;
+      // annotations.forEach(a => console.log(a));
+
+      // These annotations have ended on the previous char
+      let annotationEndsUuids = annotations.filter(a => a.isLastCharacter).map(a => a.uuid);
+
+      newCharacters.forEach((c: Character, index: number) => {
+        console.time('inherit');
+        // First inserted character can be the new last character of the annotation
+        if (index === 0) {
+          previousChar.annotations.forEach(a => {
+            if (a.isLastCharacter) {
+              a.isLastCharacter = false;
+            }
+          });
+        }
+
+        c.annotations.push(...previousChar.annotations.map(a => ({ ...a })));
+
+        if (index === newCharacters.length - 1) {
+          console.time('map');
+          c.annotations = c.annotations.map(a => {
+            if (annotationEndsUuids.includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+            return a;
+          });
+          console.timeEnd('map');
+        }
+        console.timeEnd('inherit');
+      });
+
+      console.log(JSON.parse(JSON.stringify(previousChar.annotations)));
+    } else {
+      console.log('inserting at first position, no inherit');
+    }
     snippetCharacters.value.splice(index, 0, ...newCharacters);
   }
 

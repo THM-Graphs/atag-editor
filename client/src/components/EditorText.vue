@@ -606,9 +606,8 @@ function placeCursor(): void {
           :id="character.data.uuid"
           :data-uuid="character.data.uuid"
           :class="[
-            character.annotations.some(a => a.isFirstCharacter || a.isLastCharacter)
-              ? 'boundary'
-              : '',
+            character.annotations.some(a => a.isFirstCharacter) ? 'boundary-start' : '',
+            character.annotations.some(a => a.isLastCharacter) ? 'boundary-end' : '',
           ]"
         >
           {{ character.data.text
@@ -652,6 +651,14 @@ function placeCursor(): void {
 
 #text {
   outline: 0;
+}
+
+.boundary-start {
+  background-color: lightgreen !important;
+}
+
+.boundary-end {
+  background-color: pink !important;
 }
 
 #text > span {
