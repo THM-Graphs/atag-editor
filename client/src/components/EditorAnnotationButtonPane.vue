@@ -5,10 +5,12 @@ import { useAnnotationStore } from '../store/annotations';
 import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/helper';
 import { Annotation, Character } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useFilterStore } from '../store/filter';
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
+const { selectedOptions } = useFilterStore();
 
 function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
@@ -112,6 +114,7 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
           :key="type.type"
           :label="type.text"
           size="small"
+          :disabled="!selectedOptions.includes(type.type)"
           :data-annotation-type="type.type"
           @click="handleCreateAnnotation"
         />

@@ -15,6 +15,7 @@ import {
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { Character } from '../models/types';
+import { useFilterStore } from '../store/filter';
 
 onUpdated(() => {
   placeCursor();
@@ -33,6 +34,8 @@ const {
   previousCharacters,
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
+
+const { selectedOptions } = useFilterStore();
 
 const keepTextOnPagination = ref<boolean>(false);
 
@@ -611,16 +614,17 @@ function placeCursor(): void {
           ]"
         >
           {{ character.data.text
-          }}<span
-            v-for="annotation in character.annotations"
-            :key="annotation.uuid"
-            :class="[
-              'anno',
-              annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
-              annotation.type,
-            ]"
-          >
-          </span>
+          }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+            <span
+              v-if="selectedOptions.includes(annotation.type)"
+              :class="[
+                'anno',
+                annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
+                annotation.type,
+              ]"
+            >
+            </span>
+          </template>
         </span>
       </div>
     </div>
