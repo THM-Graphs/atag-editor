@@ -274,6 +274,14 @@ export function useCharactersStore() {
     annotatedCharacters.forEach(
       c => (c.annotations = c.annotations.filter(a => a.uuid !== annotationUuid)),
     );
+
+    const annotatedSnippetCharacters: Character[] = snippetCharacters.value.filter(c =>
+      c.annotations.some(a => a.uuid === annotationUuid),
+    );
+    annotatedSnippetCharacters.forEach(
+      c => (c.annotations = c.annotations.filter(a => a.uuid !== annotationUuid)),
+    );
+
     console.timeEnd('deannotate characters');
   }
 
