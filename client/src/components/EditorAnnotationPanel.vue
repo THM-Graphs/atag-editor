@@ -57,7 +57,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         class="annotation-form mb-3"
         :data-annotation-uuid="annotation.data.uuid"
         toggleable
-        collapsed="true"
+        :collapsed="true"
       >
         <template #header>
           <div class="flex items-center gap-1 align-items-center">
