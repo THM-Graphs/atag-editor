@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Character } from '../models/types';
+import { Annotation, Character } from '../models/types';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -151,14 +151,16 @@ export function isCursorAtBeginning(
   return characterSpan === editorElm.value.firstElementChild && range.startOffset === 0;
 }
 
-export function toggleTextHightlighting(event: MouseEvent, direction: 'on' | 'off'): void {
-  // TODO: This step can be omitted as soon as each form has its own component
-  const annotationUuid: string = (
-    (event.target as HTMLElement).closest('.annotation-form') as HTMLElement
-  ).dataset.annotationUuid;
-
+/**
+ * Toggles the text highlighting for the given annotation by adding CSS classes to annotated span elements.
+ *
+ * @param {Annotation} annotation - The annotation for which to toggle highlighting.
+ * @param {'on' | 'off'} direction - The direction of the toggle operation.
+ * @return {void}
+ */
+export function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'): void {
   const annotatedSpans: NodeListOf<HTMLSpanElement> = document.querySelectorAll(
-    `#text > span:has(span[data-anno-uuid="${annotationUuid}"])`,
+    `#text > span:has(span[data-anno-uuid="${annotation.data.uuid}"])`,
   );
 
   if (annotatedSpans.length === 0) {
@@ -172,6 +174,12 @@ export function toggleTextHightlighting(event: MouseEvent, direction: 'on' | 'of
   });
 }
 
+/**
+ * Scrolls the given span element into view if it is outside the viewport.
+ *
+ * @param {HTMLSpanElement} span - The span element to scroll into view.
+ * @return {void}
+ */
 export function scrollIntoViewIfNeeded(span: HTMLSpanElement): void {
   const spanRect: DOMRect = span.getBoundingClientRect();
   const containerRect: DOMRect = document.querySelector('.text-container').getBoundingClientRect();
