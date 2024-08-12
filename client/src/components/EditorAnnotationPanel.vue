@@ -3,7 +3,7 @@ import { computed, ComputedRef } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
-import { capitalize } from '../helper/helper';
+import { capitalize, toggleTextHightlighting } from '../helper/helper';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
@@ -45,6 +45,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
 }
 </script>
 
+<!-- TODO: Create component for each form, simplifies helper functions -->,
 <template>
   <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
     <h3>Annotations [{{ displayedAnnotations.length }}]</h3>
@@ -54,9 +55,29 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         :key="annotation.data.uuid"
         :header="annotation.data.type"
         class="annotation-form mb-3"
+        :data-annotation-uuid="annotation.data.uuid"
         toggleable
+        collapsed="true"
       >
-        <div class="status-indicator" :class="annotation.status">{{ annotation.status }}</div>
+        <template #header>
+          <div class="flex items-center gap-1 align-items-center">
+            <div class="icon-container">
+              <img
+                :src="`../src/assets/icons/${annotation.data.type}.svg`"
+                class="button-icon w-full h-full"
+              />
+            </div>
+            <div class="annotation-type-container">
+              <span class="font-bold">{{ annotation.data.type }}</span>
+            </div>
+            <div
+              class="spy pi pi-eye cursor-pointer"
+              @mouseover="toggleTextHightlighting($event, 'on')"
+              @mouseleave="toggleTextHightlighting($event, 'off')"
+            ></div>
+          </div>
+          <div class="status-indicator" :class="annotation.status">{{ annotation.status }}</div>
+        </template>
         <form>
           <div
             class="input-container"
@@ -123,5 +144,14 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
 
 .created {
   background-color: lightgreen;
+}
+
+.icon-container {
+  width: 20px;
+  height: 20px;
+}
+
+.button-icon {
+  object-fit: contain;
 }
 </style>

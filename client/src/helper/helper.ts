@@ -150,3 +150,34 @@ export function isCursorAtBeginning(
   const { range } = getSelectionData();
   return characterSpan === editorElm.value.firstElementChild && range.startOffset === 0;
 }
+
+export function toggleTextHightlighting(event: MouseEvent, direction: 'on' | 'off'): void {
+  // TODO: This step can be omitted as soon as each form has its own component
+  const annotationUuid: string = (
+    (event.target as HTMLElement).closest('.annotation-form') as HTMLElement
+  ).dataset.annotationUuid;
+
+  const annotatedSpans: NodeListOf<HTMLSpanElement> = document.querySelectorAll(
+    `#text > span:has(span[data-anno-uuid="${annotationUuid}"])`,
+  );
+
+  if (annotatedSpans.length === 0) {
+    return;
+  }
+
+  scrollIntoViewIfNeeded(annotatedSpans[0]);
+
+  annotatedSpans.forEach((span: HTMLSpanElement) => {
+    direction === 'on' ? span.classList.add('highlight') : span.classList.remove('highlight');
+  });
+}
+
+export function scrollIntoViewIfNeeded(span: HTMLSpanElement): void {
+  const spanRect: DOMRect = span.getBoundingClientRect();
+  const containerRect: DOMRect = document.querySelector('.text-container').getBoundingClientRect();
+
+  const isOutsideViewport: boolean =
+    spanRect.top <= containerRect.top || spanRect.bottom >= containerRect.bottom;
+
+  isOutsideViewport && span.scrollIntoView({ behavior: 'smooth' });
+}

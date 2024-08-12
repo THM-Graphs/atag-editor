@@ -622,6 +622,7 @@ function placeCursor(): void {
                 annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
                 annotation.type,
               ]"
+              :data-anno-uuid="annotation.uuid"
             >
             </span>
           </template>
@@ -668,5 +669,9 @@ function placeCursor(): void {
 #text > span {
   white-space-collapse: break-spaces;
   position: relative;
+
+  &.highlight {
+    background-color: yellow;
+  }
 }
 </style>
