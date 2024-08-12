@@ -16,8 +16,20 @@ function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
   const annotationType: string = buttonElm.dataset.annotationType;
 
+  const { range, type } = getSelectionData();
+
+  const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
+
+  if (commonAncestorContainer?.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+
+  if (commonAncestorContainer instanceof Element && commonAncestorContainer.id !== 'text') {
+    return;
+  }
+
   // TODO: What about zero point annotations?
-  if (getSelectionData().type === 'Caret') {
+  if (type === 'Caret') {
     console.log('no text selected. Return');
     return;
   }
