@@ -109,18 +109,36 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
       <div class="name">{{ capitalize(category) }}</div>
       <div class="buttons">
         <Button
-          class="button-annotation"
           v-for="type in annotationTypes"
+          class="button-annotation"
           :key="type.type"
-          :label="type.text"
-          size="small"
           :disabled="!selectedOptions.includes(type.type)"
           :data-annotation-type="type.type"
+          v-tooltip.hover.top="{ value: type.text, showDelay: 50 }"
           @click="handleCreateAnnotation"
-        />
+        >
+          <template #icon>
+            <!-- TODO: Should this come from annotation type config? -->
+            <img
+              :src="`../src/assets/icons/${type.type}.svg`"
+              :title="type.text"
+              :alt="type.text"
+              class="button-icon w-full h-full"
+            />
+          </template>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.button-annotation {
+  width: 35px;
+  height: 35px;
+}
+
+.button-icon {
+  object-fit: contain;
+}
+</style>
