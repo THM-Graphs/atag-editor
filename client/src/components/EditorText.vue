@@ -9,25 +9,22 @@ import {
   getSelectionData,
   isCursorAtBeginning,
   isEditorElement,
-  objectsAreEqual,
   removeFormatting,
 } from '../helper/helper';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { Character } from '../models/types';
 import { useFilterStore } from '../store/filter';
+import { useEditorStore } from '../store/editor';
 
 onUpdated(() => {
   placeCursor();
 });
 
-const { collection, initialCollection } = useCollectionStore();
+const { newRangeAnchorUuid, hasUnsavedChanges, placeCursor } = useEditorStore();
+const { collection } = useCollectionStore();
 const {
-  afterEndIndex,
-  beforeStartIndex,
-  initialCharacters,
   snippetCharacters,
-  totalCharacters,
   deleteCharactersBetweenIndexes,
   insertCharactersAtIndex,
   nextCharacters,
@@ -39,7 +36,6 @@ const { selectedOptions } = useFilterStore();
 
 const keepTextOnPagination = ref<boolean>(false);
 
-const newRangeAnchorUuid = ref<string | null>(null);
 const editorRef = ref<HTMLDivElement>(null);
 
 function handleInput(event: InputEvent) {
@@ -518,53 +514,6 @@ function createNewCharacter(char: string): Character {
     },
     annotations: [],
   };
-}
-
-// TODO: This is duplicate, also exists in Editor.vue
-function hasUnsavedChanges(): boolean {
-  // Compare collection properties
-  if (!objectsAreEqual(collection.value, initialCollection.value)) {
-    return true;
-  }
-
-  // Compare charactfers length
-  if (snippetCharacters.value.length !== initialCharacters.value.length) {
-    return true;
-  }
-
-  // Compare characters values
-  for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (
-      !objectsAreEqual(snippetCharacters.value[index].data, initialCharacters.value[index].data)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// TODO: This takes very long on bigger texts -> improve
-function placeCursor(): void {
-  const range: Range = document.createRange();
-  let element: HTMLDivElement | HTMLSpanElement | null;
-
-  if (newRangeAnchorUuid.value) {
-    element = document.getElementById(newRangeAnchorUuid.value) as HTMLSpanElement;
-  } else {
-    element = document.querySelector('#text') as HTMLDivElement;
-  }
-
-  if (!element) {
-    return;
-  }
-
-  range.setStart(element, 1);
-  range.setEnd(element, 1);
-  range.collapse(true);
-
-  window.getSelection().removeAllRanges();
-  window.getSelection().addRange(range);
 }
 </script>
 

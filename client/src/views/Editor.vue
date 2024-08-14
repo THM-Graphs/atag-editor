@@ -18,12 +18,12 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { objectsAreEqual } from '../helper/helper';
 import ICollection from '../models/ICollection';
 import { Annotation, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
+import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 
 interface SidebarConfig {
@@ -51,6 +51,7 @@ onMounted(async (): Promise<void> => {
 onUnmounted((): void => {
   resetCharacters();
   resetAnnotations();
+  resetEditor();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -69,6 +70,7 @@ const isValidCollection = ref<boolean>(false);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
+const { hasUnsavedChanges, resetEditor } = useEditorStore();
 const { collection, initialCollection, initializeCollection } = useCollectionStore();
 const {
   snippetCharacters,
@@ -397,30 +399,6 @@ function findChangesetBoundaries(): {
   }
 
   return { uuidStart, uuidEnd };
-}
-
-// TODO: Implement comparing for changed annotations
-function hasUnsavedChanges(): boolean {
-  // Compare collection properties
-  if (!objectsAreEqual(collection.value, initialCollection.value)) {
-    return true;
-  }
-
-  // Compare charactfers length
-  if (snippetCharacters.value.length !== initialCharacters.value.length) {
-    return true;
-  }
-
-  // Compare characters values
-  for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (
-      !objectsAreEqual(snippetCharacters.value[index].data, initialCharacters.value[index].data)
-    ) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
