@@ -4,26 +4,26 @@ import { useAnnotationStore } from '../store/annotations';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
 import { Annotation, AnnotationType } from '../models/types';
+import Button from 'primevue/button';
 import Panel from 'primevue/panel';
 import Tree from 'primevue/tree';
 
-const { annotations } = useAnnotationStore();
-const { groupedAnnotationTypes } = useGuidelinesStore();
-
-// TODO: Use this, whole tree should be exanded
-const expandedKeys = ref<Map<string, boolean>>(new Map<string, boolean>());
-
-const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
-  annotations.value.filter(a => a.status !== 'deleted'),
-);
-
 export interface TreeNode {
+  annotationCount?: number;
   children?: TreeNode[];
   data?: Annotation;
   key: string;
   label: string;
   type: 'category' | 'type' | 'annotation';
 }
+
+const { annotations } = useAnnotationStore();
+const { groupedAnnotationTypes } = useGuidelinesStore();
+const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
+  annotations.value.filter(a => a.status !== 'deleted'),
+);
+
+const expandedKeys = ref<Record<string, boolean>>({});
 
 const nodes: ComputedRef<TreeNode[]> = computed(() => {
   const nodes: TreeNode[] = [];
@@ -34,9 +34,8 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
       label: category,
       type: 'category',
       children: [],
+      annotationCount: 0,
     };
-
-    // selectedKey.value.set(i.toString(), true);
 
     annotationType.forEach((annoType: AnnotationType, j: number) => {
       const newAnnotationType: TreeNode = {
@@ -45,8 +44,6 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
         type: 'type',
         children: [],
       };
-
-      // selectedKey.value.set(j.toString(), true);
 
       const annos: Annotation[] = displayedAnnotations.value.filter(
         a => a.data.type === annoType.type,
@@ -60,10 +57,10 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           data: anno,
         };
 
-        // selectedKey.value.set(k.toString(), true);
-
         newAnnotationType.children.push(newAnnotation);
       });
+
+      newCategory.annotationCount += annos.length;
 
       if (newAnnotationType.children.length > 0) {
         newCategory.children.push(newAnnotationType);
@@ -77,6 +74,33 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
 
   return nodes;
 });
+
+// Set initially expanded nodes -> Categories
+nodes.value.forEach(node => {
+  expandedKeys.value[node.key] = true;
+});
+
+function expandAll(): void {
+  for (let node of nodes.value) {
+    expandNode(node);
+  }
+
+  expandedKeys.value = { ...expandedKeys.value };
+}
+
+function collapseAll(): void {
+  expandedKeys.value = {};
+}
+
+function expandNode(node: TreeNode): void {
+  if (node.children && node.children.length) {
+    expandedKeys.value[node.key] = true;
+
+    for (let child of node.children) {
+      expandNode(child);
+    }
+  }
+}
 </script>
 
 <template>
@@ -84,6 +108,14 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
     <template #header>
       <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
     </template>
+    <Button type="button" icon="pi pi-plus" size="small" label="Expand All" @click="expandAll" />
+    <Button
+      type="button"
+      icon="pi pi-minus"
+      size="small"
+      label="Collapse All"
+      @click="collapseAll"
+    />
     <div class="tree">
       <div class="flex justify-center">
         <Tree
@@ -96,7 +128,7 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           <template #default="slotProps">
             <div v-if="slotProps.node.type === 'category'">
               <div class="name-container ml-2 font-bold">
-                {{ capitalize(slotProps.node.label) }} [{{ slotProps.node.children.length }}]
+                {{ capitalize(slotProps.node.label) }} [{{ slotProps.node.annotationCount }}]
               </div>
             </div>
             <div v-else-if="slotProps.node.type === 'type'" class="flex align-items-center">
