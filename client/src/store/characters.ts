@@ -15,6 +15,14 @@ const initialCharacters = ref<Character[]>([]);
  * the store is reset (character array is emptied).
  */
 export function useCharactersStore() {
+  /**
+   * Initializes the character store with the provided character data. Called on character fetching from the database.
+   *
+   * This function resets the store, sets the total characters, and updates the snippet and initial characters based on the pagination size.
+   *
+   * @param {Character[]} characterData - The array of characters to initialize the store with.
+   * @return {void} This function does not return any value.
+   */
   function initializeCharacters(characterData: Character[]): void {
     resetCharacters();
 
@@ -37,7 +45,14 @@ export function useCharactersStore() {
     initialCharacters.value = [...snippetCharacters.value];
   }
 
-  function previousCharacters(mode: 'keep' | 'replace') {
+  /**
+   * Paginates character array to the previous characters. The mode parameter determines whether the currently displayed characters
+   * should stay rendered or replaced by the previous characters.
+   *
+   * @param {'keep' | 'replace'} mode - The mode to use when moving to the previous characters.
+   * @return {void} This function does not return any value.
+   */
+  function previousCharacters(mode: 'keep' | 'replace'): void {
     if (beforeStartIndex.value === null) {
       console.log('Already at first character');
       return;
@@ -66,7 +81,14 @@ export function useCharactersStore() {
     initialCharacters.value = [...snippetCharacters.value];
   }
 
-  function nextCharacters(mode: 'keep' | 'replace') {
+  /**
+   * Paginates character array to the next characters. The mode parameter determines whether the currently displayed characters
+   * should stay rendered or replaced by the next characters.
+   *
+   * @param {'keep' | 'replace'} mode - The mode to use when moving to the next characters.
+   * @return {void} This function does not return any value.
+   */
+  function nextCharacters(mode: 'keep' | 'replace'): void {
     if (afterEndIndex.value === null) {
       console.log('No more characters');
       return;
@@ -94,6 +116,50 @@ export function useCharactersStore() {
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
     snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
     initialCharacters.value = [...snippetCharacters.value];
+  }
+
+  /**
+   * Retrieves the character that comes before the character at the specified index.
+   *
+   * @param {number} index - The index of the character for which to retrieve the previous character.
+   * @return {Character | null} The previous character, or null if the specified index is the first character.
+   */
+  function getPreviousChar(index: number): Character | null {
+    let char: Character;
+
+    if (index === 0) {
+      if (beforeStartIndex.value === null) {
+        char = null;
+      } else {
+        char = totalCharacters.value[beforeStartIndex.value];
+      }
+    } else {
+      char = snippetCharacters.value[index - 1];
+    }
+
+    return char;
+  }
+
+  /**
+   * Retrieves the character that comes after the character at the specified index.
+   *
+   * @param {number} index - The index of the character for which to retrieve the next character.
+   * @return {Character | null} The next character, or null if the specified index is the last character.
+   */
+  function getNextChar(index: number): Character | null {
+    let char: Character;
+
+    if (index === snippetCharacters.value.length - 1) {
+      if (afterEndIndex.value === null) {
+        char = null;
+      } else {
+        char = totalCharacters.value[afterEndIndex.value];
+      }
+    } else {
+      char = snippetCharacters.value[index + 1];
+    }
+
+    return char;
   }
 
   /**
@@ -154,38 +220,6 @@ export function useCharactersStore() {
     snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
   }
 
-  function getPreviousChar(index: number): Character | null {
-    let char: Character;
-
-    if (index === 0) {
-      if (beforeStartIndex.value === null) {
-        char = null;
-      } else {
-        char = totalCharacters.value[beforeStartIndex.value];
-      }
-    } else {
-      char = snippetCharacters.value[index - 1];
-    }
-
-    return char;
-  }
-
-  function getNextChar(index: number): Character | null {
-    let char: Character;
-
-    if (index === snippetCharacters.value.length - 1) {
-      if (afterEndIndex.value === null) {
-        char = null;
-      } else {
-        char = totalCharacters.value[afterEndIndex.value];
-      }
-    } else {
-      char = snippetCharacters.value[index + 1];
-    }
-
-    return char;
-  }
-
   /**
    * Inserts new characters at the specified index in the characters array. Indexes are calculated during input event handling.
    *
@@ -231,7 +265,7 @@ export function useCharactersStore() {
    * @param {number} endIndex - The index of the last character to delete.
    * @return {void} This function does not return anything.
    */
-  function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
+  function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number): void {
     const charsToDeleteCount: number = endIndex - startIndex;
 
     const previousChar: Character | null = getPreviousChar(startIndex);
@@ -254,6 +288,12 @@ export function useCharactersStore() {
     snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
   }
 
+  /**
+   * Inserts the snippet characters into the total characters chain, updating the initial characters and after end index accordingly.
+   * Called before changes are saved to the database.
+   *
+   * @return {void} This function does not return anything.
+   */
   function insertSnippetIntoChain(): void {
     const startAtIndex: number = beforeStartIndex.value ? beforeStartIndex.value + 1 : 0;
     let charsToDeleteCount = 0;
@@ -276,7 +316,14 @@ export function useCharactersStore() {
     }
   }
 
-  function annotateCharacters(characters: Character[], annotation: Annotation) {
+  /**
+   * Annotates each character in the given array with the provided annotation data.
+   *
+   * @param {Character[]} characters - The array of characters to be annotated.
+   * @param {Annotation} annotation - The annotation data to be applied to each character.
+   * @return {void} No return value.
+   */
+  function annotateCharacters(characters: Character[], annotation: Annotation): void {
     console.time('chars');
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
@@ -289,7 +336,13 @@ export function useCharactersStore() {
     console.timeEnd('chars');
   }
 
-  function removeAnnotationFromCharacters(annotationUuid: string) {
+  /**
+   * Removes the annotation with the specified UUID from all characters.
+   *
+   * @param {string} annotationUuid - The UUID of the annotation to be removed.
+   * @return {void} No return value.
+   */
+  function removeAnnotationFromCharacters(annotationUuid: string): void {
     // TODO: Reduce loops/duplicate method chaining
     console.time('deannotate characters');
     const annotatedCharacters: Character[] = totalCharacters.value.filter(c =>
@@ -309,6 +362,11 @@ export function useCharactersStore() {
     console.timeEnd('deannotate characters');
   }
 
+  /**
+   * Resets all character-related state variables to their initial values.
+   *
+   * @return {void} No return value.
+   */
   function resetCharacters(): void {
     snippetCharacters.value = [];
     totalCharacters.value = [];
