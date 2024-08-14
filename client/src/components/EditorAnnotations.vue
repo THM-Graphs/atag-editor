@@ -3,10 +3,12 @@ import { computed, ComputedRef, ref } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
-import { Annotation, AnnotationType } from '../models/types';
+import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import Panel from 'primevue/panel';
 import Tree from 'primevue/tree';
+import { useEditorStore } from '../store/editor';
+import { useCharactersStore } from '../store/characters';
 
 export interface TreeNode {
   annotationCount?: number;
@@ -17,6 +19,8 @@ export interface TreeNode {
   type: 'category' | 'type' | 'annotation';
 }
 
+const { newRangeAnchorUuid, placeCursor } = useEditorStore();
+const { snippetCharacters } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
@@ -101,6 +105,25 @@ function expandNode(node: TreeNode): void {
     }
   }
 }
+
+function handleAnnotationClick(event: MouseEvent): void {
+  const annotationUuid: string = (event.target as HTMLElement).dataset.annotationUuid;
+
+  if (!annotationUuid) {
+    return;
+  }
+
+  const lastAnnotatedChar: Character | undefined = snippetCharacters.value.findLast(c =>
+    c.annotations.some(a => a.uuid === annotationUuid),
+  );
+
+  if (!lastAnnotatedChar) {
+    return;
+  }
+
+  newRangeAnchorUuid.value = lastAnnotatedChar.data.uuid;
+  placeCursor();
+}
 </script>
 
 <template>
@@ -146,9 +169,13 @@ function expandNode(node: TreeNode): void {
               v-else
               @mouseover="toggleTextHightlighting(slotProps.node.data, 'on')"
               @mouseout="toggleTextHightlighting(slotProps.node.data, 'off')"
+              @click="handleAnnotationClick"
               :style="{ 'text-wrap': 'nowrap' }"
             >
-              <div class="ml-2 anno-entry preview">
+              <div
+                class="ml-2 anno-entry preview"
+                :data-annotation-uuid="slotProps.node.data.data.uuid"
+              >
                 <!-- TODO: Fix overflow -->
                 {{ slotProps.node.label }}
               </div>
