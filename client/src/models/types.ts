@@ -15,14 +15,16 @@ export type AnnotationType = {
   text: string;
 };
 
+export type AnnotationReference = {
+  isFirstCharacter: boolean;
+  isLastCharacter: boolean;
+  type: string;
+  uuid: string;
+};
+
 export type Character = {
   data: ICharacter;
-  annotations: {
-    isFirstCharacter: boolean;
-    isLastCharacter: boolean;
-    type: string;
-    uuid: string;
-  }[];
+  annotations: AnnotationReference[];
 };
 
 export type CharacterPostData = {

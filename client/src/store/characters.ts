@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../models/constants';
-import { Annotation, Character } from '../models/types';
+import { Annotation, AnnotationReference, Character } from '../models/types';
 
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
@@ -110,65 +110,80 @@ export function useCharactersStore() {
     endIndex: number,
     newCharacters: Character[],
   ): void {
-    if (startIndex !== 0) {
-      const previousChar: Character = snippetCharacters.value[startIndex - 1];
-      const nextChar: Character | null = snippetCharacters.value[endIndex + 1];
-      const prevCharAnnotations = previousChar.annotations;
-      const nextCharAnnotations = nextChar?.annotations ?? [];
+    const previousChar: Character | null = getPreviousChar(startIndex);
+    const nextChar: Character | null = getNextChar(endIndex);
+    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
+    const nextCharAnnotations: AnnotationReference[] = nextChar?.annotations ?? [];
 
-      // These annotations have ended on the previous char
-      let annotationEndsUuids = prevCharAnnotations.filter(a => a.isLastCharacter).map(a => a.uuid);
+    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
+    let annotationEndsUuids: string[] = prevCharAnnotations
+      .filter(a => a.isLastCharacter)
+      .map(a => a.uuid);
 
-      newCharacters.forEach((c: Character, index: number) => {
-        // First inserted character can be the new last character of the annotation
-        if (index === 0) {
-          previousChar.annotations.forEach(a => {
-            if (a.isLastCharacter) {
-              a.isLastCharacter = false;
-            }
-          });
-        }
+    newCharacters.forEach((c: Character, index: number) => {
+      // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+      if (index === 0) {
+        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
+      }
 
-        c.annotations.push(
-          ...previousChar.annotations.map(a => ({
-            ...a,
-            isFirstCharacter: false,
-            isLastCharacter: false,
-          })),
-        );
-
-        if (index === newCharacters.length - 1) {
-          c.annotations.forEach(a => {
-            if (annotationEndsUuids.includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-
-            if (!nextCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-          });
-        }
+      prevCharAnnotations.forEach(a => {
+        c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
       });
 
-      // The next character can be the new first character of an annotation
-      nextCharAnnotations.forEach(a => {
-        if (!prevCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
-          a.isFirstCharacter = true;
-        }
-      });
-    } else {
-      const nextChar: Character | null = snippetCharacters.value[endIndex + 1];
-      const nextCharAnnotations = nextChar?.annotations ?? [];
+      if (index === newCharacters.length - 1) {
+        c.annotations.forEach(a => {
+          if (annotationEndsUuids.includes(a.uuid)) {
+            a.isLastCharacter = true;
+          }
 
-      nextCharAnnotations.forEach(a => {
+          if (!nextCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
+            a.isLastCharacter = true;
+          }
+        });
+      }
+    });
+
+    // The next character can be the new first character of an annotation
+    nextCharAnnotations.forEach(a => {
+      if (!prevCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
         a.isFirstCharacter = true;
-      });
-
-      console.log('inserting at first position, no inherit');
-    }
+      }
+    });
 
     const charsToDeleteCount: number = endIndex - startIndex + 1;
     snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
+  }
+
+  function getPreviousChar(index: number): Character | null {
+    let char: Character;
+
+    if (index === 0) {
+      if (beforeStartIndex.value === null) {
+        char = null;
+      } else {
+        char = totalCharacters.value[beforeStartIndex.value];
+      }
+    } else {
+      char = snippetCharacters.value[index - 1];
+    }
+
+    return char;
+  }
+
+  function getNextChar(index: number): Character | null {
+    let char: Character;
+
+    if (index === snippetCharacters.value.length - 1) {
+      if (afterEndIndex.value === null) {
+        char = null;
+      } else {
+        char = totalCharacters.value[afterEndIndex.value];
+      }
+    } else {
+      char = snippetCharacters.value[index + 1];
+    }
+
+    return char;
   }
 
   /**
@@ -179,40 +194,32 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
-    if (index !== 0) {
-      const previousChar: Character = snippetCharacters.value[index - 1];
-      const annotations = previousChar.annotations;
+    const previousChar: Character = getPreviousChar(index);
+    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
 
-      // These annotations have ended on the previous char
-      let annotationEndsUuids = annotations.filter(a => a.isLastCharacter).map(a => a.uuid);
+    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
+    let annotationEndsUuids: string[] = prevCharAnnotations
+      .filter(a => a.isLastCharacter)
+      .map(a => a.uuid);
 
-      newCharacters.forEach((c: Character, index: number) => {
-        // First inserted character can be the new last character of the annotation
-        if (index === 0) {
-          previousChar.annotations.forEach(a => {
-            if (a.isLastCharacter) {
-              a.isLastCharacter = false;
-            }
-          });
-        }
+    newCharacters.forEach((c: Character, index: number) => {
+      // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+      if (index === 0) {
+        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
+      }
 
-        c.annotations.push(
-          ...previousChar.annotations.map(a => ({ ...a, isFirstCharacter: false })),
-        );
-
-        if (index === newCharacters.length - 1) {
-          c.annotations.forEach(a => {
-            if (annotationEndsUuids.includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-          });
-        }
+      prevCharAnnotations.forEach(a => {
+        c.annotations.push({ ...a, isFirstCharacter: false });
       });
 
-      // console.log(JSON.parse(JSON.stringify(previousChar.annotations)));
-    } else {
-      console.log('inserting at first position, no inherit');
-    }
+      if (index === newCharacters.length - 1) {
+        c.annotations.forEach(a => {
+          if (annotationEndsUuids.includes(a.uuid)) {
+            a.isLastCharacter = true;
+          }
+        });
+      }
+    });
 
     snippetCharacters.value.splice(index, 0, ...newCharacters);
   }
@@ -226,6 +233,23 @@ export function useCharactersStore() {
    */
   function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number) {
     const charsToDeleteCount: number = endIndex - startIndex;
+
+    const previousChar: Character | null = getPreviousChar(startIndex);
+    const nextChar: Character | null = getNextChar(endIndex);
+    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
+    const nextCharAnnotations: AnnotationReference[] = nextChar?.annotations ?? [];
+
+    prevCharAnnotations.forEach(prevAnno => {
+      if (!nextCharAnnotations.find(nextAnno => nextAnno.uuid === prevAnno.uuid)) {
+        prevAnno.isLastCharacter = true;
+      }
+    });
+
+    nextCharAnnotations.forEach(nextAnno => {
+      if (!prevCharAnnotations.find(prevAnno => prevAnno.uuid === nextAnno.uuid)) {
+        nextAnno.isFirstCharacter = true;
+      }
+    });
 
     snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
   }
