@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import IAnnotation from '../models/IAnnotation';
-import { Annotation } from '../models/types';
+import { Annotation, AnnotationReference, Character } from '../models/types';
 import { useCharactersStore } from './characters';
 
 const annotations = ref<Annotation[]>([]);
@@ -48,6 +48,37 @@ export function useAnnotationStore() {
   }
 
   /**
+   * Updates the character information for each annotation in the `annotations` value.
+   * This function sets the `characterUuids` property of the Annotation object and computes the `text` property for the annotation node.
+   * Called before changes are saved to the database.
+   *
+   * @return {void} This function does not return a value.
+   */
+  function updateCharacterInformation(): void {
+    const charMap: Map<string, Character[]> = new Map();
+
+    // TODO: This might be slow on longer/more annotated texts too...
+    totalCharacters.value.forEach(c => {
+      c.annotations.forEach((a: AnnotationReference) => {
+        const mapValue: Character[] | undefined = charMap.get(a.uuid);
+
+        if (!mapValue) {
+          charMap.set(a.uuid, [c]);
+        } else {
+          charMap.set(a.uuid, [...mapValue, c]);
+        }
+      });
+    });
+
+    annotations.value.forEach((a: Annotation) => {
+      const annotatedCharacters: Character[] = charMap.get(a.data.uuid) ?? [];
+
+      a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
+      a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
+    });
+  }
+
+  /**
    * Updates the statuses of the annotations in the `annotations` value after changes were saved.
    * This function filters out the annotations with a status of 'deleted' to remove them permanently
    * and sets the status of all remaining annotations to 'existing'.
@@ -69,6 +100,7 @@ export function useAnnotationStore() {
     deleteAnnotation,
     initializeAnnotations,
     resetAnnotations,
+    updateCharacterInformation,
     updateAnnotationStatuses,
   };
 }

@@ -19,7 +19,7 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import ICollection from '../models/ICollection';
-import { Annotation, Character, CharacterPostData } from '../models/types';
+import { Annotation, AnnotationReference, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
@@ -80,8 +80,13 @@ const {
   resetCharacters,
   insertSnippetIntoChain,
 } = useCharactersStore();
-const { annotations, initializeAnnotations, resetAnnotations, updateAnnotationStatuses } =
-  useAnnotationStore();
+const {
+  annotations,
+  initializeAnnotations,
+  resetAnnotations,
+  updateCharacterInformation,
+  updateAnnotationStatuses,
+} = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
 
 const resizerWidth = 5;
@@ -212,14 +217,7 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Metadata could be saved, text not');
     }
 
-    const annotationPostData: Annotation[] = annotations.value.map((a: Annotation) => {
-      return {
-        ...a,
-        characterUuids: totalCharacters.value
-          .filter((c: Character) => c.annotations.some(ca => ca.uuid === a.data.uuid))
-          .map((c: Character) => c.data.uuid),
-      };
-    });
+    updateCharacterInformation();
 
     url = `http://localhost:8080/api/collections/${uuid}/annotations`;
     response = await fetch(url, {
@@ -230,7 +228,7 @@ async function handleSaveChanges(): Promise<void> {
         'Content-Type': 'application/json',
       },
       referrerPolicy: 'no-referrer',
-      body: JSON.stringify(annotationPostData),
+      body: JSON.stringify(annotations.value),
     });
 
     if (!response.ok) {
