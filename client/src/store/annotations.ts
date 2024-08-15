@@ -100,6 +100,11 @@ export function useAnnotationStore() {
    */
   function setEditStatus(): void {
     annotations.value.forEach((a: Annotation) => {
+      // TODO: Do this, but only for non-truncated annotations!!
+      // if (a.characterUuids.length === 0) {
+      //   a.status = 'deleted';
+      // }
+
       if (a.status === 'deleted') {
         return;
       }
@@ -113,8 +118,8 @@ export function useAnnotationStore() {
 
   /**
    * Updates the statuses of the annotations in the `annotations` value AFTER changes were saved.
-   * This function filters out the annotations with a status of 'deleted' to remove them permanently,
-   * sets the status of all remaining annotations to 'existing' and sets the `initialData` property to the current annotation data.
+   * This function filters out the annotations with a status of `deleted` to remove them permanently,
+   * sets the status of all remaining annotations to `existing` and sets the `initialData` property to the current annotation data.
    *
    * @return {void} This function does not return a value.
    */
