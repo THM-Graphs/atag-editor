@@ -42,7 +42,7 @@ export function useCharactersStore() {
       snippetCharacters.value = [...totalCharacters.value];
     }
 
-    initialCharacters.value = [...snippetCharacters.value];
+    initialCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
   }
 
   /**

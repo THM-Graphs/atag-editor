@@ -19,7 +19,7 @@ export function capitalize(inputString: string): string {
  * @param {Record<string, string | number>} obj2 - The second object to compare.
  * @return {boolean} Returns true if the objects are equal, otherwise false.
  */
-export function objectsAreEqual(
+export function areObjectsEqual(
   obj1: Record<string, string | number>,
   obj2: Record<string, string | number>,
 ): boolean {
@@ -32,6 +32,28 @@ export function objectsAreEqual(
 
   for (const key of keys1) {
     if (!keys2.includes(key) || obj1[key] !== obj2[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Checks if two sets are equal by comparing their sizes and elements. Used for comparing
+ * character annotations.
+ *
+ * @param {Set<string>} setA - The first set to compare.
+ * @param {Set<string>} setB - The second set to compare.
+ * @return {boolean} Returns true if the sets are equal, otherwise false.
+ */
+export function areSetsEqual(setA: Set<string>, setB: Set<string>) {
+  if (setA.size !== setB.size) {
+    return false;
+  }
+
+  for (let item of setA) {
+    if (!setB.has(item)) {
       return false;
     }
   }

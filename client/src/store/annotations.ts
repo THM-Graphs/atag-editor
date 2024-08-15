@@ -4,6 +4,7 @@ import { Annotation, AnnotationReference, Character } from '../models/types';
 import { useCharactersStore } from './characters';
 
 const annotations = ref<Annotation[]>([]);
+const initialAnnotations = ref<Annotation[]>([]);
 
 const { totalCharacters } = useCharactersStore();
 
@@ -33,6 +34,8 @@ export function useAnnotationStore() {
         status: 'existing',
       };
     });
+
+    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
   }
 
   function addAnnotation(annotation: Annotation): void {
@@ -126,6 +129,7 @@ export function useAnnotationStore() {
 
   return {
     annotations,
+    initialAnnotations,
     addAnnotation,
     deleteAnnotation,
     initializeAnnotations,

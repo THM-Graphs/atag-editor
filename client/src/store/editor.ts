@@ -1,10 +1,13 @@
 import { ref } from 'vue';
+import { useAnnotationStore } from './annotations';
 import { useCollectionStore } from './collection';
 import { useCharactersStore } from './characters';
-import { objectsAreEqual } from '../helper/helper';
+import { areObjectsEqual, areSetsEqual } from '../helper/helper';
+import { Annotation } from '../models/types';
 
 const { collection, initialCollection } = useCollectionStore();
 const { snippetCharacters, initialCharacters } = useCharactersStore();
+const { annotations, initialAnnotations } = useAnnotationStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
 
@@ -36,10 +39,9 @@ export function useEditorStore() {
     window.getSelection().addRange(range);
   }
 
-  // TODO: Implement comparing for changed annotations
   function hasUnsavedChanges(): boolean {
     // Compare collection properties
-    if (!objectsAreEqual(collection.value, initialCollection.value)) {
+    if (!areObjectsEqual(collection.value, initialCollection.value)) {
       return true;
     }
 
@@ -48,14 +50,39 @@ export function useEditorStore() {
       return true;
     }
 
-    // Compare characters values
+    // Compare annotations length
+    if (
+      annotations.value.filter(a => a.status !== 'deleted').length !==
+      initialAnnotations.value.length
+    ) {
+      return true;
+    }
+
+    // Compare characters values and annotations
     for (let index = 0; index < snippetCharacters.value.length; index++) {
+      const annotationsAreEqual = areSetsEqual(
+        new Set(snippetCharacters.value[index].annotations.map(a => a.uuid)),
+        new Set(initialCharacters.value[index].annotations.map(a => a.uuid)),
+      );
+
       if (
-        !objectsAreEqual(snippetCharacters.value[index].data, initialCharacters.value[index].data)
+        snippetCharacters.value[index].data.uuid !== initialCharacters.value[index].data.uuid ||
+        !annotationsAreEqual
       ) {
         return true;
       }
     }
+
+    // Check annotation status and data
+    annotations.value.forEach((a: Annotation) => {
+      if (a.status === 'deleted' || a.status === 'created') {
+        return true;
+      }
+
+      if (!areObjectsEqual(a.data, a.initialData)) {
+        return true;
+      }
+    });
 
     return false;
   }

@@ -139,10 +139,10 @@ async function getCollectionByUuid(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  // TODO: Temporarily disabled because annotations are not yet checked in the function
-  // if (!hasUnsavedChanges()) {
-  //   return;
-  // }
+  if (!hasUnsavedChanges()) {
+    console.log('no changes made, no request needed');
+    return;
+  }
 
   insertSnippetIntoChain();
 
