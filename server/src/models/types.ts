@@ -6,6 +6,7 @@ export type Annotation = {
   data: IAnnotation;
   endUuid: string;
   initialData: IAnnotation;
+  isTruncated: boolean;
   startUuid: string;
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };

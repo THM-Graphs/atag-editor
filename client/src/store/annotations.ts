@@ -6,7 +6,7 @@ import { useCharactersStore } from './characters';
 const annotations = ref<Annotation[]>([]);
 const initialAnnotations = ref<Annotation[]>([]);
 
-const { totalCharacters } = useCharactersStore();
+const { totalCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
 
 /**
  * Store for managing the state of annotations inside an editor instance. When the component is mounted,
@@ -25,11 +25,28 @@ export function useAnnotationStore() {
           .map(cc => cc.data.uuid),
       ];
 
+      const isLeftTruncated: boolean =
+        beforeStartIndex.value &&
+        totalCharacters.value[beforeStartIndex.value].annotations.some(
+          a => a.uuid === annotation.uuid,
+        );
+
+      const isRightTruncated: boolean =
+        afterEndIndex.value &&
+        totalCharacters.value[afterEndIndex.value].annotations.some(
+          a => a.uuid === annotation.uuid,
+        );
+
+      if (isLeftTruncated || isRightTruncated) {
+        console.log(annotation);
+      }
+
       return {
         characterUuids: charUuids,
         data: { ...annotation },
         endUuid: charUuids[charUuids.length - 1],
         initialData: { ...annotation },
+        isTruncated: isLeftTruncated || isRightTruncated,
         startUuid: charUuids[0],
         status: 'existing',
       };

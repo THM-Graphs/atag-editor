@@ -7,6 +7,7 @@ import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
+import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation } from '../models/types';
 
@@ -70,6 +71,9 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         ></div>
       </div>
       <div class="status-indicator" :class="annotation.status">{{ annotation.status }}</div>
+      <div v-if="annotation.isTruncated" class="truncated-indicator">
+        <Tag severity="warn" value="Truncated"></Tag>
+      </div>
     </template>
     <form>
       <div
