@@ -5,6 +5,7 @@ export type Annotation = {
   characterUuids: string[];
   data: IAnnotation;
   endUuid: string;
+  initialData: IAnnotation;
   startUuid: string;
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };

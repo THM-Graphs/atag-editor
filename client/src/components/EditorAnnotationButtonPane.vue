@@ -3,9 +3,10 @@ import Button from 'primevue/button';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/helper';
-import { Annotation, Character } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
+import { Annotation, Character } from '../models/types';
+import IAnnotation from '../models/IAnnotation';
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
@@ -85,23 +86,26 @@ function findSpansWithinBoundaries(
 }
 
 function createNewAnnotation(type: string, characters: Character[]): Annotation {
+  // TODO: This should come from the guidelines
+  const data: IAnnotation = {
+    comment: '',
+    commentInternal: '',
+    // TODO: Update with Cypher
+    endIndex: 0,
+    originalText: '',
+    // TODO: Update with Cypher
+    startIndex: 0,
+    subtype: '',
+    text: characters.map((char: Character) => char.data.text).join(''),
+    type: type,
+    url: '',
+    uuid: crypto.randomUUID(),
+  };
+
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
-    // TODO: This should come from the guidelines
-    data: {
-      comment: '',
-      commentInternal: '',
-      // TODO: Update with Cypher
-      endIndex: 0,
-      originalText: '',
-      // TODO: Update with Cypher
-      startIndex: 0,
-      subtype: '',
-      text: characters.map((char: Character) => char.data.text).join(''),
-      type: type,
-      url: '',
-      uuid: crypto.randomUUID(),
-    },
+    data: data,
+    initialData: data,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,
     status: 'created',

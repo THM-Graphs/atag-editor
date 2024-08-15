@@ -84,7 +84,7 @@ const {
   annotations,
   initializeAnnotations,
   resetAnnotations,
-  updateCharacterInformation,
+  updateAnnotationsBeforeSave,
   updateAnnotationStatuses,
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
@@ -217,7 +217,7 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Metadata could be saved, text not');
     }
 
-    updateCharacterInformation();
+    updateAnnotationsBeforeSave();
 
     url = `http://localhost:8080/api/collections/${uuid}/annotations`;
     response = await fetch(url, {
@@ -235,9 +235,8 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Neither metadata nor text could be saved');
     }
 
+    // TODO: Does the annotations array also need an initial value?
     updateAnnotationStatuses();
-
-    // TODO: Add initial state to annotationsStore?
     initialCollection.value = { ...collection.value };
     initialCharacters.value = [...snippetCharacters.value];
     showMessage('success');

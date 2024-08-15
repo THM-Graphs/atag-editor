@@ -26,8 +26,9 @@ export function useAnnotationStore() {
 
       return {
         characterUuids: charUuids,
-        data: annotation,
+        data: { ...annotation },
         endUuid: charUuids[charUuids.length - 1],
+        initialData: { ...annotation },
         startUuid: charUuids[0],
         status: 'existing',
       };
@@ -45,6 +46,16 @@ export function useAnnotationStore() {
 
   function resetAnnotations(): void {
     annotations.value = [];
+  }
+
+  /**
+   * Updates the annotations before saving changes to the database.
+   *
+   * @return {void} This function does not return a value.
+   */
+  function updateAnnotationsBeforeSave(): void {
+    updateCharacterInformation();
+    setEditStatus();
   }
 
   /**
@@ -79,18 +90,37 @@ export function useAnnotationStore() {
   }
 
   /**
-   * Updates the statuses of the annotations in the `annotations` value after changes were saved.
-   * This function filters out the annotations with a status of 'deleted' to remove them permanently
-   * and sets the status of all remaining annotations to 'existing'.
+   * Updates the edit status of annotations in the `annotations` value.
+   * Iterates over the annotations and sets the status to 'edited' if the current data does not match the initial data.
    *
    * @return {void} This function does not return a value.
+   */
+  function setEditStatus(): void {
+    annotations.value.forEach((a: Annotation) => {
+      if (a.status === 'deleted') {
+        return;
+      }
+
+      if (JSON.stringify(a.data) !== JSON.stringify(a.initialData)) {
+        console.log(a);
+        a.status = 'edited';
+      }
+    });
+  }
+
+  /**
+   * Updates the statuses of the annotations in the `annotations` value AFTER changes were saved.
+   * This function filters out the annotations with a status of 'deleted' to remove them permanently,
+   * sets the status of all remaining annotations to 'existing' and sets the `initialData` property to the current annotation data.
    *
+   * @return {void} This function does not return a value.
    */
   function updateAnnotationStatuses(): void {
     annotations.value = annotations.value.filter((a: Annotation) => a.status !== 'deleted');
 
     annotations.value.forEach((a: Annotation) => {
       a.status = 'existing';
+      a.initialData = { ...a.data };
     });
   }
 
@@ -100,7 +130,7 @@ export function useAnnotationStore() {
     deleteAnnotation,
     initializeAnnotations,
     resetAnnotations,
-    updateCharacterInformation,
     updateAnnotationStatuses,
+    updateAnnotationsBeforeSave,
   };
 }
