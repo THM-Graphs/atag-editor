@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
+import { useCharactersStore } from '../store/characters';
+import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
 import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
+import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
+import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
-import { useEditorStore } from '../store/editor';
-import { useCharactersStore } from '../store/characters';
 
 export interface TreeNode {
   annotationCount?: number;
@@ -20,14 +22,37 @@ export interface TreeNode {
 }
 
 const { newRangeAnchorUuid, placeCursor } = useEditorStore();
-const { snippetCharacters } = useCharactersStore();
+const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
-const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
-  annotations.value.filter(a => a.status !== 'deleted'),
-);
+
+const displayedAnnotations = ref<Annotation[]>([]);
+
+const selectedView = ref<'current' | 'all'>('current');
+const isCurrentSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'current');
+const isAllSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'all');
 
 const expandedKeys = ref<Record<string, boolean>>({});
+
+watch(
+  [afterEndIndex, beforeStartIndex, annotations, selectedView],
+  () => {
+    if (selectedView.value === 'current') {
+      let charUuids: Set<string> = new Set();
+
+      snippetCharacters.value.forEach(c => {
+        c.annotations.forEach(a => charUuids.add(a.uuid));
+      });
+
+      displayedAnnotations.value = annotations.value.filter((annotation: Annotation) => {
+        return charUuids.has(annotation.data.uuid) && annotation.status !== 'deleted';
+      });
+    } else {
+      displayedAnnotations.value = annotations.value.filter(a => a.status !== 'deleted');
+    }
+  },
+  { deep: true, immediate: true },
+);
 
 const nodes: ComputedRef<TreeNode[]> = computed(() => {
   const nodes: TreeNode[] = [];
@@ -124,6 +149,10 @@ function handleAnnotationClick(event: MouseEvent): void {
   newRangeAnchorUuid.value = lastAnnotatedChar.data.uuid;
   placeCursor();
 }
+
+function toggleViewMode(direction: 'current' | 'all'): void {
+  selectedView.value = direction;
+}
 </script>
 
 <template>
@@ -131,14 +160,36 @@ function handleAnnotationClick(event: MouseEvent): void {
     <template #header>
       <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
     </template>
-    <Button type="button" icon="pi pi-plus" size="small" label="Expand All" @click="expandAll" />
-    <Button
-      type="button"
-      icon="pi pi-minus"
-      size="small"
-      label="Collapse All"
-      @click="collapseAll"
-    />
+    <div class="tab-buttons">
+      <ButtonGroup class="w-full flex">
+        <ToggleButton
+          :model-value="isCurrentSelected"
+          class="w-full"
+          onLabel="Current"
+          offLabel="Current"
+          badge="2"
+          @change="toggleViewMode('current')"
+        />
+        <ToggleButton
+          :model-value="isAllSelected"
+          class="w-full"
+          onLabel="All"
+          offLabel="All"
+          badge="2"
+          @change="toggleViewMode('all')"
+        />
+      </ButtonGroup>
+    </div>
+    <div class="collapse-buttons">
+      <Button type="button" icon="pi pi-plus" size="small" label="Expand All" @click="expandAll" />
+      <Button
+        type="button"
+        icon="pi pi-minus"
+        size="small"
+        label="Collapse All"
+        @click="collapseAll"
+      />
+    </div>
     <div class="tree">
       <div class="flex justify-center">
         <Tree
