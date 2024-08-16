@@ -35,11 +35,10 @@ export default class AnnotationService {
     WITH allAnnotations
 
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)
-    MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
 
     // 2. Handle other annotations (merge)
     UNWIND allAnnotations AS ann
-    WITH ann, t, ch
+    WITH ann, t
     WHERE ann.status <> 'deleted'
 
     // Create (new) annotation node
@@ -51,17 +50,23 @@ export default class AnnotationService {
     // Create edge to text node
     MERGE (t)-[:HAS_ANNOTATION]->(a)
 
-    WITH t, a, ann, ch
-    WHERE ch.uuid IN ann.characterUuids OR ch.uuid = ann.startUuid OR ch.uuid = ann.endUuid
+    // Handle character relationships
+    WITH a, ann
+    UNWIND ann.characterUuids AS uuid
+    MATCH (c:Character {uuid: uuid})
+    MERGE (c)-[:CHARACTER_HAS_ANNOTATION]->(a)
 
-    // Create edges
-    MERGE (ch)-[:CHARACTER_HAS_ANNOTATION]->(a)
-    FOREACH (_ IN CASE WHEN ch.uuid = ann.startUuid THEN [1] ELSE [] END |
-        MERGE (a)-[:STANDOFF_START]->(ch))
-    FOREACH (_ IN CASE WHEN ch.uuid = ann.endUuid THEN [1] ELSE [] END |
-        MERGE (a)-[:STANDOFF_END]->(ch))
-        
+    // Handle standoff relationships
+    WITH a, ann
+    MATCH (sc:Character {uuid: ann.startUuid})
+    MERGE (a)-[:STANDOFF_START]->(sc)
+
+    WITH a, ann
+    MATCH (ec:Character {uuid: ann.endUuid})
+    MERGE (a)-[:STANDOFF_END]->(ec)
+
     RETURN collect(distinct a {.*}) AS annotations
+
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, annotations });

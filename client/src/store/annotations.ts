@@ -101,12 +101,16 @@ export function useAnnotationStore() {
       });
     });
 
-    annotations.value.forEach((a: Annotation) => {
-      const annotatedCharacters: Character[] = charMap.get(a.data.uuid) ?? [];
+    annotations.value
+      .filter((a: Annotation) => a.status !== 'deleted')
+      .forEach((a: Annotation) => {
+        const annotatedCharacters: Character[] = charMap.get(a.data.uuid) ?? [];
 
-      a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
-      a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
-    });
+        a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
+        a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
+        a.startUuid = annotatedCharacters[0].data.uuid ?? '';
+        a.endUuid = annotatedCharacters[annotatedCharacters.length - 1].data.uuid ?? '';
+      });
   }
 
   /**
