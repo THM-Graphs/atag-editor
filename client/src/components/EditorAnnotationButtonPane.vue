@@ -19,6 +19,10 @@ function handleCreateAnnotation(event: MouseEvent) {
 
   const { range, type } = getSelectionData();
 
+  if (!range || type === 'None') {
+    return;
+  }
+
   const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
 
   if (commonAncestorContainer?.nodeType !== Node.ELEMENT_NODE) {
@@ -106,6 +110,7 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
     characterUuids: characters.map((char: Character) => char.data.uuid),
     data: data,
     initialData: data,
+    isTruncated: false,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,
     status: 'created',

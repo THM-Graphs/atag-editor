@@ -152,7 +152,7 @@ export function removeFormatting(text: string): string {
  */
 export function getSelectionData(): { selection: Selection; range: Range; type: string } {
   const selection: Selection = window.getSelection();
-  const range: Range = selection.getRangeAt(0);
+  const range: Range | null = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
   const type: string = selection.type;
 
   return { selection, range, type };
