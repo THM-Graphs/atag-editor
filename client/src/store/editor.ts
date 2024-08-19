@@ -10,29 +10,45 @@ const { snippetCharacters, initialCharacters } = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
+// Annotations that are in the current text selection (Caret or Range)
+const selectedAnnotations = ref<Annotation[]>([]);
 
 /**
  * Store for editor state and operations (cursor placement, change detection etc.). When the component is unmounted,
  * the store is reset.
  */
 export function useEditorStore() {
-  // TODO: This takes very long on bigger texts -> improve
+  /**
+   * Places the cursor at the specified position within the editor.
+   *
+   * If a new range anchor UUID is provided, the cursor is placed at the corresponding element.
+   * Otherwise, the cursor is placed at the first span element within the #text container, or at the #text container itself if no span element is found.
+   *
+   * @return {void}
+   */
   function placeCursor(): void {
     const range: Range = document.createRange();
     let element: HTMLDivElement | HTMLSpanElement | null;
+    let offset: 0 | 1 = 1;
 
     if (newRangeAnchorUuid.value) {
       element = document.getElementById(newRangeAnchorUuid.value) as HTMLSpanElement;
     } else {
-      element = document.querySelector('#text') as HTMLDivElement;
+      element = document.querySelector('#text > span') as HTMLSpanElement;
+
+      // Offset needs to be zero since the caret should be placed BEFORE the first matched span element
+      if (element) {
+        offset = 0;
+      }
+
+      // If no span element is found (=no text), place the caret at the #text container
+      if (!element) {
+        element = document.querySelector('#text') as HTMLDivElement;
+      }
     }
 
-    if (!element) {
-      return;
-    }
-
-    range.setStart(element, 1);
-    range.setEnd(element, 1);
+    range.setStart(element, offset);
+    range.setEnd(element, offset);
     range.collapse(true);
 
     window.getSelection().removeAllRanges();
@@ -93,6 +109,7 @@ export function useEditorStore() {
 
   return {
     newRangeAnchorUuid,
+    selectedAnnotations,
     hasUnsavedChanges,
     placeCursor,
     resetEditor,

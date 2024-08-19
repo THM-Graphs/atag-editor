@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onUpdated, ref } from 'vue';
+import { onUpdated, ref, watch } from 'vue';
+import { useTextSelection } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import {
@@ -13,16 +14,17 @@ import {
 } from '../helper/helper';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
-import { Annotation, Character } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
+import { Annotation, Character } from '../models/types';
 
 onUpdated(() => {
   placeCursor();
 });
 
-const { newRangeAnchorUuid, hasUnsavedChanges, placeCursor } = useEditorStore();
+const { newRangeAnchorUuid, selectedAnnotations, hasUnsavedChanges, placeCursor } =
+  useEditorStore();
 const { collection } = useCollectionStore();
 const {
   afterEndIndex,
@@ -35,13 +37,15 @@ const {
   previousCharacters,
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
-
 const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
+const state = useTextSelection();
 
 const keepTextOnPagination = ref<boolean>(false);
 
 const editorRef = ref<HTMLDivElement>(null);
+
+watch(state.ranges, updateAnnotationFormPanel);
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -583,6 +587,88 @@ function createNewCharacter(char: string): Character {
     },
     annotations: [],
   };
+}
+
+function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanElement): Set<string> {
+  const annoUuids: Set<string> = new Set();
+
+  let current: HTMLSpanElement = firstChar;
+
+  while (current && current !== lastChar) {
+    [...current.children].forEach(c => {
+      annoUuids.add((c as HTMLSpanElement).dataset.annoUuid || '');
+    });
+
+    current = current.nextElementSibling as HTMLSpanElement;
+  }
+
+  [...lastChar.children].forEach(c => {
+    annoUuids.add((c as HTMLSpanElement).dataset.annoUuid || '');
+  });
+
+  return annoUuids;
+}
+
+// TODO: Move this to annotation panel directly? Uses store anyway
+function updateAnnotationFormPanel(): void {
+  // On initial page load there is no range
+  if (state.ranges.value.length < 1 || state.selection.value.type === 'None') {
+    return;
+  }
+
+  const commonAncestorContainer: Node | undefined | Element =
+    state.ranges.value[0].commonAncestorContainer;
+
+  // Selection is outside of text component (with element node as container)
+  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
+    console.log('outside of text component');
+    return;
+  }
+
+  // Selection is outside of text component (with text node as container)
+  if (
+    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
+    !commonAncestorContainer.parentElement.closest('#text')
+  ) {
+    console.log('outside of text component');
+    return;
+  }
+
+  let firstSpan: HTMLSpanElement;
+  let lastSpan: HTMLSpanElement;
+  let annotationUuids: Set<string>;
+
+  if (state.selection.value.type === 'Caret') {
+    // This happens when there is not text and the range will has to be set to the whole editor div instead of a span
+    if (
+      isEditorElement(state.ranges.value[0].startContainer) ||
+      isEditorElement(state.ranges.value[0].endContainer)
+    ) {
+      firstSpan = editorRef.value.querySelector('span');
+      lastSpan = firstSpan;
+      annotationUuids = firstSpan ? findAnnotationUuids(firstSpan, firstSpan) : new Set();
+
+      selectedAnnotations.value = annotations.value.filter(a => annotationUuids.has(a.data.uuid));
+      return;
+    } else {
+      firstSpan = getParentCharacterSpan(state.ranges.value[0].startContainer);
+      lastSpan = getParentCharacterSpan(state.ranges.value[0].endContainer);
+
+      if (firstSpan === lastSpan) {
+        if (state.ranges.value[0].startOffset === 0) {
+          lastSpan = (firstSpan.previousElementSibling as HTMLSpanElement) ?? firstSpan;
+        } else if (state.ranges.value[0].endOffset === 1) {
+          lastSpan = (firstSpan.nextElementSibling as HTMLSpanElement) ?? firstSpan;
+        }
+      }
+    }
+  } else {
+    firstSpan = getParentCharacterSpan(state.ranges.value[0].startContainer);
+    lastSpan = getParentCharacterSpan(state.ranges.value[0].endContainer);
+  }
+
+  annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
+  selectedAnnotations.value = annotations.value.filter(a => annotationUuids.has(a.data.uuid));
 }
 </script>
 
