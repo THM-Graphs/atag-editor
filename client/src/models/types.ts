@@ -8,7 +8,7 @@ export type Annotation = {
   initialData: IAnnotation;
   isTruncated: boolean;
   startUuid: string;
-  status: 'existing' | 'created' | 'deleted' | 'edited';
+  status: 'existing' | 'created' | 'deleted';
 };
 
 export type AnnotationType = {

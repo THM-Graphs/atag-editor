@@ -108,13 +108,14 @@ export function useAnnotationStore() {
    */
   function updateAnnotationsBeforeSave(): void {
     updateCharacterInformation();
-    setEditStatus();
   }
 
   /**
    * Updates the character information for each annotation in the `annotations` value.
    * This function sets the `characterUuids` property of the Annotation object and computes the `text` property for the annotation node.
-   * Called before changes are saved to the database.
+   * If there is no annotated character (because the annotated text was deleted), the status of the annotation is set to `deleted`.
+   *
+   *  Called before changes are saved to the database.
    *
    * @return {void} This function does not return a value.
    */
@@ -139,33 +140,15 @@ export function useAnnotationStore() {
       .forEach((a: Annotation) => {
         const annotatedCharacters: Character[] = charMap.get(a.data.uuid) ?? [];
 
-        a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
-        a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
-        a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
-        a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
+        if (annotatedCharacters.length === 0) {
+          a.status = 'deleted';
+        } else {
+          a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
+          a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
+          a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
+          a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
+        }
       });
-  }
-
-  /**
-   * Updates the edit status of annotations in the `annotations` value.
-   * Iterates over the annotations and sets the status to 'edited' if the current data does not match the initial data.
-   *
-   * @return {void} This function does not return a value.
-   */
-  function setEditStatus(): void {
-    annotations.value.forEach((a: Annotation) => {
-      if (a.characterUuids.length === 0) {
-        a.status = 'deleted';
-      }
-
-      if (a.status === 'deleted') {
-        return;
-      }
-
-      if (JSON.stringify(a.data) !== JSON.stringify(a.initialData)) {
-        a.status = 'edited';
-      }
-    });
   }
 
   /**
