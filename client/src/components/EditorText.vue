@@ -13,9 +13,10 @@ import {
 } from '../helper/helper';
 import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
-import { Character } from '../models/types';
-import { useFilterStore } from '../store/filter';
+import { Annotation, Character } from '../models/types';
+import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
+import { useFilterStore } from '../store/filter';
 
 onUpdated(() => {
   placeCursor();
@@ -24,7 +25,10 @@ onUpdated(() => {
 const { newRangeAnchorUuid, hasUnsavedChanges, placeCursor } = useEditorStore();
 const { collection } = useCollectionStore();
 const {
+  afterEndIndex,
+  beforeStartIndex,
   snippetCharacters,
+  totalCharacters,
   deleteCharactersBetweenIndexes,
   insertCharactersAtIndex,
   nextCharacters,
@@ -32,6 +36,7 @@ const {
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
 
+const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
 const keepTextOnPagination = ref<boolean>(false);
@@ -477,6 +482,38 @@ function handlePaginationUp(event: MouseEvent): void {
   const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
 
   previousCharacters(mode);
+
+  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
+
+  let charUuids: Set<string> = new Set();
+
+  snippetCharacters.value.forEach(c => {
+    c.annotations.forEach(a => charUuids.add(a.uuid));
+  });
+
+  annotations.value.forEach((annotation: Annotation) => {
+    if (!charUuids.has(annotation.data.uuid)) {
+      annotation.isTruncated = false;
+    } else {
+      const isLeftTruncated: boolean =
+        beforeStartIndex.value &&
+        totalCharacters.value[beforeStartIndex.value].annotations.some(
+          a => a.uuid === annotation.data.uuid,
+        );
+
+      const isRightTruncated: boolean =
+        afterEndIndex.value &&
+        totalCharacters.value[afterEndIndex.value].annotations.some(
+          a => a.uuid === annotation.data.uuid,
+        );
+
+      if (isLeftTruncated || isRightTruncated) {
+        annotation.isTruncated = true;
+      } else {
+        annotation.isTruncated = false;
+      }
+    }
+  });
 }
 
 function handlePaginationDown(event: MouseEvent): void {
@@ -488,6 +525,38 @@ function handlePaginationDown(event: MouseEvent): void {
   const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
 
   nextCharacters(mode);
+
+  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
+
+  let charUuids: Set<string> = new Set();
+
+  snippetCharacters.value.forEach(c => {
+    c.annotations.forEach(a => charUuids.add(a.uuid));
+  });
+
+  annotations.value.forEach((annotation: Annotation) => {
+    if (!charUuids.has(annotation.data.uuid)) {
+      annotation.isTruncated = false;
+    } else {
+      const isLeftTruncated: boolean =
+        beforeStartIndex.value &&
+        totalCharacters.value[beforeStartIndex.value].annotations.some(
+          a => a.uuid === annotation.data.uuid,
+        );
+
+      const isRightTruncated: boolean =
+        afterEndIndex.value &&
+        totalCharacters.value[afterEndIndex.value].annotations.some(
+          a => a.uuid === annotation.data.uuid,
+        );
+
+      if (isLeftTruncated || isRightTruncated) {
+        annotation.isTruncated = true;
+      } else {
+        annotation.isTruncated = false;
+      }
+    }
+  });
 }
 
 async function handleCopy(): Promise<void> {

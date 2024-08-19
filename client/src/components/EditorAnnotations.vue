@@ -9,6 +9,7 @@ import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
+import Tag from 'primevue/tag';
 import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
 
@@ -228,6 +229,11 @@ function toggleViewMode(direction: 'current' | 'all'): void {
                 :data-annotation-uuid="slotProps.node.data.data.uuid"
               >
                 <!-- TODO: Fix overflow -->
+                <Tag
+                  v-if="slotProps.node.data.isTruncated"
+                  icon="pi pi-exclamation-triangle"
+                  severity="warn"
+                ></Tag>
                 {{ slotProps.node.label }}
               </div>
             </div>

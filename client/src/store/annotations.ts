@@ -6,7 +6,8 @@ import { useCharactersStore } from './characters';
 const annotations = ref<Annotation[]>([]);
 const initialAnnotations = ref<Annotation[]>([]);
 
-const { totalCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
+const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
+  useCharactersStore();
 
 /**
  * Store for managing the state of annotations inside an editor instance. When the component is mounted,
@@ -50,6 +51,38 @@ export function useAnnotationStore() {
         startUuid: charUuids[0],
         status: 'existing',
       };
+    });
+
+    // TODO: Duplicate functionality with character pagination methods -> simplify
+
+    let charUuids: Set<string> = new Set();
+
+    snippetCharacters.value.forEach(c => {
+      c.annotations.forEach(a => charUuids.add(a.uuid));
+    });
+
+    annotations.value.forEach((annotation: Annotation) => {
+      if (!charUuids.has(annotation.data.uuid)) {
+        annotation.isTruncated = false;
+      } else {
+        const isLeftTruncated: boolean =
+          beforeStartIndex.value &&
+          totalCharacters.value[beforeStartIndex.value].annotations.some(
+            a => a.uuid === annotation.data.uuid,
+          );
+
+        const isRightTruncated: boolean =
+          afterEndIndex.value &&
+          totalCharacters.value[afterEndIndex.value].annotations.some(
+            a => a.uuid === annotation.data.uuid,
+          );
+
+        if (isLeftTruncated || isRightTruncated) {
+          annotation.isTruncated = true;
+        } else {
+          annotation.isTruncated = false;
+        }
+      }
     });
 
     initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
@@ -108,8 +141,8 @@ export function useAnnotationStore() {
 
         a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
         a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
-        a.startUuid = annotatedCharacters[0].data.uuid ?? '';
-        a.endUuid = annotatedCharacters[annotatedCharacters.length - 1].data.uuid ?? '';
+        a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
+        a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
       });
   }
 
@@ -121,17 +154,15 @@ export function useAnnotationStore() {
    */
   function setEditStatus(): void {
     annotations.value.forEach((a: Annotation) => {
-      // TODO: Do this, but only for non-truncated annotations!!
-      // if (a.characterUuids.length === 0) {
-      //   a.status = 'deleted';
-      // }
+      if (a.characterUuids.length === 0) {
+        a.status = 'deleted';
+      }
 
       if (a.status === 'deleted') {
         return;
       }
 
       if (JSON.stringify(a.data) !== JSON.stringify(a.initialData)) {
-        console.log(a);
         a.status = 'edited';
       }
     });
