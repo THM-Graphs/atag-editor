@@ -46,10 +46,13 @@ export default class CharacterService {
     uuidEnd: string | null,
     characters: ICharacter[],
   ): Promise<ICharacter[]> {
+    const text: string = characters.map(c => c.text).join('');
+
     const query: string = `
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)
-    WITH t.uuid as uuidText
-    CALL atag.chains.update(uuidText, $uuidStart, $uuidEnd, $characters, {
+    SET t.text = $text
+    WITH t
+    CALL atag.chains.update(t.uuid, $uuidStart, $uuidEnd, $characters, {
       textLabel: "Text",
       elementLabel: "Character",
       relationshipType: "NEXT_CHARACTER"
@@ -63,6 +66,7 @@ export default class CharacterService {
       uuidStart,
       uuidEnd,
       characters,
+      text,
     });
 
     return result.records[0]?.get('characters');
