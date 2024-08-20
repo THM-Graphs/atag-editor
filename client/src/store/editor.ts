@@ -10,8 +10,6 @@ const { snippetCharacters, initialCharacters } = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
-// Annotations that are in the current text selection (Caret or Range)
-const selectedAnnotations = ref<Annotation[]>([]);
 
 /**
  * Store for editor state and operations (cursor placement, change detection etc.). When the component is unmounted,
@@ -115,7 +113,6 @@ export function useEditorStore() {
 
   return {
     newRangeAnchorUuid,
-    selectedAnnotations,
     hasUnsavedChanges,
     placeCursor,
     resetEditor,
