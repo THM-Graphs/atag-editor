@@ -53,7 +53,6 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
       firstSpan = document.querySelector('#text span');
       lastSpan = firstSpan;
       annotationUuids = firstSpan ? findAnnotationUuids(firstSpan, firstSpan) : new Set();
-      console.log('compute');
 
       return annotations.value.filter(a => annotationUuids.has(a.data.uuid));
     } else {
@@ -74,7 +73,6 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
   }
 
   annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
-  console.log('compute');
 
   return annotations.value.filter(a => annotationUuids.has(a.data.uuid));
 });

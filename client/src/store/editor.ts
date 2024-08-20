@@ -47,6 +47,13 @@ export function useEditorStore() {
       }
     }
 
+    // This is the case when newRangeAnchorUuid points to a character that was deleted after cancel -> span can't be matched
+    // TODO: Fix this? (Set range anchor to first/last span in text, ...)
+    if (!element) {
+      return;
+    }
+
+    console.log(element);
     range.setStart(element, offset);
     range.setEnd(element, offset);
     range.collapse(true);
