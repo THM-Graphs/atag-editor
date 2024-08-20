@@ -33,87 +33,104 @@
       {
         "type": "emphasised",
         "category": "edition",
-        "text": "in rubro"
+        "text": "in rubro",
+        "defaultSelected": true
       },
       {
         "type": "expansion",
         "category": "edition",
-        "text": "expansio"
+        "text": "expansio",
+        "defaultSelected": true
       },
       {
         "type": "nonLinear",
         "category": "edition",
-        "text": "supra lineam"
+        "text": "supra lineam",
+        "defaultSelected": true
       },
       {
         "type": "marginNote",
         "category": "edition",
-        "text": "in margine"
+        "text": "in margine",
+        "defaultSelected": true
       },
       {
         "type": "intervention",
         "category": "edition",
-        "text": "correxit"
+        "text": "correxit",
+        "defaultSelected": true
       },
       {
         "type": "inRasura",
         "category": "edition",
-        "text": "in rasura"
+        "text": "in rasura",
+        "defaultSelected": true
       },
       {
         "type": "deleted",
         "category": "edition",
-        "text": "delevit"
+        "text": "delevit",
+        "defaultSelected": true
       },
       {
         "type": "unreadable",
         "category": "edition",
-        "text": "legi nequit"
+        "text": "legi nequit",
+        "defaultSelected": true
       },
       {
         "type": "repeated",
         "category": "edition",
-        "text": "repetitio"
+        "text": "repetitio",
+        "defaultSelected": true
       },
       {
         "type": "gap",
         "category": "edition",
-        "text": "lacuna"
+        "text": "lacuna",
+        "defaultSelected": true
       },
       {
         "type": "addition",
         "category": "edition",
-        "text": "recensi manu"
+        "text": "recensi manu",
+        "defaultSelected": true
       },
       {
         "type": "inscription",
         "category": "layout",
-        "text": "inscriptio"
+        "text": "inscriptio",
+        "defaultSelected": true
       },
       {
         "type": "page",
         "category": "layout",
-        "text": "page"
+        "text": "page",
+        "defaultSelected": false
       },
       {
         "type": "column",
         "category": "layout",
-        "text": "columna"
+        "text": "columna",
+        "defaultSelected": false
       },
       {
         "type": "line",
         "category": "layout",
-        "text": "linea"
+        "text": "linea",
+        "defaultSelected": false
       },
       {
         "type": "transposition",
         "category": "layout",
-        "text": "transpositio"
+        "text": "transpositio",
+        "defaultSelected": true
       },
       {
         "type": "initial",
         "category": "edition",
-        "text": "initial"
+        "text": "initial",
+        "defaultSelected": true
       }
     ],
     "properties": [

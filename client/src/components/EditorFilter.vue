@@ -7,7 +7,7 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';
 
-const { allOptions, selectedOptions, selectAllOptions } = useFilterStore();
+const { allOptions, selectedOptions, selectAllOptions, selectDefaultOptions } = useFilterStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 
 const isCollapsed = ref<boolean>(true);
@@ -28,11 +28,14 @@ function toggleDropdown(event: MouseEvent): void {
     />
     <Card v-if="!isCollapsed" id="overlay_menu" class="dropdown absolute w-full z-1">
       <template #content>
-        <div class="dropwn-header flex gap-1 mb-2 justify-content-between align-items-center">
+        <div class="dropwn-header">
           <div class="info-pane font-semibold">
             {{ selectedOptions.length }} of {{ allOptions.length }} options displayed
           </div>
-          <Button label="Select all" size="small" @click="selectAllOptions" />
+          <div class="buttons flex gap-1 mb-2 align-items-center">
+            <Button label="Select all" size="small" @click="selectAllOptions" />
+            <Button label="Reset to default" size="small" @click="selectDefaultOptions" />
+          </div>
         </div>
         <div class="container flex gap-2">
           <div v-for="(annotationTypes, category) in groupedAnnotationTypes" class="group">

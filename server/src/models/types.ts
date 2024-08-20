@@ -12,9 +12,10 @@ export type Annotation = {
 };
 
 export type AnnotationType = {
-  type: string;
   category: string;
+  defaultSelected: boolean;
   text: string;
+  type: string;
 };
 
 export type AnnotationReference = {
