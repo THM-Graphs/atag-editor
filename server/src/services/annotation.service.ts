@@ -50,6 +50,12 @@ export default class AnnotationService {
     // Create edge to text node
     MERGE (t)-[:HAS_ANNOTATION]->(a)
 
+    // Remove existing relationships between annotation and character nodes before creating new ones
+    WITH a, ann
+
+    OPTIONAL MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(c:Character)
+    DELETE r
+
     // Handle character relationships
     WITH a, ann
     UNWIND ann.characterUuids AS uuid
