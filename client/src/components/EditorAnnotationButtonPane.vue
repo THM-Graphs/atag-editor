@@ -94,10 +94,8 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
   const data: IAnnotation = {
     comment: '',
     commentInternal: '',
-    // TODO: Update with Cypher
     endIndex: 0,
     originalText: '',
-    // TODO: Update with Cypher
     startIndex: 0,
     subtype: '',
     text: characters.map((char: Character) => char.data.text).join(''),

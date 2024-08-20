@@ -21,7 +21,7 @@ export default class AnnotationService {
   ): Promise<IAnnotation[]> {
     // TODO: Improve query speed, way too many db hits
     const query: string = `
-    WITH $annotations as allAnnotations
+   WITH $annotations as allAnnotations
 
     // 1. Delete deleted annotations
     CALL {
@@ -71,8 +71,23 @@ export default class AnnotationService {
     MATCH (ec:Character {uuid: ann.endUuid})
     MERGE (a)-[:STANDOFF_END]->(ec)
 
-    RETURN collect(distinct a {.*}) AS annotations
+    WITH collect(distinct a {.*}) as annotations
 
+    // Set startIndex and andIndex properties of Annotation nodes
+    
+    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:NEXT_CHARACTER*]->(ch:Character)
+    WITH collect(ch) as characters, annotations
+
+    UNWIND range(0, size(characters) - 1) AS idx
+    WITH characters[idx] AS ch, idx, annotations
+
+    OPTIONAL MATCH (ch)<-[:STANDOFF_START]-(aStart:Annotation)
+    OPTIONAL MATCH (ch)<-[:STANDOFF_END]-(aEnd:Annotation)
+
+    SET aStart.startIndex = idx
+    SET aEnd.endIndex = idx
+
+    RETURN annotations
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, annotations });
