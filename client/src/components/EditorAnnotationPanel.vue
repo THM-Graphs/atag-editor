@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import { useTextSelection } from '@vueuse/core';
 import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
@@ -7,8 +7,10 @@ import { useFilterStore } from '../store/filter';
 import { getParentCharacterSpan, isEditorElement } from '../helper/helper';
 import { Annotation } from '../models/types';
 
-const textSelection = useTextSelection();
+// Last valid selection. Is used when new selection is outside of text component
+const cachedSelectedAnnotations = ref<Annotation[]>([]);
 
+const textSelection = useTextSelection();
 const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
@@ -20,24 +22,8 @@ const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
 );
 
 const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
-  if (textSelection.ranges.value.length < 1 || textSelection.selection.value.type === 'None') {
-    return [];
-  }
-
-  const commonAncestorContainer: Node | undefined | Element =
-    textSelection.ranges.value[0].commonAncestorContainer;
-
-  // Selection is outside of text component (with element node as container)
-  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
-    return [];
-  }
-
-  // Selection is outside of text component (with text node as container)
-  if (
-    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
-    !commonAncestorContainer.parentElement.closest('#text')
-  ) {
-    return [];
+  if (!isValidSelection()) {
+    return cachedSelectedAnnotations.value;
   }
 
   let firstSpan: HTMLSpanElement;
@@ -45,7 +31,6 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
   let annotationUuids: Set<string>;
 
   if (textSelection.selection.value.type === 'Caret') {
-    // This is the case when there is not text and the range will has to be set to the whole editor div instead of a span
     if (
       isEditorElement(textSelection.ranges.value[0].startContainer) ||
       isEditorElement(textSelection.ranges.value[0].endContainer)
@@ -54,7 +39,10 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
       lastSpan = firstSpan;
       annotationUuids = firstSpan ? findAnnotationUuids(firstSpan, firstSpan) : new Set();
 
-      return annotations.value.filter(a => annotationUuids.has(a.data.uuid));
+      cachedSelectedAnnotations.value = annotations.value.filter(a =>
+        annotationUuids.has(a.data.uuid),
+      );
+      return cachedSelectedAnnotations.value;
     } else {
       firstSpan = getParentCharacterSpan(textSelection.ranges.value[0].startContainer);
       lastSpan = getParentCharacterSpan(textSelection.ranges.value[0].endContainer);
@@ -73,9 +61,33 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
   }
 
   annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
+  cachedSelectedAnnotations.value = annotations.value.filter(a => annotationUuids.has(a.data.uuid));
 
-  return annotations.value.filter(a => annotationUuids.has(a.data.uuid));
+  return cachedSelectedAnnotations.value;
 });
+
+function isValidSelection(): boolean {
+  if (textSelection.ranges.value.length < 1 || textSelection.selection.value.type === 'None') {
+    return false;
+  }
+
+  const commonAncestorContainer: Node | undefined | Element =
+    textSelection.ranges.value[0].commonAncestorContainer;
+
+  // Selection is outside of text component (with element node as container)
+  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
+    return false;
+  }
+
+  if (
+    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
+    !commonAncestorContainer.parentElement.closest('#text')
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanElement): Set<string> {
   const annoUuids: Set<string> = new Set();

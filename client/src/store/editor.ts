@@ -53,7 +53,6 @@ export function useEditorStore() {
       return;
     }
 
-    console.log(element);
     range.setStart(element, offset);
     range.setEnd(element, offset);
     range.collapse(true);
