@@ -8,7 +8,7 @@ import { getParentCharacterSpan, isEditorElement } from '../helper/helper';
 import { Annotation } from '../models/types';
 
 // Last valid selection. Is used when new selection is outside of text component
-const cachedSelectedAnnotations = ref<Annotation[]>([]);
+const cachedAnnotationsInSelection = ref<Annotation[]>([]);
 
 const textSelection = useTextSelection();
 const { annotations } = useAnnotationStore();
@@ -21,9 +21,9 @@ const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
   annotations.value.filter(a => a.status !== 'deleted'),
 );
 
-const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
+const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
   if (!isValidSelection()) {
-    return cachedSelectedAnnotations.value;
+    return cachedAnnotationsInSelection.value;
   }
 
   let firstSpan: HTMLSpanElement;
@@ -39,19 +39,19 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
       lastSpan = firstSpan;
       annotationUuids = firstSpan ? findAnnotationUuids(firstSpan, firstSpan) : new Set();
 
-      cachedSelectedAnnotations.value = annotations.value.filter(a =>
+      cachedAnnotationsInSelection.value = annotations.value.filter(a =>
         annotationUuids.has(a.data.uuid),
       );
-      return cachedSelectedAnnotations.value;
+      return cachedAnnotationsInSelection.value;
     } else {
       firstSpan = getParentCharacterSpan(textSelection.ranges.value[0].startContainer);
       lastSpan = getParentCharacterSpan(textSelection.ranges.value[0].endContainer);
 
       if (firstSpan === lastSpan) {
         if (textSelection.ranges.value[0].startOffset === 0) {
-          lastSpan = (firstSpan.previousElementSibling as HTMLSpanElement) ?? firstSpan;
+          firstSpan = (firstSpan.previousElementSibling as HTMLSpanElement) ?? firstSpan;
         } else if (textSelection.ranges.value[0].endOffset === 1) {
-          lastSpan = (firstSpan.nextElementSibling as HTMLSpanElement) ?? firstSpan;
+          lastSpan = (lastSpan.nextElementSibling as HTMLSpanElement) ?? lastSpan;
         }
       }
     }
@@ -61,9 +61,12 @@ const selectedAnnotations: ComputedRef<Annotation[]> = computed(() => {
   }
 
   annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
-  cachedSelectedAnnotations.value = annotations.value.filter(a => annotationUuids.has(a.data.uuid));
 
-  return cachedSelectedAnnotations.value;
+  cachedAnnotationsInSelection.value = annotations.value.filter(a =>
+    annotationUuids.has(a.data.uuid),
+  );
+
+  return cachedAnnotationsInSelection.value;
 });
 
 function isValidSelection(): boolean {
@@ -112,13 +115,15 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
 
 <template>
   <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
-    <h3>Annotations [{{ selectedAnnotations.length }}]</h3>
+    <h3>Annotations [{{ annotationsInSelection.length }}]</h3>
     <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
       <EditorAnnotationForm
         v-for="annotation in displayedAnnotations"
+        :key="annotation.data.uuid"
         :annotation="annotation"
         v-show="
-          selectedAnnotations.includes(annotation) && selectedOptions.includes(annotation.data.type)
+          annotationsInSelection.includes(annotation) &&
+          selectedOptions.includes(annotation.data.type)
         "
       />
     </div>
