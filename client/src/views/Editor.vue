@@ -84,6 +84,7 @@ const {
 } = useCharactersStore();
 const {
   annotations,
+  initialAnnotations,
   initializeAnnotations,
   resetAnnotations,
   updateAnnotationsBeforeSave,
@@ -240,10 +241,11 @@ async function handleSaveChanges(): Promise<void> {
       throw new Error('Neither metadata nor text could be saved');
     }
 
-    // TODO: Does the annotations array also need an initial value?
+    // Reset initial states. All Annotation statuses are updated explicitly to "existing"
     updateAnnotationStatuses();
     initialCollection.value = { ...collection.value };
     initialCharacters.value = [...snippetCharacters.value];
+    initialAnnotations.value = [...annotations.value];
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);
