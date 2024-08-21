@@ -73,12 +73,14 @@ const asyncOperationRunning = ref<boolean>(false);
 const { hasUnsavedChanges, resetEditor } = useEditorStore();
 const { collection, initialCollection, initializeCollection } = useCollectionStore();
 const {
-  snippetCharacters,
+  afterEndIndex,
+  beforeStartIndex,
   initialCharacters,
+  snippetCharacters,
   totalCharacters,
   initializeCharacters,
-  resetCharacters,
   insertSnippetIntoChain,
+  resetCharacters,
 } = useCharactersStore();
 const {
   annotations,
@@ -144,10 +146,6 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
-  insertSnippetIntoChain();
-
-  asyncOperationRunning.value = true;
-
   const metadataAreValid: boolean = metadataRef.value.validate();
   const labelInputIsValid: boolean = labelInputRef.value.validate();
 
@@ -155,7 +153,14 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
+  asyncOperationRunning.value = true;
+
+  // This can be done within the snippet since changes in the chain can only occur here
   const { uuidStart, uuidEnd } = findChangesetBoundaries();
+
+  // Insert the snippet into the whole chain to simplify index finding -> only one chain to consider
+  // TODO: This might take a while on longer texts...fix?
+  insertSnippetIntoChain();
 
   const startNodeIndex = uuidStart
     ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidStart)
@@ -359,8 +364,13 @@ function findChangesetBoundaries(): {
   uuidStart: string | null;
   uuidEnd: string | null;
 } {
-  let uuidStart: string | null = null;
-  let uuidEnd: string | null = null;
+  let uuidStart: string | null = beforeStartIndex.value
+    ? totalCharacters.value[beforeStartIndex.value].data.uuid
+    : null;
+
+  let uuidEnd: string | null = afterEndIndex.value
+    ? totalCharacters.value[afterEndIndex.value].data.uuid
+    : null;
 
   for (let index = 0; index < snippetCharacters.value.length; index++) {
     if (snippetCharacters.value[index].data.uuid !== initialCharacters.value[index]?.data.uuid) {
@@ -373,7 +383,9 @@ function findChangesetBoundaries(): {
       index === snippetCharacters.value.length - 1 &&
       snippetCharacters.value.length >= initialCharacters.value.length
     ) {
-      uuidStart = null;
+      uuidStart = beforeStartIndex.value
+        ? totalCharacters.value[beforeStartIndex.value].data.uuid
+        : null;
     }
   }
 
@@ -391,7 +403,7 @@ function findChangesetBoundaries(): {
       index === reversedCharacters.length - 1 &&
       reversedCharacters.length >= reversedInitialCharacters.length
     ) {
-      uuidEnd = null;
+      uuidEnd = afterEndIndex.value ? totalCharacters.value[afterEndIndex.value].data.uuid : null;
     }
   }
 
