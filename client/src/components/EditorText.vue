@@ -625,10 +625,6 @@ function createNewCharacter(char: string): Character {
           :key="character.data.uuid"
           :id="character.data.uuid"
           :data-uuid="character.data.uuid"
-          :class="[
-            character.annotations.some(a => a.isFirstCharacter) ? 'boundary-start' : '',
-            character.annotations.some(a => a.isLastCharacter) ? 'boundary-end' : '',
-          ]"
         >
           {{ character.data.text
           }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
@@ -673,14 +669,6 @@ function createNewCharacter(char: string): Character {
 
 #text {
   outline: 0;
-}
-
-.boundary-start {
-  background-color: lightgreen !important;
-}
-
-.boundary-end {
-  background-color: pink !important;
 }
 
 #text > span {
