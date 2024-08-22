@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUpdated, ref } from 'vue';
+import { computed, ComputedRef, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import EditorOrientationBar from './EditorOrientationBar.vue';
@@ -28,6 +28,7 @@ const { collection } = useCollectionStore();
 const {
   afterEndIndex,
   beforeStartIndex,
+  initialCharacters,
   snippetCharacters,
   totalCharacters,
   deleteCharactersBetweenIndexes,
@@ -42,6 +43,15 @@ const { selectedOptions } = useFilterStore();
 const keepTextOnPagination = ref<boolean>(false);
 
 const editorRef = ref<HTMLDivElement>(null);
+
+const charCounterMessage: ComputedRef<string> = computed(() => {
+  // This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
+  const total: number =
+    totalCharacters.value.length - initialCharacters.value.length + snippetCharacters.value.length;
+  const current: number = snippetCharacters.value.length;
+
+  return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
+});
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -592,11 +602,7 @@ function createNewCharacter(char: string): Character {
     <ToggleSwitch v-model="keepTextOnPagination" />
   </div>
   <div class="counter text-right mb-1">
-    <small
-      >{{ snippetCharacters.length }} character{{
-        snippetCharacters.length !== 1 ? 's' : ''
-      }}</small
-    >
+    <small>{{ charCounterMessage }}</small>
   </div>
   <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
