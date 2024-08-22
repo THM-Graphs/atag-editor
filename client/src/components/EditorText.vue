@@ -2,6 +2,7 @@
 import { onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
+import EditorOrientationBar from './EditorOrientationBar.vue';
 import {
   findEndOfWord,
   findStartOfWord,
@@ -586,80 +587,89 @@ function createNewCharacter(char: string): Character {
 </script>
 
 <template>
+  <div class="flex justify-content-end">
+    <label class="label">Keep text on pagination</label>
+    <ToggleSwitch v-model="keepTextOnPagination" />
+  </div>
+  <div class="counter text-right mb-1">
+    <small
+      >{{ snippetCharacters.length }} character{{
+        snippetCharacters.length !== 1 ? 's' : ''
+      }}</small
+    >
+  </div>
+  <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    <div class="flex justify-content-end">
-      <label class="label">Keep text on pagination</label>
-      <ToggleSwitch v-model="keepTextOnPagination" />
-    </div>
-    <div class="counter text-right mb-1">
-      <small
-        >{{ snippetCharacters.length }} character{{
-          snippetCharacters.length !== 1 ? 's' : ''
-        }}</small
-      >
-    </div>
-    <div>
-      <Button
-        class="w-full"
-        label="Previous"
-        aria-label="Show previous characters"
-        severity="secondary"
-        icon="pi pi-arrow-up"
-        @click="handlePaginationUp"
-      ></Button>
-    </div>
-    <div class="text-container h-full p-2 overflow-auto">
-      <div
-        id="text"
-        class="min-h-full"
-        ref="editorRef"
-        contenteditable="true"
-        spellcheck="false"
-        @beforeinput="handleInput"
-        @copy="handleCopy"
-        @keydown.ctrl.z.exact="handleUndo"
-        @keydown.ctrl.shift.z.exact="handleRedo"
-      >
-        <span
-          v-for="character in snippetCharacters"
-          :key="character.data.uuid"
-          :id="character.data.uuid"
-          :data-uuid="character.data.uuid"
+    <Button
+      class="w-full"
+      label="Previous"
+      aria-label="Show previous characters"
+      severity="secondary"
+      icon="pi pi-arrow-up"
+      @click="handlePaginationUp"
+    ></Button>
+    <div class="text-container h-full p-2 flex gap-1 overflow-hidden">
+      <div class="scroll-container flex-1 overflow-y-scroll">
+        <div
+          id="text"
+          class="min-h-full"
+          ref="editorRef"
+          contenteditable="true"
+          spellcheck="false"
+          @beforeinput="handleInput"
+          @copy="handleCopy"
+          @keydown.ctrl.z.exact="handleUndo"
+          @keydown.ctrl.shift.z.exact="handleRedo"
         >
-          {{ character.data.text
-          }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
-            <span
-              v-if="selectedOptions.includes(annotation.type)"
-              :class="[
-                'anno',
-                annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
-                annotation.type,
-              ]"
-              :data-anno-uuid="annotation.uuid"
-            >
-            </span>
-          </template>
-        </span>
+          <span
+            v-for="character in snippetCharacters"
+            :key="character.data.uuid"
+            :id="character.data.uuid"
+            :data-uuid="character.data.uuid"
+          >
+            {{ character.data.text
+            }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+              <span
+                v-if="selectedOptions.includes(annotation.type)"
+                :class="[
+                  'anno',
+                  annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
+                  annotation.type,
+                ]"
+                :data-anno-uuid="annotation.uuid"
+              >
+              </span>
+            </template>
+          </span>
+        </div>
       </div>
+      <EditorOrientationBar />
     </div>
-    <div>
-      <Button
-        class="w-full"
-        label="Next"
-        aria-label="Show next characters"
-        severity="secondary"
-        icon="pi pi-arrow-down"
-        @click="handlePaginationDown"
-      ></Button>
-    </div>
+    <Button
+      class="w-full"
+      label="Next"
+      aria-label="Show next characters"
+      severity="secondary"
+      icon="pi pi-arrow-down"
+      @click="handlePaginationDown"
+    ></Button>
   </div>
 </template>
 
 <style scoped>
-.text-container {
+.scroll-container {
   background-color: white;
   border-radius: 3px;
   outline: 1px solid var(--color-focus);
+
+  /* IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+
+  /* Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &:has(:focus-visible) {
     box-shadow: var(--box-shadow-focus);
