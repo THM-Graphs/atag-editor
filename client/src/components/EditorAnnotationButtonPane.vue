@@ -63,7 +63,7 @@ function getSelectedCharacters(): Character[] {
     lastSpan as HTMLSpanElement,
   );
 
-  const uuids: string[] = selectedCharacterSpans.map((span: HTMLSpanElement) => span.dataset.uuid);
+  const uuids: string[] = selectedCharacterSpans.map((span: HTMLSpanElement) => span.id);
 
   const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
     uuids.includes(c.data.uuid),

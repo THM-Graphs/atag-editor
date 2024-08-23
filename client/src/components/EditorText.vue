@@ -631,7 +631,6 @@ function createNewCharacter(char: string): Character {
             v-for="character in snippetCharacters"
             :key="character.data.uuid"
             :id="character.data.uuid"
-            :data-uuid="character.data.uuid"
           >
             {{ character.data.text
             }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
