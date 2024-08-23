@@ -15,14 +15,11 @@ export function capitalize(inputString: string): string {
  * A function that compares two objects to check if they are equal. Works only for non-nested objects
  * where values are strings or numbers.
  *
- * @param {Record<string, string | number>} obj1 - The first object to compare.
- * @param {Record<string, string | number>} obj2 - The second object to compare.
+ * @param {Record<string, any>} obj1 - The first object to compare.
+ * @param {Record<string, any>} obj2 - The second object to compare.
  * @return {boolean} Returns true if the objects are equal, otherwise false.
  */
-export function areObjectsEqual(
-  obj1: Record<string, string | number>,
-  obj2: Record<string, string | number>,
-): boolean {
+export function areObjectsEqual(obj1: Record<string, any>, obj2: Record<string, any>): boolean {
   const keys1: string[] = Object.keys(obj1);
   const keys2: string[] = Object.keys(obj2);
 

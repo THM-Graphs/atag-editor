@@ -4,19 +4,28 @@ import { useTextSelection } from '@vueuse/core';
 import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
-import { getParentCharacterSpan, isEditorElement } from '../helper/helper';
+import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../helper/helper';
 import { Annotation } from '../models/types';
 
-// Last valid selection. Is used when new selection is outside of text component
+interface SelectionObject {
+  startContainer: Node;
+  endContainer: Node;
+  startOffset: number;
+  endOffset: number;
+  type: string;
+}
+
+// Last annotations in selection. Is used when new selection is not valid (e.g. outside of text)
 const cachedAnnotationsInSelection = ref<Annotation[]>([]);
 
-const textSelection = useTextSelection();
+// Snapshot of last valid selection. Used to prevent multiple computings and rerenders
+// (see `selectionHasChanged()` documentation)
+let lastSelection: SelectionObject | null = null;
+
+const { ranges, selection } = useTextSelection();
 const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
-// TODO: This is a hack: All components need to be mounted initially, because complete rerenders
-// will emit too many selectionchange events and trigger the useSelection callback function too often.
-// Might cause problems when the text has a lot of annotations -> fix later
 const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
   annotations.value.filter(a => a.status !== 'deleted'),
 );
@@ -26,14 +35,18 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
     return cachedAnnotationsInSelection.value;
   }
 
+  if (!selectionHasChanged()) {
+    return cachedAnnotationsInSelection.value;
+  }
+
   let firstSpan: HTMLSpanElement;
   let lastSpan: HTMLSpanElement;
   let annotationUuids: Set<string>;
 
-  if (textSelection.selection.value.type === 'Caret') {
+  if (selection.value.type === 'Caret') {
     if (
-      isEditorElement(textSelection.ranges.value[0].startContainer) ||
-      isEditorElement(textSelection.ranges.value[0].endContainer)
+      isEditorElement(ranges.value[0].startContainer) ||
+      isEditorElement(ranges.value[0].endContainer)
     ) {
       firstSpan = document.querySelector('#text span');
       lastSpan = firstSpan;
@@ -44,20 +57,20 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
       );
       return cachedAnnotationsInSelection.value;
     } else {
-      firstSpan = getParentCharacterSpan(textSelection.ranges.value[0].startContainer);
-      lastSpan = getParentCharacterSpan(textSelection.ranges.value[0].endContainer);
+      firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
+      lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
 
       if (firstSpan === lastSpan) {
-        if (textSelection.ranges.value[0].startOffset === 0) {
+        if (ranges.value[0].startOffset === 0) {
           firstSpan = (firstSpan.previousElementSibling as HTMLSpanElement) ?? firstSpan;
-        } else if (textSelection.ranges.value[0].endOffset === 1) {
+        } else if (ranges.value[0].endOffset === 1) {
           lastSpan = (lastSpan.nextElementSibling as HTMLSpanElement) ?? lastSpan;
         }
       }
     }
   } else {
-    firstSpan = getParentCharacterSpan(textSelection.ranges.value[0].startContainer);
-    lastSpan = getParentCharacterSpan(textSelection.ranges.value[0].endContainer);
+    firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
+    lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
   }
 
   annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
@@ -69,13 +82,44 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
   return cachedAnnotationsInSelection.value;
 });
 
+/**
+ * Checks if the current text selection has changed compared to the last selection.
+ *
+ * Used to prevent multiple computings and rerenders of AnnotationForm components since the creation
+ * of the input fields triggers new `selectionchange` events.
+ *
+ * @return {boolean} True if the selection has changed, false otherwise
+ */
+function selectionHasChanged(): boolean {
+  const newSelection: SelectionObject = {
+    startContainer: ranges.value[0].startContainer,
+    endContainer: ranges.value[0].endContainer,
+    startOffset: ranges.value[0].startOffset,
+    endOffset: ranges.value[0].endOffset,
+    type: selection.value.type,
+  };
+
+  if (lastSelection && areObjectsEqual(lastSelection, newSelection)) {
+    return false;
+  }
+
+  lastSelection = newSelection;
+
+  return true;
+}
+
+/**
+ * Checks if the current selection is valid (= inside the text component).
+ *
+ * @return {boolean} True if the selection is valid, false otherwise
+ */
 function isValidSelection(): boolean {
-  if (textSelection.ranges.value.length < 1 || textSelection.selection.value.type === 'None') {
+  if (ranges.value.length < 1 || selection.value.type === 'None') {
     return false;
   }
 
   const commonAncestorContainer: Node | undefined | Element =
-    textSelection.ranges.value[0].commonAncestorContainer;
+    ranges.value[0].commonAncestorContainer;
 
   // Selection is outside of text component (with element node as container)
   if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
@@ -117,15 +161,15 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
   <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
     <h3>Annotations [{{ annotationsInSelection.length }}]</h3>
     <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
-      <EditorAnnotationForm
-        v-for="annotation in displayedAnnotations"
-        :key="annotation.data.uuid"
-        :annotation="annotation"
-        v-show="
-          annotationsInSelection.includes(annotation) &&
-          selectedOptions.includes(annotation.data.type)
-        "
-      />
+      <template v-for="annotation in displayedAnnotations" :key="annotation.data.uuid">
+        <EditorAnnotationForm
+          :annotation="annotation"
+          v-if="
+            annotationsInSelection.includes(annotation) &&
+            selectedOptions.includes(annotation.data.type)
+          "
+        />
+      </template>
     </div>
   </div>
 </template>
