@@ -40,7 +40,7 @@ const {
 } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
-const { history, initializeHistory, pushHistoryEntry } = useHistoryStore();
+const { history, initializeHistory, pushHistoryEntry, redo, undo } = useHistoryStore();
 
 const keepTextOnPagination = ref<boolean>(false);
 
@@ -492,13 +492,11 @@ function handleDeleteHardLineForward(event: InputEvent): void {
 }
 
 function handleUndo(event: KeyboardEvent): void {
-  const { removeHistoryEntry } = useHistoryStore();
-  removeHistoryEntry();
-  // alert('undo (Ctrl + Z) is not yet implemented');
+  undo();
 }
 
 function handleRedo(event: KeyboardEvent): void {
-  alert('redo (Ctrl + Shift + Z) is not yet implemented');
+  redo();
 }
 
 function handlePaginationUp(event: MouseEvent): void {
@@ -623,7 +621,6 @@ function createNewCharacter(char: string): Character {
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch v-model="keepTextOnPagination" />
   </div>
-  <div>{{ history.length }}</div>
   <div class="counter text-right mb-1">
     <small>{{ charCounterMessage }}</small>
   </div>

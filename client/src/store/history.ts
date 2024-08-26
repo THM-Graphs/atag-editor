@@ -7,7 +7,8 @@ import { HistoryRecord, HistoryStack } from '../models/types';
 const { snippetCharacters } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 
-const lastEditTimestamp = ref(Date.now());
+let lastEditTimestamp: number = Date.now();
+let currentHistoryPosition: number = 0;
 
 const history = ref<HistoryStack>([]);
 
@@ -32,31 +33,31 @@ export function useHistoryStore() {
         annotations: JSON.parse(JSON.stringify(annotations.value)),
       },
     ];
+
+    currentHistoryPosition = 0;
   }
 
   /**
-   * Pushes a new entry into the history stack if enough time has passed since the last edit (defined in EDIT_DELAY constant).
-   * Creates a new history record with the current annotations and characters, adds it to the history stack,
-   * and removes the oldest entry if the stack exceeds the maximum size.
+   * Pushes a new entry into the history stack if enough time has passed since the last edit (defined in `EDIT_DELAY` constant).
+   * Creates a new history record with the current annotations and characters and adds it to the history stack at the current
+   * history pointer index. Removes the oldest entry if the stack exceeds the maximum size.
    *
    * @return {void} No return value.
    */
   function pushHistoryEntry(): void {
-    if (Date.now() - lastEditTimestamp.value < EDIT_DELAY) {
-      // console.log(Date.now() - lastEditTimestamp.value);
-      lastEditTimestamp.value = Date.now();
+    if (Date.now() - lastEditTimestamp < EDIT_DELAY) {
+      lastEditTimestamp = Date.now();
       return;
     }
 
-    lastEditTimestamp.value = Date.now();
+    lastEditTimestamp = Date.now();
 
-    console.time('snapshot');
     const newEntry: HistoryRecord = {
       annotations: JSON.parse(JSON.stringify(annotations.value)),
       characters: [...snippetCharacters.value],
     };
 
-    history.value.push(newEntry);
+    history.value.splice(currentHistoryPosition + 1, Infinity, newEntry);
 
     // Keep stack reasonably small
     // TODO: Give hint for user (like toast/message)
@@ -64,27 +65,48 @@ export function useHistoryStore() {
       history.value.shift();
     }
 
-    console.timeEnd('snapshot');
+    currentHistoryPosition = history.value.length - 1;
   }
 
   /**
-   * Removes the most recent entry from the editing history and updates the current character snippet and annotations.
-   * Called on undo action (Ctrl + Z).
+   * Moves backwards in the editing history by 1 and updates the current character snippet and annotations while keeping
+   * the stack intact for possible later redo action. Called on undo action (Ctrl + Z).
    *
    * @return {void} No return value.
    */
-  function removeHistoryEntry(): void {
-    if (history.value.length <= 1) {
+  function undo(): void {
+    if (currentHistoryPosition < 1) {
       return;
     }
 
-    history.value.pop();
+    currentHistoryPosition--;
 
     snippetCharacters.value = JSON.parse(
-      JSON.stringify(history.value[history.value.length - 1].characters),
+      JSON.stringify(history.value[currentHistoryPosition].characters),
     );
     annotations.value = JSON.parse(
-      JSON.stringify(history.value[history.value.length - 1].annotations),
+      JSON.stringify(history.value[currentHistoryPosition].annotations),
+    );
+  }
+
+  /**
+   * Moves forward in the editing history by 1 and updates the current character snippet and annotations while keeping
+   * the stack intact for possible later undo/redo action. Called on redo action (Ctrl + Shift + Z).
+   *
+   * @return {void} No return value.
+   */
+  function redo(): void {
+    if (currentHistoryPosition >= history.value.length - 1) {
+      return;
+    }
+
+    currentHistoryPosition++;
+
+    snippetCharacters.value = JSON.parse(
+      JSON.stringify(history.value[currentHistoryPosition].characters),
+    );
+    annotations.value = JSON.parse(
+      JSON.stringify(history.value[currentHistoryPosition].annotations),
     );
   }
 
@@ -99,9 +121,10 @@ export function useHistoryStore() {
 
   return {
     history,
-    pushHistoryEntry,
     initializeHistory,
-    removeHistoryEntry,
+    pushHistoryEntry,
+    redo,
     resetHistory,
+    undo,
   };
 }
