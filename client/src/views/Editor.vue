@@ -75,7 +75,7 @@ const { collection, initialCollection, initializeCollection } = useCollectionSto
 const {
   afterEndIndex,
   beforeStartIndex,
-  initialCharacters,
+  initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
   initializeCharacters,
@@ -244,7 +244,7 @@ async function handleSaveChanges(): Promise<void> {
     // Reset initial states. All Annotation statuses are updated explicitly to "existing"
     updateAnnotationStatuses();
     initialCollection.value = { ...collection.value };
-    initialCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = [...snippetCharacters.value];
     initialAnnotations.value = [...annotations.value];
     showMessage('success');
   } catch (error: unknown) {
@@ -375,7 +375,9 @@ function findChangesetBoundaries(): {
     : null;
 
   for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (snippetCharacters.value[index].data.uuid !== initialCharacters.value[index]?.data.uuid) {
+    if (
+      snippetCharacters.value[index].data.uuid !== initialSnippetCharacters.value[index]?.data.uuid
+    ) {
       break;
     }
 
@@ -383,7 +385,7 @@ function findChangesetBoundaries(): {
 
     if (
       index === snippetCharacters.value.length - 1 &&
-      snippetCharacters.value.length >= initialCharacters.value.length
+      snippetCharacters.value.length >= initialSnippetCharacters.value.length
     ) {
       uuidStart = beforeStartIndex.value
         ? totalCharacters.value[beforeStartIndex.value].data.uuid
@@ -392,7 +394,7 @@ function findChangesetBoundaries(): {
   }
 
   const reversedCharacters: Character[] = [...snippetCharacters.value].reverse();
-  const reversedInitialCharacters: Character[] = [...initialCharacters.value].reverse();
+  const reversedInitialCharacters: Character[] = [...initialSnippetCharacters.value].reverse();
 
   for (let index = 0; index < reversedCharacters.length; index++) {
     if (reversedCharacters[index].data.uuid !== reversedInitialCharacters[index]?.data.uuid) {

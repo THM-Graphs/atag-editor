@@ -2,12 +2,12 @@
 import { computed, ComputedRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 
-const { beforeStartIndex, totalCharacters, initialCharacters } = useCharactersStore();
+const { beforeStartIndex, totalCharacters, initialSnippetCharacters } = useCharactersStore();
 
 const totalCharCount: ComputedRef<number> = computed(() => totalCharacters.value.length);
 // Initial characters are used to keep the visualization even if the size of the snippet during edited changes.
 // Otherwise, for example the highlighted div would have the size 0 if the user removed all text.
-const snippetCharCount: ComputedRef<number> = computed(() => initialCharacters.value.length);
+const snippetCharCount: ComputedRef<number> = computed(() => initialSnippetCharacters.value.length);
 
 const snippetHeight: ComputedRef<number> = computed(() => {
   if (totalCharCount.value !== 0) {

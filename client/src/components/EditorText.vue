@@ -28,7 +28,7 @@ const { collection } = useCollectionStore();
 const {
   afterEndIndex,
   beforeStartIndex,
-  initialCharacters,
+  initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
   deleteCharactersBetweenIndexes,
@@ -47,7 +47,9 @@ const editorRef = ref<HTMLDivElement>(null);
 const charCounterMessage: ComputedRef<string> = computed(() => {
   // This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
   const total: number =
-    totalCharacters.value.length - initialCharacters.value.length + snippetCharacters.value.length;
+    totalCharacters.value.length -
+    initialSnippetCharacters.value.length +
+    snippetCharacters.value.length;
   const current: number = snippetCharacters.value.length;
 
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;

@@ -7,7 +7,7 @@ const afterEndIndex = ref<number | null>(null);
 
 const totalCharacters = ref<Character[]>([]);
 const snippetCharacters = ref<Character[]>([]);
-const initialCharacters = ref<Character[]>([]);
+const initialSnippetCharacters = ref<Character[]>([]);
 
 /**
  * Store for managing the state of characters inside an editor instance. When the component is mounted,
@@ -42,7 +42,7 @@ export function useCharactersStore() {
       snippetCharacters.value = [...totalCharacters.value];
     }
 
-    initialCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
   }
 
   /**
@@ -78,7 +78,7 @@ export function useCharactersStore() {
 
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
     snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = [...snippetCharacters.value];
   }
 
   /**
@@ -115,7 +115,7 @@ export function useCharactersStore() {
 
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
     snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = [...snippetCharacters.value];
   }
 
   /**
@@ -305,7 +305,7 @@ export function useCharactersStore() {
     }
 
     totalCharacters.value.splice(startAtIndex, charsToDeleteCount, ...snippetCharacters.value);
-    initialCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = [...snippetCharacters.value];
 
     if (afterEndIndex.value === null) {
       afterEndIndex.value = null;
@@ -370,7 +370,7 @@ export function useCharactersStore() {
   function resetCharacters(): void {
     snippetCharacters.value = [];
     totalCharacters.value = [];
-    initialCharacters.value = [];
+    initialSnippetCharacters.value = [];
     beforeStartIndex.value = null;
     afterEndIndex.value = null;
   }
@@ -378,7 +378,7 @@ export function useCharactersStore() {
   return {
     afterEndIndex,
     beforeStartIndex,
-    initialCharacters,
+    initialSnippetCharacters,
     snippetCharacters,
     totalCharacters,
     annotateCharacters,

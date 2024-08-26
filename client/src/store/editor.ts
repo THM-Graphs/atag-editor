@@ -6,7 +6,7 @@ import { areObjectsEqual, areSetsEqual } from '../helper/helper';
 import { Annotation } from '../models/types';
 
 const { collection, initialCollection } = useCollectionStore();
-const { snippetCharacters, initialCharacters } = useCharactersStore();
+const { snippetCharacters, initialSnippetCharacters } = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -66,7 +66,7 @@ export function useEditorStore() {
     }
 
     // Compare characters length
-    if (snippetCharacters.value.length !== initialCharacters.value.length) {
+    if (snippetCharacters.value.length !== initialSnippetCharacters.value.length) {
       return true;
     }
 
@@ -82,11 +82,12 @@ export function useEditorStore() {
     for (let index = 0; index < snippetCharacters.value.length; index++) {
       const annotationsAreEqual = areSetsEqual(
         new Set(snippetCharacters.value[index].annotations.map(a => a.uuid)),
-        new Set(initialCharacters.value[index].annotations.map(a => a.uuid)),
+        new Set(initialSnippetCharacters.value[index].annotations.map(a => a.uuid)),
       );
 
       if (
-        snippetCharacters.value[index].data.uuid !== initialCharacters.value[index].data.uuid ||
+        snippetCharacters.value[index].data.uuid !==
+          initialSnippetCharacters.value[index].data.uuid ||
         !annotationsAreEqual
       ) {
         return true;
