@@ -5,6 +5,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
+import { useHistoryStore } from '../store/history';
 import { Annotation, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 
@@ -12,6 +13,7 @@ const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
+const { pushHistoryEntry } = useHistoryStore();
 
 function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
@@ -44,6 +46,7 @@ function handleCreateAnnotation(event: MouseEvent) {
 
   addAnnotation(newAnnotation);
   annotateCharacters(selectedCharacters, newAnnotation);
+  pushHistoryEntry();
 }
 
 function getSelectedCharacters(): Character[] {

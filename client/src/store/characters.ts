@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { PAGINATION_SIZE } from '../models/constants';
+import { PAGINATION_SIZE } from '../config/constants';
 import { Annotation, AnnotationReference, Character } from '../models/types';
 
 const beforeStartIndex = ref<number | null>(null);

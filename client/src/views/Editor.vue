@@ -19,12 +19,13 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import ICollection from '../models/ICollection';
-import { Annotation, AnnotationReference, Character, CharacterPostData } from '../models/types';
+import { Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -40,6 +41,8 @@ onMounted(async (): Promise<void> => {
     await getCharacters();
     await getAnnotations();
 
+    initializeHistory();
+
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -52,6 +55,7 @@ onUnmounted((): void => {
   resetCharacters();
   resetAnnotations();
   resetEditor();
+  resetHistory();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -91,6 +95,8 @@ const {
   updateAnnotationStatuses,
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
+
+const { initializeHistory, resetHistory } = useHistoryStore();
 
 const resizerWidth = 5;
 

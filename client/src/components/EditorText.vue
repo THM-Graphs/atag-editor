@@ -18,6 +18,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import { Annotation, Character } from '../models/types';
+import { useHistoryStore } from '../store/history';
 
 onUpdated(() => {
   placeCursor();
@@ -39,6 +40,7 @@ const {
 } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
+const { history, initializeHistory, pushHistoryEntry } = useHistoryStore();
 
 const keepTextOnPagination = ref<boolean>(false);
 
@@ -57,6 +59,16 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
+
+  // console.time('snapshot');
+
+  // const snapshot = {
+  //   collection: JSON.parse(JSON.stringify(collection.value)),
+  //   characters: JSON.parse(JSON.stringify(snippetCharacters.value)),
+  //   annotations: JSON.parse(JSON.stringify(annotations.value)),
+  // };
+
+  // console.timeEnd('snapshot');
 
   switch (event.inputType) {
     // Text Insertion
@@ -111,6 +123,8 @@ function handleInput(event: InputEvent) {
     default:
       console.log('Unhandled input type:', event.inputType);
   }
+
+  pushHistoryEntry();
 }
 
 function handleInsertText(event: InputEvent): void {
@@ -478,7 +492,9 @@ function handleDeleteHardLineForward(event: InputEvent): void {
 }
 
 function handleUndo(event: KeyboardEvent): void {
-  alert('undo (Ctrl + Z) is not yet implemented');
+  const { removeHistoryEntry } = useHistoryStore();
+  removeHistoryEntry();
+  // alert('undo (Ctrl + Z) is not yet implemented');
 }
 
 function handleRedo(event: KeyboardEvent): void {
@@ -526,6 +542,8 @@ function handlePaginationUp(event: MouseEvent): void {
       }
     }
   });
+
+  initializeHistory();
 }
 
 function handlePaginationDown(event: MouseEvent): void {
@@ -569,6 +587,8 @@ function handlePaginationDown(event: MouseEvent): void {
       }
     }
   });
+
+  initializeHistory();
 }
 
 async function handleCopy(): Promise<void> {
@@ -603,6 +623,7 @@ function createNewCharacter(char: string): Character {
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch v-model="keepTextOnPagination" />
   </div>
+  <div>{{ history.length }}</div>
   <div class="counter text-right mb-1">
     <small>{{ charCounterMessage }}</small>
   </div>

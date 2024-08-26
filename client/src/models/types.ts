@@ -36,3 +36,10 @@ export type CharacterPostData = {
   uuidEnd: string;
   characters: ICharacter[];
 };
+
+export type HistoryStack = HistoryRecord[];
+
+export type HistoryRecord = {
+  annotations: Annotation[];
+  characters: Character[];
+};
