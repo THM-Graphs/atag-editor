@@ -27,12 +27,16 @@ function handleCreateAnnotation(event: MouseEvent) {
 
   const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
 
-  if (commonAncestorContainer?.nodeType !== Node.ELEMENT_NODE) {
-    return;
+  // Selection is outside of text component (with element node as container)
+  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
+    return false;
   }
 
-  if (commonAncestorContainer instanceof Element && commonAncestorContainer.id !== 'text') {
-    return;
+  if (
+    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
+    !commonAncestorContainer.parentElement.closest('#text')
+  ) {
+    return false;
   }
 
   // TODO: What about zero point annotations?
@@ -46,6 +50,7 @@ function handleCreateAnnotation(event: MouseEvent) {
 
   addAnnotation(newAnnotation);
   annotateCharacters(selectedCharacters, newAnnotation);
+  // TODO: This snapshot should be taken BEFORE changing the state
   pushHistoryEntry();
 }
 
