@@ -8,6 +8,7 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
+import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation } from '../models/types';
 
@@ -79,6 +80,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
       <div
         class="input-container"
         v-for="field in guidelines.annotations.properties"
+        :key="field.name"
         v-show="field.visible"
       >
         <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
@@ -86,14 +88,28 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
             >{{ capitalize(field.name) }}
           </label>
           <InputText
+            v-if="field.type === 'text'"
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
             :invalid="field.required && !annotation.data[field.name]"
-            :key="field.name"
             v-model="annotation.data[field.name]"
             class="flex-auto w-full"
           />
+          <Textarea
+            v-else-if="field.type === 'textarea'"
+            :id="field.name"
+            :disabled="!field.editable"
+            :required="field.required"
+            :invalid="field.required && !annotation.data[field.name]"
+            v-model="annotation.data[field.name]"
+            cols="30"
+            rows="5"
+            class="flex-auto w-full"
+          />
+          <div v-else class="default-field">
+            {{ annotation.data[field.name] }}
+          </div>
         </div>
       </div>
     </form>

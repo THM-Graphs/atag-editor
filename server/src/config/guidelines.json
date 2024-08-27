@@ -5,21 +5,21 @@
       "properties": [
         {
           "name": "label",
-          "type": "string",
+          "type": "text",
           "required": true,
           "editable": false,
           "visible": false
         },
         {
           "name": "sender",
-          "type": "string",
+          "type": "text",
           "required": false,
           "editable": true,
           "visible": true
         },
         {
           "name": "receiver",
-          "type": "string",
+          "type": "text",
           "required": false,
           "editable": true,
           "visible": true
@@ -136,49 +136,49 @@
     "properties": [
       {
         "name": "type",
-        "type": "string",
+        "type": "text",
         "required": true,
         "editable": false,
         "visible": true
       },
       {
         "name": "text",
-        "type": "string",
+        "type": "text",
         "required": true,
         "editable": false,
         "visible": true
       },
       {
         "name": "originalText",
-        "type": "string",
+        "type": "text",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "comment",
-        "type": "string",
+        "type": "textarea",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "commentInternal",
-        "type": "string",
+        "type": "textarea",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "subtype",
-        "type": "string",
+        "type": "text",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "url",
-        "type": "string",
+        "type": "text",
         "required": false,
         "editable": true,
         "visible": true
