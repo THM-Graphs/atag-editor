@@ -162,6 +162,62 @@ async function handleSaveChanges(): Promise<void> {
 
   asyncOperationRunning.value = true;
 
+  try {
+    await saveCollection();
+    await saveCharacters();
+    await saveAnnotations();
+
+    // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
+    updateAnnotationStatuses();
+
+    // Reset initial values of all state components
+    initialCollection.value = { ...collection.value };
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
+
+    showMessage('success');
+  } catch (error: unknown) {
+    showMessage('error', error as Error);
+    console.error('Error updating collection:', error);
+  } finally {
+    asyncOperationRunning.value = false;
+  }
+}
+
+async function handleCancelChanges(): Promise<void> {
+  asyncOperationRunning.value = true;
+
+  try {
+    await getCollectionByUuid();
+    await getCharacters();
+    await getAnnotations();
+  } catch (error: unknown) {
+    console.error('Error discarding changes:', error);
+  } finally {
+    asyncOperationRunning.value = false;
+  }
+}
+
+async function saveCollection(): Promise<void> {
+  // TODO: Replace localhost with vite configuration
+  const url: string = `http://localhost:8080/api/collections/${uuid}`;
+  const response: Response = await fetch(url, {
+    method: 'POST',
+    cache: 'no-cache',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    referrerPolicy: 'no-referrer',
+    body: JSON.stringify(collection.value),
+  });
+
+  if (!response.ok) {
+    throw new Error('Neither metadata nor text could be saved');
+  }
+}
+
+async function saveCharacters(): Promise<void> {
   // This can be done within the snippet since changes in the chain can only occur here
   const { uuidStart, uuidEnd } = findChangesetBoundaries();
 
@@ -187,93 +243,48 @@ async function handleSaveChanges(): Promise<void> {
   const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
   console.log(snippetToUpdate.map((c: Character) => c.data.text));
 
-  try {
-    // TODO: Replace localhost with vite configuration
-    let url: string = `http://localhost:8080/api/collections/${uuid}`;
-    let response: Response = await fetch(url, {
-      method: 'POST',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify(collection.value),
-    });
+  const characterPostData: CharacterPostData = {
+    collectionUuid: collection.value.uuid,
+    uuidStart: uuidStart,
+    uuidEnd: uuidEnd,
+    // TODO: This array.map is a workaround since saving does not work currently
+    characters: snippetToUpdate.map((c: Character) => c.data),
+  };
 
-    if (!response.ok) {
-      throw new Error('Neither metadata nor text could be saved');
-    }
+  const url: string = `http://localhost:8080/api/collections/${uuid}/characters`;
+  const response: Response = await fetch(url, {
+    method: 'POST',
+    cache: 'no-cache',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    referrerPolicy: 'no-referrer',
+    body: JSON.stringify(characterPostData),
+  });
 
-    const characterPostData: CharacterPostData = {
-      collectionUuid: collection.value.uuid,
-      uuidStart: uuidStart,
-      uuidEnd: uuidEnd,
-      // TODO: This array.map is a workaround since saving does not work currently
-      characters: snippetToUpdate.map((c: Character) => c.data),
-    };
-
-    url = `http://localhost:8080/api/collections/${uuid}/characters`;
-    response = await fetch(url, {
-      method: 'POST',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify(characterPostData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Metadata could be saved, text not');
-    }
-
-    updateAnnotationsBeforeSave();
-
-    url = `http://localhost:8080/api/collections/${uuid}/annotations`;
-    response = await fetch(url, {
-      method: 'POST',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify(annotations.value),
-    });
-
-    if (!response.ok) {
-      throw new Error('Neither metadata nor text could be saved');
-    }
-
-    // Reset initial states. All Annotation statuses are updated explicitly to "existing"
-    // and the initialData property set to the current data
-    updateAnnotationStatuses();
-
-    initialCollection.value = { ...collection.value };
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
-    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
-    showMessage('success');
-  } catch (error: unknown) {
-    showMessage('error', error as Error);
-    console.error('Error updating collection:', error);
-  } finally {
-    asyncOperationRunning.value = false;
+  if (!response.ok) {
+    throw new Error('Metadata could be saved, text not');
   }
 }
 
-async function handleCancelChanges(): Promise<void> {
-  asyncOperationRunning.value = true;
+async function saveAnnotations(): Promise<void> {
+  updateAnnotationsBeforeSave();
 
-  try {
-    await getCollectionByUuid();
-    await getCharacters();
-    await getAnnotations();
-  } catch (error: unknown) {
-    console.error('Error discarding changes:', error);
-  } finally {
-    asyncOperationRunning.value = false;
+  const url: string = `http://localhost:8080/api/collections/${uuid}/annotations`;
+  const response: Response = await fetch(url, {
+    method: 'POST',
+    cache: 'no-cache',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    referrerPolicy: 'no-referrer',
+    body: JSON.stringify(annotations.value),
+  });
+
+  if (!response.ok) {
+    throw new Error('Neither metadata nor text could be saved');
   }
 }
 
