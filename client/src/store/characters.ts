@@ -78,7 +78,7 @@ export function useCharactersStore() {
 
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
     snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialSnippetCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
   }
 
   /**
@@ -115,7 +115,7 @@ export function useCharactersStore() {
 
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
     snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialSnippetCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
   }
 
   /**
@@ -305,7 +305,7 @@ export function useCharactersStore() {
     }
 
     totalCharacters.value.splice(startAtIndex, charsToDeleteCount, ...snippetCharacters.value);
-    initialSnippetCharacters.value = [...snippetCharacters.value];
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
 
     if (afterEndIndex.value === null) {
       afterEndIndex.value = null;

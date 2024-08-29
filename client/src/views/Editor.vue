@@ -248,10 +248,12 @@ async function handleSaveChanges(): Promise<void> {
     }
 
     // Reset initial states. All Annotation statuses are updated explicitly to "existing"
+    // and the initialData property set to the current data
     updateAnnotationStatuses();
+
     initialCollection.value = { ...collection.value };
-    initialSnippetCharacters.value = [...snippetCharacters.value];
-    initialAnnotations.value = [...annotations.value];
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);

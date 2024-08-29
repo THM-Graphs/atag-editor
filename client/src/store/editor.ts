@@ -79,15 +79,14 @@ export function useEditorStore() {
     }
 
     // Compare characters values and annotations
-    for (let index = 0; index < snippetCharacters.value.length; index++) {
+    for (let i = 0; i < snippetCharacters.value.length; i++) {
       const annotationsAreEqual = areSetsEqual(
-        new Set(snippetCharacters.value[index].annotations.map(a => a.uuid)),
-        new Set(initialSnippetCharacters.value[index].annotations.map(a => a.uuid)),
+        new Set(snippetCharacters.value[i].annotations.map(a => a.uuid)),
+        new Set(initialSnippetCharacters.value[i].annotations.map(a => a.uuid)),
       );
 
       if (
-        snippetCharacters.value[index].data.uuid !==
-          initialSnippetCharacters.value[index].data.uuid ||
+        snippetCharacters.value[i].data.uuid !== initialSnippetCharacters.value[i].data.uuid ||
         !annotationsAreEqual
       ) {
         return true;
@@ -95,15 +94,17 @@ export function useEditorStore() {
     }
 
     // Check annotation status and data
-    annotations.value.forEach((a: Annotation) => {
-      if (a.status === 'deleted' || a.status === 'created') {
-        return true;
-      }
+    for (let i = 0; i < annotations.value.length; i++) {
+      const a: Annotation = annotations.value[i];
 
-      if (!areObjectsEqual(a.data, a.initialData)) {
+      if (
+        a.status === 'deleted' ||
+        a.status === 'created' ||
+        !areObjectsEqual(a.data, a.initialData)
+      ) {
         return true;
       }
-    });
+    }
 
     return false;
   }
