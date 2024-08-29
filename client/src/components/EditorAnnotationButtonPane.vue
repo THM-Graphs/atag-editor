@@ -141,7 +141,7 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
           :key="type.type"
           :disabled="!selectedOptions.includes(type.type)"
           :data-annotation-type="type.type"
-          v-tooltip.hover.top="{ value: type.text, showDelay: 50 }"
+          v-tooltip.hover.top="{ value: type.type, showDelay: 50 }"
           @click="handleCreateAnnotation"
         >
           <template #icon>
