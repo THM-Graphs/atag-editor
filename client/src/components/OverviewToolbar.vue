@@ -100,7 +100,12 @@ function handleSearchInput(): void {
         <InputIcon>
           <i class="pi pi-search" />
         </InputIcon>
-        <InputText placeholder="Filter texts" v-model="searchInput" @input="handleSearchInput" />
+        <InputText
+          spellcheck="false"
+          ceholder="Filter texts"
+          v-model="searchInput"
+          @input="handleSearchInput"
+        />
       </IconField>
     </template>
 
@@ -137,6 +142,7 @@ function handleSearchInput(): void {
             :key="property.name"
             v-model="newCollectionData[property.name]"
             class="flex-auto"
+            spellcheck="false"
           />
         </div>
       </div>

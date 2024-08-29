@@ -95,6 +95,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
             :invalid="field.required && !annotation.data[field.name]"
             v-model="annotation.data[field.name]"
             class="flex-auto w-full"
+            spellcheck="false"
           />
           <Textarea
             v-else-if="field.type === 'textarea'"

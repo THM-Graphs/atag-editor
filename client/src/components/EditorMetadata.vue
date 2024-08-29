@@ -35,6 +35,7 @@ function validate(): boolean {
         :value="collection.uuid"
         class="flex-auto w-full"
         size="small"
+        spellcheck="false"
       />
       <Button
         icon="pi pi-copy"
@@ -64,6 +65,7 @@ function validate(): boolean {
             :key="field.name"
             v-model="collection[field.name]"
             class="flex-auto w-full"
+            spellcheck="false"
           />
         </div>
       </div>
