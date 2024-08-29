@@ -185,17 +185,10 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 async function handleCancelChanges(): Promise<void> {
-  asyncOperationRunning.value = true;
-
-  try {
-    await getCollectionByUuid();
-    await getCharacters();
-    await getAnnotations();
-  } catch (error: unknown) {
-    console.error('Error discarding changes:', error);
-  } finally {
-    asyncOperationRunning.value = false;
-  }
+  // Also works, needs less condition checking in stores and skips requests
+  collection.value = { ...initialCollection.value };
+  snippetCharacters.value = JSON.parse(JSON.stringify(initialSnippetCharacters.value));
+  annotations.value = JSON.parse(JSON.stringify(initialAnnotations.value));
 }
 
 async function saveCollection(): Promise<void> {
