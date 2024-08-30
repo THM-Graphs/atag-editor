@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onUpdated, ref } from 'vue';
+import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import EditorOrientationBar from './EditorOrientationBar.vue';
@@ -20,11 +20,15 @@ import { useFilterStore } from '../store/filter';
 import { Annotation, Character } from '../models/types';
 import { useHistoryStore } from '../store/history';
 
-onUpdated(() => {
-  placeCursor();
+onMounted(() => {
+  placeCaret();
 });
 
-const { newRangeAnchorUuid, hasUnsavedChanges, placeCursor } = useEditorStore();
+onUpdated(() => {
+  placeCaret();
+});
+
+const { newRangeAnchorUuid, hasUnsavedChanges, placeCaret } = useEditorStore();
 const { collection } = useCollectionStore();
 const {
   afterEndIndex,
@@ -56,6 +60,8 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
 
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
 });
+
+newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -541,6 +547,8 @@ function handlePaginationUp(event: MouseEvent): void {
     }
   });
 
+  newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
+
   initializeHistory();
 }
 
@@ -585,6 +593,8 @@ function handlePaginationDown(event: MouseEvent): void {
       }
     }
   });
+
+  newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
 
   initializeHistory();
 }

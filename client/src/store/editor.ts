@@ -17,14 +17,14 @@ const newRangeAnchorUuid = ref<string | null>(null);
  */
 export function useEditorStore() {
   /**
-   * Places the cursor at the specified position within the editor.
+   * Places the caret at the specified position within the editor.
    *
-   * If a new range anchor UUID is provided, the cursor is placed at the corresponding element.
-   * Otherwise, the cursor is placed at the first span element within the #text container, or at the #text container itself if no span element is found.
+   * If a new range anchor UUID is provided, the caret is placed at the corresponding element.
+   * Otherwise, the caret is placed at the first span element within the #text container, or at the #text container itself if no span element is found.
    *
    * @return {void}
    */
-  function placeCursor(): void {
+  function placeCaret(): void {
     const range: Range = document.createRange();
     let element: HTMLDivElement | HTMLSpanElement | null;
     let offset: 0 | 1 = 1;
@@ -116,7 +116,7 @@ export function useEditorStore() {
   return {
     newRangeAnchorUuid,
     hasUnsavedChanges,
-    placeCursor,
+    placeCaret,
     resetEditor,
   };
 }
