@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { onClickOutside } from '@vueuse/core';
 import { useFilterStore } from '../store/filter';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../helper/helper';
@@ -10,7 +11,10 @@ import Checkbox from 'primevue/checkbox';
 const { allOptions, selectedOptions, selectAllOptions, selectDefaultOptions } = useFilterStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 
+const container = ref<HTMLDivElement>(null);
 const isCollapsed = ref<boolean>(true);
+
+onClickOutside(container, () => (isCollapsed.value = true));
 
 function toggleDropdown(event: MouseEvent): void {
   isCollapsed.value = !isCollapsed.value;
@@ -18,7 +22,7 @@ function toggleDropdown(event: MouseEvent): void {
 </script>
 
 <template>
-  <div class="w-full relative">
+  <div ref="container" class="w-full relative">
     <Button
       type="button"
       class="w-full"
