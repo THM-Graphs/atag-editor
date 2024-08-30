@@ -61,7 +61,8 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
 });
 
-newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
+newRangeAnchorUuid.value =
+  snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -505,6 +506,7 @@ function handleRedo(event: KeyboardEvent): void {
   redo();
 }
 
+// TODO: Fix, unneeded calculations after calling the store function...
 function handlePaginationUp(event: MouseEvent): void {
   if (hasUnsavedChanges()) {
     console.log('SAVE YOUR CHANGES');
@@ -547,11 +549,13 @@ function handlePaginationUp(event: MouseEvent): void {
     }
   });
 
-  newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
+  newRangeAnchorUuid.value =
+    snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
 
   initializeHistory();
 }
 
+// TODO: Fix, unneeded calculations after calling the store function...
 function handlePaginationDown(event: MouseEvent): void {
   if (hasUnsavedChanges()) {
     console.log('SAVE YOUR CHANGES');
@@ -594,7 +598,8 @@ function handlePaginationDown(event: MouseEvent): void {
     }
   });
 
-  newRangeAnchorUuid.value = snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid;
+  newRangeAnchorUuid.value =
+    snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
 
   initializeHistory();
 }
