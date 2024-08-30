@@ -9,6 +9,7 @@ const { collection, initialCollection } = useCollectionStore();
 const { snippetCharacters, initialSnippetCharacters } = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
+const keepTextOnPagination = ref<boolean>(false);
 const newRangeAnchorUuid = ref<string | null>(null);
 
 /**
@@ -24,6 +25,7 @@ export function useEditorStore() {
    *
    * @return {void}
    */
+
   function placeCaret(): void {
     const range: Range = document.createRange();
     let element: HTMLDivElement | HTMLSpanElement | null;
@@ -78,17 +80,21 @@ export function useEditorStore() {
       return true;
     }
 
-    // Compare characters values and annotations
+    // Compare characters by uuid to see if the text has changed
+    for (let i = 0; i < snippetCharacters.value.length; i++) {
+      if (snippetCharacters.value[i].data.uuid !== initialSnippetCharacters.value[i].data.uuid) {
+        return true;
+      }
+    }
+
+    // Compare annotations of characters to see if annotation ranges have changed
     for (let i = 0; i < snippetCharacters.value.length; i++) {
       const annotationsAreEqual = areSetsEqual(
         new Set(snippetCharacters.value[i].annotations.map(a => a.uuid)),
         new Set(initialSnippetCharacters.value[i].annotations.map(a => a.uuid)),
       );
 
-      if (
-        snippetCharacters.value[i].data.uuid !== initialSnippetCharacters.value[i].data.uuid ||
-        !annotationsAreEqual
-      ) {
+      if (!annotationsAreEqual) {
         return true;
       }
     }
@@ -114,6 +120,7 @@ export function useEditorStore() {
   }
 
   return {
+    keepTextOnPagination,
     newRangeAnchorUuid,
     hasUnsavedChanges,
     placeCaret,

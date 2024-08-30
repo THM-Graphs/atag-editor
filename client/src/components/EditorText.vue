@@ -3,6 +3,7 @@ import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
 import EditorOrientationBar from './EditorOrientationBar.vue';
+import PaginationButton from './PaginationButton.vue';
 import {
   findEndOfWord,
   findStartOfWord,
@@ -12,12 +13,10 @@ import {
   isEditorElement,
   removeFormatting,
 } from '../helper/helper';
-import Button from 'primevue/button';
 import ToggleSwitch from 'primevue/toggleswitch';
-import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
-import { Annotation, Character } from '../models/types';
+import { Character } from '../models/types';
 import { useHistoryStore } from '../store/history';
 
 onMounted(() => {
@@ -28,25 +27,18 @@ onUpdated(() => {
   placeCaret();
 });
 
-const { newRangeAnchorUuid, hasUnsavedChanges, placeCaret } = useEditorStore();
+const { keepTextOnPagination, newRangeAnchorUuid, placeCaret } = useEditorStore();
 const { collection } = useCollectionStore();
 const {
-  afterEndIndex,
-  beforeStartIndex,
   initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
   deleteCharactersBetweenIndexes,
   insertCharactersAtIndex,
-  nextCharacters,
-  previousCharacters,
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
-const { annotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
-const { history, initializeHistory, pushHistoryEntry, redo, undo } = useHistoryStore();
-
-const keepTextOnPagination = ref<boolean>(false);
+const { pushHistoryEntry, redo, undo } = useHistoryStore();
 
 const editorRef = ref<HTMLDivElement>(null);
 
@@ -506,104 +498,6 @@ function handleRedo(event: KeyboardEvent): void {
   redo();
 }
 
-// TODO: Fix, unneeded calculations after calling the store function...
-function handlePaginationUp(event: MouseEvent): void {
-  if (hasUnsavedChanges()) {
-    console.log('SAVE YOUR CHANGES');
-    return;
-  }
-
-  const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
-
-  previousCharacters(mode);
-
-  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
-
-  let charUuids: Set<string> = new Set();
-
-  snippetCharacters.value.forEach(c => {
-    c.annotations.forEach(a => charUuids.add(a.uuid));
-  });
-
-  annotations.value.forEach((annotation: Annotation) => {
-    if (!charUuids.has(annotation.data.uuid)) {
-      annotation.isTruncated = false;
-    } else {
-      const isLeftTruncated: boolean =
-        beforeStartIndex.value &&
-        totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
-        );
-
-      const isRightTruncated: boolean =
-        afterEndIndex.value &&
-        totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
-        );
-
-      if (isLeftTruncated || isRightTruncated) {
-        annotation.isTruncated = true;
-      } else {
-        annotation.isTruncated = false;
-      }
-    }
-  });
-
-  newRangeAnchorUuid.value =
-    snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
-
-  initializeHistory();
-}
-
-// TODO: Fix, unneeded calculations after calling the store function...
-function handlePaginationDown(event: MouseEvent): void {
-  if (hasUnsavedChanges()) {
-    console.log('SAVE YOUR CHANGES');
-    return;
-  }
-
-  const mode: 'keep' | 'replace' = keepTextOnPagination.value === true ? 'keep' : 'replace';
-
-  nextCharacters(mode);
-
-  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
-
-  let charUuids: Set<string> = new Set();
-
-  snippetCharacters.value.forEach(c => {
-    c.annotations.forEach(a => charUuids.add(a.uuid));
-  });
-
-  annotations.value.forEach((annotation: Annotation) => {
-    if (!charUuids.has(annotation.data.uuid)) {
-      annotation.isTruncated = false;
-    } else {
-      const isLeftTruncated: boolean =
-        beforeStartIndex.value &&
-        totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
-        );
-
-      const isRightTruncated: boolean =
-        afterEndIndex.value &&
-        totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
-        );
-
-      if (isLeftTruncated || isRightTruncated) {
-        annotation.isTruncated = true;
-      } else {
-        annotation.isTruncated = false;
-      }
-    }
-  });
-
-  newRangeAnchorUuid.value =
-    snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
-
-  initializeHistory();
-}
-
 async function handleCopy(): Promise<void> {
   const { selection } = getSelectionData();
   const text: string = selection.toString();
@@ -641,14 +535,7 @@ function createNewCharacter(char: string): Character {
   </div>
   <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    <Button
-      class="w-full"
-      label="Previous"
-      aria-label="Show previous characters"
-      severity="secondary"
-      icon="pi pi-arrow-up"
-      @click="handlePaginationUp"
-    ></Button>
+    <PaginationButton direction="previous" />
     <div class="text-container h-full p-2 flex gap-1 overflow-hidden">
       <div class="scroll-container flex-1 overflow-y-scroll">
         <div
@@ -685,14 +572,7 @@ function createNewCharacter(char: string): Character {
       </div>
       <EditorOrientationBar />
     </div>
-    <Button
-      class="w-full"
-      label="Next"
-      aria-label="Show next characters"
-      severity="secondary"
-      icon="pi pi-arrow-down"
-      @click="handlePaginationDown"
-    ></Button>
+    <PaginationButton direction="next" />
   </div>
 </template>
 
