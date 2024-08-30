@@ -6,11 +6,13 @@ import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 import { useHistoryStore } from '../store/history';
+import { useEditorStore } from '../store/editor';
 import { Annotation, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
+const { newRangeAnchorUuid } = useEditorStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { pushHistoryEntry } = useHistoryStore();
@@ -52,6 +54,7 @@ function handleCreateAnnotation(event: MouseEvent) {
   annotateCharacters(selectedCharacters, newAnnotation);
   // TODO: This snapshot should be taken BEFORE changing the state
   pushHistoryEntry();
+  newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
 }
 
 function getSelectedCharacters(): Character[] {
