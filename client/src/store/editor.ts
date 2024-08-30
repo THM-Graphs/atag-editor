@@ -12,7 +12,7 @@ const { annotations, initialAnnotations } = useAnnotationStore();
 const newRangeAnchorUuid = ref<string | null>(null);
 
 /**
- * Store for editor state and operations (cursor placement, change detection etc.). When the component is unmounted,
+ * Store for editor state and operations (caret placement, change detection etc.). When the component is unmounted,
  * the store is reset.
  */
 export function useEditorStore() {

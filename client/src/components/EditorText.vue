@@ -8,7 +8,7 @@ import {
   findStartOfWord,
   getParentCharacterSpan,
   getSelectionData,
-  isCursorAtBeginning,
+  isCaretAtBeginning,
   isEditorElement,
   removeFormatting,
 } from '../helper/helper';
@@ -146,7 +146,7 @@ function handleInsertText(event: InputEvent): void {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
       let index: number;
 
-      if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
         index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
@@ -162,7 +162,7 @@ function handleInsertText(event: InputEvent): void {
       let startIndex: number;
       let endIndex: number;
 
-      if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
@@ -209,7 +209,7 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
       let index: number;
 
-      if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
         index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
@@ -225,7 +225,7 @@ async function handleInsertFromPaste(event: InputEvent): Promise<void> {
       let startIndex: number;
       let endIndex: number;
 
-      if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
@@ -263,7 +263,7 @@ function handleInsertFromDrop(event: InputEvent): void {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
       let index: number;
 
-      if (isCursorAtBeginning(referenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
         index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id);
@@ -279,7 +279,7 @@ function handleInsertFromDrop(event: InputEvent): void {
       let startIndex: number;
       let endIndex: number;
 
-      if (isCursorAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
         startIndex = 0;
       } else {
         startIndex = snippetCharacters.value.findIndex(
@@ -311,7 +311,7 @@ function handleDeleteWordBackward(event: InputEvent): void {
   if (type === 'Caret') {
     const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
-    if (isCursorAtBeginning(spanToDelete, editorRef)) {
+    if (isCaretAtBeginning(spanToDelete, editorRef)) {
       return;
     }
 
@@ -351,7 +351,7 @@ function handleDeleteWordForward(event: InputEvent): void {
       );
       const endWordIndex: number = findEndOfWord(charIndex, snippetCharacters.value);
 
-      const deletionStartIndex: number = isCursorAtBeginning(referenceSpanElement, editorRef)
+      const deletionStartIndex: number = isCaretAtBeginning(referenceSpanElement, editorRef)
         ? charIndex
         : charIndex + 1;
 
@@ -374,7 +374,7 @@ function handleDeleteContentBackward(event: InputEvent): void {
   if (type === 'Caret') {
     const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
-    if (isCursorAtBeginning(spanToDelete, editorRef)) {
+    if (isCaretAtBeginning(spanToDelete, editorRef)) {
       return;
     }
 

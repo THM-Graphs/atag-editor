@@ -156,16 +156,13 @@ export function getSelectionData(): { selection: Selection; range: Range; type: 
 }
 
 /**
- * Determines if the cursor is before the first character in the editor. Used for determining where to execute the insert/delete operation.
+ * Determines if the caret is before the first character in the editor. Used for determining where to execute the insert/delete operation.
  *
  * @param {HTMLSpanElement} characterSpan - The HTMLSpanElement representing the character span.
  * @param {Ref<HTMLDivElement>} editorElm - The ref to the editor element.
- * @return {boolean} True if the cursor is before the first character, false otherwise.
+ * @return {boolean} True if the caret is before the first character, false otherwise.
  */
-export function isCursorAtBeginning(
-  characterSpan: HTMLSpanElement,
-  editorElm: Ref<HTMLDivElement>,
-) {
+export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
   const { range } = getSelectionData();
   return characterSpan === editorElm.value.firstElementChild && range.startOffset === 0;
 }
