@@ -466,7 +466,9 @@ function preventUserFromRouteLeaving(): boolean {
   <LoadingSpinner v-if="isLoading === true" />
   <EditorError v-else-if="isValidCollection === false" :uuid="uuid" />
   <div v-else class="container flex h-screen">
-    <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning"></div>
+    <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
+      <LoadingSpinner />
+    </div>
     <EditorSidebar
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
@@ -489,7 +491,7 @@ function preventUserFromRouteLeaving(): boolean {
       <Toast />
       <EditorHeader ref="labelInputRef" />
       <EditorAnnotationButtonPane />
-      <EditorText ref="editorRef" />
+      <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
     <EditorResizer

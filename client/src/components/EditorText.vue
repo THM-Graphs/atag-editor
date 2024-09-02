@@ -19,6 +19,8 @@ import { useFilterStore } from '../store/filter';
 import { Character } from '../models/types';
 import { useHistoryStore } from '../store/history';
 
+const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
+
 onMounted(() => {
   placeCaret();
 });
@@ -527,6 +529,7 @@ function createNewCharacter(char: string): Character {
 </script>
 
 <template>
+  <div class="overlay"></div>
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch v-model="keepTextOnPagination" />
@@ -542,6 +545,7 @@ function createNewCharacter(char: string): Character {
         <div
           id="text"
           class="min-h-full"
+          :class="asyncOperationRunning ? 'async-overlay' : ''"
           ref="editorRef"
           contenteditable="true"
           spellcheck="false"
@@ -599,6 +603,11 @@ function createNewCharacter(char: string): Character {
 
 #text {
   outline: 0;
+}
+
+#text.async-overlay {
+  background-color: white;
+  opacity: 0.6;
 }
 
 #text > span {
