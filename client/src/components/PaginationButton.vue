@@ -44,7 +44,7 @@ const { initializeHistory } = useHistoryStore();
 
 function handlePagination() {
   if (hasUnsavedChanges()) {
-    console.log('SAVE YOUR CHANGES');
+    window.alert('Save your changes before paginating further');
     return;
   }
 
