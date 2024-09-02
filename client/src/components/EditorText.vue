@@ -490,12 +490,16 @@ function handleDeleteHardLineForward(event: InputEvent): void {
   // Handle delete hard line forward logic
 }
 
-function handleUndo(event: KeyboardEvent): void {
-  undo();
-}
+function handleKeydown(event: KeyboardEvent) {
+  if (!event.ctrlKey || event.key.toLowerCase() !== 'z') {
+    return;
+  }
 
-function handleRedo(event: KeyboardEvent): void {
-  redo();
+  if (event.shiftKey) {
+    redo();
+  } else {
+    undo();
+  }
 }
 
 async function handleCopy(): Promise<void> {
@@ -546,8 +550,7 @@ function createNewCharacter(char: string): Character {
           spellcheck="false"
           @beforeinput="handleInput"
           @copy="handleCopy"
-          @keydown.ctrl.z.exact="handleUndo"
-          @keydown.ctrl.shift.z.exact="handleRedo"
+          @keydown="handleKeydown"
         >
           <span
             v-for="character in snippetCharacters"
