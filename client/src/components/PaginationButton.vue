@@ -42,7 +42,7 @@ const {
 const { keepTextOnPagination, newRangeAnchorUuid, hasUnsavedChanges } = useEditorStore();
 const { initializeHistory } = useHistoryStore();
 
-function handlePagination(event: MouseEvent) {
+function handlePagination() {
   if (hasUnsavedChanges()) {
     console.log('SAVE YOUR CHANGES');
     return;

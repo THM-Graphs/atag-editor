@@ -63,7 +63,7 @@ onUnmounted((): void => {
   window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
-onBeforeRouteLeave((to, from) => preventUserFromRouteLeaving());
+onBeforeRouteLeave(() => preventUserFromRouteLeaving());
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const uuid: string = route.params.uuid as string;
@@ -356,7 +356,7 @@ function handleMouseDown(event: MouseEvent): void {
   window.addEventListener('mousemove', handleResize);
 }
 
-function handleMouseUp(event: MouseEvent): void {
+function handleMouseUp(): void {
   activeResizer.value = '';
   window.removeEventListener('mousemove', handleResize);
 }

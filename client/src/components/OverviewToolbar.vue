@@ -147,7 +147,7 @@ function handleSearchInput(): void {
         </div>
       </div>
       <div v-else class="skeleton-container">
-        <div v-for="n in 4" class="flex flex-row gap-2">
+        <div v-for="_n in 4" class="flex flex-row gap-2">
           <Skeleton class="mb-3" height="2rem" width="10rem"></Skeleton>
           <Skeleton class="mb-3" height="2rem"></Skeleton>
         </div>

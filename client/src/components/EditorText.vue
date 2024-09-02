@@ -78,7 +78,7 @@ function handleInput(event: InputEvent) {
       handleInsertReplacementText(event);
       break;
     case 'insertFromPaste':
-      handleInsertFromPaste(event);
+      handleInsertFromPaste();
       break;
     case 'insertFromDrop':
       handleInsertFromDrop(event);
@@ -89,22 +89,22 @@ function handleInput(event: InputEvent) {
 
     // Text Deletion
     case 'deleteWordBackward':
-      handleDeleteWordBackward(event);
+      handleDeleteWordBackward();
       break;
     case 'deleteWordForward':
-      handleDeleteWordForward(event);
+      handleDeleteWordForward();
       break;
     case 'deleteContentBackward':
-      handleDeleteContentBackward(event);
+      handleDeleteContentBackward();
       break;
     case 'deleteContentForward':
-      handleDeleteContentForward(event);
+      handleDeleteContentForward();
       break;
     case 'deleteByCut':
-      handleDeleteByCut(event);
+      handleDeleteByCut();
       break;
     case 'deleteByDrag':
-      handleDeleteByDrag(event);
+      handleDeleteByDrag();
       break;
     case 'deleteSoftLineBackward':
       handleDeleteSoftLineBackward(event);
@@ -185,7 +185,7 @@ function handleInsertReplacementText(event: InputEvent): void {
   // Additional logic for replacement can be added here
 }
 
-async function handleInsertFromPaste(event: InputEvent): Promise<void> {
+async function handleInsertFromPaste(): Promise<void> {
   const text: string = await navigator.clipboard.readText();
 
   const newCharacters: Character[] = removeFormatting(text)
@@ -294,7 +294,7 @@ function handleInsertFromYank(event: InputEvent): void {
 }
 
 // Text Deletion Handlers
-function handleDeleteWordBackward(event: InputEvent): void {
+function handleDeleteWordBackward(): void {
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
@@ -317,21 +317,18 @@ function handleDeleteWordBackward(event: InputEvent): void {
 
     deleteCharactersBetweenIndexes(startWordIndex, charIndex);
   } else {
-    handleDeleteContentBackward(event);
+    handleDeleteContentBackward();
   }
 }
 
-function handleDeleteWordForward(event: InputEvent): void {
+function handleDeleteWordForward(): void {
   const { range, type } = getSelectionData();
-
-  let spanToDelete: HTMLSpanElement;
 
   if (isEditorElement(range.startContainer)) {
     if (editorRef.value.childElementCount === 0) {
       return;
     }
 
-    spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
     newRangeAnchorUuid.value = snippetCharacters.value[0]?.data.uuid ?? null;
 
     deleteCharactersBetweenIndexes(0, findEndOfWord(0, snippetCharacters.value));
@@ -351,12 +348,12 @@ function handleDeleteWordForward(event: InputEvent): void {
       newRangeAnchorUuid.value = snippetCharacters.value[charIndex]?.data.uuid ?? null;
       deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
     } else {
-      handleDeleteContentForward(event);
+      handleDeleteContentForward();
     }
   }
 }
 
-function handleDeleteContentBackward(event: InputEvent): void {
+function handleDeleteContentBackward(): void {
   const { range, type } = getSelectionData();
 
   if (isEditorElement(range.startContainer)) {
@@ -393,7 +390,7 @@ function handleDeleteContentBackward(event: InputEvent): void {
   }
 }
 
-function handleDeleteContentForward(event: InputEvent): void {
+function handleDeleteContentForward(): void {
   const { range, type } = getSelectionData();
 
   let spanToDelete: HTMLSpanElement;
@@ -446,7 +443,7 @@ function handleDeleteContentForward(event: InputEvent): void {
   }
 }
 
-function handleDeleteByCut(event: InputEvent): void {
+function handleDeleteByCut(): void {
   const { range } = getSelectionData();
 
   const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
@@ -465,7 +462,7 @@ function handleDeleteByCut(event: InputEvent): void {
   handleCopy();
 }
 
-function handleDeleteByDrag(event: InputEvent): void {
+function handleDeleteByDrag(): void {
   // TODO: Should this be handled? Drag and drop with annotated text will be very complex
   return;
 }

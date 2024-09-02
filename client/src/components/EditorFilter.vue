@@ -16,7 +16,7 @@ const isCollapsed = ref<boolean>(true);
 
 onClickOutside(container, () => (isCollapsed.value = true));
 
-function toggleDropdown(event: MouseEvent): void {
+function toggleDropdown(): void {
   isCollapsed.value = !isCollapsed.value;
 }
 </script>
