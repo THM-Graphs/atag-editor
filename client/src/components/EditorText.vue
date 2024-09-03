@@ -529,7 +529,6 @@ function createNewCharacter(char: string): Character {
 </script>
 
 <template>
-  <div class="overlay"></div>
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch v-model="keepTextOnPagination" />
