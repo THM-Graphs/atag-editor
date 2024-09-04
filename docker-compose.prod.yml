@@ -26,8 +26,6 @@ services:
   build:
    context: ./client
    dockerfile: Dockerfile.prod
-  # volumes:
-  #  - ./client:/app
   restart: on-failure
   depends_on:
    - backend
@@ -43,8 +41,6 @@ services:
   #  TODO: Remove ports as soon as nginx setup works?
   ports:
    - '8080:8080'
-  volumes:
-   - ./server:/app
   restart: on-failure
   environment:
    - APP_PORT=${APP_PORT}
