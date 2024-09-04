@@ -5,6 +5,7 @@ import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
+import iconsMap from '../helper/icons';
 import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
@@ -208,10 +209,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
             </div>
             <div v-else-if="slotProps.node.type === 'type'" class="flex align-items-center">
               <div class="icon-container">
-                <img
-                  :src="`../src/assets/icons/${slotProps.node.label}.svg`"
-                  class="icon w-full h-full"
-                />
+                <img :src="`${iconsMap[slotProps.node.label]}`" class="icon w-full h-full" />
               </div>
               <div class="name-container ml-2">
                 {{ slotProps.node.label }} [{{ slotProps.node.children.length }}]

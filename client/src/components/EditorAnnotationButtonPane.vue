@@ -3,6 +3,7 @@ import Button from 'primevue/button';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/helper';
+import iconsMap from '../helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 import { useHistoryStore } from '../store/history';
@@ -150,7 +151,7 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
           <template #icon>
             <!-- TODO: Should this come from annotation type config? -->
             <img
-              :src="`../src/assets/icons/${type.type}.svg`"
+              :src="`${iconsMap[type.type]}`"
               :title="type.text"
               :alt="type.text"
               class="button-icon w-full h-full"

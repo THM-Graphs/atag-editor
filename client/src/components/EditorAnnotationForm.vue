@@ -3,6 +3,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
+import iconsMap from '../helper/icons';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
@@ -57,10 +58,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
-          <img
-            :src="`../src/assets/icons/${annotation.data.type}.svg`"
-            class="button-icon w-full h-full"
-          />
+          <img :src="`${iconsMap[annotation.data.type]}`" class="button-icon w-full h-full" />
         </div>
         <div class="annotation-type-container">
           <span class="font-bold">{{ annotation.data.type }}</span>
