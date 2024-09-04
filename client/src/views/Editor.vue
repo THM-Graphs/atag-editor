@@ -17,7 +17,6 @@ import EditorError from '../components/EditorError.vue';
 import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
-import EditorSearchBar from '../components/EditorSearchBar.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import ICollection from '../models/ICollection';
 import { Character, CharacterPostData } from '../models/types';
@@ -492,7 +491,6 @@ function preventUserFromRouteLeaving(): boolean {
       <Toast />
       <EditorHeader ref="labelInputRef" />
       <EditorAnnotationButtonPane />
-      <EditorSearchBar />
       <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
