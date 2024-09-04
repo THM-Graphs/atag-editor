@@ -1,0 +1,27 @@
+FROM node:21-alpine as build
+
+# Set working directory
+WORKDIR /app
+
+# Copy files to container
+COPY . .
+
+# Install dependencies including devDependencies
+RUN npm install
+
+# Build bundle
+RUN npm run build
+
+# Build nginx image to serve bundle
+FROM nginx:alpine
+
+COPY /nginx.conf /etc/nginx/nginx.conf
+
+# Copy built bundles from previous build's dist folder
+COPY --from=build app/dist/ /app
+
+# Expose port
+EXPOSE 80
+
+# Start app
+CMD ["nginx", "-g", "daemon off;"]
