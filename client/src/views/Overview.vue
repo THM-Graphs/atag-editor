@@ -56,7 +56,7 @@ async function getCollections(): Promise<void> {
 
     collections.value = fetchedCollections;
   } catch (error: unknown) {
-    console.error('Error creating collection:', error);
+    console.error('Error fetching collections:', error);
   }
 }
 
