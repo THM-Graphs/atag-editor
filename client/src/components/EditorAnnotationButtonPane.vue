@@ -6,7 +6,7 @@ import { capitalize, getParentCharacterSpan, getSelectionData } from '../helper/
 import iconsMap from '../helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
-import { useHistoryStore } from '../store/history';
+// import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
 import { Annotation, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
@@ -16,7 +16,7 @@ const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
-const { pushHistoryEntry } = useHistoryStore();
+// const { pushHistoryEntry } = useHistoryStore();
 
 function handleCreateAnnotation(event: MouseEvent) {
   const buttonElm: HTMLButtonElement = (event.target as HTMLElement).closest('button');
@@ -54,7 +54,7 @@ function handleCreateAnnotation(event: MouseEvent) {
   addAnnotation(newAnnotation);
   annotateCharacters(selectedCharacters, newAnnotation);
   // TODO: This snapshot should be taken BEFORE changing the state
-  pushHistoryEntry();
+  // pushHistoryEntry();
   newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
 }
 

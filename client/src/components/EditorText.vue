@@ -17,7 +17,7 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import { Character } from '../models/types';
-import { useHistoryStore } from '../store/history';
+// import { useHistoryStore } from '../store/history';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -40,7 +40,7 @@ const {
   replaceCharactersBetweenIndizes,
 } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
-const { pushHistoryEntry, redo, undo } = useHistoryStore();
+// const { pushHistoryEntry, redo, undo } = useHistoryStore();
 
 const editorRef = ref<HTMLDivElement>(null);
 
@@ -125,7 +125,7 @@ function handleInput(event: InputEvent) {
       console.log('Unhandled input type:', event.inputType);
   }
 
-  pushHistoryEntry();
+  // pushHistoryEntry();
 }
 
 function handleInsertText(event: InputEvent): void {
@@ -495,9 +495,11 @@ function handleKeydown(event: KeyboardEvent) {
   }
 
   if (event.shiftKey) {
-    redo();
+    // redo();
+    return;
   } else {
-    undo();
+    // undo();
+    return;
   }
 }
 

@@ -25,7 +25,7 @@ import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
-import { useHistoryStore } from '../store/history';
+// import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -41,7 +41,7 @@ onMounted(async (): Promise<void> => {
     await getCharacters();
     await getAnnotations();
 
-    initializeHistory();
+    // initializeHistory();
 
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
@@ -55,7 +55,7 @@ onUnmounted((): void => {
   resetCharacters();
   resetAnnotations();
   resetEditor();
-  resetHistory();
+  // resetHistory();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -96,7 +96,7 @@ const {
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
 
-const { initializeHistory, resetHistory } = useHistoryStore();
+// const { initializeHistory, resetHistory } = useHistoryStore();
 
 const resizerWidth = 5;
 
