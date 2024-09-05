@@ -21,7 +21,7 @@ export default class AnnotationService {
   ): Promise<IAnnotation[]> {
     // TODO: Improve query speed, way too many db hits
     const query: string = `
-   WITH $annotations as allAnnotations
+    WITH $annotations as allAnnotations
 
     // 1. Delete deleted annotations
     CALL {
@@ -41,12 +41,8 @@ export default class AnnotationService {
     WITH ann, t
     WHERE ann.status <> 'deleted'
 
-    // Workaround: Detach delete matched node (if it exists). Faster than deleting all relationships from existing node
-    OPTIONAL MATCH (aDel:Annotation {uuid: ann.data.uuid})
-    DETACH DELETE (aDel)
-
-    // Create new annotation node
-    CREATE (a:Annotation {uuid: ann.data.uuid})
+    // Create (new) annotation node
+    MERGE (a:Annotation {uuid: ann.data.uuid})
 
     // Set data
     SET a = ann.data
@@ -57,8 +53,10 @@ export default class AnnotationService {
     // Remove existing relationships between annotation and character nodes before creating new ones
     WITH a, ann
 
-    // OPTIONAL MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(c:Character)
-    // DELETE r   
+    CALL {
+        MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(:Character)
+        DELETE r   
+    }
 
     // Handle character relationships
     WITH a, ann
