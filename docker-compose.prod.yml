@@ -65,3 +65,7 @@ services:
    - ./neo4j/data:/var/lib/neo4j/data
   environment:
    NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
+   NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
+   apoc.initializer.neo4j.0: CREATE CONSTRAINT collection_uuid IF NOT EXISTS FOR (c:Collection) REQUIRE c.uuid IS UNIQUE
+   apoc.initializer.neo4j.1: CREATE CONSTRAINT character_uuid IF NOT EXISTS FOR (ch:Character) REQUIRE ch.uuid IS UNIQUE
+   apoc.initializer.neo4j.2: CREATE CONSTRAINT annotation_uuid IF NOT EXISTS FOR (a:Annotation) REQUIRE a.uuid IS UNIQUE
