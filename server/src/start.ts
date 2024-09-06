@@ -22,5 +22,7 @@ app.get('/', (req: Request, res: Response) => {
 Neo4jDriver.createDatabaseConnection();
 
 app.listen(process.env.APP_PORT, (): void =>
-  console.log(`Running an Express API server at http://localhost:${process.env.APP_PORT}/api`),
+  console.log(
+    `Running an Express API server at ${process.env.PROTOCOL}://${process.env.APP_HOST}:${process.env.APP_PORT}/api`,
+  ),
 );

@@ -25,8 +25,7 @@ const guidelinesAreLoaded = ref<boolean>(false);
 async function createNewCollection(): Promise<void> {
   console.log(JSON.parse(JSON.stringify(newCollectionData.value)));
   try {
-    // TODO: Replace localhost with vite configuration
-    const url: string = 'http://localhost:8080/api/collections';
+    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
     const response: Response = await fetch(url, {
       method: 'POST',
       cache: 'no-cache',
@@ -65,8 +64,7 @@ async function hideDialog(): Promise<void> {
 }
 async function getGuidelines(): Promise<void> {
   try {
-    // TODO: Replace localhost with vite configuration
-    const url: string = 'http://localhost:8080/api/guidelines';
+    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/guidelines`;
     const response: Response = await fetch(url);
 
     if (!response.ok) {

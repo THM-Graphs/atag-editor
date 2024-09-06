@@ -34,8 +34,7 @@ onMounted(async (): Promise<void> => {
 
 async function getCollections(): Promise<void> {
   try {
-    // TODO: Replace localhost with vite configuration
-    const url: string = 'http://localhost:8080/api/collections';
+    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
     const response: Response = await fetch(url);
 
     if (!response.ok) {
