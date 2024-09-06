@@ -29,6 +29,9 @@ services:
   volumes:
    - ./client:/app
   restart: on-failure
+  environment:
+   - VITE_PROTOCOL=${PROTOCOL}
+   - VITE_APP_HOST=${APP_HOST}
   depends_on:
    - backend
   ports:
@@ -47,15 +50,17 @@ services:
    - ./server:/app
   restart: on-failure
   environment:
+   - APP_HOST=${APP_HOST}
    - APP_PORT=${APP_PORT}
    - NEO4J_BOLT_PORT=${NEO4J_BOLT_PORT}
    - NEO4J_HTTPS_PORT=${NEO4J_HTTPS_PORT}
    - NEO4J_USER=${NEO4J_USER}
    - NEO4J_PW=${NEO4J_PW}
+   - PROTOCOL=${PROTOCOL}
   depends_on:
    - neo4j
 
- #  Neo4j Database
+ # Neo4j Database
  neo4j:
   container_name: neo4j
   image: neo4j:5.19

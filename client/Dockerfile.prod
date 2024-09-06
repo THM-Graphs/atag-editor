@@ -6,6 +6,14 @@ WORKDIR /app
 # Copy files to container
 COPY . .
 
+# Use the build arguments from docker-compose.yml and set it as environment variables.
+# This way the variable is baked into the bundle.
+ARG VITE_APP_HOST
+ENV VITE_APP_HOST=${VITE_APP_HOST}
+
+ARG VITE_PROTOCOL
+ENV VITE_PROTOCOL=${VITE_PROTOCOL}
+
 # Install dependencies including devDependencies
 RUN npm install
 
