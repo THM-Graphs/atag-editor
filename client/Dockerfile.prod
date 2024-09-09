@@ -7,7 +7,7 @@ WORKDIR /app
 COPY . .
 
 # Use the build arguments from docker-compose.yml and set it as environment variables.
-# This way the variable is baked into the bundle.
+# This way the variables are baked into the bundle.
 ARG VITE_APP_HOST
 ENV VITE_APP_HOST=${VITE_APP_HOST}
 
@@ -23,13 +23,14 @@ RUN npm run build
 # Build nginx image to serve bundle
 FROM nginx:alpine
 
+# Copy nginx config
 COPY /nginx.conf /etc/nginx/nginx.conf
 
 # Copy built bundles from previous build's dist folder
 COPY --from=build app/dist/ /app
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
 # Start app
 CMD ["nginx", "-g", "daemon off;"]
