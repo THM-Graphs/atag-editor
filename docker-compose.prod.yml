@@ -6,7 +6,7 @@ services:
   image: nginx:alpine
   volumes:
    - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-  #  - ../etc/:/etc/nginx/certs
+   - ../certificates/:/etc/nginx/certs
   ports:
    - '80:80'
    - '443:443'
