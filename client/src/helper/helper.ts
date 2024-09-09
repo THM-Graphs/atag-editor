@@ -220,7 +220,7 @@ export function buildFetchUrl(path: string): string {
 
   if (import.meta.env.MODE === 'development') {
     // Used for development currently, fix in future with vite configuration
-    url = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
+    url = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080${path}`;
   } else {
     // For production, use relative URL and leave configuration to nginx
     url = path;
