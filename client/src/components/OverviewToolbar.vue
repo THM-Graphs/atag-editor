@@ -7,7 +7,7 @@ import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import Skeleton from 'primevue/skeleton';
 import Toolbar from 'primevue/toolbar';
-import { capitalize } from '../helper/helper';
+import { buildFetchUrl, capitalize } from '../helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 
@@ -25,7 +25,8 @@ const guidelinesAreLoaded = ref<boolean>(false);
 async function createNewCollection(): Promise<void> {
   console.log(JSON.parse(JSON.stringify(newCollectionData.value)));
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
+    const url: string = buildFetchUrl('/api/collections');
+
     const response: Response = await fetch(url, {
       method: 'POST',
       cache: 'no-cache',
@@ -64,7 +65,8 @@ async function hideDialog(): Promise<void> {
 }
 async function getGuidelines(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/guidelines`;
+    const url: string = buildFetchUrl('/api/guidelines');
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {

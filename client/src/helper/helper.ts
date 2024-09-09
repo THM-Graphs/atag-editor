@@ -205,3 +205,26 @@ export function scrollIntoViewIfNeeded(span: HTMLSpanElement): void {
 
   isOutsideViewport && span.scrollIntoView({ behavior: 'smooth' });
 }
+
+/**
+ * Builds a URL for a given path depending on the environment.
+ *
+ * If the environment is "development", the URL is constructed by prepending the protocol and host
+ * from the Vite configuration to the path. Otherwise, the given path is used as is.
+ *
+ * @param {string} path - The path for which to build the URL.
+ * @return {string} The built URL.
+ */
+export function buildFetchUrl(path: string): string {
+  let url: string;
+
+  if (import.meta.env.MODE === 'development') {
+    // Used for development currently, fix in future with vite configuration
+    url = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
+  } else {
+    // For production, use relative URL and leave configuration to nginx
+    url = path;
+  }
+
+  return url;
+}

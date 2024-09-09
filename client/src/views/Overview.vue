@@ -6,6 +6,7 @@ import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionList from '../components/CollectionList.vue';
 import ICollection from '../models/ICollection';
+import { buildFetchUrl } from '../helper/helper';
 
 const collections = ref<ICollection[] | null>(null);
 const filteredCollections = ref<ICollection[] | null>(null);
@@ -34,7 +35,8 @@ onMounted(async (): Promise<void> => {
 
 async function getCollections(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections`;
+    const url: string = buildFetchUrl('/api/collections');
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {

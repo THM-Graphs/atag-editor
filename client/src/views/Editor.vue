@@ -18,6 +18,7 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { buildFetchUrl } from '../helper/helper';
 import ICollection from '../models/ICollection';
 import { Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
@@ -130,7 +131,8 @@ const toast: ToastServiceMethods = useToast();
 
 async function getCollectionByUuid(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}`;
+    const url: string = buildFetchUrl(`/api/collections/${uuid}`);
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {
@@ -191,7 +193,8 @@ async function handleCancelChanges(): Promise<void> {
 }
 
 async function saveCollection(): Promise<void> {
-  const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}`;
+  const url: string = buildFetchUrl(`/api/collections/${uuid}`);
+
   const response: Response = await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
@@ -242,7 +245,8 @@ async function saveCharacters(): Promise<void> {
     characters: snippetToUpdate.map((c: Character) => c.data),
   };
 
-  const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}/characters`;
+  const url: string = buildFetchUrl(`/api/collections/${uuid}/characters`);
+
   const response: Response = await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
@@ -262,7 +266,8 @@ async function saveCharacters(): Promise<void> {
 async function saveAnnotations(): Promise<void> {
   updateAnnotationsBeforeSave();
 
-  const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}/annotations`;
+  const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
+
   const response: Response = await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
@@ -281,7 +286,8 @@ async function saveAnnotations(): Promise<void> {
 
 async function getCharacters(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}/characters`;
+    const url: string = buildFetchUrl(`/api/collections/${uuid}/characters`);
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {
@@ -298,7 +304,8 @@ async function getCharacters(): Promise<void> {
 
 async function getAnnotations(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/collections/${uuid}/annotations`;
+    const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {
@@ -315,7 +322,8 @@ async function getAnnotations(): Promise<void> {
 
 async function getGuidelines(): Promise<void> {
   try {
-    const url: string = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080/api/guidelines`;
+    const url: string = buildFetchUrl(`/api/guidelines`);
+
     const response: Response = await fetch(url);
 
     if (!response.ok) {
