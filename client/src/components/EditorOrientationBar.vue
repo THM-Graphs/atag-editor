@@ -26,7 +26,7 @@ const snippetOffset: ComputedRef<number> = computed(() => {
 </script>
 
 <template>
-  <div class="container relative w-1rem">
+  <div class="container relative flex-grow-1">
     <div
       class="snippet absolute w-full"
       :style="{ height: `${snippetHeight}%`, top: `${snippetOffset}%` }"

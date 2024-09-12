@@ -6,24 +6,43 @@ import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { Annotation } from '../models/types';
 // import { useHistoryStore } from '../store/history';
-import { capitalize } from '../helper/helper';
 
-const { direction } = defineProps<{ direction: 'previous' | 'next' }>();
+const { action } = defineProps<{ action: 'previous' | 'next' | 'start' | 'end' }>();
 
-const label: ComputedRef<string> = computed(() => capitalize(direction));
-const ariaLabel: ComputedRef<string> = computed(() => `Show ${direction} characters`);
-const arrowDirection: ComputedRef<string> = computed(() => {
-  if (direction === 'previous') {
-    return 'pi pi-arrow-up';
-  } else {
-    return 'pi pi-arrow-down';
+const ariaLabel: ComputedRef<string> = computed(() => {
+  switch (action) {
+    case 'previous':
+      return 'Show previous characters';
+    case 'next':
+      return 'Show next characters';
+    case 'start':
+      return 'Go to beginning of text';
+    case 'end':
+      return 'Go to end of text';
+  }
+});
+const iconClass: ComputedRef<string> = computed(() => {
+  switch (action) {
+    case 'previous':
+      return 'pi pi-angle-up';
+    case 'next':
+      return 'pi pi-angle-down';
+    case 'start':
+      return 'pi pi-angle-double-up';
+    case 'end':
+      return 'pi pi-angle-double-down';
   }
 });
 const noMoreCharacters: ComputedRef<boolean> = computed(() => {
-  if (direction === 'previous') {
-    return beforeStartIndex.value === null;
-  } else {
-    return afterEndIndex.value === null;
+  switch (action) {
+    case 'previous':
+      return beforeStartIndex.value === null;
+    case 'next':
+      return afterEndIndex.value === null;
+    case 'start':
+      return beforeStartIndex.value === null;
+    case 'end':
+      return afterEndIndex.value === null;
   }
 });
 const paginationMode: ComputedRef<'keep' | 'replace'> = computed(() =>
@@ -48,18 +67,27 @@ function handlePagination() {
     return;
   }
 
-  if (direction === 'previous') {
-    if (beforeStartIndex.value === null) {
-      return;
-    }
-
-    previousCharacters(paginationMode.value);
-  } else {
-    if (afterEndIndex.value === null) {
-      return;
-    }
-
-    nextCharacters(paginationMode.value);
+  switch (action) {
+    case 'previous':
+      if (beforeStartIndex.value === null) {
+        return;
+      }
+      previousCharacters(paginationMode.value);
+      break;
+    case 'next':
+      if (afterEndIndex.value === null) {
+        return;
+      }
+      nextCharacters(paginationMode.value);
+      break;
+    case 'start':
+      // TODO: Implement (add method to store)
+      throw Error('not yet implemented');
+      break;
+    case 'end':
+      // TODO: Implement (add method to store)
+      throw Error('not yet implemented');
+      break;
   }
 
   // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
@@ -102,12 +130,12 @@ function handlePagination() {
 
 <template>
   <Button
-    class="w-full"
-    :label="label"
+    size="small"
     :aria-label="ariaLabel"
+    :title="ariaLabel"
     severity="secondary"
     :disabled="noMoreCharacters"
-    :icon="arrowDirection"
+    :icon="iconClass"
     @click="handlePagination"
   ></Button>
 </template>

@@ -2,8 +2,7 @@
 import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
-import EditorOrientationBar from './EditorOrientationBar.vue';
-import PaginationButton from './PaginationButton.vue';
+import EditorTextNavigation from './EditorTextNavigation.vue';
 import {
   findEndOfWord,
   findStartOfWord,
@@ -554,7 +553,6 @@ function getCharacterIndex(span: HTMLSpanElement): number {
   </div>
   <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
-    <PaginationButton direction="previous" />
     <div class="text-container h-full p-2 flex gap-1 overflow-hidden">
       <div class="scroll-container flex-1 overflow-y-scroll">
         <div
@@ -589,9 +587,8 @@ function getCharacterIndex(span: HTMLSpanElement): number {
           </span>
         </div>
       </div>
-      <EditorOrientationBar />
+      <EditorTextNavigation />
     </div>
-    <PaginationButton direction="next" />
   </div>
 </template>
 
