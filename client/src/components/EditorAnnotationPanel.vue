@@ -48,14 +48,8 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
       isEditorElement(ranges.value[0].startContainer) ||
       isEditorElement(ranges.value[0].endContainer)
     ) {
-      firstSpan = document.querySelector('#text span');
+      firstSpan = document.querySelector('#text > span');
       lastSpan = firstSpan;
-      annotationUuids = firstSpan ? findAnnotationUuids(firstSpan, firstSpan) : new Set();
-
-      cachedAnnotationsInSelection.value = annotations.value.filter(a =>
-        annotationUuids.has(a.data.uuid),
-      );
-      return cachedAnnotationsInSelection.value;
     } else {
       firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
       lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
@@ -69,15 +63,28 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
       }
     }
   } else {
-    firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
-    lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
+    if (
+      isEditorElement(ranges.value[0].startContainer) ||
+      isEditorElement(ranges.value[0].endContainer)
+    ) {
+      firstSpan = document.querySelector('#text > span');
+      lastSpan = document.querySelector('#text > span:last-of-type');
+    } else {
+      firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
+      lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
+    }
   }
 
-  annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
+  if (!firstSpan && !lastSpan) {
+    // Text element is empty
+    cachedAnnotationsInSelection.value = [];
+  } else {
+    annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
 
-  cachedAnnotationsInSelection.value = annotations.value.filter(a =>
-    annotationUuids.has(a.data.uuid),
-  );
+    cachedAnnotationsInSelection.value = annotations.value.filter(a =>
+      annotationUuids.has(a.data.uuid),
+    );
+  }
 
   return cachedAnnotationsInSelection.value;
 });

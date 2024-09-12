@@ -61,16 +61,6 @@ newRangeAnchorUuid.value =
 function handleInput(event: InputEvent) {
   event.preventDefault();
 
-  // console.time('snapshot');
-
-  // const snapshot = {
-  //   collection: JSON.parse(JSON.stringify(collection.value)),
-  //   characters: JSON.parse(JSON.stringify(snippetCharacters.value)),
-  //   annotations: JSON.parse(JSON.stringify(annotations.value)),
-  // };
-
-  // console.timeEnd('snapshot');
-
   switch (event.inputType) {
     // Text Insertion
     case 'insertText':
@@ -133,43 +123,44 @@ function handleInsertText(event: InputEvent): void {
 
   const { range, type } = getSelectionData();
 
-  if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacter.data.uuid;
-    insertCharactersAtIndex(0, [newCharacter]);
-  } else {
-    if (type === 'Caret') {
+  if (type === 'Caret') {
+    let index: number;
+
+    if (isEditorElement(range.startContainer)) {
+      index = 0;
+    } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      let index: number;
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
+        index = getCharacterIndex(referenceSpanElement) + 1;
       }
+    }
 
-      newRangeAnchorUuid.value = newCharacter.data.uuid;
-      insertCharactersAtIndex(index, [newCharacter]);
+    newRangeAnchorUuid.value = newCharacter.data.uuid;
+    insertCharactersAtIndex(index, [newCharacter]);
+  } else {
+    let startIndex: number;
+    let endIndex: number;
+
+    if (isEditorElement(range.startContainer)) {
+      startIndex = 0;
+      endIndex = snippetCharacters.value.length - 1;
     } else {
-      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
-        range.startContainer,
-      );
-      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-      let startIndex: number;
-      let endIndex: number;
+      const { startSpan, endSpan } = getRangeBoundaries(range);
 
-      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = snippetCharacters.value.findIndex(
-          c => c.data.uuid === startReferenceSpanElement.id,
-        );
+        startIndex = getCharacterIndex(startSpan);
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
-
-      newRangeAnchorUuid.value = newCharacter.data.uuid;
-      replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
+      endIndex = getCharacterIndex(endSpan);
     }
+
+    newRangeAnchorUuid.value = newCharacter.data.uuid;
+    replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
   }
 }
 
@@ -196,43 +187,44 @@ async function handleInsertFromPaste(): Promise<void> {
 
   const { range, type } = getSelectionData();
 
-  if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    insertCharactersAtIndex(0, newCharacters);
-  } else {
-    if (type === 'Caret') {
+  if (type === 'Caret') {
+    let index: number;
+
+    if (isEditorElement(range.startContainer)) {
+      index = 0;
+    } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      let index: number;
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id) + 1;
+        index = getCharacterIndex(referenceSpanElement) + 1;
       }
+    }
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-      insertCharactersAtIndex(index, newCharacters);
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    insertCharactersAtIndex(index, newCharacters);
+  } else {
+    let startIndex: number;
+    let endIndex: number;
+
+    if (isEditorElement(range.startContainer)) {
+      startIndex = 0;
+      endIndex = snippetCharacters.value.length - 1;
     } else {
-      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
-        range.startContainer,
-      );
-      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-      let startIndex: number;
-      let endIndex: number;
+      const { startSpan, endSpan } = getRangeBoundaries(range);
 
-      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = snippetCharacters.value.findIndex(
-          c => c.data.uuid === startReferenceSpanElement.id,
-        );
+        startIndex = getCharacterIndex(startSpan);
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
-
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-      replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+      endIndex = getCharacterIndex(endSpan);
     }
+
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
   }
 }
 
@@ -250,43 +242,44 @@ function handleInsertFromDrop(event: InputEvent): void {
 
   const { range, type } = getSelectionData();
 
-  if (isEditorElement(range.startContainer)) {
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    insertCharactersAtIndex(0, newCharacters);
-  } else {
-    if (type === 'Caret') {
+  if (type === 'Caret') {
+    let index: number;
+
+    if (isEditorElement(range.startContainer)) {
+      index = 0;
+    } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      let index: number;
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = snippetCharacters.value.findIndex(c => c.data.uuid === referenceSpanElement.id);
+        index = getCharacterIndex(referenceSpanElement);
       }
+    }
 
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-      insertCharactersAtIndex(index, newCharacters);
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    insertCharactersAtIndex(index, newCharacters);
+  } else {
+    let startIndex: number;
+    let endIndex: number;
+
+    if (isEditorElement(range.startContainer)) {
+      startIndex = 0;
+      endIndex = snippetCharacters.value.length - 1;
     } else {
-      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
-        range.startContainer,
-      );
-      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-      let startIndex: number;
-      let endIndex: number;
+      const { startSpan, endSpan } = getRangeBoundaries(range);
 
-      if (isCaretAtBeginning(startReferenceSpanElement, editorRef)) {
+      if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = snippetCharacters.value.findIndex(
-          c => c.data.uuid === startReferenceSpanElement.id,
-        );
+        startIndex = getCharacterIndex(startSpan);
       }
 
-      endIndex = snippetCharacters.value.findIndex(c => c.data.uuid === endReferenceSpanElement.id);
-
-      newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-      replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+      endIndex = getCharacterIndex(endSpan);
     }
+
+    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
   }
 }
 
@@ -297,26 +290,30 @@ function handleInsertFromYank(event: InputEvent): void {
 
 // Text Deletion Handlers
 function handleDeleteWordBackward(): void {
-  const { range, type } = getSelectionData();
-
-  if (isEditorElement(range.startContainer)) {
+  // If there is no text, nothing should happen
+  if (snippetCharacters.value.length === 0) {
     return;
   }
 
+  const { range, type } = getSelectionData();
+
+  // TODO: In Firefox, the range type is always Caret -> Overwrite default behaviour?
+  // See https://www.reddit.com/r/firefox/comments/gxj9qd/does_anyone_else_find_that_ctrlbackspace_on/
   if (type === 'Caret') {
+    if (isEditorElement(range.startContainer)) {
+      return;
+    }
+
     const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
     if (isCaretAtBeginning(spanToDelete, editorRef)) {
       return;
     }
 
-    const charIndex: number = snippetCharacters.value.findIndex(
-      c => c.data.uuid === spanToDelete.id,
-    );
+    const charIndex: number = getCharacterIndex(spanToDelete);
     const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
 
     newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
-
     deleteCharactersBetweenIndexes(startWordIndex, charIndex);
   } else {
     handleDeleteContentBackward();
@@ -324,141 +321,137 @@ function handleDeleteWordBackward(): void {
 }
 
 function handleDeleteWordForward(): void {
+  // If there is no text, nothing should happen
+  if (snippetCharacters.value.length === 0) {
+    return;
+  }
+
   const { range, type } = getSelectionData();
 
-  if (isEditorElement(range.startContainer)) {
-    if (editorRef.value.childElementCount === 0) {
-      return;
-    }
+  if (type === 'Caret') {
+    let index: number;
+    let deletionStartIndex: number;
 
-    newRangeAnchorUuid.value = snippetCharacters.value[0]?.data.uuid ?? null;
-
-    deleteCharactersBetweenIndexes(0, findEndOfWord(0, snippetCharacters.value));
-  } else {
-    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-
-    if (type === 'Caret') {
-      const charIndex: number = snippetCharacters.value.findIndex(
-        c => c.data.uuid === referenceSpanElement.id,
-      );
-      const endWordIndex: number = findEndOfWord(charIndex, snippetCharacters.value);
-
-      const deletionStartIndex: number = isCaretAtBeginning(referenceSpanElement, editorRef)
-        ? charIndex
-        : charIndex + 1;
-
-      newRangeAnchorUuid.value = snippetCharacters.value[charIndex]?.data.uuid ?? null;
-      deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+    if (isEditorElement(range.startContainer)) {
+      index = 0;
+      deletionStartIndex = 0;
     } else {
-      handleDeleteContentForward();
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+
+      index = getCharacterIndex(referenceSpanElement);
+      deletionStartIndex = isCaretAtBeginning(referenceSpanElement, editorRef) ? index : index + 1;
     }
+
+    const endWordIndex: number = findEndOfWord(index, snippetCharacters.value);
+
+    newRangeAnchorUuid.value = snippetCharacters.value[index]?.data.uuid ?? null;
+    deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+  } else {
+    handleDeleteContentForward();
   }
 }
 
 function handleDeleteContentBackward(): void {
-  const { range, type } = getSelectionData();
-
-  if (isEditorElement(range.startContainer)) {
-    // TODO: Any edge cases where this might occur?
+  // If there is no text, nothing should happen
+  if (snippetCharacters.value.length === 0) {
     return;
   }
 
+  const { range, type } = getSelectionData();
+
   if (type === 'Caret') {
+    if (isEditorElement(range.startContainer)) {
+      return;
+    }
+
     const spanToDelete: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
     if (isCaretAtBeginning(spanToDelete, editorRef)) {
       return;
     }
 
-    const charIndex: number = snippetCharacters.value.findIndex(
-      c => c.data.uuid === spanToDelete.id,
-    );
-    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
+    const charIndex: number = getCharacterIndex(spanToDelete);
 
+    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
     deleteCharactersBetweenIndexes(charIndex, charIndex);
   } else {
-    const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-    const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-    const startIndex: number = snippetCharacters.value.findIndex(
-      c => c.data.uuid === startReferenceSpanElement.id,
-    );
-    const endIndex: number = snippetCharacters.value.findIndex(
-      c => c.data.uuid === endReferenceSpanElement.id,
-    );
+    let startIndex: number;
+    let endIndex: number;
+
+    if (isEditorElement(range.startContainer)) {
+      startIndex = 0;
+      endIndex = snippetCharacters.value.length - 1;
+    } else {
+      const { startSpan, endSpan } = getRangeBoundaries(range);
+      startIndex = getCharacterIndex(startSpan);
+      endIndex = getCharacterIndex(endSpan);
+    }
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-
     deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
 }
 
 function handleDeleteContentForward(): void {
+  // If there is no text, nothing should happen
+  if (snippetCharacters.value.length === 0) {
+    return;
+  }
+
   const { range, type } = getSelectionData();
 
-  let spanToDelete: HTMLSpanElement;
-
-  if (isEditorElement(range.startContainer)) {
-    if (editorRef.value.childElementCount === 0) {
-      return;
-    }
-
-    spanToDelete = getParentCharacterSpan(editorRef.value.firstElementChild) as HTMLSpanElement;
-    newRangeAnchorUuid.value = snippetCharacters.value[0]?.data.uuid ?? null;
-
-    deleteCharactersBetweenIndexes(0, 0);
-  } else {
+  if (type === 'Caret') {
     const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    let spanToDelete: HTMLSpanElement;
 
-    if (type === 'Caret') {
-      if (range.startOffset === 0) {
-        spanToDelete = referenceSpanElement;
-      } else {
-        if (referenceSpanElement === editorRef.value.lastElementChild) {
-          return;
-        } else {
-          spanToDelete = referenceSpanElement.nextElementSibling as HTMLSpanElement;
-        }
-      }
-
-      const charIndex: number = snippetCharacters.value.findIndex(
-        c => c.data.uuid === spanToDelete.id,
-      );
-      newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
-
-      deleteCharactersBetweenIndexes(charIndex, charIndex);
+    if (range.startOffset === 0) {
+      spanToDelete = referenceSpanElement;
     } else {
-      const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(
-        range.startContainer,
-      );
-      const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-      const startIndex: number = snippetCharacters.value.findIndex(
-        c => c.data.uuid === startReferenceSpanElement.id,
-      );
-      const endIndex: number = snippetCharacters.value.findIndex(
-        c => c.data.uuid === endReferenceSpanElement.id,
-      );
-
-      newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-
-      deleteCharactersBetweenIndexes(startIndex, endIndex);
+      if (referenceSpanElement === editorRef.value.lastElementChild) {
+        return;
+      } else {
+        spanToDelete = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+      }
     }
+
+    const charIndex: number = getCharacterIndex(spanToDelete);
+
+    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
+    deleteCharactersBetweenIndexes(charIndex, charIndex);
+  } else {
+    let startIndex: number;
+    let endIndex: number;
+
+    if (isEditorElement(range.startContainer)) {
+      startIndex = 0;
+      endIndex = snippetCharacters.value.length - 1;
+    } else {
+      const { startSpan, endSpan } = getRangeBoundaries(range);
+      startIndex = getCharacterIndex(startSpan);
+      endIndex = getCharacterIndex(endSpan);
+    }
+
+    newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
+    deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
 }
 
 function handleDeleteByCut(): void {
   const { range } = getSelectionData();
 
-  const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-  const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-  const startIndex: number = snippetCharacters.value.findIndex(
-    c => c.data.uuid === startReferenceSpanElement.id,
-  );
-  const endIndex: number = snippetCharacters.value.findIndex(
-    c => c.data.uuid === endReferenceSpanElement.id,
-  );
+  let startIndex: number;
+  let endIndex: number;
+
+  if (isEditorElement(range.startContainer)) {
+    startIndex = 0;
+    endIndex = snippetCharacters.value.length - 1;
+  } else {
+    const { startSpan, endSpan } = getRangeBoundaries(range);
+    startIndex = getCharacterIndex(startSpan);
+    endIndex = getCharacterIndex(endSpan);
+  }
 
   newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-
   deleteCharactersBetweenIndexes(startIndex, endIndex);
 
   handleCopy();
@@ -527,6 +520,27 @@ function createNewCharacter(char: string): Character {
     },
     annotations: [],
   };
+}
+
+/**
+ * Extracts the start and end span elements from a given Range and return an object with two properties,
+ * `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
+ *
+ * @param {Range} range A Range object
+ * @returns {Object} An object with two properties, `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
+ */
+function getRangeBoundaries(range: Range): {
+  startSpan: HTMLSpanElement;
+  endSpan: HTMLSpanElement;
+} {
+  const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+  const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+
+  return { startSpan: startReferenceSpanElement, endSpan: endReferenceSpanElement };
+}
+
+function getCharacterIndex(span: HTMLSpanElement): number {
+  return snippetCharacters.value.findIndex(c => c.data.uuid === span.id);
 }
 </script>
 
