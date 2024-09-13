@@ -97,8 +97,141 @@ export function useAnnotationStore() {
     annotation.status = 'deleted';
   }
 
+  function expandAnnotation(annotation: Annotation): void {
+    if (annotation.isTruncated) {
+      return;
+    }
+
+    const { lastCharacter, lastIndex } = getAnnotationInfo(annotation);
+
+    if (lastIndex === snippetCharacters.value.length - 1) {
+      return;
+    }
+
+    // You are the last character now
+    snippetCharacters.value[lastIndex + 1].annotations.push({
+      isLastCharacter: true,
+      type: annotation.data.type,
+      uuid: annotation.data.uuid,
+    } as AnnotationReference);
+
+    // You are not the last anymore
+    lastCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isLastCharacter = false;
+  }
+
+  /**
+   * Retrieves information about the characters that are annotated with the specified annotation.
+   * The information includes the first and last character, as well as their respective indexes.
+   *
+   * @param {Annotation} annotation - The annotation for which to retrieve information.
+   * @return {{firstCharacter: Character, lastCharacter: Character, firstIndex: number, lastIndex: number}} - The information about the annotated characters.
+   */
+  function getAnnotationInfo(annotation: Annotation): {
+    firstCharacter: Character;
+    lastCharacter: Character;
+    firstIndex: number;
+    lastIndex: number;
+  } {
+    const annotatedCharacters: Character[] = snippetCharacters.value.filter(c =>
+      c.annotations.some(a => a.uuid === annotation.data.uuid),
+    );
+    const firstCharacter: Character = annotatedCharacters[0];
+    const lastCharacter: Character = annotatedCharacters[annotatedCharacters.length - 1];
+
+    const firstIndex: number = snippetCharacters.value.findIndex(c => c === firstCharacter);
+    const lastIndex: number = snippetCharacters.value.findIndex(c => c === lastCharacter);
+
+    return { firstCharacter, lastCharacter, firstIndex, lastIndex };
+  }
+
   function resetAnnotations(): void {
     annotations.value = [];
+  }
+
+  function shiftAnnotationLeft(annotation: Annotation): void {
+    if (annotation.isTruncated) {
+      return;
+    }
+
+    const { firstCharacter, lastCharacter, firstIndex, lastIndex } = getAnnotationInfo(annotation);
+
+    if (firstIndex <= 0) {
+      return;
+    }
+
+    // You are the first character now
+    snippetCharacters.value[firstIndex - 1].annotations.push({
+      isFirstCharacter: true,
+      type: annotation.data.type,
+      uuid: annotation.data.uuid,
+    } as AnnotationReference);
+
+    // You are not the first anymore
+    firstCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isFirstCharacter = false;
+
+    // Your are not the last anymore
+    lastCharacter.annotations = lastCharacter.annotations.filter(
+      a => a.uuid !== annotation.data.uuid,
+    );
+
+    // You are the last character now
+    snippetCharacters.value[lastIndex - 1].annotations.find(
+      a => a.uuid === annotation.data.uuid,
+    ).isLastCharacter = true;
+  }
+
+  function shiftAnnotationRight(annotation: Annotation): void {
+    if (annotation.isTruncated) {
+      return;
+    }
+
+    const { firstCharacter, lastCharacter, firstIndex, lastIndex } = getAnnotationInfo(annotation);
+
+    if (lastIndex === snippetCharacters.value.length - 1) {
+      return;
+    }
+
+    // You are the last character now
+    snippetCharacters.value[lastIndex + 1].annotations.push({
+      isLastCharacter: true,
+      type: annotation.data.type,
+      uuid: annotation.data.uuid,
+    } as AnnotationReference);
+
+    // You are not the last anymore
+    lastCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isLastCharacter = false;
+
+    // Your are not annotated anymore
+    firstCharacter.annotations = firstCharacter.annotations.filter(
+      a => a.uuid !== annotation.data.uuid,
+    );
+
+    // You are the first character now
+    snippetCharacters.value[firstIndex + 1].annotations.find(
+      a => a.uuid === annotation.data.uuid,
+    ).isFirstCharacter = true;
+  }
+
+  function shrinkAnnotation(annotation: Annotation): void {
+    if (annotation.isTruncated) {
+      return;
+    }
+
+    const { lastCharacter, firstIndex, lastIndex } = getAnnotationInfo(annotation);
+
+    if (firstIndex === lastIndex) {
+      return;
+    }
+
+    // Your are not the last anymore
+    lastCharacter.annotations = lastCharacter.annotations.filter(
+      a => a.uuid !== annotation.data.uuid,
+    );
+
+    // You are the last character now
+    snippetCharacters.value[lastIndex - 1].annotations.find(
+      a => a.uuid === annotation.data.uuid,
+    ).isLastCharacter = true;
   }
 
   /**
@@ -172,8 +305,13 @@ export function useAnnotationStore() {
     initialAnnotations,
     addAnnotation,
     deleteAnnotation,
+    expandAnnotation,
+    getAnnotationInfo,
     initializeAnnotations,
     resetAnnotations,
+    shiftAnnotationLeft,
+    shiftAnnotationRight,
+    shrinkAnnotation,
     updateAnnotationStatuses,
     updateAnnotationsBeforeSave,
   };

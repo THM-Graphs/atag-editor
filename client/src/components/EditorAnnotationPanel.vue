@@ -30,6 +30,7 @@ const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
   annotations.value.filter(a => a.status !== 'deleted'),
 );
 
+// TODO: Fix bug, on cancel the counter still shows cached number
 const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
   if (!isValidSelection()) {
     return cachedAnnotationsInSelection.value;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
+import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../helper/helper';
 import iconsMap from '../helper/icons';
@@ -21,8 +22,16 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const { deleteAnnotation } = useAnnotationStore();
+const {
+  deleteAnnotation,
+  expandAnnotation,
+  getAnnotationInfo,
+  shiftAnnotationLeft,
+  shiftAnnotationRight,
+  shrinkAnnotation,
+} = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
+const { newRangeAnchorUuid } = useEditorStore();
 const { guidelines } = useGuidelinesStore();
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
@@ -45,6 +54,31 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
     },
     reject: () => {},
   });
+}
+
+function handleShiftLeft(): void {
+  shiftAnnotationLeft(annotation);
+  setRangeAnchorAtEnd();
+}
+
+function handleShiftRight(): void {
+  shiftAnnotationRight(annotation);
+  setRangeAnchorAtEnd();
+}
+
+function handleExpand(): void {
+  expandAnnotation(annotation);
+  setRangeAnchorAtEnd();
+}
+
+function handleShrink(): void {
+  shrinkAnnotation(annotation);
+  setRangeAnchorAtEnd();
+}
+
+function setRangeAnchorAtEnd(): void {
+  const { lastCharacter } = getAnnotationInfo(annotation);
+  newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
 </script>
 
@@ -112,7 +146,41 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         </div>
       </div>
     </form>
-    <div class="flex justify-content-center">
+    <div class="edit-buttons flex justify-content-center">
+      <Button
+        icon="pi pi-angle-left"
+        size="small"
+        severity="secondary"
+        rounded
+        :disabled="annotation.isTruncated"
+        @click="handleShiftLeft"
+      />
+      <Button
+        icon="pi pi-angle-right"
+        size="small"
+        severity="secondary"
+        rounded
+        :disabled="annotation.isTruncated"
+        @click="handleShiftRight"
+      />
+      <Button
+        icon="pi pi-plus"
+        size="small"
+        severity="secondary"
+        rounded
+        :disabled="annotation.isTruncated"
+        @click="handleExpand"
+      />
+      <Button
+        icon="pi pi-minus"
+        size="small"
+        severity="secondary"
+        rounded
+        :disabled="annotation.isTruncated"
+        @click="handleShrink"
+      />
+    </div>
+    <div class="action-buttons flex justify-content-center">
       <Button
         label="Delete"
         severity="danger"
@@ -120,8 +188,8 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
         size="small"
         @click="handleDeleteAnnotation($event, annotation.data.uuid)"
       />
-      <ConfirmPopup></ConfirmPopup>
     </div>
+    <ConfirmPopup></ConfirmPopup>
   </Panel>
 </template>
 
