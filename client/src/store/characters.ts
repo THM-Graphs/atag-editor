@@ -73,12 +73,7 @@ export function useCharactersStore() {
       beforeStartIndex.value -= PAGINATION_SIZE;
     }
 
-    const startSliceAt: number = beforeStartIndex.value === null ? 0 : beforeStartIndex.value + 1;
-    const endSliceAt: number = afterEndIndex.value ?? totalCharacters.value.length;
-
-    // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
-    snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    sliceCharactersSnippet();
   }
 
   /**
@@ -110,12 +105,51 @@ export function useCharactersStore() {
       afterEndIndex.value += PAGINATION_SIZE;
     }
 
-    const startSliceAt: number = beforeStartIndex.value === null ? 0 : beforeStartIndex.value + 1;
-    const endSliceAt: number = afterEndIndex.value ?? totalCharacters.value.length;
+    sliceCharactersSnippet();
+  }
 
-    // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
-    snippetCharacters.value = [...totalCharacters.value].slice(startSliceAt, endSliceAt);
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+  /**
+   * Paginates to the first snippet of the characters array.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function firstCharacters(): void {
+    if (beforeStartIndex.value === null) {
+      console.log('Already at first character');
+      return;
+    }
+
+    beforeStartIndex.value = null;
+
+    if (totalCharacters.value.length <= PAGINATION_SIZE) {
+      afterEndIndex.value = null;
+    } else {
+      afterEndIndex.value = PAGINATION_SIZE;
+    }
+
+    sliceCharactersSnippet();
+  }
+
+  /**
+   * Paginates to the last snippet of the characters array.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function lastCharacters(): void {
+    if (afterEndIndex.value === null) {
+      console.log('No more characters');
+      return;
+    }
+
+    afterEndIndex.value = null;
+
+    if (totalCharacters.value.length <= PAGINATION_SIZE) {
+      beforeStartIndex.value = null;
+    } else {
+      beforeStartIndex.value = totalCharacters.value.length - PAGINATION_SIZE - 1;
+    }
+
+    sliceCharactersSnippet();
   }
 
   /**
@@ -160,6 +194,21 @@ export function useCharactersStore() {
     }
 
     return char;
+  }
+
+  /**
+   * Slices the total characters array to the snippet characters array, based on the computed start and end indices,
+   * and sets the initial snippet characters property to the new snippet.
+   *
+   * @return {void} No return value.
+   */
+  function sliceCharactersSnippet(): void {
+    const start: number = beforeStartIndex.value === null ? 0 : beforeStartIndex.value + 1;
+    const end: number = afterEndIndex.value ?? totalCharacters.value.length;
+
+    // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
+    snippetCharacters.value = [...totalCharacters.value].slice(start, end);
+    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
   }
 
   /**
@@ -383,6 +432,7 @@ export function useCharactersStore() {
     totalCharacters,
     annotateCharacters,
     deleteCharactersBetweenIndexes,
+    lastCharacters,
     initializeCharacters,
     insertCharactersAtIndex,
     insertSnippetIntoChain,
@@ -391,5 +441,6 @@ export function useCharactersStore() {
     removeAnnotationFromCharacters,
     replaceCharactersBetweenIndizes,
     resetCharacters,
+    firstCharacters,
   };
 }

@@ -55,6 +55,8 @@ const {
   beforeStartIndex,
   snippetCharacters,
   totalCharacters,
+  firstCharacters,
+  lastCharacters,
   nextCharacters,
   previousCharacters,
 } = useCharactersStore();
@@ -67,26 +69,19 @@ function handlePagination() {
     return;
   }
 
+  // TODO: Should the pagination mode impact the go to start/end behaviour?
   switch (action) {
     case 'previous':
-      if (beforeStartIndex.value === null) {
-        return;
-      }
       previousCharacters(paginationMode.value);
       break;
     case 'next':
-      if (afterEndIndex.value === null) {
-        return;
-      }
       nextCharacters(paginationMode.value);
       break;
     case 'start':
-      // TODO: Implement (add method to store)
-      throw Error('not yet implemented');
+      firstCharacters();
       break;
     case 'end':
-      // TODO: Implement (add method to store)
-      throw Error('not yet implemented');
+      lastCharacters();
       break;
   }
 
