@@ -1,0 +1,26 @@
+name: Pull repository to server and rebuild containers
+
+on:
+ push:
+  branches: ['main']
+ pull_request:
+  branches: ['main']
+
+jobs:
+ build:
+  runs-on: ubuntu-latest
+
+  steps:
+   # This step is only needed if images should be pushed to registry
+   - name: Checkout code
+     uses: actions/checkout@v4
+   - name: executing remote ssh commands using ssh key
+     uses: appleboy/ssh-action@v1.0.3
+     with:
+      host: ${{ secrets.HOST }}
+      key: ${{ secrets.SSH_KEY }}
+      username: ${{ secrets.USERNAME }}
+      script: |
+       cd atag-editor
+       git pull
+       docker compose -f docker-compose.prod.yml up --build -d
