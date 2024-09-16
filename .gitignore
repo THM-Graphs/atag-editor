@@ -1,5 +1,6 @@
 neo4j/data
 neo4j/backups
+nginx/.htpasswd
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,webstorm+all,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,webstorm+all,visualstudiocode
