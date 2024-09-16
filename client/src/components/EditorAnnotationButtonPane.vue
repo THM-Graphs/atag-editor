@@ -131,17 +131,20 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
 </script>
 
 <template>
-  <div class="annotation-button-pane flex flex-wrap gap-1">
+  <div class="annotation-button-pane flex flex-wrap gap-3 py-3">
     <div
       class="group"
       v-for="(annotationTypes, category) in groupedAnnotationTypes"
       :key="category"
     >
-      <div class="name">{{ capitalize(category) }}</div>
+      <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
       <div class="buttons">
         <Button
           v-for="type in annotationTypes"
           class="button-annotation"
+          severity="secondary"
+          outlined
+          raised
           :key="type.type"
           :disabled="!selectedOptions.includes(type.type)"
           :data-annotation-type="type.type"
@@ -164,6 +167,11 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
 </template>
 
 <style scoped>
+.buttons {
+  display: flex;
+  gap: 2px;
+}
+
 .button-annotation {
   width: 35px;
   height: 35px;
