@@ -106,7 +106,6 @@ function setRangeAnchorAtEnd(): void {
           @mouseleave="toggleTextHightlighting(annotation, 'off')"
         ></div>
       </div>
-      <div class="status-indicator" :class="annotation.status">{{ annotation.status }}</div>
       <div v-if="annotation.isTruncated" class="truncated-indicator">
         <Tag severity="warn" value="Truncated"></Tag>
       </div>

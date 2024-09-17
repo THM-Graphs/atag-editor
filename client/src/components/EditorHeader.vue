@@ -34,7 +34,7 @@ function validate(): boolean {
   <div class="header">
     <div class="header-buttons flex mb-2">
       <RouterLink to="/">
-        <Button icon="pi pi-home" aria-label="Home" class="w-2rem h-2rem"></Button>
+        <Button icon="pi pi-home" aria-label="Home" class="w-2rem h-2rem" title="Overview"></Button>
       </RouterLink>
     </div>
     <div class="label flex justify-content-center text-center">

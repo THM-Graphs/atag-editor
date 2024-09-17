@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { useFilterStore } from '../store/filter';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -13,6 +13,18 @@ const { groupedAnnotationTypes } = useGuidelinesStore();
 
 const container = ref<HTMLDivElement>(null);
 const isCollapsed = ref<boolean>(true);
+
+const badgeContent: ComputedRef<string> = computed(() => {
+  return `${selectedOptions.value.length}/${allOptions.value.length}`;
+});
+
+const badgeSeverity: ComputedRef<string> = computed(() => {
+  if (selectedOptions.value.length === allOptions.value.length) {
+    return 'secondary';
+  }
+
+  return 'danger';
+});
 
 onClickOutside(container, () => (isCollapsed.value = true));
 
@@ -29,13 +41,12 @@ function toggleDropdown(): void {
       icon="pi pi-filter-fill"
       label="Filter"
       @click="toggleDropdown"
+      :badge="badgeContent"
+      :badgeSeverity="badgeSeverity"
     />
     <Card v-if="!isCollapsed" id="overlay_menu" class="dropdown absolute w-full z-1">
       <template #content>
         <div class="dropwn-header">
-          <div class="info-pane font-semibold">
-            {{ selectedOptions.length }} of {{ allOptions.length }} options displayed
-          </div>
           <div class="buttons flex gap-1 mb-2 align-items-center">
             <Button label="Select all" size="small" @click="selectAllOptions" />
             <Button label="Reset to default" size="small" @click="selectDefaultOptions" />
@@ -43,14 +54,18 @@ function toggleDropdown(): void {
         </div>
         <div class="container flex gap-2">
           <div v-for="(annotationTypes, category) in groupedAnnotationTypes" class="group">
-            {{ capitalize(category) }}
+            <div class="name font-semibold">
+              {{ capitalize(category) }}
+            </div>
             <div v-for="annotationType of annotationTypes" :key="annotationType.type">
               <Checkbox
                 v-model="selectedOptions"
                 :inputId="annotationType.type"
                 :value="annotationType.type"
               />
-              <label :for="annotationType.type" class="ml-2"> {{ annotationType.text }} </label>
+              <label :for="annotationType.type" class="ml-2 cursor-pointer">
+                {{ annotationType.type }}
+              </label>
             </div>
           </div>
         </div>

@@ -164,8 +164,8 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
             <!-- TODO: Should this come from annotation type config? -->
             <img
               :src="`${iconsMap[type.type]}`"
-              :title="type.text"
-              :alt="type.text"
+              :title="type.type"
+              :alt="type.type"
               class="button-icon w-full h-full"
             />
           </template>

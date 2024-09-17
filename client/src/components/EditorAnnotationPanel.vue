@@ -6,6 +6,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
 import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../helper/helper';
 import { Annotation } from '../models/types';
+import Badge from 'primevue/badge';
 
 interface SelectionObject {
   startContainer: Node;
@@ -167,7 +168,10 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
 
 <template>
   <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
-    <h3>Annotations [{{ annotationsInSelection.length }}]</h3>
+    <div class="header flex align-items-center gap-2 my-4">
+      <h3 class="m-0">Annotations</h3>
+      <Badge :value="annotationsInSelection.length" severity="contrast" />
+    </div>
     <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
       <template v-for="annotation in displayedAnnotations" :key="annotation.data.uuid">
         <EditorAnnotationForm
