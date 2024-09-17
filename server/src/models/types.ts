@@ -14,6 +14,7 @@ export type Annotation = {
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
+  scope: 'range' | 'point' /* 'point' if an annotation is "between" characters (e.g. deleted) */;
   text: string;
   type: string;
 };

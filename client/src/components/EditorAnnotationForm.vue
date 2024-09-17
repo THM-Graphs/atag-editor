@@ -34,6 +34,9 @@ const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { guidelines } = useGuidelinesStore();
 
+const isRangeAnnotation: boolean =
+  guidelines.value.annotations.types.find(t => t.type === annotation.data.type).scope === 'range';
+
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
   confirm.require({
     target: event.currentTarget as HTMLButtonElement,
@@ -168,7 +171,7 @@ function setRangeAnchorAtEnd(): void {
         size="small"
         severity="secondary"
         rounded
-        :disabled="annotation.isTruncated"
+        :disabled="annotation.isTruncated || !isRangeAnnotation"
         @click="handleExpand"
       />
       <Button
@@ -176,7 +179,7 @@ function setRangeAnchorAtEnd(): void {
         size="small"
         severity="secondary"
         rounded
-        :disabled="annotation.isTruncated"
+        :disabled="annotation.isTruncated || !isRangeAnnotation"
         @click="handleShrink"
       />
     </div>

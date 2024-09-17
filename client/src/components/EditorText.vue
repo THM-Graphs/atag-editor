@@ -577,7 +577,8 @@ function getCharacterIndex(span: HTMLSpanElement): number {
                 v-if="selectedOptions.includes(annotation.type)"
                 :class="[
                   'anno',
-                  annotation.isFirstCharacter || annotation.isLastCharacter ? 'boundary' : '',
+                  annotation.isFirstCharacter ? 'start' : '',
+                  annotation.isLastCharacter ? 'end' : '',
                   annotation.type,
                 ]"
                 :data-anno-uuid="annotation.uuid"

@@ -14,7 +14,7 @@ import IAnnotation from '../models/IAnnotation';
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { groupedAnnotationTypes } = useGuidelinesStore();
+const { groupedAnnotationTypes, guidelines } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
@@ -42,13 +42,22 @@ function handleCreateAnnotation(event: MouseEvent) {
     return false;
   }
 
-  // TODO: What about zero point annotations?
   if (type === 'Caret') {
     console.log('no text selected. Return');
     return;
   }
 
   const selectedCharacters: Character[] = getSelectedCharacters();
+
+  // TODO: Or should this only be done with a caret selection?
+  if (
+    guidelines.value.annotations.types.find(t => t.type === annotationType).scope === 'point' &&
+    selectedCharacters.length > 1
+  ) {
+    debugger;
+    return;
+  }
+
   const newAnnotation: Annotation = createNewAnnotation(annotationType, selectedCharacters);
 
   addAnnotation(newAnnotation);
@@ -169,6 +178,7 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
 <style scoped>
 .buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
 }
 

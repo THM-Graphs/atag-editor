@@ -1,6 +1,9 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
+import { useGuidelinesStore } from './guidelines';
 import { Annotation, AnnotationReference, Character } from '../models/types';
+
+const { guidelines } = useGuidelinesStore();
 
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
@@ -238,21 +241,29 @@ export function useCharactersStore() {
     newCharacters.forEach((c: Character, index: number) => {
       // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
       if (index === 0) {
-        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
+        prevCharAnnotations.forEach(a => {
+          if (guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range') {
+            a.isLastCharacter = false;
+          }
+        });
       }
 
       prevCharAnnotations.forEach(a => {
-        c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+        if (guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range') {
+          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+        }
       });
 
       if (index === newCharacters.length - 1) {
         c.annotations.forEach(a => {
-          if (annotationEndsUuids.includes(a.uuid)) {
-            a.isLastCharacter = true;
-          }
+          if (guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range') {
+            if (annotationEndsUuids.includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
 
-          if (!nextCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
-            a.isLastCharacter = true;
+            if (!nextCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
           }
         });
       }
@@ -288,16 +299,25 @@ export function useCharactersStore() {
     newCharacters.forEach((c: Character, index: number) => {
       // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
       if (index === 0) {
-        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
+        prevCharAnnotations.forEach(a => {
+          if (guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range') {
+            a.isLastCharacter = false;
+          }
+        });
       }
 
       prevCharAnnotations.forEach(a => {
-        c.annotations.push({ ...a, isFirstCharacter: false });
+        if (guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range') {
+          c.annotations.push({ ...a, isFirstCharacter: false });
+        }
       });
 
       if (index === newCharacters.length - 1) {
         c.annotations.forEach(a => {
-          if (annotationEndsUuids.includes(a.uuid)) {
+          if (
+            annotationEndsUuids.includes(a.uuid) &&
+            guidelines.value.annotations.types.find(t => t.type === a.type).scope === 'range'
+          ) {
             a.isLastCharacter = true;
           }
         });
