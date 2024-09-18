@@ -54,6 +54,7 @@ export default class AnnotationService {
     WITH a, ann
 
     CALL {
+        WITH a
         MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(:Character)
         DELETE r   
     }
