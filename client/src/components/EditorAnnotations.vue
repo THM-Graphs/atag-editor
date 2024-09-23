@@ -245,6 +245,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
 <style scoped>
 .annotations-container {
   outline: 1px solid var(--p-primary-color);
+  scrollbar-gutter: stable;
 }
 
 .preview {

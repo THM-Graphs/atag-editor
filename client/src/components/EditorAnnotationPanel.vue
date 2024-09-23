@@ -172,7 +172,7 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
       <h3 class="m-0">Annotations</h3>
       <Badge :value="annotationsInSelection.length" severity="contrast" />
     </div>
-    <div class="annotation-list flex-grow-1 overflow-y-scroll p-1">
+    <div class="annotation-list flex-grow-1 overflow-y-auto p-1">
       <template v-for="annotation in displayedAnnotations" :key="annotation.data.uuid">
         <EditorAnnotationForm
           :annotation="annotation"
@@ -186,4 +186,8 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.annotation-list {
+  scrollbar-gutter: stable;
+}
+</style>
