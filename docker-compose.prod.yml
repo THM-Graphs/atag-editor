@@ -21,13 +21,8 @@ services:
  ## Vue (Nginx) Frontend
  frontend:
   container_name: frontend_prod
-  build:
-   context: ./client
-   dockerfile: Dockerfile.prod
-   args:
-    VITE_PROTOCOL: ${PROTOCOL}
-    VITE_APP_HOST: ${APP_HOST}
-  restart: on-failure
+  image: ghcr.io/thm-graphs/atag-editor-frontend:latest
+  restart: always
   depends_on:
    - backend
   ports:
@@ -36,12 +31,10 @@ services:
  ## NodeJS-Express Backend
  backend:
   container_name: backend_prod
-  build:
-   context: ./server
-   dockerfile: Dockerfile.prod
+  image: ghcr.io/thm-graphs/atag-editor-backend:latest
   ports:
    - '8080:8080'
-  restart: on-failure
+  restart: always
   environment:
    - APP_HOST=${APP_HOST}
    - APP_PORT=${APP_PORT}
