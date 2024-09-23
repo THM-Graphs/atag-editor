@@ -20,9 +20,11 @@ jobs:
    fail-fast: true
    matrix:
     include:
-     - dockerfile: ./client/Dockerfile.prod
+     - service: frontend
+       context: ./client
        image: ghcr.io/${{ github.repository }}-frontend
-     - dockerfile: ./server/Dockerfile.prod
+     - service: backend
+       context: ./server
        image: ghcr.io/${{ github.repository }}-backend
 
   # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
@@ -58,8 +60,8 @@ jobs:
      id: push
      uses: docker/build-push-action@v6
      with:
-      context: .
-      file: ${{ matrix.dockerfile }}
+      context: ${{ matrix.context}}
+      file: ${{ matrix.context }}/Dockerfile.prod
       push: true
       tags: ${{ steps.meta.outputs.tags }}
       labels: ${{ steps.meta.outputs.labels }}
