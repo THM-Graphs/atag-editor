@@ -97,9 +97,9 @@
         "defaultSelected": true
       },
       {
-        "type": "inscription",
+        "type": "head",
         "category": "layout",
-        "text": "inscriptio",
+        "text": "head",
         "defaultSelected": true
       },
       {

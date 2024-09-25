@@ -9,7 +9,7 @@ import deletedIcon from '../../public/icons/deleted.svg';
 import unreadableIcon from '../../public/icons/unreadable.svg';
 import repeatedIcon from '../../public/icons/repeated.svg';
 import gapIcon from '../../public/icons/gap.svg';
-import inscriptionIcon from '../../public/icons/inscription.svg';
+import headIcon from '../../public/icons/head.svg';
 import pageIcon from '../../public/icons/page.svg';
 import columnIcon from '../../public/icons/column.svg';
 import lineIcon from '../../public/icons/line.svg';
@@ -28,7 +28,7 @@ const iconsMap: { [key: string]: string } = {
   unreadable: unreadableIcon,
   repeated: repeatedIcon,
   gap: gapIcon,
-  inscription: inscriptionIcon,
+  head: headIcon,
   page: pageIcon,
   column: columnIcon,
   line: lineIcon,

@@ -8,7 +8,7 @@
   --expansion-clr: hsl(201, 22%, 87%);
   --expansion-opacity: 0.7;
   --gap-text-decoration: underline dotted;
-  --inscription-font-weight: 700;
+  --head-font-weight: 700;
   --initial-clr: hsl(114, 100%, 37%);
   --inRasura-clr: hsl(36, 85%, 76%);
   --inRasura-opacity: 0.5;
@@ -71,8 +71,8 @@
   transition: var(--addition-transition);
 }
 
-#text > span:has(span.inscription) {
-  font-weight: var(--inscription-font-weight);
+#text > span:has(span.head) {
+  font-weight: var(--head-font-weight);
 }
 
 #text > span:has(span.page) {
