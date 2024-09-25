@@ -34,120 +34,103 @@
         "type": "emphasised",
         "category": "edition",
         "text": "in rubro",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "expansion",
         "category": "edition",
         "text": "expansio",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "nonLinear",
         "category": "edition",
         "text": "supra lineam",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "marginNote",
         "category": "edition",
         "text": "in margine",
-        "defaultSelected": true,
-        "scope": "point"
+        "defaultSelected": true
       },
       {
         "type": "intervention",
         "category": "edition",
         "text": "correxit",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "inRasura",
         "category": "edition",
         "text": "in rasura",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "deleted",
         "category": "edition",
         "text": "delevit",
-        "defaultSelected": true,
-        "scope": "point"
+        "defaultSelected": true
       },
       {
         "type": "unreadable",
         "category": "edition",
         "text": "legi nequit",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "repeated",
         "category": "edition",
         "text": "repetitio",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "gap",
         "category": "edition",
         "text": "lacuna",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "addition",
         "category": "edition",
         "text": "recensi manu",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "inscription",
         "category": "layout",
         "text": "inscriptio",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "page",
         "category": "layout",
         "text": "page",
-        "defaultSelected": false,
-        "scope": "range"
+        "defaultSelected": false
       },
       {
         "type": "column",
         "category": "layout",
         "text": "columna",
-        "defaultSelected": false,
-        "scope": "range"
+        "defaultSelected": false
       },
       {
         "type": "line",
         "category": "layout",
         "text": "linea",
-        "defaultSelected": false,
-        "scope": "range"
+        "defaultSelected": false
       },
       {
         "type": "transposition",
         "category": "layout",
         "text": "transpositio",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       },
       {
         "type": "initial",
         "category": "edition",
         "text": "initial",
-        "defaultSelected": true,
-        "scope": "range"
+        "defaultSelected": true
       }
     ],
     "properties": [
