@@ -1,4 +1,4 @@
-name: Pull images from registry and restart containers
+name: Deploy editor to test environment
 
 on:
  workflow_run:
@@ -13,7 +13,7 @@ jobs:
    - name: Execute remote ssh commands using ssh key
      uses: appleboy/ssh-action@v1.0.3
      with:
-      host: ${{ secrets.HOST }}
+      host: ${{ secrets.HOST_TEST }}
       key: ${{ secrets.SSH_KEY }}
       username: ${{ secrets.USERNAME }}
       script: |
