@@ -121,28 +121,28 @@
         "defaultSelected": false,
         "properties": [
           {
-            "name": "firstOfColumn",
+            "name": "firstLineOfColumn",
             "type": "checkbox",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
-            "name": "lastOfColumn",
+            "name": "lastLineOfColumn",
             "type": "checkbox",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
-            "name": "firstOfPage",
+            "name": "firstLineOfPage",
             "type": "checkbox",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
-            "name": "lastOfPage",
+            "name": "lastLineOfPage",
             "type": "checkbox",
             "required": true,
             "editable": true,
