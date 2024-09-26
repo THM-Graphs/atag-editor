@@ -1,5 +1,5 @@
 export default interface IAnnotation {
-  [keyof: string]: string | number;
+  [keyof: string]: string | number | boolean;
   comment: string;
   commentInternal: string;
   endIndex: number;

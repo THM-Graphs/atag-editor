@@ -8,13 +8,13 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
-import { Annotation, Character } from '../models/types';
+import { Annotation, AnnotationProperty, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { groupedAnnotationTypes } = useGuidelinesStore();
+const { groupedAnnotationTypes, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
@@ -102,19 +102,24 @@ function findSpansWithinBoundaries(
 }
 
 function createNewAnnotation(type: string, characters: Character[]): Annotation {
-  // TODO: This should come from the guidelines
-  const data: IAnnotation = {
-    comment: '',
-    commentInternal: '',
-    endIndex: 0,
-    originalText: '',
-    startIndex: 0,
-    subtype: '',
-    text: characters.map((char: Character) => char.data.text).join(''),
-    type: type,
-    url: '',
-    uuid: crypto.randomUUID(),
-  };
+  const fields: AnnotationProperty[] = getAnnotationFields(type);
+  const data: IAnnotation = {} as IAnnotation;
+
+  // Base properties
+  fields.forEach((field: AnnotationProperty) => {
+    if (field.type === 'text' || field.type === 'textarea') {
+      data[field.name] = '';
+    } else if (field.type === 'checkbox') {
+      data[field.name] = false;
+    }
+  });
+
+  // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
+  data.type = type;
+  data.startIndex = 0;
+  data.endIndex = 0;
+  data.text = characters.map((char: Character) => char.data.text).join('');
+  data.uuid = crypto.randomUUID();
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),

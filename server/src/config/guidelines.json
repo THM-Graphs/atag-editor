@@ -118,7 +118,37 @@
         "type": "line",
         "category": "layout",
         "text": "linea",
-        "defaultSelected": false
+        "defaultSelected": false,
+        "properties": [
+          {
+            "name": "firstOfColumn",
+            "type": "checkbox",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "lastOfColumn",
+            "type": "checkbox",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "firstOfPage",
+            "type": "checkbox",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "lastOfPage",
+            "type": "checkbox",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
       {
         "type": "transposition",

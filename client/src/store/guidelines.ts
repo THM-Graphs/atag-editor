@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationType } from '../models/types';
+import { AnnotationProperty, AnnotationType } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -24,6 +24,32 @@ export function useGuidelinesStore() {
     groupedAnnotationTypes.value = groupAnnotationTypes();
 
     initializeFilter(guidelines.value);
+  }
+
+  /**
+   * Retrieves the configuration for an annotation of given type. The configuration is an object containing internal information
+   * as well as information about rendering behaviour (input type in forms, selection status etc.).
+   *
+   * @param {string} type - The type of the annotation.
+   * @return {AnnotationType} The configuration of the annotation type.
+   */
+  function getAnnotationConfig(type: string): AnnotationType {
+    return guidelines.value.annotations.types.find(t => t.type === type);
+  }
+
+  /**
+   * Retrieves the properties an annotation of given type should should have. Used for rendering input fields in forms
+   * where properties of the annotation can be edited. The fields are retrieved from the annotation type itself (if it has any)
+   * and from the global annotation properties.
+   *
+   * @param {string} type - The type of the annotation.
+   * @return {AnnotationProperty[]} The fields for the annotation type.
+   */
+  function getAnnotationFields(type: string): AnnotationProperty[] {
+    return [
+      ...(getAnnotationConfig(type)?.properties ?? []),
+      ...guidelines.value.annotations.properties,
+    ];
   }
 
   /**
@@ -51,6 +77,8 @@ export function useGuidelinesStore() {
   return {
     groupedAnnotationTypes,
     guidelines,
+    getAnnotationConfig,
+    getAnnotationFields,
     initializeGuidelines,
   };
 }

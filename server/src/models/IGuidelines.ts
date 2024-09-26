@@ -1,4 +1,4 @@
-import { AnnotationType } from './types.js';
+import { AnnotationProperty, AnnotationType } from './types.js';
 
 export interface IGuidelines {
   collections: {
@@ -16,12 +16,6 @@ export interface IGuidelines {
   };
   annotations: {
     types: AnnotationType[];
-    properties: {
-      name: string /* type, subtype, text, url */;
-      type: string /* raw string, dropdown, multiple options */;
-      required: boolean /* required or optional */;
-      editable: boolean /* Editable by user */;
-      visible: boolean /* Visible by user */;
-    }[];
+    properties: AnnotationProperty[];
   };
 }

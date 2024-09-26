@@ -12,7 +12,7 @@ import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import { Annotation } from '../models/types';
+import { Annotation, AnnotationProperty } from '../models/types';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -32,7 +32,9 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { guidelines } = useGuidelinesStore();
+const { getAnnotationFields } = useGuidelinesStore();
+
+const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.type);
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
   confirm.require({
@@ -107,13 +109,9 @@ function setRangeAnchorAtEnd(): void {
         <Tag severity="warn" value="Truncated"></Tag>
       </div>
     </template>
+    <!-- TODO: Make "id" attributes unique -->
     <form>
-      <div
-        class="input-container"
-        v-for="field in guidelines.annotations.properties"
-        :key="field.name"
-        v-show="field.visible"
-      >
+      <div class="input-container" v-for="field in fields" :key="field.name" v-show="field.visible">
         <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
           <label :for="field.name" class="w-10rem font-semibold"
             >{{ capitalize(field.name) }}
@@ -138,6 +136,22 @@ function setRangeAnchorAtEnd(): void {
             cols="30"
             rows="5"
             class="flex-auto w-full"
+          />
+          <!-- <Checkbox
+          v-else-if="field.type === 'checkbox'"
+          v-model="annotation.data[field.name]"
+          :inputId="field.name"
+          :name="field.name"
+          :value="annotation.data[field.name]"
+          /> -->
+          <!-- TODO: Primevue checkboxes work differently... -> create own component or match styling -->
+          <input
+            v-else-if="field.type === 'checkbox'"
+            v-model="annotation.data[field.name]"
+            type="checkbox"
+            :id="field.name"
+            :name="field.name"
+            :style="{ width: '15px', height: '15px', cursor: 'pointer' }"
           />
           <div v-else class="default-field">
             {{ annotation.data[field.name] }}
