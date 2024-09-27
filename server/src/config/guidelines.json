@@ -34,7 +34,17 @@
         "type": "emphasised",
         "category": "edition",
         "text": "in rubro",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "selection",
+            "options": ["emphasised", "initial"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
       {
         "type": "expansion",
@@ -172,12 +182,6 @@
         "type": "transposition",
         "category": "layout",
         "text": "transpositio",
-        "defaultSelected": true
-      },
-      {
-        "type": "initial",
-        "category": "edition",
-        "text": "initial",
         "defaultSelected": true
       }
     ],
