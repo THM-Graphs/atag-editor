@@ -41,9 +41,10 @@ export type Character = {
 
 export type CharacterPostData = {
   collectionUuid: string;
-  uuidStart: string;
-  uuidEnd: string;
   characters: ICharacter[];
+  text: string;
+  uuidEnd: string;
+  uuidStart: string;
 };
 
 export type HistoryStack = HistoryRecord[];

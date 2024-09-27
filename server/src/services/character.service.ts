@@ -37,7 +37,8 @@ export default class CharacterService {
    * @param {string} collectionUuid - The UUID of the collection to update characters for.
    * @param {string | null} uuidStart - The UUID of the starting character, or null if no starting character.
    * @param {string | null} uuidEnd - The UUID of the ending character, or null if no ending character.
-   * @param {ICharacter[]} characters - The array of characters to update.
+   * @param {ICharacter[]} characters - The array of characters that will form the new chain snippet between given start and end Character node.
+   * @param {string} text - The concatenated characters that will be set on the text node's "text" property.
    * @return {Promise<ICharacter[]>} A promise that resolves to an array of the whole updated character chain.
    */
   public async saveCharacters(
@@ -45,9 +46,8 @@ export default class CharacterService {
     uuidStart: string | null,
     uuidEnd: string | null,
     characters: ICharacter[],
+    text: string,
   ): Promise<ICharacter[]> {
-    const text: string = characters.map(c => c.text).join('');
-
     const query: string = `
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)
     SET t.text = $text

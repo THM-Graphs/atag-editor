@@ -22,7 +22,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const collectionUuid: string = req.params.uuid;
 
-  const { uuidStart, uuidEnd, characters } = req.body;
+  const { uuidStart, uuidEnd, characters, text } = req.body;
 
   try {
     const updatedCharacters: ICharacter[] = await characterService.saveCharacters(
@@ -30,6 +30,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       uuidStart,
       uuidEnd,
       characters,
+      text,
     );
 
     res.status(200).json(updatedCharacters);

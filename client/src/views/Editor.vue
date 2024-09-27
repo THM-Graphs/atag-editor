@@ -241,8 +241,8 @@ async function saveCharacters(): Promise<void> {
     collectionUuid: collection.value.uuid,
     uuidStart: uuidStart,
     uuidEnd: uuidEnd,
-    // TODO: This array.map is a workaround since saving does not work currently
     characters: snippetToUpdate.map((c: Character) => c.data),
+    text: totalCharacters.value.map(c => c.data.text).join(''),
   };
 
   const url: string = buildFetchUrl(`/api/collections/${uuid}/characters`);
