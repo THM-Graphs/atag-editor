@@ -6,7 +6,7 @@ import marginNoteIcon from '../../public/icons/marginNote.svg';
 import interventionIcon from '../../public/icons/intervention.svg';
 import correctionIcon from '../../public/icons/correction.svg';
 import deletedIcon from '../../public/icons/deleted.svg';
-import unreadableIcon from '../../public/icons/unreadable.svg';
+import unclearIcon from '../../public/icons/unclear.svg';
 import repeatedIcon from '../../public/icons/repeated.svg';
 import gapIcon from '../../public/icons/gap.svg';
 import headIcon from '../../public/icons/head.svg';
@@ -25,7 +25,7 @@ const iconsMap: { [key: string]: string } = {
   intervention: interventionIcon,
   correction: correctionIcon,
   deleted: deletedIcon,
-  unreadable: unreadableIcon,
+  unclear: unclearIcon,
   repeated: repeatedIcon,
   gap: gapIcon,
   head: headIcon,

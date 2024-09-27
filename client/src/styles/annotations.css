@@ -17,7 +17,7 @@
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
   --transposition-clr: #ccc;
-  --unreadable-clr: hsl(328, 98%, 47%);
+  --unclear-clr: hsl(328, 98%, 47%);
 }
 
 #text > span:has(span.emphasised) {
@@ -47,8 +47,8 @@
   text-decoration: var(--deleted-text-decoration);
 }
 
-#text > span:has(span.unreadable) {
-  color: var(--unreadable-clr);
+#text > span:has(span.unclear) {
+  color: var(--unclear-clr);
 }
 
 #text > span:has(span.repeated) {
