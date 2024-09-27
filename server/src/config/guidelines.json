@@ -45,8 +45,18 @@
       {
         "type": "nonLinear",
         "category": "edition",
-        "text": "supra lineam",
-        "defaultSelected": true
+        "text": "non linear",
+        "defaultSelected": true,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "selection",
+            "options": ["aboveLine", "marginNote"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
       {
         "type": "marginNote",
@@ -58,13 +68,33 @@
         "type": "intervention",
         "category": "edition",
         "text": "correxit",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "selection",
+            "options": ["conjecture", "correction", "normalisation"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
       {
-        "type": "inRasura",
+        "type": "correction",
         "category": "edition",
         "text": "in rasura",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "selection",
+            "options": ["inPlace", "inRasura"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
       {
         "type": "deleted",
@@ -101,18 +131,6 @@
         "category": "layout",
         "text": "head",
         "defaultSelected": true
-      },
-      {
-        "type": "page",
-        "category": "layout",
-        "text": "page",
-        "defaultSelected": false
-      },
-      {
-        "type": "column",
-        "category": "layout",
-        "text": "columna",
-        "defaultSelected": false
       },
       {
         "type": "line",
@@ -195,13 +213,6 @@
       {
         "name": "commentInternal",
         "type": "textarea",
-        "required": false,
-        "editable": true,
-        "visible": true
-      },
-      {
-        "name": "subtype",
-        "type": "text",
         "required": false,
         "editable": true,
         "visible": true

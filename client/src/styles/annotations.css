@@ -2,6 +2,8 @@
   --addition-color: hsla(39, 29%, 85%, 0.6);
   --addition-opacity: 0.9;
   --addition-transition: var(--addition-opacity) ease-in-out 1s;
+  --correction-clr: hsl(36, 85%, 76%);
+  --correction-opacity: 0.5;
   --deleted-text-decoration: line-through;
   --emphasised-clr: hsl(0, 76%, 38%);
   --emphasised-font-weight: 700;
@@ -10,11 +12,8 @@
   --gap-text-decoration: underline dotted;
   --head-font-weight: 700;
   --initial-clr: hsl(114, 100%, 37%);
-  --inRasura-clr: hsl(36, 85%, 76%);
-  --inRasura-opacity: 0.5;
   --intervention-clr: hsl(292, 100%, 62%);
-  --marginNote-clr: hsl(34, 100%, 47%);
-  --nonLinear-clr: hsl(22, 81%, 35%);
+  --nonLinear-clr: hsl(34, 100%, 47%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
   --transposition-clr: #ccc;
@@ -35,17 +34,13 @@
   color: var(--nonLinear-clr);
 }
 
-#text > span:has(span.marginNote) {
-  color: var(--marginNote-clr);
-}
-
 #text > span:has(span.intervention) {
   color: var(--intervention-clr);
 }
 
-#text > span:has(span.inRasura) {
-  background-color: var(--inRasura-clr);
-  opacity: var(--inRasura-opacity);
+#text > span:has(span.correction) {
+  background-color: var(--correction-clr);
+  opacity: var(--correction-opacity);
 }
 
 #text > span:has(span.deleted) {

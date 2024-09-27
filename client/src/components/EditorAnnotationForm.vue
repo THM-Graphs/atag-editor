@@ -10,6 +10,7 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
+import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty } from '../models/types';
@@ -135,6 +136,17 @@ function setRangeAnchorAtEnd(): void {
             v-model="annotation.data[field.name]"
             cols="30"
             rows="5"
+            class="flex-auto w-full"
+          />
+          <Select
+            v-else-if="field.type === 'selection'"
+            :id="field.name"
+            :disabled="!field.editable"
+            :required="field.required"
+            :invalid="field.required && !annotation.data[field.name]"
+            v-model="annotation.data[field.name]"
+            :options="field.options"
+            :placeholder="`Select ${field.name}`"
             class="flex-auto w-full"
           />
           <!-- <Checkbox

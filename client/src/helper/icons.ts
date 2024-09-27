@@ -4,7 +4,7 @@ import expansionIcon from '../../public/icons/expansion.svg';
 import nonLinearIcon from '../../public/icons/nonLinear.svg';
 import marginNoteIcon from '../../public/icons/marginNote.svg';
 import interventionIcon from '../../public/icons/intervention.svg';
-import inRasuraIcon from '../../public/icons/inRasura.svg';
+import correctionIcon from '../../public/icons/correction.svg';
 import deletedIcon from '../../public/icons/deleted.svg';
 import unreadableIcon from '../../public/icons/unreadable.svg';
 import repeatedIcon from '../../public/icons/repeated.svg';
@@ -23,7 +23,7 @@ const iconsMap: { [key: string]: string } = {
   nonLinear: nonLinearIcon,
   marginNote: marginNoteIcon,
   intervention: interventionIcon,
-  inRasura: inRasuraIcon,
+  correction: correctionIcon,
   deleted: deletedIcon,
   unreadable: unreadableIcon,
   repeated: repeatedIcon,
