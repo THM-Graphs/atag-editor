@@ -143,6 +143,20 @@
         "defaultSelected": false,
         "properties": [
           {
+            "name": "page",
+            "type": "text",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "url",
+            "type": "text",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
             "name": "firstLineOfColumn",
             "type": "checkbox",
             "required": true,
@@ -211,13 +225,6 @@
       {
         "name": "commentInternal",
         "type": "textarea",
-        "required": false,
-        "editable": true,
-        "visible": true
-      },
-      {
-        "name": "url",
-        "type": "text",
         "required": false,
         "editable": true,
         "visible": true
