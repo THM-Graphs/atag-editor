@@ -1,0 +1,19 @@
+name: Deploy editor to production environment
+
+on: workflow_dispatch
+
+jobs:
+ build:
+  runs-on: ubuntu-latest
+  steps:
+   - name: Execute remote ssh commands using ssh key
+     uses: appleboy/ssh-action@v1.0.3
+     with:
+      host: ${{ secrets.HOST_PRODUCTION }}
+      key: ${{ secrets.SSH_KEY }}
+      username: ${{ secrets.USERNAME }}
+      script: |
+       echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+       cd atag-editor
+       git pull
+       docker compose -f docker-compose.prod.yml up --pull always -d
