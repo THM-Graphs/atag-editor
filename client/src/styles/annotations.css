@@ -1,7 +1,9 @@
 :root {
-  --addition-color: hsla(39, 29%, 85%, 0.6);
+  --addition-color: hsla(38, 78%, 67%, 0.6);
   --addition-opacity: 0.9;
   --addition-transition: var(--addition-opacity) ease-in-out 1s;
+  --commentInternal-color: #e3dbcc99;
+  --commentInternal-opacity: 0.9;
   --correction-clr: hsl(36, 85%, 76%);
   --correction-opacity: 0.5;
   --deleted-text-decoration: line-through;
@@ -68,6 +70,11 @@
 
 #text > span:has(span.head) {
   font-weight: var(--head-font-weight);
+}
+
+#text > span:has(span.commentInternal) {
+  background-color: var(--commentInternal-color);
+  opacity: var(--commentInternal-opacity);
 }
 
 #text > span:has(span.page) {

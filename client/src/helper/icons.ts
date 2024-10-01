@@ -1,5 +1,6 @@
 // TODO: This is not good, should be dynamic...
 import additionIcon from '../../public/icons/addition.svg';
+import commentInternalIcon from '../../public/icons/commentInternal.svg';
 import emphasisedIcon from '../../public/icons/emphasised.svg';
 import expansionIcon from '../../public/icons/expansion.svg';
 import nonLinearIcon from '../../public/icons/nonLinear.svg';
@@ -15,6 +16,7 @@ import transpositionIcon from '../../public/icons/transposition.svg';
 
 const iconsMap: { [key: string]: string } = {
   addition: additionIcon,
+  commentInternal: commentInternalIcon,
   emphasised: emphasisedIcon,
   expansion: expansionIcon,
   nonLinear: nonLinearIcon,

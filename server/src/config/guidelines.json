@@ -191,6 +191,12 @@
         "category": "layout",
         "text": "transpositio",
         "defaultSelected": true
+      },
+      {
+        "type": "commentInternal",
+        "category": "project",
+        "text": "comment",
+        "defaultSelected": true
       }
     ],
     "properties": [

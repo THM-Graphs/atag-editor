@@ -2,51 +2,73 @@
 <!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
 
 <svg
-   width="20"
+   fill="#000000"
    height="20"
-   viewBox="-0.5 0 7.8125 7.8125"
-   fill="none"
+   width="20"
    version="1.1"
-   id="svg764"
-   sodipodi:docname="correction.svg"
+   id="Capa_1"
+   viewBox="0 0 7.665925 7.665925"
+   xml:space="preserve"
+   stroke="#000000"
+   stroke-width="8.89247"
+   sodipodi:docname="intervention.svg"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs768" />
-  <sodipodi:namedview
-     id="namedview766"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     showgrid="false"
-     inkscape:zoom="10.835599"
-     inkscape:cx="-6.3217548"
-     inkscape:cy="4.475987"
-     inkscape:window-width="1920"
-     inkscape:window-height="991"
-     inkscape:window-x="-9"
-     inkscape:window-y="-9"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg764" />
-  <g
-     id="SVGRepo_bgCarrier"
-     stroke-width="0" />
-  <g
-     id="SVGRepo_tracerCarrier"
-     stroke-linecap="round"
-     stroke-linejoin="round" />
-  <path
-     fill-rule="evenodd"
-     clip-rule="evenodd"
-     d="m 4.586788,0.4592365 2.60932,2.682221 -1.6984981,1.698521 -1.8281698,1.824034 H 7.3125 v 0.689251 H 1.307253 L -0.5,5.5460015 Z M 2.6935529,6.6640125 4.7662689,4.5959835 3.095524,2.9252385 0.47474799,5.5460015 1.59275,6.6640125 Z"
-     fill="#1f2328"
-     id="path289"
-     style="stroke-width:0.4595" />
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs46" /><sodipodi:namedview
+   id="namedview44"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   showgrid="false"
+   inkscape:zoom="18.577989"
+   inkscape:cx="30.223938"
+   inkscape:cy="20.965671"
+   inkscape:window-width="1920"
+   inkscape:window-height="991"
+   inkscape:window-x="-9"
+   inkscape:window-y="-9"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Capa_1" />
+
+<g
+   id="SVGRepo_bgCarrier"
+   stroke-width="0" />
+
+<g
+   id="SVGRepo_tracerCarrier"
+   stroke-linecap="round"
+   stroke-linejoin="round" />
+
+<g
+   id="SVGRepo_iconCarrier"
+   transform="matrix(0.02406908,0,0,0.02406908,0.13411056,0.15134414)"> <g
+   id="g40"> <g
+   id="g8"> <path
+   d="M 12.809,238.52 0,306.637 68.118,293.828 252.395,109.551 197.086,54.242 Z m 47.981,41.423 -41.992,7.896 7.896,-41.992 170.392,-170.392 34.096,34.096 z"
+   id="path4" /> <path
+   d="M 251.329,0 209.822,41.507 265.13,96.815 306.637,55.308 Z M 231.035,41.507 251.329,21.213 285.424,55.308 265.13,75.602 Z"
+   id="path6" /> </g> <g
+   id="g10"> </g> <g
+   id="g12"> </g> <g
+   id="g14"> </g> <g
+   id="g16"> </g> <g
+   id="g18"> </g> <g
+   id="g20"> </g> <g
+   id="g22"> </g> <g
+   id="g24"> </g> <g
+   id="g26"> </g> <g
+   id="g28"> </g> <g
+   id="g30"> </g> <g
+   id="g32"> </g> <g
+   id="g34"> </g> <g
+   id="g36"> </g> <g
+   id="g38"> </g> </g> </g>
+
 </svg>
