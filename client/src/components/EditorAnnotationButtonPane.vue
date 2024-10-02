@@ -107,10 +107,21 @@ function createNewAnnotation(type: string, characters: Character[]): Annotation 
 
   // Base properties
   fields.forEach((field: AnnotationProperty) => {
-    if (field.type === 'text' || field.type === 'textarea') {
-      data[field.name] = '';
-    } else if (field.type === 'checkbox') {
-      data[field.name] = false;
+    switch (field.type) {
+      case 'text':
+        data[field.name] = '';
+        break;
+      case 'textarea':
+        data[field.name] = '';
+        break;
+      case 'selection':
+        data[field.name] = field.options[0] ?? '';
+        break;
+      case 'checkbox':
+        data[field.name] = false;
+        break;
+      default:
+        data[field.name] = '';
     }
   });
 
