@@ -10,6 +10,7 @@ import { useEditorStore } from '../store/editor';
 import { Annotation, AnnotationProperty, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
+import SplitButton from 'primevue/splitbutton';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -20,7 +21,26 @@ const { getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
-function handleClick() {
+const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
+const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
+const options: string[] = subtypeField?.options ?? [];
+
+const dropdownOptions = options.map((option: string) => {
+  return {
+    label: option,
+    command: () => handleDropdownClick(option),
+  };
+});
+
+function handleDropdownClick(subtype: string) {
+  handleClick(subtype);
+}
+
+function handleButtonClick() {
+  handleClick();
+}
+
+function handleClick(dropdownOption?: string) {
   const { range, type } = getSelectionData();
 
   if (!range || type === 'None') {
@@ -41,14 +61,17 @@ function handleClick() {
     return false;
   }
 
-  // TODO: What about zero point annotations?
   if (type === 'Caret') {
     console.log('no text selected. Return');
     return;
   }
 
   const selectedCharacters: Character[] = getSelectedCharacters();
-  const newAnnotation: Annotation = createNewAnnotation(annotationType, selectedCharacters);
+  const newAnnotation: Annotation = createNewAnnotation(
+    annotationType,
+    dropdownOption,
+    selectedCharacters,
+  );
 
   addAnnotation(newAnnotation);
   annotateCharacters(selectedCharacters, newAnnotation);
@@ -57,10 +80,11 @@ function handleClick() {
   newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
 }
 
-function createNewAnnotation(type: string, characters: Character[]) {
+function createNewAnnotation(type: string, subtype: string | undefined, characters: Character[]) {
   const fields: AnnotationProperty[] = getAnnotationFields(type);
   const data: IAnnotation = {} as IAnnotation;
 
+  // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
   fields.forEach((field: AnnotationProperty) => {
     switch (field.type) {
@@ -83,6 +107,7 @@ function createNewAnnotation(type: string, characters: Character[]) {
 
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
   data.type = type;
+  data.subtype = subtype ?? data.subtype;
   data.startIndex = 0;
   data.endIndex = 0;
   data.text = characters.map((char: Character) => char.data.text).join('');
@@ -147,6 +172,7 @@ function findSpansWithinBoundaries(
 
 <template>
   <Button
+    v-if="!subtypeField"
     class="button-annotation"
     severity="secondary"
     outlined
@@ -166,6 +192,26 @@ function findSpansWithinBoundaries(
       />
     </template>
   </Button>
+  <SplitButton
+    v-else
+    severity="secondary"
+    outlined
+    raised
+    :style="{ width: '3.5rem' }"
+    :model="dropdownOptions"
+    :disabled="!selectedOptions.includes(annotationType)"
+    v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
+    @click="handleButtonClick"
+  >
+    <span class="flex dropdownOption-center font-bold">
+      <img
+        :src="`${iconsMap[annotationType]}`"
+        :title="annotationType"
+        :alt="annotationType"
+        :style="{ height: '1rem', marginRight: '0.5rem' }"
+      />
+    </span>
+  </SplitButton>
 </template>
 
 <style scoped>

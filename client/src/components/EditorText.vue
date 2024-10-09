@@ -580,6 +580,7 @@ function getCharacterIndex(span: HTMLSpanElement): number {
                   annotation.isFirstCharacter ? 'start' : '',
                   annotation.isLastCharacter ? 'end' : '',
                   annotation.type,
+                  annotation.subtype,
                 ]"
                 :data-anno-uuid="annotation.uuid"
               >
