@@ -1,4 +1,5 @@
 :root {
+  --aboveLine-clr: hsl(22, 81%, 35%);
   --addition-color: hsla(38, 78%, 67%, 0.6);
   --addition-opacity: 0.9;
   --addition-transition: var(--addition-opacity) ease-in-out 1s;
@@ -15,16 +16,54 @@
   --head-font-weight: 700;
   --initial-clr: hsl(114, 100%, 37%);
   --intervention-clr: hsl(292, 100%, 62%);
-  --nonLinear-clr: hsl(34, 100%, 47%);
+  --marginNote-clr: hsl(34, 100%, 47%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
   --transposition-clr: #ccc;
   --unclear-clr: hsl(328, 98%, 47%);
 }
 
+/* TODO: Improve when rubricated is own subtype */
+#text > span:has(span.emphasised) {
+  font-weight: normal;
+  color: unset;
+}
+
 #text > span:has(span.emphasised) {
   font-weight: var(--emphasised-font-weight);
   color: var(--emphasised-clr);
+}
+
+#text > span:has(span.emphasised) {
+  font-weight: var(--emphasised-font-weight);
+  color: var(--emphasised-clr);
+
+  &:has(.bold) {
+    font-weight: bold;
+    color: unset;
+  }
+
+  &:has(.initial) {
+    color: var(--initial-clr);
+    font-weight: bold;
+  }
+
+  &:has(.italic) {
+    font-style: italic;
+  }
+
+  &:has(.smallCaps) {
+    text-decoration: dotted underline;
+  }
+
+  &:has(.underlined) {
+    text-decoration: underline;
+  }
+}
+
+#text > span:has(span.emphasised:where(.bold, .initial, .italic, .underlined, .smallCaps)) {
+  font-weight: normal;
+  color: unset;
 }
 
 #text > span:has(span.expansion) {
@@ -33,7 +72,13 @@
 }
 
 #text > span:has(span.nonLinear) {
-  color: var(--nonLinear-clr);
+  &:has(.aboveLine) {
+    color: var(--aboveLine-clr);
+  }
+
+  &:has(.marginNote) {
+    color: var(--marginNote-clr);
+  }
 }
 
 #text > span:has(span.intervention) {
@@ -94,9 +139,4 @@
 
 #text > span:has(span.transposition) {
   background-color: var(--transposition-clr);
-}
-
-#text > span:has(span.initial) {
-  color: var(--initial-clr);
-  font-weight: bold;
 }
