@@ -100,7 +100,17 @@ Fix by changing classlists or annotation types? */
 }
 
 #text > span:has(span.deleted) {
-  text-decoration: var(--deleted-text-decoration);
+  &:has(.start) {
+    /* border-right: 2px solid green; */
+    /* margin-right: -2px; */
+    background-color: lightblue;
+  }
+
+  &:has(.end) {
+    background-color: rgb(111, 111, 229);
+    /* border-left: 2px solid red; */
+    /* margin-left: -0.5px; */
+  }
 }
 
 #text > span:has(span.unclear) {

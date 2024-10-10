@@ -17,7 +17,7 @@ const { annotationType } = defineProps<{ annotationType: string }>();
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { getAnnotationFields } = useGuidelinesStore();
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
@@ -41,10 +41,29 @@ function handleButtonClick() {
 }
 
 function handleClick(dropdownOption?: string) {
+  if (!isValidSelection()) {
+    return;
+  }
+
+  const selectedCharacters: Character[] = getSelectedCharacters();
+  const newAnnotation: Annotation = createNewAnnotation(
+    annotationType,
+    dropdownOption,
+    selectedCharacters,
+  );
+
+  addAnnotation(newAnnotation);
+  annotateCharacters(selectedCharacters, newAnnotation);
+  // TODO: This snapshot should be taken BEFORE changing the state
+  // pushHistoryEntry();
+  newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+}
+
+function isValidSelection(): boolean {
   const { range, type } = getSelectionData();
 
   if (!range || type === 'None') {
-    return;
+    return false;
   }
 
   const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
@@ -63,21 +82,17 @@ function handleClick(dropdownOption?: string) {
 
   if (type === 'Caret') {
     console.log('no text selected. Return');
-    return;
+    return false;
   }
 
-  const selectedCharacters: Character[] = getSelectedCharacters();
-  const newAnnotation: Annotation = createNewAnnotation(
-    annotationType,
-    dropdownOption,
-    selectedCharacters,
-  );
+  if (getAnnotationConfig(annotationType)?.isZeroPoint) {
+    const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
 
-  addAnnotation(newAnnotation);
-  annotateCharacters(selectedCharacters, newAnnotation);
-  // TODO: This snapshot should be taken BEFORE changing the state
-  // pushHistoryEntry();
-  newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+    return firstSpan.nextElementSibling === lastSpan;
+  }
+
+  return true;
 }
 
 function createNewAnnotation(type: string, subtype: string | undefined, characters: Character[]) {
@@ -132,13 +147,7 @@ function createNewAnnotation(type: string, subtype: string | undefined, characte
 }
 
 function getSelectedCharacters(): Character[] {
-  const { range, selection } = getSelectionData();
-
-  // TODO: Is this needed?
-  // Return if no selection or the anchorNode is the text container.
-  if (!selection || selection.anchorNode?.nodeName === 'DIV') {
-    return [];
-  }
+  const { range } = getSelectionData();
 
   const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
   const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
