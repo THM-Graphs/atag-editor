@@ -98,7 +98,8 @@
       {
         "type": "deleted",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": true
       },
       {
         "type": "unclear",
