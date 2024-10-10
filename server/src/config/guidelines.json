@@ -33,7 +33,6 @@
       {
         "type": "emphasised",
         "category": "edition",
-        "text": "in rubro",
         "defaultSelected": true,
         "properties": [
           {
@@ -49,13 +48,11 @@
       {
         "type": "expansion",
         "category": "edition",
-        "text": "expansio",
         "defaultSelected": true
       },
       {
         "type": "nonLinear",
         "category": "edition",
-        "text": "non linear",
         "defaultSelected": true,
         "properties": [
           {
@@ -71,7 +68,6 @@
       {
         "type": "intervention",
         "category": "edition",
-        "text": "correxit",
         "defaultSelected": true,
         "properties": [
           {
@@ -87,7 +83,6 @@
       {
         "type": "correction",
         "category": "edition",
-        "text": "in rasura",
         "defaultSelected": true,
         "properties": [
           {
@@ -103,43 +98,36 @@
       {
         "type": "deleted",
         "category": "edition",
-        "text": "delevit",
         "defaultSelected": true
       },
       {
         "type": "unclear",
         "category": "edition",
-        "text": "legi nequit",
         "defaultSelected": true
       },
       {
         "type": "repeated",
         "category": "edition",
-        "text": "repetitio",
         "defaultSelected": true
       },
       {
         "type": "gap",
         "category": "edition",
-        "text": "lacuna",
         "defaultSelected": true
       },
       {
         "type": "addition",
         "category": "edition",
-        "text": "recensi manu",
         "defaultSelected": true
       },
       {
         "type": "head",
         "category": "layout",
-        "text": "head",
         "defaultSelected": true
       },
       {
         "type": "line",
         "category": "layout",
-        "text": "linea",
         "defaultSelected": false,
         "properties": [
           {
@@ -189,13 +177,11 @@
       {
         "type": "transposition",
         "category": "layout",
-        "text": "transpositio",
         "defaultSelected": true
       },
       {
         "type": "commentInternal",
         "category": "project",
-        "text": "comment",
         "defaultSelected": true
       }
     ],
