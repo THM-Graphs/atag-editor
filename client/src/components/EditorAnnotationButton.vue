@@ -107,11 +107,16 @@ function createNewAnnotation(type: string, subtype: string | undefined, characte
 
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
   data.type = type;
-  data.subtype = subtype ?? data.subtype;
   data.startIndex = 0;
   data.endIndex = 0;
   data.text = characters.map((char: Character) => char.data.text).join('');
   data.uuid = crypto.randomUUID();
+
+  // Set subtype only when a subtype property is defined in guidelines
+  // If it is, set it to the given parameter subtype or use the default value if no parameter is passed
+  if (subtypeField) {
+    data.subtype = subtype ?? data.subtype;
+  }
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
@@ -180,7 +185,7 @@ function findSpansWithinBoundaries(
     :disabled="!selectedOptions.includes(annotationType)"
     :data-annotation-type="annotationType"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
-    @click="handleClick"
+    @click="handleButtonClick"
   >
     <template #icon>
       <!-- TODO: Should this come from annotation type config? -->

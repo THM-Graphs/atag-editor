@@ -39,7 +39,7 @@
           {
             "name": "subtype",
             "type": "selection",
-            "options": ["emphasised", "initial", "underlined", "italic", "bold", "smallCaps"],
+            "options": ["rubricated", "initial", "underlined", "italic", "bold", "smallCaps"],
             "required": true,
             "editable": true,
             "visible": true

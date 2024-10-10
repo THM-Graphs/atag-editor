@@ -8,8 +8,6 @@
   --correction-clr: hsl(36, 85%, 76%);
   --correction-opacity: 0.5;
   --deleted-text-decoration: line-through;
-  --emphasised-clr: hsl(0, 76%, 38%);
-  --emphasised-font-weight: 700;
   --expansion-clr: hsl(201, 22%, 87%);
   --expansion-opacity: 0.7;
   --gap-text-decoration: underline dotted;
@@ -19,12 +17,14 @@
   --marginNote-clr: hsl(34, 100%, 47%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
+  --rubricated-clr: hsl(0, 76%, 38%);
+  --rubricated-font-weight: 700;
   --transposition-clr: #ccc;
   --unclear-clr: hsl(328, 98%, 47%);
 }
 
 /* TODO: Improve when rubricated is own subtype */
-#text > span:has(span.emphasised) {
+/* #text > span:has(span.emphasised) {
   font-weight: normal;
   color: unset;
 }
@@ -32,11 +32,18 @@
 #text > span:has(span.emphasised) {
   font-weight: var(--emphasised-font-weight);
   color: var(--emphasised-clr);
-}
+} */
 
 #text > span:has(span.emphasised) {
-  font-weight: var(--emphasised-font-weight);
-  color: var(--emphasised-clr);
+  &:has(.rubricated) {
+    font-weight: var(--rubricated-font-weight);
+    color: var(--rubricated-clr);
+  }
+
+  &:has(.bold) {
+    font-weight: bold;
+    color: unset;
+  }
 
   &:has(.bold) {
     font-weight: bold;
@@ -85,7 +92,9 @@
   color: var(--intervention-clr);
 }
 
-#text > span:has(span.correction) {
+/* TODO: This is a hack since there is a annotion type as well as a subtype "correction".
+Fix by changing classlists or annotation types? */
+#text > span:has(span.correction:not(.intervention)) {
   background-color: var(--correction-clr);
   opacity: var(--correction-opacity);
 }

@@ -31,7 +31,7 @@ export type AnnotationProperty = {
 export type AnnotationReference = {
   isFirstCharacter: boolean;
   isLastCharacter: boolean;
-  subtype: string;
+  subtype: string | null;
   type: string;
   uuid: string;
 };
