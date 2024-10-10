@@ -1,6 +1,14 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { Annotation, AnnotationReference, Character } from '../models/types';
+import { useGuidelinesStore } from './guidelines';
+
+type CharacterInfo = {
+  char: Character | null;
+  annotations: AnnotationReference[];
+  anchorStartUuids?: string[];
+  anchorEndUuids?: string[];
+};
 
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
@@ -8,6 +16,8 @@ const afterEndIndex = ref<number | null>(null);
 const totalCharacters = ref<Character[]>([]);
 const snippetCharacters = ref<Character[]>([]);
 const initialSnippetCharacters = ref<Character[]>([]);
+
+const { getAnnotationConfig } = useGuidelinesStore();
 
 /**
  * Store for managing the state of characters inside an editor instance. When the component is mounted,
@@ -196,6 +206,51 @@ export function useCharactersStore() {
     return char;
   }
 
+  function getCharInfo(index: number): CharacterInfo {
+    const charAtIndex: Character | null = snippetCharacters.value[index];
+    const annotations: AnnotationReference[] = charAtIndex?.annotations ?? [];
+    const anchorStartUuids: string[] = annotations
+      .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter)
+      .map(a => a.uuid);
+
+    const anchorEndUuids: string[] = annotations
+      .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isLastCharacter)
+      .map(a => a.uuid);
+
+    const char: CharacterInfo = {
+      char: charAtIndex,
+      annotations,
+      anchorStartUuids,
+      anchorEndUuids,
+    };
+
+    return char;
+  }
+
+  function getPrevCharInfo(index: number): CharacterInfo {
+    const char: Character | null = getPreviousChar(index);
+    const annotations: AnnotationReference[] = char?.annotations ?? [];
+    const anchorStartUuids: string[] = annotations
+      .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter)
+      .map(a => a.uuid);
+
+    const prevChar = { char, annotations, anchorStartUuids };
+
+    return prevChar;
+  }
+
+  function getNextCharInfo(index: number): CharacterInfo {
+    const char: Character | null = getNextChar(index);
+    const annotations: AnnotationReference[] = char?.annotations ?? [];
+    const anchorEndUuids: string[] = annotations
+      .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isLastCharacter)
+      .map(a => a.uuid);
+
+    const nextChar = { char, annotations, anchorEndUuids };
+
+    return nextChar;
+  }
+
   /**
    * Slices the total characters array to the snippet characters array, based on the computed start and end indices,
    * and sets the initial snippet characters property to the new snippet.
@@ -277,29 +332,55 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
-    const previousChar: Character = getPreviousChar(index);
-    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
+    // TODO: Handle truncated annotations
+    const prevChar: CharacterInfo = getPrevCharInfo(index);
+    const nextChar: CharacterInfo = getCharInfo(index);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
-    let annotationEndsUuids: string[] = prevCharAnnotations
+    let annotationEndsUuids: string[] = prevChar.annotations
       .filter(a => a.isLastCharacter)
       .map(a => a.uuid);
 
-    newCharacters.forEach((c: Character, index: number) => {
-      // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
-      if (index === 0) {
-        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
-      }
+    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+    prevChar.char.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
 
-      prevCharAnnotations.forEach(a => {
-        c.annotations.push({ ...a, isFirstCharacter: false });
+      if (!isZeroPoint) {
+        a.isLastCharacter = false;
+      }
+    });
+
+    newCharacters.forEach((c: Character, i: number) => {
+      prevChar.char.annotations.forEach(a => {
+        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+        if (!isZeroPoint) {
+          c.annotations.push({ ...a, isFirstCharacter: false });
+        } else {
+          // debugger;
+          if (i === 0 && prevChar.anchorStartUuids.includes(a.uuid)) {
+            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
+          }
+        }
       });
 
-      if (index === newCharacters.length - 1) {
+      if (i === newCharacters.length - 1) {
         c.annotations.forEach(a => {
           if (annotationEndsUuids.includes(a.uuid)) {
             a.isLastCharacter = true;
           }
+        });
+      }
+
+      if (nextChar.char) {
+        nextChar.char.annotations = nextChar.char.annotations.filter(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (isZeroPoint && nextChar.anchorEndUuids?.includes(a.uuid)) {
+            return false;
+          }
+
+          return true;
         });
       }
     });
