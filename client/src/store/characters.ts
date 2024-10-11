@@ -162,6 +162,22 @@ export function useCharactersStore() {
     sliceCharactersSnippet();
   }
 
+  function getCharAtIndex(index: number): Character | null {
+    let char: Character;
+
+    if (index === snippetCharacters.value.length) {
+      if (afterEndIndex.value === null) {
+        char = null;
+      } else {
+        char = totalCharacters.value[afterEndIndex.value];
+      }
+    } else {
+      char = snippetCharacters.value[index];
+    }
+
+    return char;
+  }
+
   /**
    * Retrieves the character that comes before the character at the specified index.
    *
@@ -207,7 +223,7 @@ export function useCharactersStore() {
   }
 
   function getCharInfo(index: number): CharacterInfo {
-    const charAtIndex: Character | null = snippetCharacters.value[index];
+    const charAtIndex: Character | null = getCharAtIndex(index);
     const annotations: AnnotationReference[] = charAtIndex?.annotations ?? [];
     const anchorStartUuids: string[] = annotations
       .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter)
@@ -335,6 +351,9 @@ export function useCharactersStore() {
     // TODO: Handle truncated annotations
     const prevChar: CharacterInfo = getPrevCharInfo(index);
     const nextChar: CharacterInfo = getCharInfo(index);
+
+    console.log(prevChar, nextChar);
+    // return;
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.annotations
