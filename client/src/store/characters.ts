@@ -348,12 +348,8 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
-    // TODO: Handle truncated annotations
     const prevChar: CharacterInfo = getPrevCharInfo(index);
     const nextChar: CharacterInfo = getCharInfo(index);
-
-    console.log(prevChar, nextChar);
-    // return;
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.annotations
@@ -361,7 +357,7 @@ export function useCharactersStore() {
       .map(a => a.uuid);
 
     // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
-    prevChar.char.annotations.forEach(a => {
+    prevChar.char?.annotations.forEach(a => {
       const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
 
       if (!isZeroPoint) {
@@ -370,7 +366,7 @@ export function useCharactersStore() {
     });
 
     newCharacters.forEach((c: Character, i: number) => {
-      prevChar.char.annotations.forEach(a => {
+      prevChar.char?.annotations.forEach(a => {
         const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
 
         if (!isZeroPoint) {
@@ -391,6 +387,7 @@ export function useCharactersStore() {
         });
       }
 
+      // Remove annotation from span after insertion if it is zero-point (first of the inserted spans is now annotated as isLastCharacter)
       if (nextChar.char) {
         nextChar.char.annotations = nextChar.char.annotations.filter(a => {
           const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
