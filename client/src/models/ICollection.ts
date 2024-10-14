@@ -11,7 +11,7 @@ export default interface ICollection {
   normalizedLabel: string;
   receivedBy: string;
   sentBy: string;
-  status: number;
+  status: string;
   textGuid: string;
   uuid: string;
   websiteUrl: string;

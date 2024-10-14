@@ -11,6 +11,13 @@
           "visible": false
         },
         {
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "editable": true,
+          "visible": true
+        },
+        {
           "name": "sender",
           "type": "text",
           "required": false,
