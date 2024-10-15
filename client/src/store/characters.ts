@@ -413,20 +413,80 @@ export function useCharactersStore() {
    */
   function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number): void {
     const charsToDeleteCount: number = endIndex - startIndex;
+    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
+    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+    // This variable is important for deleting characters at the beginning of the text
+    const firstCharToDelete: Character = snippetCharacters.value[startIndex];
 
-    const previousChar: Character | null = getPreviousChar(startIndex);
-    const nextChar: Character | null = getNextChar(endIndex);
-    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
-    const nextCharAnnotations: AnnotationReference[] = nextChar?.annotations ?? [];
+    // If there is no next/previous character to be the new anchor of a zero-point annotation,
+    // text operation should not be allowed at all
+    // TODO: This is hacky af, find better solution?
+    if (
+      nextChar.char?.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
+      firstCharToDelete.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
+      !prevChar.char
+    ) {
+      // TODO: Throw error/return false for user feedback
+      console.log('no character before :/');
+      return;
+    }
 
-    prevCharAnnotations.forEach(prevAnno => {
-      if (!nextCharAnnotations.find(nextAnno => nextAnno.uuid === prevAnno.uuid)) {
+    if (
+      prevChar.char?.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
+      !nextChar.char
+    ) {
+      // TODO: Throw error/return false for user feedback
+      console.log('no character after :/');
+      return;
+    }
+
+    // Behaviour for zero-point annotations (annotate previous/next character
+    // if the delete operation starts/ends inside of an annotation)
+    prevChar.anchorStartUuids.forEach((uuid: string) => {
+      const anno: AnnotationReference = {
+        ...prevChar.char?.annotations.find(a => a.uuid === uuid),
+      };
+
+      if (!nextChar.char?.annotations.some(a => a.uuid === uuid)) {
+        nextChar.char?.annotations.push(anno);
+      }
+
+      anno.isFirstCharacter = false;
+      anno.isLastCharacter = true;
+    });
+
+    nextChar.anchorEndUuids.forEach((uuid: string) => {
+      const anno: AnnotationReference = {
+        ...nextChar.char?.annotations.find(a => a.uuid === uuid),
+      };
+
+      if (!prevChar.char?.annotations.some(a => a.uuid === uuid)) {
+        prevChar.char?.annotations.push(anno);
+      }
+
+      anno.isFirstCharacter = true;
+      anno.isLastCharacter = false;
+    });
+
+    // Behaviour for non-zero-point annotations
+    prevChar.char?.annotations.forEach(prevAnno => {
+      if (!getAnnotationConfig(prevAnno.type)?.isZeroPoint) {
+        // TODO: Implement error/warning handling
+        return;
+      }
+
+      if (!nextChar.char?.annotations.find(nextAnno => nextAnno.uuid === prevAnno.uuid)) {
         prevAnno.isLastCharacter = true;
       }
     });
 
-    nextCharAnnotations.forEach(nextAnno => {
-      if (!prevCharAnnotations.find(prevAnno => prevAnno.uuid === nextAnno.uuid)) {
+    nextChar.char?.annotations.forEach(nextAnno => {
+      if (!getAnnotationConfig(nextAnno.type)?.isZeroPoint) {
+        // TODO: Implement error/warning handling
+        return;
+      }
+
+      if (!prevChar.char?.annotations.find(prevAnno => prevAnno.uuid === nextAnno.uuid)) {
         nextAnno.isFirstCharacter = true;
       }
     });
