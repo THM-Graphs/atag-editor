@@ -13,7 +13,7 @@ import Tag from 'primevue/tag';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import { Annotation, AnnotationProperty } from '../models/types';
+import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -33,8 +33,9 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { getAnnotationFields } = useGuidelinesStore();
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
+const config: AnnotationType = getAnnotationConfig(annotation.data.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.type);
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
@@ -193,7 +194,7 @@ function setRangeAnchorAtEnd(): void {
         size="small"
         severity="secondary"
         rounded
-        :disabled="annotation.isTruncated"
+        :disabled="annotation.isTruncated || config.isZeroPoint"
         @click="handleExpand"
       />
       <Button
@@ -201,7 +202,7 @@ function setRangeAnchorAtEnd(): void {
         size="small"
         severity="secondary"
         rounded
-        :disabled="annotation.isTruncated"
+        :disabled="annotation.isTruncated || config.isZeroPoint"
         @click="handleShrink"
       />
     </div>
