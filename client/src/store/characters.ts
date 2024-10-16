@@ -1,7 +1,8 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
-import { Annotation, AnnotationReference, Character } from '../models/types';
 import { useGuidelinesStore } from './guidelines';
+import TextOperationError from '../errors/textOperation.error';
+import { Annotation, AnnotationReference, Character } from '../models/types';
 
 type CharacterInfo = {
   char: Character | null;
@@ -430,11 +431,14 @@ export function useCharactersStore() {
   }
 
   /**
-   * Deletes characters between the specified start and end indexes (both inclusive).
+   * Deletes characters between the specified start and end indexes.
+   * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
    *
    * @param {number} startIndex - The index of the first character to delete.
    * @param {number} endIndex - The index of the last character to delete.
    * @return {void} This function does not return anything.
+   *
+   * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
    */
   function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number): void {
     const charsToDeleteCount: number = endIndex - startIndex;
@@ -457,16 +461,12 @@ export function useCharactersStore() {
 
     // If there is no next/previous character to be the new anchor of a zero-point annotation,
     // text operation should not be allowed at all
-    if (hasNoPreviousAnchor) {
-      // TODO: Throw error/return false for user feedback
-      console.log('no character before :/');
-      return;
-    }
+    if (hasNoPreviousAnchor || hasNoNextAnchor) {
+      const errorMsg: string = hasNoPreviousAnchor
+        ? 'Character can not be deleted since there is no previous character to be annotated as zero-point anchor'
+        : 'Character can not be deleted since there is no next character to be annotated as zero-point anchor';
 
-    if (hasNoNextAnchor) {
-      // TODO: Throw error/return false for user feedback
-      console.log('no character after :/');
-      return;
+      throw new TextOperationError(errorMsg);
     }
 
     // Behaviour for zero-point annotations (annotate previous/next character
