@@ -7,10 +7,13 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
+import { useToast } from 'primevue/usetoast';
+import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { Annotation, AnnotationProperty, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
+import { ToastServiceMethods } from 'primevue/toastservice';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -32,6 +35,8 @@ const dropdownOptions = options.map((option: string) => {
   };
 });
 
+const toast: ToastServiceMethods = useToast();
+
 function handleDropdownClick(subtype: string) {
   handleClick(subtype);
 }
@@ -41,55 +46,68 @@ function handleButtonClick() {
 }
 
 function handleClick(dropdownOption?: string) {
-  if (!isValidSelection()) {
-    return;
+  try {
+    isSelectionValid();
+
+    const selectedCharacters: Character[] = getSelectedCharacters();
+    const newAnnotation: Annotation = createNewAnnotation(
+      annotationType,
+      dropdownOption,
+      selectedCharacters,
+    );
+
+    addAnnotation(newAnnotation);
+    annotateCharacters(selectedCharacters, newAnnotation);
+    // pushHistoryEntry();
+    newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+  } catch (error) {
+    if (error instanceof AnnotationRangeError) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Invalid selection',
+        detail: error.message,
+        life: 3000,
+      });
+    } else {
+      console.error('Unexpected error:', error);
+    }
   }
-
-  const selectedCharacters: Character[] = getSelectedCharacters();
-  const newAnnotation: Annotation = createNewAnnotation(
-    annotationType,
-    dropdownOption,
-    selectedCharacters,
-  );
-
-  addAnnotation(newAnnotation);
-  annotateCharacters(selectedCharacters, newAnnotation);
-  // TODO: This snapshot should be taken BEFORE changing the state
-  // pushHistoryEntry();
-  newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
 }
 
-function isValidSelection(): boolean {
+function isSelectionValid(): boolean {
   const { range, type } = getSelectionData();
 
   if (!range || type === 'None') {
-    return false;
+    throw new AnnotationRangeError('No valid text selected.');
   }
 
   const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
 
-  // Selection is outside of text component (with element node as container)
   if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
-    return false;
+    throw new AnnotationRangeError('Selection is outside the text component.');
   }
 
   if (
     commonAncestorContainer.nodeType === Node.TEXT_NODE &&
     !commonAncestorContainer.parentElement.closest('#text')
   ) {
-    return false;
+    throw new AnnotationRangeError('Text selection is outside the text component.');
   }
 
   if (type === 'Caret') {
-    console.log('no text selected. Return');
-    return false;
+    throw new AnnotationRangeError('Select some text to annotate.');
   }
 
-  if (getAnnotationConfig(annotationType)?.isZeroPoint) {
+  // TODO: Create zero-point annotations only with caret selection? More intuitive...affects more parts of the functionality
+  if (type === 'Range' && getAnnotationConfig(annotationType)?.isZeroPoint) {
     const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
     const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
 
-    return firstSpan.nextElementSibling === lastSpan;
+    if (firstSpan.nextElementSibling !== lastSpan) {
+      throw new AnnotationRangeError(
+        'For zero-point annotations, select EXACTLY TWO characters to annotate',
+      );
+    }
   }
 
   return true;
