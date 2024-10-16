@@ -440,26 +440,30 @@ export function useCharactersStore() {
     const charsToDeleteCount: number = endIndex - startIndex;
     const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
     const nextChar: CharacterInfo = getNextCharInfo(endIndex);
-    // This variable is important for deleting characters at the beginning of the text
-    const firstCharToDelete: Character = snippetCharacters.value[startIndex];
+
+    // Selection ends between two anchor spans and there is no previous character in the chain to be the new left anchor
+    const hasNoPreviousAnchor: boolean =
+      !prevChar.char &&
+      nextChar.char?.annotations.some(
+        a => getAnnotationConfig(a.type)?.isZeroPoint && a.isLastCharacter,
+      );
+
+    // Selection starts between two anchor spans and there is no next character in the chain to be the right anchor
+    const hasNoNextAnchor: boolean =
+      !nextChar.char &&
+      prevChar.char?.annotations.some(
+        a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter,
+      );
 
     // If there is no next/previous character to be the new anchor of a zero-point annotation,
     // text operation should not be allowed at all
-    // TODO: This is hacky af, find better solution?
-    if (
-      nextChar.char?.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
-      firstCharToDelete.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
-      !prevChar.char
-    ) {
+    if (hasNoPreviousAnchor) {
       // TODO: Throw error/return false for user feedback
       console.log('no character before :/');
       return;
     }
 
-    if (
-      prevChar.char?.annotations.some(a => getAnnotationConfig(a.type)?.isZeroPoint) &&
-      !nextChar.char
-    ) {
+    if (hasNoNextAnchor) {
       // TODO: Throw error/return false for user feedback
       console.log('no character after :/');
       return;
