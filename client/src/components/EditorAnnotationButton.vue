@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
-import { getParentCharacterSpan, getSelectionData } from '../helper/helper';
-import iconsMap from '../helper/icons';
+import { getParentCharacterSpan, getSelectionData } from '../utils/helper/helper';
+import iconsMap from '../utils/helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';

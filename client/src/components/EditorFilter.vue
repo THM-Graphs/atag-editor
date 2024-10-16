@@ -3,7 +3,7 @@ import { computed, ComputedRef, ref } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { useFilterStore } from '../store/filter';
 import { useGuidelinesStore } from '../store/guidelines';
-import { capitalize } from '../helper/helper';
+import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';

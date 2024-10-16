@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
-import TextOperationError from '../errors/textOperation.error';
+import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character } from '../models/types';
 
 type CharacterInfo = {

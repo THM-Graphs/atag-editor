@@ -11,11 +11,11 @@ import {
   isCaretAtBeginning,
   isEditorElement,
   removeFormatting,
-} from '../helper/helper';
+} from '../utils/helper/helper';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
-import TextOperationError from '../errors/textOperation.error';
+import TextOperationError from '../utils/errors/textOperation.error';
 import { useToast } from 'primevue/usetoast';
 import { Character } from '../models/types';
 import { ToastServiceMethods } from 'primevue/toastservice';

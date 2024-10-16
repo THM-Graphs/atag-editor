@@ -18,7 +18,7 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl } from '../helper/helper';
+import { buildFetchUrl } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
