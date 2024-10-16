@@ -296,42 +296,68 @@ export function useCharactersStore() {
     endIndex: number,
     newCharacters: Character[],
   ): void {
-    const previousChar: Character | null = getPreviousChar(startIndex);
-    const nextChar: Character | null = getNextChar(endIndex);
-    const prevCharAnnotations: AnnotationReference[] = previousChar?.annotations ?? [];
-    const nextCharAnnotations: AnnotationReference[] = nextChar?.annotations ?? [];
+    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
+    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
-    let annotationEndsUuids: string[] = prevCharAnnotations
-      .filter(a => a.isLastCharacter)
+    let annotationEndsUuids: string[] = prevChar.char?.annotations
+      .filter(a => !getAnnotationConfig(a.type).isZeroPoint && a.isLastCharacter)
       .map(a => a.uuid);
 
-    newCharacters.forEach((c: Character, index: number) => {
-      // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
-      if (index === 0) {
-        prevCharAnnotations.forEach(a => (a.isLastCharacter = false));
-      }
+    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+    prevChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
 
-      prevCharAnnotations.forEach(a => {
-        c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+      if (!isZeroPoint) {
+        a.isLastCharacter = false;
+      }
+    });
+
+    newCharacters.forEach((c: Character, index: number) => {
+      // Annotate new character with annotations of previous character
+      prevChar.char?.annotations.forEach(a => {
+        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+        if (!isZeroPoint) {
+          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+        } else {
+          if (a.isFirstCharacter && index === 0) {
+            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
+          }
+        }
       });
 
       if (index === newCharacters.length - 1) {
-        c.annotations.forEach(a => {
-          if (annotationEndsUuids.includes(a.uuid)) {
-            a.isLastCharacter = true;
-          }
+        // If next character after insertion is the last character of a zero-point-annotation, new character will be the new start char.
+        nextChar.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
 
-          if (!nextCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
-            a.isLastCharacter = true;
+          if (isZeroPoint && a.isLastCharacter) {
+            c.annotations.push({ ...a, isFirstCharacter: true, isLastCharacter: false });
+          }
+        });
+
+        c.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (!isZeroPoint) {
+            if (annotationEndsUuids.includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+
+            if (!nextChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
           }
         });
       }
     });
 
     // The next character can be the new first character of an annotation
-    nextCharAnnotations.forEach(a => {
-      if (!prevCharAnnotations.map(ax => ax.uuid).includes(a.uuid)) {
+    nextChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+      if (!isZeroPoint && !prevChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
         a.isFirstCharacter = true;
       }
     });
@@ -372,7 +398,6 @@ export function useCharactersStore() {
         if (!isZeroPoint) {
           c.annotations.push({ ...a, isFirstCharacter: false });
         } else {
-          // debugger;
           if (i === 0 && prevChar.anchorStartUuids.includes(a.uuid)) {
             c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
           }
