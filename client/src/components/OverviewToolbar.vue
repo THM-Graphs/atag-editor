@@ -7,7 +7,7 @@ import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import Skeleton from 'primevue/skeleton';
 import Toolbar from 'primevue/toolbar';
-import { buildFetchUrl, capitalize } from '../helper/helper';
+import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 

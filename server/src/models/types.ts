@@ -14,6 +14,7 @@ export type Annotation = {
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
+  isZeroPoint?: boolean;
   text: string;
   type: string;
   properties?: AnnotationProperty[];

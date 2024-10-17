@@ -6,7 +6,7 @@ import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionList from '../components/CollectionList.vue';
 import ICollection from '../models/ICollection';
-import { buildFetchUrl } from '../helper/helper';
+import { buildFetchUrl } from '../utils/helper/helper';
 
 const collections = ref<ICollection[] | null>(null);
 const filteredCollections = ref<ICollection[] | null>(null);

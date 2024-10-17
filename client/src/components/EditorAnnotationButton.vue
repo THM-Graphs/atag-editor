@@ -1,26 +1,30 @@
 <script setup lang="ts">
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
-import { getParentCharacterSpan, getSelectionData } from '../helper/helper';
-import iconsMap from '../helper/icons';
+import { getParentCharacterSpan, getSelectionData, isEditorElement } from '../utils/helper/helper';
+import iconsMap from '../utils/helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
-import { Annotation, AnnotationProperty, Character } from '../models/types';
+import { useToast } from 'primevue/usetoast';
+import AnnotationRangeError from '../utils/errors/annotationRange.error';
+import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
+import { ToastServiceMethods } from 'primevue/toastservice';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
 const { snippetCharacters, annotateCharacters } = useCharactersStore();
 const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { getAnnotationFields } = useGuidelinesStore();
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
+const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
 const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
 const options: string[] = subtypeField?.options ?? [];
@@ -32,6 +36,8 @@ const dropdownOptions = options.map((option: string) => {
   };
 });
 
+const toast: ToastServiceMethods = useToast();
+
 function handleDropdownClick(subtype: string) {
   handleClick(subtype);
 }
@@ -41,43 +47,85 @@ function handleButtonClick() {
 }
 
 function handleClick(dropdownOption?: string) {
+  try {
+    isSelectionValid();
+
+    const selectedCharacters: Character[] = getCharactersToAnnotate();
+    const newAnnotation: Annotation = createNewAnnotation(
+      annotationType,
+      dropdownOption,
+      selectedCharacters,
+    );
+
+    addAnnotation(newAnnotation);
+    annotateCharacters(selectedCharacters, newAnnotation);
+    // pushHistoryEntry();
+    newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+  } catch (error) {
+    if (error instanceof AnnotationRangeError) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Invalid selection',
+        detail: error.message,
+        life: 3000,
+      });
+    } else {
+      console.error('Unexpected error:', error);
+    }
+  }
+}
+
+function isSelectionValid(): boolean {
   const { range, type } = getSelectionData();
 
   if (!range || type === 'None') {
-    return;
+    throw new AnnotationRangeError('No valid text selected.');
   }
 
   const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
 
-  // Selection is outside of text component (with element node as container)
   if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
-    return false;
+    throw new AnnotationRangeError('Selection is outside the text component.');
   }
 
   if (
     commonAncestorContainer.nodeType === Node.TEXT_NODE &&
     !commonAncestorContainer.parentElement.closest('#text')
   ) {
-    return false;
+    throw new AnnotationRangeError('Text selection is outside the text component.');
   }
 
-  if (type === 'Caret') {
-    console.log('no text selected. Return');
-    return;
+  if (type === 'Caret' && !config.isZeroPoint) {
+    throw new AnnotationRangeError('Select some text to annotate.');
   }
 
-  const selectedCharacters: Character[] = getSelectedCharacters();
-  const newAnnotation: Annotation = createNewAnnotation(
-    annotationType,
-    dropdownOption,
-    selectedCharacters,
-  );
+  if (type === 'Caret' && config.isZeroPoint) {
+    if (isEditorElement(range.startContainer)) {
+      throw new AnnotationRangeError(
+        'For creating zero-point annotations, place the caret between two characters',
+      );
+    } else {
+      const parentSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      const caretIsAtBeginning: boolean =
+        range.startOffset === 0 && !parentSpanElement.previousElementSibling;
+      const caretIsAtEnd: boolean =
+        range.startOffset === 1 && !parentSpanElement.nextElementSibling;
 
-  addAnnotation(newAnnotation);
-  annotateCharacters(selectedCharacters, newAnnotation);
-  // TODO: This snapshot should be taken BEFORE changing the state
-  // pushHistoryEntry();
-  newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+      if (caretIsAtBeginning || caretIsAtEnd) {
+        throw new AnnotationRangeError(
+          'For creating zero-point annotations, place the caret between two characters',
+        );
+      }
+    }
+  }
+
+  if (type === 'Range' && config.isZeroPoint) {
+    throw new AnnotationRangeError(
+      'For creating zero-point annotations, place the caret between two characters',
+    );
+  }
+
+  return true;
 }
 
 function createNewAnnotation(type: string, subtype: string | undefined, characters: Character[]) {
@@ -131,25 +179,51 @@ function createNewAnnotation(type: string, subtype: string | undefined, characte
   return newAnnotation;
 }
 
-function getSelectedCharacters(): Character[] {
-  const { range, selection } = getSelectionData();
+/**
+ * Get the HTML span elements that the user wants to annotate. If selection is of type 'Range', all spans between
+ * the range's start and end container are returned. If selection is of type 'Caret', the span elements to the left and right
+ * of the caret are returned (this is the case for zero-point annotations). The `isSelectionValid` function takes care of the existence
+ * of previous and next elements.
+ *
+ * @returns {HTMLSpanElement[]} An array of HTML span elements to annotate.
+ */
+function getSpansToAnnotate(): HTMLSpanElement[] {
+  const { range, type } = getSelectionData();
+  let spans: HTMLSpanElement[] = [];
 
-  // TODO: Is this needed?
-  // Return if no selection or the anchorNode is the text container.
-  if (!selection || selection.anchorNode?.nodeName === 'DIV') {
-    return [];
+  if (type === 'Range') {
+    const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+    spans = findSpansWithinBoundaries(firstSpan, lastSpan);
   }
 
-  const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-  const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+  if (type === 'Caret') {
+    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    let leftSpan: HTMLSpanElement;
+    let rightSpan: HTMLSpanElement;
 
-  const selectedCharacterSpans: HTMLSpanElement[] = findSpansWithinBoundaries(
-    firstSpan as HTMLSpanElement,
-    lastSpan as HTMLSpanElement,
-  );
+    if (range.startOffset === 0) {
+      leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
+      rightSpan = referenceSpanElement;
+    } else {
+      leftSpan = referenceSpanElement;
+      rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+    }
 
-  const uuids: string[] = selectedCharacterSpans.map((span: HTMLSpanElement) => span.id);
+    spans = [leftSpan, rightSpan];
+  }
 
+  return spans;
+}
+
+/**
+ * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
+ *
+ * @returns {Character[]} The characters that the user wants to annotate.
+ */
+function getCharactersToAnnotate(): Character[] {
+  const spans: HTMLSpanElement[] = getSpansToAnnotate();
+  const uuids: string[] = spans.map((span: HTMLSpanElement) => span.id);
   const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
     uuids.includes(c.data.uuid),
   );
@@ -157,6 +231,14 @@ function getSelectedCharacters(): Character[] {
   return characters;
 }
 
+/**
+ * Finds all HTML span elements between two given span elements. Used for iterating over the DOM when the selection is of type 'Range'.
+ *
+ * @param {HTMLSpanElement} firstChar The first span element to include in the result.
+ * @param {HTMLSpanElement} lastChar The last span element to include in the result.
+ *
+ * @returns {HTMLSpanElement[]} An array of all span elements between (and including) the given `firstChar` and `lastChar`.
+ */
 function findSpansWithinBoundaries(
   firstChar: HTMLSpanElement,
   lastChar: HTMLSpanElement,

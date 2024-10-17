@@ -4,7 +4,7 @@ import { useTextSelection } from '@vueuse/core';
 import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
-import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../helper/helper';
+import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 import Badge from 'primevue/badge';
 

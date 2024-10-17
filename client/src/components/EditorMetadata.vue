@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useCollectionStore } from '../store/collection';
 import { useGuidelinesStore } from '../store/guidelines';
-import { capitalize } from '../helper/helper';
+import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';

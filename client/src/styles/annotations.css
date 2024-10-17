@@ -8,6 +8,7 @@
   --correction-clr: hsl(36, 85%, 76%);
   --correction-opacity: 0.5;
   --deleted-text-decoration: line-through;
+  --deleted-clr: hsl(0, 0%, 44%);
   --expansion-clr: hsl(201, 22%, 87%);
   --expansion-opacity: 0.7;
   --gap-text-decoration: underline dotted;
@@ -22,17 +23,6 @@
   --transposition-clr: #ccc;
   --unclear-clr: hsl(328, 98%, 47%);
 }
-
-/* TODO: Improve when rubricated is own subtype */
-/* #text > span:has(span.emphasised) {
-  font-weight: normal;
-  color: unset;
-}
-
-#text > span:has(span.emphasised) {
-  font-weight: var(--emphasised-font-weight);
-  color: var(--emphasised-clr);
-} */
 
 #text > span:has(span.emphasised) {
   &:has(.rubricated) {
@@ -99,8 +89,11 @@ Fix by changing classlists or annotation types? */
   opacity: var(--correction-opacity);
 }
 
-#text > span:has(span.deleted) {
-  text-decoration: var(--deleted-text-decoration);
+#text > span:has(span.deleted.start) {
+  border-right: 2px solid var(--deleted-clr);
+}
+#text > span:has(span.deleted.end) {
+  border-left: 2px solid var(--deleted-clr);
 }
 
 #text > span:has(span.unclear) {

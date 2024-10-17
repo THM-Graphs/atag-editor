@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useGuidelinesStore } from '../store/guidelines';
 import EditorAnnotationButton from './EditorAnnotationButton.vue';
-import { capitalize } from '../helper/helper';
+import { capitalize } from '../utils/helper/helper';
 
 const { groupedAnnotationTypes } = useGuidelinesStore();
 </script>

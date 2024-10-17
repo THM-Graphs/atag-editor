@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCollectionStore } from './collection';
 import { useCharactersStore } from './characters';
-import { areObjectsEqual, areSetsEqual } from '../helper/helper';
+import { areObjectsEqual, areSetsEqual } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 
 const { collection, initialCollection } = useCollectionStore();

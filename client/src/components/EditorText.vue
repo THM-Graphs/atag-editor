@@ -11,11 +11,14 @@ import {
   isCaretAtBeginning,
   isEditorElement,
   removeFormatting,
-} from '../helper/helper';
+} from '../utils/helper/helper';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
+import TextOperationError from '../utils/errors/textOperation.error';
+import { useToast } from 'primevue/usetoast';
 import { Character } from '../models/types';
+import { ToastServiceMethods } from 'primevue/toastservice';
 // import { useHistoryStore } from '../store/history';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
@@ -56,6 +59,8 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
 
 newRangeAnchorUuid.value =
   snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
+
+const toast: ToastServiceMethods = useToast();
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -313,7 +318,19 @@ function handleDeleteWordBackward(): void {
     const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
 
     newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   } else {
     handleDeleteContentBackward();
   }
@@ -344,7 +361,19 @@ function handleDeleteWordForward(): void {
     const endWordIndex: number = findEndOfWord(index, snippetCharacters.value);
 
     newRangeAnchorUuid.value = snippetCharacters.value[index]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   } else {
     handleDeleteContentForward();
   }
@@ -372,7 +401,19 @@ function handleDeleteContentBackward(): void {
     const charIndex: number = getCharacterIndex(spanToDelete);
 
     newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(charIndex, charIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(charIndex, charIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   } else {
     let startIndex: number;
     let endIndex: number;
@@ -387,7 +428,19 @@ function handleDeleteContentBackward(): void {
     }
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(startIndex, endIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(startIndex, endIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   }
 }
 
@@ -416,7 +469,19 @@ function handleDeleteContentForward(): void {
     const charIndex: number = getCharacterIndex(spanToDelete);
 
     newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(charIndex, charIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(charIndex, charIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   } else {
     let startIndex: number;
     let endIndex: number;
@@ -431,7 +496,19 @@ function handleDeleteContentForward(): void {
     }
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-    deleteCharactersBetweenIndexes(startIndex, endIndex);
+
+    try {
+      deleteCharactersBetweenIndexes(startIndex, endIndex);
+    } catch (e: unknown) {
+      if (e instanceof TextOperationError) {
+        toast.add({
+          severity: e.severity,
+          summary: 'Invalid Text Operation',
+          detail: e.message,
+          life: 3000,
+        });
+      }
+    }
   }
 }
 
@@ -451,7 +528,18 @@ function handleDeleteByCut(): void {
   }
 
   newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
-  deleteCharactersBetweenIndexes(startIndex, endIndex);
+  try {
+    deleteCharactersBetweenIndexes(startIndex, endIndex);
+  } catch (e: unknown) {
+    if (e instanceof TextOperationError) {
+      toast.add({
+        severity: e.severity,
+        summary: 'Invalid Text Operation',
+        detail: e.message,
+        life: 3000,
+      });
+    }
+  }
 
   handleCopy();
 }
@@ -617,6 +705,8 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 
 #text {
   outline: 0;
+  line-height: 1.75rem;
+  caret-color: black;
 }
 
 #text.async-overlay {
@@ -625,6 +715,7 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 }
 
 #text > span {
+  display: inline-block;
   white-space-collapse: break-spaces;
   position: relative;
 

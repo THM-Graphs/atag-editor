@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Annotation, Character } from '../models/types';
+import { Annotation, Character } from '../../models/types';
 
 /**
  * Capitalizes the first letter of a given string.
