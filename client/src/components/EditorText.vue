@@ -705,6 +705,8 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 
 #text {
   outline: 0;
+  line-height: 1.75rem;
+  caret-color: black;
 }
 
 #text.async-overlay {
@@ -713,6 +715,7 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 }
 
 #text > span {
+  display: inline-block;
   white-space-collapse: break-spaces;
   position: relative;
 
