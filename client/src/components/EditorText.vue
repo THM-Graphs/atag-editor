@@ -715,7 +715,6 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 }
 
 #text > span {
-  display: inline-block;
   white-space-collapse: break-spaces;
   position: relative;
 
