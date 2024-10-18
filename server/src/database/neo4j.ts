@@ -9,8 +9,7 @@ export default class Neo4jDriver {
    * @return {Promise<Driver>} A promise that resolves to the Neo4j driver instance.
    */
   public static async createDatabaseConnection(): Promise<Driver> {
-    // TODO: Put uri string in .env file
-    const uri: string = `bolt://neo4j:${process.env.NEO4J_BOLT_PORT}`;
+    const uri: string = `${process.env.NEO4J_URI}`;
     const user: string = `${process.env.NEO4J_USER}`;
     const password: string = `${process.env.NEO4J_PW}`;
 
