@@ -1,4 +1,4 @@
-import neo4j, { Driver, QueryResult, ServerInfo, Session } from 'neo4j-driver';
+import neo4j, { Config, Driver, QueryResult, ServerInfo, Session } from 'neo4j-driver';
 
 export default class Neo4jDriver {
   public static instance: Driver;
@@ -13,10 +13,22 @@ export default class Neo4jDriver {
     const user: string = `${process.env.NEO4J_USER}`;
     const password: string = `${process.env.NEO4J_PW}`;
 
+    const developmentConfig: Config = {
+      disableLosslessIntegers: true,
+    };
+
+    const deploymentConfig: Config = {
+      ...developmentConfig,
+      encrypted: 'ENCRYPTION_ON',
+      trust: 'TRUST_CUSTOM_CA_SIGNED_CERTIFICATES',
+      trustedCertificates: ['/app/certificates/public.crt'],
+    };
+
+    let options: Config =
+      process.env.NODE_ENV === 'production' ? deploymentConfig : developmentConfig;
+
     try {
-      this.instance = neo4j.driver(uri, neo4j.auth.basic(user, password), {
-        disableLosslessIntegers: true,
-      });
+      this.instance = neo4j.driver(uri, neo4j.auth.basic(user, password), options);
 
       const serverInfo: ServerInfo = await this.instance.getServerInfo();
       console.log(`Connection established: ${serverInfo}`);
