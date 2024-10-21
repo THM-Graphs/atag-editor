@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import IAnnotation from '../models/IAnnotation';
 import { Annotation, AnnotationReference, Character } from '../models/types';
 import { useCharactersStore } from './characters';
+import { cloneDeep } from '../utils/helper/helper';
 
 const annotations = ref<Annotation[]>([]);
 const initialAnnotations = ref<Annotation[]>([]);
@@ -85,7 +86,7 @@ export function useAnnotationStore() {
       }
     });
 
-    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
+    initialAnnotations.value = cloneDeep(annotations.value);
   }
 
   function addAnnotation(annotation: Annotation): void {

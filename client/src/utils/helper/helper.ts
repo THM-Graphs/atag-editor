@@ -12,6 +12,17 @@ export function capitalize(inputString: string): string {
 }
 
 /**
+ * Creates a deep copy of a JSON object with JSON.parse/JSON.stringify.
+ * Used to remove unwanted references e.g. during slicing the character array snippet.
+ *
+ * @param {Record<any, any>} json - The object to be deep cloned.
+ * @return {Record<any, any>} A deep copy of the input object.
+ */
+export function cloneDeep(json: Record<any, any>) {
+  return JSON.parse(JSON.stringify(json));
+}
+
+/**
  * A function that compares two objects to check if they are equal. Works only for non-nested objects
  * where values are strings or numbers.
  *

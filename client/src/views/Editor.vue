@@ -18,7 +18,7 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl } from '../utils/helper/helper';
+import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
@@ -173,8 +173,8 @@ async function handleSaveChanges(): Promise<void> {
 
     // Reset initial values of all state components
     initialCollection.value = { ...collection.value };
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
-    initialAnnotations.value = JSON.parse(JSON.stringify(annotations.value));
+    initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+    initialAnnotations.value = cloneDeep(annotations.value);
 
     showMessage('success');
   } catch (error: unknown) {
@@ -188,8 +188,8 @@ async function handleSaveChanges(): Promise<void> {
 async function handleCancelChanges(): Promise<void> {
   // Also works, needs less condition checking in stores and skips requests
   collection.value = { ...initialCollection.value };
-  snippetCharacters.value = JSON.parse(JSON.stringify(initialSnippetCharacters.value));
-  annotations.value = JSON.parse(JSON.stringify(initialAnnotations.value));
+  snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
+  annotations.value = cloneDeep(initialAnnotations.value);
 }
 
 async function saveCollection(): Promise<void> {

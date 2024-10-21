@@ -3,6 +3,7 @@ import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { EDIT_DELAY, HISTORY_MAX_SIZE } from '../config/constants';
 import { HistoryRecord, HistoryStack } from '../models/types';
+import { cloneDeep } from '../utils/helper/helper';
 
 const { snippetCharacters } = useCharactersStore();
 const { annotations } = useAnnotationStore();
@@ -29,8 +30,8 @@ export function useHistoryStore() {
   function initializeHistory(): void {
     history.value = [
       {
-        characters: JSON.parse(JSON.stringify(snippetCharacters.value)),
-        annotations: JSON.parse(JSON.stringify(annotations.value)),
+        characters: cloneDeep(snippetCharacters.value),
+        annotations: cloneDeep(annotations.value),
       },
     ];
 
@@ -53,8 +54,8 @@ export function useHistoryStore() {
     lastEditTimestamp = Date.now();
 
     const newEntry: HistoryRecord = {
-      annotations: JSON.parse(JSON.stringify(annotations.value)),
-      characters: [...snippetCharacters.value],
+      annotations: cloneDeep(annotations.value),
+      characters: cloneDeep(snippetCharacters.value),
     };
 
     history.value.splice(currentHistoryPosition + 1, Infinity, newEntry);

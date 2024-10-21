@@ -7,7 +7,7 @@ import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import Skeleton from 'primevue/skeleton';
 import Toolbar from 'primevue/toolbar';
-import { buildFetchUrl, capitalize } from '../utils/helper/helper';
+import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 
@@ -23,7 +23,7 @@ const guidelinesAreLoaded = ref<boolean>(false);
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
-  console.log(JSON.parse(JSON.stringify(newCollectionData.value)));
+  console.log(cloneDeep(newCollectionData.value));
   try {
     const url: string = buildFetchUrl('/api/collections');
 

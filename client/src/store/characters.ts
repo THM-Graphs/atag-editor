@@ -3,6 +3,7 @@ import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character } from '../models/types';
+import { cloneDeep } from '../utils/helper/helper';
 
 type CharacterInfo = {
   char: Character | null;
@@ -48,12 +49,14 @@ export function useCharactersStore() {
     }
 
     if (afterEndIndex.value) {
-      snippetCharacters.value = [...totalCharacters.value].slice(0, afterEndIndex.value);
+      snippetCharacters.value = JSON.parse(
+        JSON.stringify([...totalCharacters.value].slice(0, afterEndIndex.value)),
+      );
     } else {
-      snippetCharacters.value = [...totalCharacters.value];
+      snippetCharacters.value = cloneDeep(totalCharacters.value);
     }
 
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
   }
 
   /**
@@ -279,8 +282,10 @@ export function useCharactersStore() {
     const end: number = afterEndIndex.value ?? totalCharacters.value.length;
 
     // TODO: This is repetitive, it should be sufficient to update the indizes. Compute the rest?
-    snippetCharacters.value = [...totalCharacters.value].slice(start, end);
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    snippetCharacters.value = JSON.parse(
+      JSON.stringify([...totalCharacters.value].slice(start, end)),
+    );
+    initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
   }
 
   /**
@@ -540,7 +545,7 @@ export function useCharactersStore() {
     }
 
     totalCharacters.value.splice(startAtIndex, charsToDeleteCount, ...snippetCharacters.value);
-    initialSnippetCharacters.value = JSON.parse(JSON.stringify(snippetCharacters.value));
+    initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
 
     if (afterEndIndex.value === null) {
       afterEndIndex.value = null;
@@ -559,7 +564,6 @@ export function useCharactersStore() {
    * @return {void} No return value.
    */
   function annotateCharacters(characters: Character[], annotation: Annotation): void {
-    console.time('chars');
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
         uuid: annotation.data.uuid,
@@ -569,7 +573,6 @@ export function useCharactersStore() {
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),
     );
-    console.timeEnd('chars');
   }
 
   /**
