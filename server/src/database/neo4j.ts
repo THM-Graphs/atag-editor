@@ -28,7 +28,7 @@ export default class Neo4jDriver {
       process.env.NODE_ENV === 'production' ? deploymentConfig : developmentConfig;
 
     try {
-      this.instance = neo4j.driver(uri, neo4j.auth.basic(user, password), options);
+      this.instance = neo4j.driver(uri, neo4j.auth.basic(user, password));
 
       const serverInfo: ServerInfo = await this.instance.getServerInfo();
       console.log(`Connection established: ${serverInfo}`);
