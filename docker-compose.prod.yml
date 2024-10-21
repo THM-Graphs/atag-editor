@@ -32,8 +32,8 @@ services:
  backend:
   container_name: backend_prod
   image: ghcr.io/thm-graphs/atag-editor-backend:latest
-  ports:
-   - '8080:8080'
+  # ports:
+  #  - '8080:8080'
   restart: always
   volumes:
    - ../certificates/:/app/certificates
