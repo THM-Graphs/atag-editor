@@ -13,6 +13,10 @@ export default class Neo4jDriver {
     const user: string = `${process.env.NEO4J_USER}`;
     const password: string = `${process.env.NEO4J_PW}`;
 
+    console.log(uri);
+    console.log(user);
+    console.log(password);
+
     try {
       this.instance = neo4j.driver(uri, neo4j.auth.basic(user, password), {
         disableLosslessIntegers: true,
