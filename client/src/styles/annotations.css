@@ -124,19 +124,29 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-#text > span:has(span.page) {
-  /* TODO: Improve styling */
+/* #text > span:has(span.line) {
   text-decoration: double underline;
+} */
+
+#text > span:has(span.line.end)::after {
+  content: '\A';
+  white-space: pre;
 }
 
-#text > span:has(span.column) {
-  /* TODO: Improve styling */
-  text-decoration: double underline;
-}
-
-#text > span:has(span.line) {
-  /* TODO: Improve styling */
-  text-decoration: double underline;
+#text > span:has(span.line.end)::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 10px;
+  width: 10px;
+  display: inline-block;
+  /* TODO: Use inline svg later */
+  background-image: url('../../public/icons/linebreak.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  content: '';
+  user-select: none;
+  pointer-events: none;
 }
 
 #text > span:has(span.transposition) {
