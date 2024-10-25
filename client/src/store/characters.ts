@@ -504,8 +504,7 @@ export function useCharactersStore() {
 
     // Behaviour for non-zero-point annotations
     prevChar.char?.annotations.forEach(prevAnno => {
-      if (!getAnnotationConfig(prevAnno.type)?.isZeroPoint) {
-        // TODO: Implement error/warning handling
+      if (getAnnotationConfig(prevAnno.type)?.isZeroPoint) {
         return;
       }
 
@@ -515,8 +514,7 @@ export function useCharactersStore() {
     });
 
     nextChar.char?.annotations.forEach(nextAnno => {
-      if (!getAnnotationConfig(nextAnno.type)?.isZeroPoint) {
-        // TODO: Implement error/warning handling
+      if (getAnnotationConfig(nextAnno.type)?.isZeroPoint) {
         return;
       }
 
