@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onKeyStroke } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { getParentCharacterSpan, getSelectionData, isEditorElement } from '../utils/helper/helper';
@@ -39,13 +39,7 @@ const dropdownOptions = options.map((option: string) => {
 });
 const toast: ToastServiceMethods = useToast();
 
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
+onKeyStroke(true, handleKeyDown);
 
 function handleKeyDown(event: KeyboardEvent): void {
   const keys: string[] = [];
