@@ -1,12 +1,9 @@
 :root {
   --aboveLine-clr: hsl(22, 81%, 35%);
-  --addition-color: hsla(38, 78%, 67%, 0.6);
-  --addition-opacity: 0.9;
-  --addition-transition: var(--addition-opacity) ease-in-out 1s;
+  --addition-color: hsla(91, 59%, 64%, 0.3);
   --commentInternal-color: #e3dbcc99;
   --commentInternal-opacity: 0.9;
-  --correction-clr: hsl(36, 85%, 76%);
-  --correction-opacity: 0.5;
+  --correction-clr: hsla(36, 85%, 76%, 0.6);
   --deleted-text-decoration: line-through;
   --deleted-clr: hsl(0, 0%, 44%);
   --expansion-clr: hsl(201, 22%, 87%);
@@ -86,7 +83,6 @@
 Fix by changing classlists or annotation types? */
 #text > span:has(span.correction:not(.intervention)) {
   background-color: var(--correction-clr);
-  opacity: var(--correction-opacity);
 }
 
 #text > span:has(span.deleted.start) {
@@ -111,8 +107,6 @@ Fix by changing classlists or annotation types? */
 
 #text > span:has(span.addition) {
   background-color: var(--addition-color);
-  opacity: var(--addition-opacity);
-  transition: var(--addition-transition);
 }
 
 #text > span:has(span.head) {
@@ -124,19 +118,26 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-#text > span:has(span.page) {
-  /* TODO: Improve styling */
-  text-decoration: double underline;
+#text > span:has(span.line.end)::after {
+  content: '\A';
+  white-space: pre;
 }
 
-#text > span:has(span.column) {
-  /* TODO: Improve styling */
-  text-decoration: double underline;
-}
-
-#text > span:has(span.line) {
-  /* TODO: Improve styling */
-  text-decoration: double underline;
+#text > span:has(span.line.end)::before {
+  position: absolute;
+  top: 50%;
+  left: 150%;
+  transform: translateY(-50%);
+  height: 13px;
+  width: 13px;
+  display: inline-block;
+  /* TODO: Use inline svg later */
+  background-image: url('../../public/other/linebreak.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  content: '';
+  user-select: none;
+  pointer-events: none;
 }
 
 #text > span:has(span.transposition) {

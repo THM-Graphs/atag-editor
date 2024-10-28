@@ -138,7 +138,11 @@ function handleInsertText(event: InputEvent): void {
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = getCharacterIndex(referenceSpanElement) + 1;
+        if (range.startOffset === 0) {
+          index = getCharacterIndex(referenceSpanElement);
+        } else {
+          index = getCharacterIndex(referenceSpanElement) + 1;
+        }
       }
     }
 
@@ -157,7 +161,11 @@ function handleInsertText(event: InputEvent): void {
       if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = getCharacterIndex(startSpan);
+        if (range.startOffset === 0) {
+          startIndex = getCharacterIndex(startSpan);
+        } else {
+          startIndex = getCharacterIndex(startSpan) + 1;
+        }
       }
 
       endIndex = getCharacterIndex(endSpan);
@@ -202,7 +210,11 @@ async function handleInsertFromPaste(): Promise<void> {
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = getCharacterIndex(referenceSpanElement) + 1;
+        if (range.startOffset === 0) {
+          index = getCharacterIndex(referenceSpanElement);
+        } else {
+          index = getCharacterIndex(referenceSpanElement) + 1;
+        }
       }
     }
 
@@ -221,7 +233,11 @@ async function handleInsertFromPaste(): Promise<void> {
       if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = getCharacterIndex(startSpan);
+        if (range.startOffset === 0) {
+          startIndex = getCharacterIndex(startSpan);
+        } else {
+          startIndex = getCharacterIndex(startSpan) + 1;
+        }
       }
 
       endIndex = getCharacterIndex(endSpan);
@@ -257,7 +273,11 @@ function handleInsertFromDrop(event: InputEvent): void {
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
         index = 0;
       } else {
-        index = getCharacterIndex(referenceSpanElement);
+        if (range.startOffset === 0) {
+          index = getCharacterIndex(referenceSpanElement);
+        } else {
+          index = getCharacterIndex(referenceSpanElement) + 1;
+        }
       }
     }
 
@@ -276,7 +296,12 @@ function handleInsertFromDrop(event: InputEvent): void {
       if (isCaretAtBeginning(startSpan, editorRef)) {
         startIndex = 0;
       } else {
-        startIndex = getCharacterIndex(startSpan);
+        if (range.startOffset === 0) {
+          startIndex = getCharacterIndex(startSpan);
+        } else {
+          startIndex = getCharacterIndex(startSpan);
+          +1;
+        }
       }
 
       endIndex = getCharacterIndex(endSpan);
@@ -452,26 +477,32 @@ function handleDeleteContentForward(): void {
 
   const { range, type } = getSelectionData();
 
-  if (type === 'Caret') {
-    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-    let spanToDelete: HTMLSpanElement;
+  let index: number;
 
-    if (range.startOffset === 0) {
-      spanToDelete = referenceSpanElement;
+  if (type === 'Caret') {
+    if (isEditorElement(range.startContainer)) {
+      index = 0;
     } else {
-      if (referenceSpanElement === editorRef.value.lastElementChild) {
-        return;
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      let spanToDelete: HTMLSpanElement;
+
+      if (range.startOffset === 0) {
+        spanToDelete = referenceSpanElement;
       } else {
-        spanToDelete = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+        if (referenceSpanElement === editorRef.value.lastElementChild) {
+          return;
+        } else {
+          spanToDelete = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+        }
       }
+
+      index = getCharacterIndex(spanToDelete);
     }
 
-    const charIndex: number = getCharacterIndex(spanToDelete);
-
-    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
+    newRangeAnchorUuid.value = snippetCharacters.value[index - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(charIndex, charIndex);
+      deleteCharactersBetweenIndexes(index, index);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
