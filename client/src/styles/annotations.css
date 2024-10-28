@@ -124,10 +124,6 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-/* #text > span:has(span.line) {
-  text-decoration: double underline;
-} */
-
 #text > span:has(span.line.end)::after {
   content: '\A';
   white-space: pre;
@@ -136,12 +132,13 @@ Fix by changing classlists or annotation types? */
 #text > span:has(span.line.end)::before {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 150%;
+  transform: translateY(-50%);
   height: 10px;
   width: 10px;
   display: inline-block;
   /* TODO: Use inline svg later */
-  background-image: url('../../public/icons/linebreak.svg');
+  background-image: url('../../public/other/linebreak.svg');
   background-size: contain;
   background-repeat: no-repeat;
   content: '';
