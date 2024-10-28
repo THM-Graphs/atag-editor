@@ -15,9 +15,10 @@ export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
   isZeroPoint?: boolean;
+  properties?: AnnotationProperty[];
+  shortcut: string[];
   text: string;
   type: string;
-  properties?: AnnotationProperty[];
 };
 
 export type AnnotationProperty = {

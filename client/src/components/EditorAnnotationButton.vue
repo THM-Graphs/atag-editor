@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { getParentCharacterSpan, getSelectionData, isEditorElement } from '../utils/helper/helper';
@@ -14,6 +15,7 @@ import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import { ToastServiceMethods } from 'primevue/toastservice';
+import ShortcutError from '../utils/errors/shortcut.error';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -25,29 +27,62 @@ const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
+const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
 const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
 const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
 const options: string[] = subtypeField?.options ?? [];
-
 const dropdownOptions = options.map((option: string) => {
   return {
     label: option,
     command: () => handleDropdownClick(option),
   };
 });
-
 const toast: ToastServiceMethods = useToast();
 
-function handleDropdownClick(subtype: string) {
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+function handleKeyDown(event: KeyboardEvent): void {
+  const keys: string[] = [];
+
+  if (event.ctrlKey) {
+    keys.push('ctrl');
+  }
+
+  if (event.shiftKey) {
+    keys.push('shift');
+  }
+
+  if (event.altKey) {
+    keys.push('alt');
+  }
+
+  keys.push(event.key.toLowerCase());
+
+  const keyCombo: string = normalizeKeys(keys);
+
+  if (keyCombo === shortcutCombo) {
+    event.preventDefault();
+    handleClick();
+  }
+}
+
+function handleDropdownClick(subtype: string): void {
   handleClick(subtype);
 }
 
-function handleButtonClick() {
+function handleButtonClick(): void {
   handleClick();
 }
 
-function handleClick(dropdownOption?: string) {
+function handleClick(dropdownOption?: string): void {
   try {
+    isAnnotationTypeEnabled();
     isSelectionValid();
 
     const selectedCharacters: Character[] = getCharactersToAnnotate();
@@ -69,10 +104,33 @@ function handleClick(dropdownOption?: string) {
         detail: error.message,
         life: 3000,
       });
+    } else if (error instanceof ShortcutError) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Annotation type not enabled',
+        detail: error.message,
+        life: 3000,
+      });
     } else {
       console.error('Unexpected error:', error);
     }
   }
+}
+
+/**
+ * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
+ *
+ * @throws {ShortcutError} If the annotation type is not enabled in the current filter settings.
+ * @returns {boolean} True if the annotation type is enabled.
+ */
+function isAnnotationTypeEnabled(): boolean {
+  if (!selectedOptions.value.includes(annotationType)) {
+    throw new ShortcutError(
+      `Annotations of type "${config.type}" are not enabled currently. Use the Filter component to enable the type.`,
+    );
+  }
+
+  return true;
 }
 
 function isSelectionValid(): boolean {
@@ -128,7 +186,22 @@ function isSelectionValid(): boolean {
   return true;
 }
 
-function createNewAnnotation(type: string, subtype: string | undefined, characters: Character[]) {
+/**
+ * Sorts and joins the given array of strings into a single string, with '+' in between each element.
+ * This is used to normalize the shortcut keys and compare them to pressed key combination later.
+ *
+ * @param keys The array of strings to sort.
+ * @returns The normalized string.
+ */
+function normalizeKeys(keys: string[]): string {
+  return keys.sort().join('+');
+}
+
+function createNewAnnotation(
+  type: string,
+  subtype: string | undefined,
+  characters: Character[],
+): Annotation {
   const fields: AnnotationProperty[] = getAnnotationFields(type);
   const data: IAnnotation = {} as IAnnotation;
 

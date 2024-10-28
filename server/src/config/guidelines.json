@@ -148,6 +148,7 @@
         "category": "layout",
         "defaultSelected": false,
         "isZeroPoint": false,
+        "shortcut": ["ctrl", "shift", "l"],
         "properties": [
           {
             "name": "page",
