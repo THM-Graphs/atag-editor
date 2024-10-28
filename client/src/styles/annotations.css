@@ -134,8 +134,8 @@ Fix by changing classlists or annotation types? */
   top: 50%;
   left: 150%;
   transform: translateY(-50%);
-  height: 10px;
-  width: 10px;
+  height: 13px;
+  width: 13px;
   display: inline-block;
   /* TODO: Use inline svg later */
   background-image: url('../../public/other/linebreak.svg');
