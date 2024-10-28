@@ -41,6 +41,7 @@
         "type": "emphasised",
         "category": "edition",
         "defaultSelected": true,
+        "isZeroPoint": false,
         "properties": [
           {
             "name": "subtype",
@@ -55,12 +56,14 @@
       {
         "type": "expansion",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "nonLinear",
         "category": "edition",
         "defaultSelected": true,
+        "isZeroPoint": false,
         "properties": [
           {
             "name": "subtype",
@@ -76,6 +79,7 @@
         "type": "intervention",
         "category": "edition",
         "defaultSelected": true,
+        "isZeroPoint": false,
         "properties": [
           {
             "name": "subtype",
@@ -91,6 +95,7 @@
         "type": "correction",
         "category": "edition",
         "defaultSelected": true,
+        "isZeroPoint": false,
         "properties": [
           {
             "name": "subtype",
@@ -111,32 +116,38 @@
       {
         "type": "unclear",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "repeated",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "gap",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "addition",
         "category": "edition",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "head",
         "category": "layout",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "line",
         "category": "layout",
         "defaultSelected": false,
+        "isZeroPoint": false,
         "properties": [
           {
             "name": "page",
@@ -185,12 +196,14 @@
       {
         "type": "transposition",
         "category": "layout",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       },
       {
         "type": "commentInternal",
         "category": "project",
-        "defaultSelected": true
+        "defaultSelected": true,
+        "isZeroPoint": false
       }
     ],
     "properties": [
