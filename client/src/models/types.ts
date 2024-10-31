@@ -57,3 +57,13 @@ export type HistoryRecord = {
   annotations: Annotation[];
   characters: Character[];
 };
+
+export type StandoffJson = {
+  annotations: {
+    start: number;
+    end: number;
+    text: string;
+    type: string;
+  }[];
+  text: string;
+};

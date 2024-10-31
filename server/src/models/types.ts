@@ -49,3 +49,13 @@ export type CharacterPostData = {
   uuidEnd: string;
   characters: ICharacter[];
 };
+
+export type StandoffJson = {
+  annotations: {
+    start: number;
+    end: number;
+    text: string;
+    type: string;
+  }[];
+  text: string;
+};
