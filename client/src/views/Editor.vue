@@ -26,6 +26,7 @@ import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useShortcutsStore } from '../store/shortcuts';
 // import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
@@ -47,6 +48,7 @@ onMounted(async (): Promise<void> => {
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
   }
 
   isLoading.value = false;
@@ -62,6 +64,7 @@ onUnmounted((): void => {
   window.removeEventListener('mouseup', handleMouseUp);
   window.removeEventListener('mousedown', handleMouseDown);
   window.removeEventListener('beforeunload', handleBeforeUnload);
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
@@ -96,6 +99,7 @@ const {
   updateAnnotationStatuses,
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
+const { shortcutMap, normalizeKeys } = useShortcutsStore();
 
 // const { initializeHistory, resetHistory } = useHistoryStore();
 
@@ -357,6 +361,36 @@ function handleMouseDown(event: MouseEvent): void {
   const side: string = (event.target as Element).getAttribute('resizer-id');
   activeResizer.value = side;
   window.addEventListener('mousemove', handleResize);
+}
+
+function handleKeyDown(event: KeyboardEvent): void {
+  const keys: string[] = [];
+
+  if (event.ctrlKey) {
+    keys.push('ctrl');
+  }
+
+  if (event.shiftKey) {
+    keys.push('shift');
+  }
+
+  if (event.altKey) {
+    keys.push('alt');
+  }
+
+  if (event.metaKey) {
+    keys.push('meta');
+  }
+
+  keys.push(event.key.toLowerCase());
+
+  const keyCombo: string = normalizeKeys(keys);
+
+  // Check if the shortcut combo exists, execute callback function
+  if (shortcutMap.value.has(keyCombo)) {
+    event.preventDefault();
+    shortcutMap.value.get(keyCombo)();
+  }
 }
 
 function handleMouseUp(): void {

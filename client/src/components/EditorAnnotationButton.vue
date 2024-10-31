@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onKeyStroke } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { getParentCharacterSpan, getSelectionData, isEditorElement } from '../utils/helper/helper';
@@ -8,6 +7,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
+import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
@@ -24,10 +24,10 @@ const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
+const { normalizeKeys, registerShortcut } = useShortcutsStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
-const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
 const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
 const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
 const options: string[] = subtypeField?.options ?? [];
@@ -39,31 +39,9 @@ const dropdownOptions = options.map((option: string) => {
 });
 const toast: ToastServiceMethods = useToast();
 
-onKeyStroke(true, handleKeyDown);
-
-function handleKeyDown(event: KeyboardEvent): void {
-  const keys: string[] = [];
-
-  if (event.ctrlKey) {
-    keys.push('ctrl');
-  }
-
-  if (event.shiftKey) {
-    keys.push('shift');
-  }
-
-  if (event.altKey) {
-    keys.push('alt');
-  }
-
-  keys.push(event.key.toLowerCase());
-
-  const keyCombo: string = normalizeKeys(keys);
-
-  if (keyCombo === shortcutCombo) {
-    event.preventDefault();
-    handleClick();
-  }
+if (config.shortcut?.length > 0) {
+  const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
+  registerShortcut(shortcutCombo, handleClick);
 }
 
 function handleDropdownClick(subtype: string): void {
@@ -178,17 +156,6 @@ function isSelectionValid(): boolean {
   }
 
   return true;
-}
-
-/**
- * Sorts and joins the given array of strings into a single string, with '+' in between each element.
- * This is used to normalize the shortcut keys and compare them to pressed key combination later.
- *
- * @param keys The array of strings to sort.
- * @returns The normalized string.
- */
-function normalizeKeys(keys: string[]): string {
-  return keys.sort().join('+');
 }
 
 function createNewAnnotation(

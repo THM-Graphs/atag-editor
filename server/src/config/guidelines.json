@@ -57,7 +57,8 @@
         "type": "expansion",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "shortcut": ["Ctrl", "Shift", "E"]
       },
       {
         "type": "nonLinear",
@@ -148,7 +149,7 @@
         "category": "layout",
         "defaultSelected": false,
         "isZeroPoint": false,
-        "shortcut": ["ctrl", "shift", "l"],
+        "shortcut": ["Ctrl", "Shift", "L"],
         "properties": [
           {
             "name": "page",
