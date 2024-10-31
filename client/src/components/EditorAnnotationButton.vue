@@ -7,6 +7,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
+import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
@@ -14,6 +15,7 @@ import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import { ToastServiceMethods } from 'primevue/toastservice';
+import ShortcutError from '../utils/errors/shortcut.error';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -22,32 +24,37 @@ const { addAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
+const { normalizeKeys, registerShortcut } = useShortcutsStore();
 // const { pushHistoryEntry } = useHistoryStore();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
 const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
 const options: string[] = subtypeField?.options ?? [];
-
 const dropdownOptions = options.map((option: string) => {
   return {
     label: option,
     command: () => handleDropdownClick(option),
   };
 });
-
 const toast: ToastServiceMethods = useToast();
 
-function handleDropdownClick(subtype: string) {
+if (config.shortcut?.length > 0) {
+  const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
+  registerShortcut(shortcutCombo, handleClick);
+}
+
+function handleDropdownClick(subtype: string): void {
   handleClick(subtype);
 }
 
-function handleButtonClick() {
+function handleButtonClick(): void {
   handleClick();
 }
 
-function handleClick(dropdownOption?: string) {
+function handleClick(dropdownOption?: string): void {
   try {
+    isAnnotationTypeEnabled();
     isSelectionValid();
 
     const selectedCharacters: Character[] = getCharactersToAnnotate();
@@ -69,10 +76,33 @@ function handleClick(dropdownOption?: string) {
         detail: error.message,
         life: 3000,
       });
+    } else if (error instanceof ShortcutError) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Annotation type not enabled',
+        detail: error.message,
+        life: 3000,
+      });
     } else {
       console.error('Unexpected error:', error);
     }
   }
+}
+
+/**
+ * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
+ *
+ * @throws {ShortcutError} If the annotation type is not enabled in the current filter settings.
+ * @returns {boolean} True if the annotation type is enabled.
+ */
+function isAnnotationTypeEnabled(): boolean {
+  if (!selectedOptions.value.includes(annotationType)) {
+    throw new ShortcutError(
+      `Annotations of type "${config.type}" are not enabled currently. Use the Filter component to enable the type.`,
+    );
+  }
+
+  return true;
 }
 
 function isSelectionValid(): boolean {
@@ -128,7 +158,11 @@ function isSelectionValid(): boolean {
   return true;
 }
 
-function createNewAnnotation(type: string, subtype: string | undefined, characters: Character[]) {
+function createNewAnnotation(
+  type: string,
+  subtype: string | undefined,
+  characters: Character[],
+): Annotation {
   const fields: AnnotationProperty[] = getAnnotationFields(type);
   const data: IAnnotation = {} as IAnnotation;
 
