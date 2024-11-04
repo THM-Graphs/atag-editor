@@ -8,8 +8,8 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 
-const { totalCharacters, snippetCharacters } = useCharactersStore();
-const { annotations } = useAnnotationStore();
+const { initializeCharacters } = useCharactersStore();
+const { initializeAnnotations } = useAnnotationStore();
 
 const dialogIsVisible = ref<boolean>(false);
 const json = ref('');
@@ -29,9 +29,12 @@ function handleCreateClick(): void {
   console.log(JSON.parse(json.value));
   const parsedJson: StandoffJson = JSON.parse(json.value);
 
-  const newCharacters: Character[] = [];
-  const newAnnotations: Annotation[] = [];
+  console.time('import');
 
+  const newCharacters: Character[] = [];
+  const newAnnotations: IAnnotation[] = [];
+
+  // Create character chain (without annotation references)
   parsedJson.text.split('').forEach((c: string) => {
     const char: Character = {
       data: {
@@ -45,6 +48,7 @@ function handleCreateClick(): void {
     newCharacters.push(char);
   });
 
+  // Create annotation objects and annotate characters
   parsedJson.annotations.forEach(a => {
     // TODO: Really?
     if (a.start === -1 || a.end === -1) {
@@ -52,6 +56,7 @@ function handleCreateClick(): void {
     }
 
     // TODO: This should come from the configuration
+    // Data of the annotation
     const newAnnotationData: IAnnotation = {
       comment: '',
       commentInternal: '',
@@ -65,54 +70,30 @@ function handleCreateClick(): void {
       uuid: crypto.randomUUID(),
     };
 
-    const newAnnotation: Annotation = {
-      characterUuids: [],
-      data: newAnnotationData,
-      endUuid: newCharacters[a.end].data.uuid,
-      initialData: newAnnotationData,
-      isTruncated: false,
-      startUuid: newCharacters[a.start].data.uuid,
-      status: 'created',
-    };
-
     let index: number = a.start;
-    let hasOnlyOneCharacter: boolean = a.start === a.end;
 
-    if (hasOnlyOneCharacter) {
+    // Annotate characters (skipped in the first step since information is stored in annotations)
+    do {
       newCharacters[index].annotations.push({
-        uuid: newAnnotation.data.uuid,
-        isFirstCharacter: true,
-        isLastCharacter: true,
+        uuid: newAnnotationData.uuid,
+        isFirstCharacter: index === a.start,
+        isLastCharacter: index === a.end,
         type: a.type,
         subtype: '',
       });
 
-      newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
-    } else {
-      while (index <= a.end) {
-        console.log('char loop :)');
+      // newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
 
-        newCharacters[index].annotations.push({
-          uuid: newAnnotation.data.uuid,
-          isFirstCharacter: index === a.start,
-          isLastCharacter: index === a.end,
-          type: a.type,
-          subtype: '',
-        });
+      index++;
+    } while (index <= a.end);
 
-        newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
-
-        index++;
-      }
-    }
-
-    newAnnotations.push(newAnnotation);
+    newAnnotations.push(newAnnotationData);
   });
 
-  // TODO: Fix this, call initializer function of the stores
-  totalCharacters.value = newCharacters;
-  snippetCharacters.value = newCharacters;
-  annotations.value = newAnnotations;
+  // Insert data into editor data structures
+  initializeCharacters(newCharacters);
+  initializeAnnotations(newAnnotations);
+  console.timeEnd('import');
 
   json.value = '';
   dialogIsVisible.value = false;

@@ -19,7 +19,7 @@ export function useAnnotationStore() {
   function initializeAnnotations(annotationData: IAnnotation[]): void {
     resetAnnotations();
 
-    // TODO: This might be slow...are characters, start and end really needed before saving?
+    // TODO: This IS slow when importing text with many annotations -> fix!
     annotations.value = annotationData.map((annotation: IAnnotation, index: number) => {
       const charUuids: string[] = [
         ...totalCharacters.value
@@ -43,6 +43,7 @@ export function useAnnotationStore() {
         console.log(annotation);
       }
 
+      // TODO: Not always "existing", can be "created" when importing text...
       return {
         characterUuids: charUuids,
         data: { ...annotation },
