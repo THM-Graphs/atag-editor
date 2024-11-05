@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref, onUpdated, watch } from 'vue';
+import { ref, onUpdated, watch, onMounted } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { Character, StandoffJson } from '../models/types';
 import ProgressBar from 'primevue/progressbar';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
+import ButtonGroup from 'primevue/buttongroup';
 import Dialog from 'primevue/dialog';
+import FileUpload from 'primevue/fileupload';
 import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
+import ToggleButton from 'primevue/togglebutton';
+import { useToast } from 'primevue/usetoast';
 
 const { initializeAnnotations } = useAnnotationStore();
 const { initializeCharacters } = useCharactersStore();
@@ -20,8 +24,18 @@ onUpdated((): void => {
 
 const dialogIsVisible = ref<boolean>(false);
 const rawJson = ref<string>('');
+const fileContent = ref<string>('');
 const parsedJson = ref<null | StandoffJson>(null);
+const chooseOption = ref<'raw' | 'file'>('raw');
+const fileupload = ref();
 const currentStep = ref<null | 'checking' | 'importing' | 'finishing' | 'starting'>(null);
+
+watch(fileupload, () => {
+  if (fileupload.value) {
+    // fileupload.value.style.outline = '5px solid red';
+    console.log(fileupload.value);
+  }
+});
 
 async function showDialog(): Promise<void> {
   dialogIsVisible.value = true;
@@ -138,6 +152,49 @@ async function startImport(): Promise<void> {
   await new Promise(p => setTimeout(p, 0));
   currentStep.value = 'finishing';
 }
+
+const toast = useToast();
+
+const onAdvancedUpload = () => {
+  toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
+};
+
+function toggleViewMode(direction: 'raw' | 'file'): void {
+  chooseOption.value = direction;
+}
+
+function handleRawJson() {
+  startImport();
+}
+
+function handleFileUpload() {
+  const file: File = fileupload.value.files[0];
+  const reader: FileReader = new FileReader();
+
+  // Triggered once file is read successfully
+  reader.onload = () => {
+    fileContent.value = reader.result as string;
+    rawJson.value = fileContent.value;
+
+    try {
+      startImport();
+    } catch (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to parse JSON',
+        life: 3000,
+      });
+    }
+  };
+
+  reader.onerror = () => {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Error reading file', life: 3000 });
+  };
+
+  // Read the file as text
+  reader.readAsText(file);
+}
 </script>
 
 <template>
@@ -161,18 +218,69 @@ async function startImport(): Promise<void> {
     <template #header>
       <h2 class="w-full text-center m-0">Import JSON</h2>
     </template>
-    {{ currentStep ?? 'NULL' }}
-    <form v-if="currentStep !== 'finishing'" @submit.prevent="startImport">
-      <div class="card" v-if="currentStep === 'importing'">
-        Importing data...
-        <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
-      </div>
-      <Textarea v-model="rawJson" rows="10" cols="50" />
-      <div class="button-container flex justify-content-end gap-2">
-        <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-        <Button type="submit" label="Import"></Button>
-      </div>
-    </form>
+    <div v-if="currentStep !== 'finishing'" class="choose-panel">
+      <ButtonGroup class="w-full flex">
+        <ToggleButton
+          :model-value="chooseOption === 'raw'"
+          class="w-full"
+          onLabel="Raw"
+          offLabel="Raw"
+          badge="2"
+          @change="toggleViewMode('raw')"
+        />
+        <ToggleButton
+          :model-value="chooseOption === 'file'"
+          class="w-full"
+          onLabel="File"
+          offLabel="File"
+          badge="2"
+          @change="toggleViewMode('file')"
+        />
+      </ButtonGroup>
+      <form v-if="chooseOption === 'raw'" @submit.prevent="handleRawJson">
+        <div class="card" v-if="currentStep === 'importing'">
+          Importing data...
+          <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
+        </div>
+        <Textarea v-model="rawJson" rows="10" cols="50" />
+        <div class="button-container flex justify-content-end gap-2">
+          <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
+          <Button type="submit" label="Import"></Button>
+        </div>
+      </form>
+      <form v-else @submit.prevent="handleFileUpload">
+        <div class="card">
+          <Toast />
+          <FileUpload
+            name="demo[]"
+            ref="fileupload"
+            @upload="onAdvancedUpload()"
+            accept=".json,.text"
+            :maxFileSize="1000000"
+          >
+            <template #header="{ chooseCallback }">
+              <Button
+                @click="chooseCallback()"
+                label="Choose file"
+                icon="pi pi-plus"
+                severity="secondary"
+              ></Button>
+            </template>
+            <template #empty>
+              <div class="flex flex-column align-items-center justify-center">
+                <i class="pi pi-file-arrow-up" />
+                <p class="mb-0">Drag and drop .json or .txt files to here to upload.</p>
+              </div>
+            </template>
+          </FileUpload>
+        </div>
+
+        <div class="button-container flex justify-content-end gap-2">
+          <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
+          <Button type="submit" label="Import"></Button>
+        </div>
+      </form>
+    </div>
     <div v-else>
       <div>&#10004; Text imported successfully</div>
       <div>
