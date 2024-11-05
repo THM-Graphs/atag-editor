@@ -300,7 +300,7 @@ async function getCharacters(): Promise<void> {
 
     const fetchedCharacters: Character[] = await response.json();
 
-    initializeCharacters(fetchedCharacters);
+    initializeCharacters(fetchedCharacters, 'database');
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
   }

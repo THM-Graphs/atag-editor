@@ -35,24 +35,31 @@ export function useCharactersStore() {
    * @param {Character[]} characterData - The array of characters to initialize the store with.
    * @return {void} This function does not return any value.
    */
-  function initializeCharacters(characterData: Character[]): void {
+  function initializeCharacters(characterData: Character[], source: 'database' | 'import'): void {
     resetCharacters();
 
     totalCharacters.value = characterData;
 
-    if (totalCharacters.value.length === 0) {
-      // No characters -> snippet equals total characters (obviously) -> afterEndIndex stays at null
-    } else if (totalCharacters.value.length < PAGINATION_SIZE) {
-      // Less than default page size -> afterEndIndex needs to be null
-    } else if (totalCharacters.value.length > PAGINATION_SIZE) {
-      afterEndIndex.value = PAGINATION_SIZE;
-    }
+    // TODO: Update JSDoc
+    if (source === 'database') {
+      // SLICE ACTION
+      if (totalCharacters.value.length === 0) {
+        // No characters -> snippet equals total characters (obviously) -> afterEndIndex stays at null
+      } else if (totalCharacters.value.length < PAGINATION_SIZE) {
+        // Less than default page size -> afterEndIndex needs to be null
+      } else if (totalCharacters.value.length > PAGINATION_SIZE) {
+        afterEndIndex.value = PAGINATION_SIZE;
+      }
 
-    if (afterEndIndex.value) {
-      snippetCharacters.value = JSON.parse(
-        JSON.stringify([...totalCharacters.value].slice(0, afterEndIndex.value)),
-      );
+      if (afterEndIndex.value) {
+        snippetCharacters.value = JSON.parse(
+          JSON.stringify([...totalCharacters.value].slice(0, afterEndIndex.value)),
+        );
+      } else {
+        snippetCharacters.value = cloneDeep(totalCharacters.value);
+      }
     } else {
+      // NO SLICE ACTION
       snippetCharacters.value = cloneDeep(totalCharacters.value);
     }
 
