@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onUpdated, watch, onMounted } from 'vue';
+import { ref, onUpdated, computed } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
+import { formatFileSize } from '../utils/helper/helper';
+import JsonParseError from '../utils/errors/parse.error';
+import ImportError from '../utils/errors/import.error';
+import IAnnotation from '../models/IAnnotation';
 import { Character, StandoffJson } from '../models/types';
 import ProgressBar from 'primevue/progressbar';
-import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Dialog from 'primevue/dialog';
@@ -12,29 +15,62 @@ import FileUpload from 'primevue/fileupload';
 import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
-import { useToast } from 'primevue/usetoast';
 
 const { initializeAnnotations } = useAnnotationStore();
 const { initializeCharacters } = useCharactersStore();
-const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 
 onUpdated((): void => {
   console.log('update');
 });
 
+const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const dialogIsVisible = ref<boolean>(false);
 const rawJson = ref<string>('');
-const fileContent = ref<string>('');
 const parsedJson = ref<null | StandoffJson>(null);
-const chooseOption = ref<'raw' | 'file'>('raw');
+const chooseOption = ref<'raw' | 'file'>('file');
 const fileupload = ref();
-const currentStep = ref<null | 'checking' | 'importing' | 'finishing' | 'starting'>(null);
-
-watch(fileupload, () => {
-  if (fileupload.value) {
-    // fileupload.value.style.outline = '5px solid red';
-    console.log(fileupload.value);
+const inputIsValid = computed(() => {
+  if (chooseOption.value === 'raw') {
+    return rawJson.value.length > 0;
+  } else {
+    return fileupload.value?.files.length === 1;
   }
+});
+const currentStep = ref<null | 'checking' | 'importing' | 'finishing' | 'starting'>(null);
+const errorMessages = ref([]);
+const messageCount = ref(0);
+
+function addErrorMessage(error: JsonParseError | ImportError | DOMException | unknown): void {
+  if (error instanceof JsonParseError || error instanceof ImportError) {
+    errorMessages.value.push({
+      severity: error.severity,
+      content: error.message,
+      id: messageCount.value++,
+    });
+  } else {
+    errorMessages.value.push({
+      severity: 'error',
+      content: 'An unknown error occurred.',
+      id: messageCount.value++,
+    });
+  }
+}
+
+function clearErrorMessages(): void {
+  errorMessages.value = [];
+}
+
+// Needs to be instantiated at top-level to make Vue track changes better
+const reader: FileReader = new FileReader();
+
+reader.addEventListener('load', () => {
+  rawJson.value = reader.result as string;
+  importJson();
+});
+
+reader.addEventListener('error', (event: ProgressEvent) => {
+  const error: DOMException = (event.target as FileReader).error;
+  addErrorMessage(error);
 });
 
 async function showDialog(): Promise<void> {
@@ -56,143 +92,156 @@ function finishImport(): void {
 }
 
 function parse(): void {
-  parsedJson.value = JSON.parse(rawJson.value);
+  try {
+    parsedJson.value = JSON.parse(rawJson.value);
+  } catch (e: unknown) {
+    throw new JsonParseError('The JSON format contains syntax errors. Please check and try again.');
+  }
 }
 
 function transform() {
-  const newCharacters: Character[] = [];
-  const newAnnotations: IAnnotation[] = [];
+  try {
+    const newCharacters: Character[] = [];
+    const newAnnotations: IAnnotation[] = [];
 
-  // Create character chain (without annotation references)
-  parsedJson.value.text.split('').forEach((c: string) => {
-    const char: Character = {
-      data: {
-        uuid: crypto.randomUUID(),
-        text: c,
-        letterLabel: '',
-      },
-      annotations: [],
-    };
+    // Create character chain (without annotation references)
+    parsedJson.value.text.split('').forEach((c: string) => {
+      const char: Character = {
+        data: {
+          uuid: crypto.randomUUID(),
+          text: c,
+          letterLabel: '',
+        },
+        annotations: [],
+      };
 
-    newCharacters.push(char);
-  });
+      newCharacters.push(char);
+    });
 
-  // Create annotation objects and annotate characters
-  parsedJson.value.annotations.forEach(a => {
-    // TODO: Really?
-    if (a.start === -1 || a.end === -1) {
-      return;
-    }
+    // Create annotation objects and annotate characters
+    parsedJson.value.annotations.forEach(a => {
+      // TODO: Really?
+      if (a.start === -1 || a.end === -1) {
+        return;
+      }
 
-    // TODO: This should come from the configuration
-    // Data of the annotation
-    const newAnnotationData: IAnnotation = {
-      comment: '',
-      commentInternal: '',
-      endIndex: a.end,
-      originalText: '',
-      startIndex: a.start,
-      subtype: '',
-      text: a.text,
-      type: a.type,
-      url: '',
-      uuid: crypto.randomUUID(),
-    };
-
-    let index: number = a.start;
-
-    // Annotate characters (skipped in the first step since information is stored in annotations)
-    do {
-      newCharacters[index].annotations.push({
-        uuid: newAnnotationData.uuid,
-        isFirstCharacter: index === a.start,
-        isLastCharacter: index === a.end,
-        type: a.type,
+      // TODO: This should come from the configuration
+      // Data of the annotation
+      const newAnnotationData: IAnnotation = {
+        comment: '',
+        commentInternal: '',
+        endIndex: a.end,
+        originalText: '',
+        startIndex: a.start,
         subtype: '',
-      });
+        text: a.text,
+        type: a.type,
+        url: '',
+        uuid: crypto.randomUUID(),
+      };
 
-      // newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
+      let index: number = a.start;
 
-      index++;
-    } while (index <= a.end);
+      // Annotate characters (skipped in the first step since information is stored in annotations)
+      do {
+        newCharacters[index].annotations.push({
+          uuid: newAnnotationData.uuid,
+          isFirstCharacter: index === a.start,
+          isLastCharacter: index === a.end,
+          type: a.type,
+          subtype: '',
+        });
 
-    newAnnotations.push(newAnnotationData);
-  });
+        // newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
 
-  dataToImport.value = { characters: newCharacters, annotations: newAnnotations };
+        index++;
+      } while (index <= a.end);
+
+      newAnnotations.push(newAnnotationData);
+    });
+
+    dataToImport.value = { characters: newCharacters, annotations: newAnnotations };
+  } catch (e: unknown) {
+    throw new ImportError(
+      'The JSON structure does not match the expected schema. Please check the JSON format.',
+    );
+  }
 }
 
 function initializeStores(): void {
-  initializeCharacters(dataToImport.value.characters, 'import');
-  initializeAnnotations(dataToImport.value.annotations);
+  try {
+    initializeCharacters(dataToImport.value.characters, 'import');
+    initializeAnnotations(dataToImport.value.annotations);
+  } catch (e: unknown) {
+    throw new ImportError('An internal error during import occured. Pleasy try again.');
+  }
 }
 
-async function startImport(): Promise<void> {
+async function importJson(): Promise<void> {
   // TODO: Display error messages
-  // TODO: Allow file upload
+
+  clearErrorMessages();
+
+  // currentStep.value = 'importing';
+  // await new Promise(p => setTimeout(p, 0));
+
+  // return;
+
+  // ---------------------------------------------------------------------------------------------
 
   currentStep.value = 'checking';
 
-  parse();
+  try {
+    parse();
+  } catch (e: unknown) {
+    addErrorMessage(e);
+    return;
+  }
 
-  currentStep.value = 'importing';
+  try {
+    currentStep.value = 'importing';
 
-  // await nextTick(() => {
-  //   console.log('after DOM update: ', currentStep.value);
-  // });
-  // TODO: This is hacky af again, but needed for repainting the DOM for the progress bar. Find better solution
+    // TODO: This is hacky af again, but needed for repainting the DOM for the progress bar. Find better solution
+    // await nextTick(() => {
+    //   console.log('after DOM update: ', currentStep.value);
+    // });
+    await new Promise(p => setTimeout(p, 0));
+
+    transform();
+  } catch (e: unknown) {
+    addErrorMessage(e);
+    currentStep.value = 'checking';
+
+    return;
+  }
+
+  try {
+    initializeStores();
+  } catch (e: unknown) {
+    // TODO: Here, the initial state of the characters should be restored
+    addErrorMessage(e);
+    currentStep.value = 'checking';
+
+    return;
+  }
+
   await new Promise(p => setTimeout(p, 0));
 
-  transform();
-  initializeStores();
-
-  // await nextTick(() => {
-  //   console.log('after DOM update: ', currentStep.value);
-  // });
-  await new Promise(p => setTimeout(p, 0));
   currentStep.value = 'finishing';
 }
-
-const toast = useToast();
-
-const onAdvancedUpload = () => {
-  toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
-};
 
 function toggleViewMode(direction: 'raw' | 'file'): void {
   chooseOption.value = direction;
 }
 
-function handleRawJson() {
-  startImport();
+function handleRawJson(): void {
+  importJson();
 }
 
-function handleFileUpload() {
+function handleFileUpload(): void {
   const file: File = fileupload.value.files[0];
-  const reader: FileReader = new FileReader();
 
-  // Triggered once file is read successfully
-  reader.onload = () => {
-    fileContent.value = reader.result as string;
-    rawJson.value = fileContent.value;
-
-    try {
-      startImport();
-    } catch (error) {
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to parse JSON',
-        life: 3000,
-      });
-    }
-  };
-
-  reader.onerror = () => {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Error reading file', life: 3000 });
-  };
-
-  // Read the file as text
+  // This triggers the "load" event listener attached to the reader which handles the further logic
   reader.readAsText(file);
 }
 </script>
@@ -201,7 +250,6 @@ function handleFileUpload() {
   <Button
     icon="pi pi-file-import"
     severity="secondary"
-    aria-label="Import JSON"
     outlined
     class="h-2rem"
     title="Import JSON"
@@ -214,20 +262,13 @@ function handleFileUpload() {
     modal
     :closable="false"
     :close-on-escape="false"
+    :style="{ width: '30rem' }"
   >
     <template #header>
       <h2 class="w-full text-center m-0">Import JSON</h2>
     </template>
     <div v-if="currentStep !== 'finishing'" class="choose-panel">
       <ButtonGroup class="w-full flex">
-        <ToggleButton
-          :model-value="chooseOption === 'raw'"
-          class="w-full"
-          onLabel="Raw"
-          offLabel="Raw"
-          badge="2"
-          @change="toggleViewMode('raw')"
-        />
         <ToggleButton
           :model-value="chooseOption === 'file'"
           class="w-full"
@@ -236,48 +277,98 @@ function handleFileUpload() {
           badge="2"
           @change="toggleViewMode('file')"
         />
+        <ToggleButton
+          :model-value="chooseOption === 'raw'"
+          class="w-full"
+          onLabel="Raw"
+          offLabel="Raw"
+          badge="2"
+          @change="toggleViewMode('raw')"
+        />
       </ButtonGroup>
+      <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closeable>{{
+        msg.content
+      }}</Message>
       <form v-if="chooseOption === 'raw'" @submit.prevent="handleRawJson">
         <div class="card" v-if="currentStep === 'importing'">
           Importing data...
           <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
         </div>
-        <Textarea v-model="rawJson" rows="10" cols="50" />
+        <Textarea
+          v-model="rawJson"
+          rows="10"
+          placeholder="Enter some valid JSON"
+          spellcheck="false"
+        />
         <div class="button-container flex justify-content-end gap-2">
           <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-          <Button type="submit" label="Import"></Button>
+          <Button type="submit" label="Import" :disabled="!inputIsValid"></Button>
         </div>
       </form>
-      <form v-else @submit.prevent="handleFileUpload">
-        <div class="card">
-          <Toast />
-          <FileUpload
-            name="demo[]"
-            ref="fileupload"
-            @upload="onAdvancedUpload()"
-            accept=".json,.text"
-            :maxFileSize="1000000"
-          >
-            <template #header="{ chooseCallback }">
+      <form v-else @submit.prevent="handleFileUpload" class="h-full">
+        <div class="card" v-if="currentStep === 'importing'">
+          Importing data...
+          <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
+        </div>
+        <FileUpload
+          name="import"
+          ref="fileupload"
+          :file-limit="1"
+          :multiple="false"
+          accept=".json,.txt"
+        >
+          <template #header="{ chooseCallback }">
+            <div class="flex justify-content-center w-full">
               <Button
+                v-if="!inputIsValid"
                 @click="chooseCallback()"
-                label="Choose file"
+                label="Browse files"
                 icon="pi pi-plus"
                 severity="secondary"
+                title="Choose file to import (.json or .txt)"
+                :disabled="inputIsValid"
               ></Button>
-            </template>
-            <template #empty>
-              <div class="flex flex-column align-items-center justify-center">
-                <i class="pi pi-file-arrow-up" />
-                <p class="mb-0">Drag and drop .json or .txt files to here to upload.</p>
+            </div>
+          </template>
+          <template #content="{ files, removeFileCallback }">
+            <div
+              v-for="(file, index) of files"
+              :key="file.name + file.type + file.size"
+              class="flex justify-content-between align-items-center h-2rem"
+            >
+              <div class="flex gap-4">
+                <div class="font-semibold">
+                  <img role="presentation" :alt="file.name" :src="file.objectURL" />
+                </div>
+                <div>{{ formatFileSize(file.size) }}</div>
               </div>
-            </template>
-          </FileUpload>
-        </div>
+              <Button
+                icon="pi pi-times"
+                size="small"
+                :style="{ width: '2rem', height: '2rem' }"
+                severity="danger"
+                outlined
+                rounded
+                title="Remove file"
+                aria-label="Remove file"
+                @click="removeFileCallback(index)"
+              />
+            </div>
+          </template>
 
+          <template #empty>
+            <div class="flex flex-column align-items-center justify-center">
+              <p class="font-italic">or</p>
+              <p class="m-0 p-3 drop-area">
+                <i class="pi pi-file-arrow-up" /> Drag and drop .json or .txt files to here to
+                upload.
+              </p>
+            </div>
+          </template>
+        </FileUpload>
         <div class="button-container flex justify-content-end gap-2">
           <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-          <Button type="submit" label="Import"></Button>
+          <Button type="submit" label="Import" :disabled="!inputIsValid"></Button>
         </div>
       </form>
     </div>
@@ -302,4 +393,8 @@ function handleFileUpload() {
   </Dialog>
 </template>
 
-<style scoped></style>
+<style scoped>
+.drop-area {
+  border: 2px dashed var(--p-primary-500);
+}
+</style>
