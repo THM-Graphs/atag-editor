@@ -16,6 +16,8 @@ import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
 
+type PipelineStep = null | 'validating' | 'importing' | 'finishing';
+
 const { initializeAnnotations } = useAnnotationStore();
 const { initializeCharacters } = useCharactersStore();
 
@@ -36,7 +38,7 @@ const inputIsValid = computed(() => {
     return fileupload.value?.files.length === 1;
   }
 });
-const currentStep = ref<null | 'checking' | 'importing' | 'finishing' | 'starting'>(null);
+const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
 const messageCount = ref(0);
 
@@ -97,6 +99,10 @@ function parse(): void {
   } catch (e: unknown) {
     throw new JsonParseError('The JSON format contains syntax errors. Please check and try again.');
   }
+}
+
+function setPipelineStep(step: PipelineStep): void {
+  currentStep.value = step;
 }
 
 function transform() {
@@ -178,8 +184,6 @@ function initializeStores(): void {
 }
 
 async function importJson(): Promise<void> {
-  // TODO: Display error messages
-
   clearErrorMessages();
 
   // currentStep.value = 'importing';
@@ -189,28 +193,27 @@ async function importJson(): Promise<void> {
 
   // ---------------------------------------------------------------------------------------------
 
-  currentStep.value = 'checking';
+  setPipelineStep('validating');
 
   try {
     parse();
   } catch (e: unknown) {
     addErrorMessage(e);
+    setPipelineStep(null);
+
     return;
   }
 
+  setPipelineStep('importing');
+
+  // Give the browser time to repaint (=show the progress bar)
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   try {
-    currentStep.value = 'importing';
-
-    // TODO: This is hacky af again, but needed for repainting the DOM for the progress bar. Find better solution
-    // await nextTick(() => {
-    //   console.log('after DOM update: ', currentStep.value);
-    // });
-    await new Promise(p => setTimeout(p, 0));
-
     transform();
   } catch (e: unknown) {
     addErrorMessage(e);
-    currentStep.value = 'checking';
+    setPipelineStep(null);
 
     return;
   }
@@ -220,14 +223,12 @@ async function importJson(): Promise<void> {
   } catch (e: unknown) {
     // TODO: Here, the initial state of the characters should be restored
     addErrorMessage(e);
-    currentStep.value = 'checking';
+    setPipelineStep(null);
 
     return;
   }
 
-  await new Promise(p => setTimeout(p, 0));
-
-  currentStep.value = 'finishing';
+  setPipelineStep('finishing');
 }
 
 function toggleViewMode(direction: 'raw' | 'file'): void {
