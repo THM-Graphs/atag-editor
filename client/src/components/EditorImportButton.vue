@@ -18,8 +18,8 @@ import ToggleButton from 'primevue/togglebutton';
 
 type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 
-const { initializeAnnotations } = useAnnotationStore();
-const { initializeCharacters } = useCharactersStore();
+const { annotations, initializeAnnotations } = useAnnotationStore();
+const { totalCharacters, initializeCharacters } = useCharactersStore();
 
 onUpdated((): void => {
   console.log('update');
@@ -235,15 +235,15 @@ function toggleViewMode(direction: 'raw' | 'file'): void {
   chooseOption.value = direction;
 }
 
-function handleRawJson(): void {
-  importJson();
-}
+function handleImport(): void {
+  if (chooseOption.value === 'raw') {
+    importJson();
+  } else {
+    const file: File = fileupload.value.files[0];
 
-function handleFileUpload(): void {
-  const file: File = fileupload.value.files[0];
-
-  // This triggers the "load" event listener attached to the reader which handles the further logic
-  reader.readAsText(file);
+    // This triggers the "load" event listener attached to the reader which handles the further logic
+    reader.readAsText(file);
+  }
 }
 </script>
 
@@ -259,16 +259,20 @@ function handleFileUpload(): void {
   ></Button>
   <Dialog
     v-model:visible="dialogIsVisible"
-    header="Import Text from JSON"
     modal
     :closable="false"
     :close-on-escape="false"
     :style="{ width: '30rem' }"
   >
     <template #header>
-      <h2 class="w-full text-center m-0">Import JSON</h2>
+      <h2
+        v-if="currentStep === null || currentStep === 'validating'"
+        class="w-full text-center m-0"
+      >
+        Import JSON
+      </h2>
     </template>
-    <div v-if="currentStep !== 'finishing'" class="choose-panel">
+    <div v-if="currentStep === null || currentStep === 'validating'" class="choose-panel">
       <ButtonGroup class="w-full flex">
         <ToggleButton
           :model-value="chooseOption === 'file'"
@@ -290,28 +294,17 @@ function handleFileUpload(): void {
       <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closeable>{{
         msg.content
       }}</Message>
-      <form v-if="chooseOption === 'raw'" @submit.prevent="handleRawJson">
-        <div class="card" v-if="currentStep === 'importing'">
-          Importing data...
-          <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
-        </div>
+
+      <form @submit.prevent="handleImport">
         <Textarea
+          v-if="chooseOption === 'raw'"
           v-model="rawJson"
           rows="10"
           placeholder="Enter some valid JSON"
           spellcheck="false"
         />
-        <div class="button-container flex justify-content-end gap-2">
-          <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-          <Button type="submit" label="Import" :disabled="!inputIsValid"></Button>
-        </div>
-      </form>
-      <form v-else @submit.prevent="handleFileUpload" class="h-full">
-        <div class="card" v-if="currentStep === 'importing'">
-          Importing data...
-          <ProgressBar mode="indeterminate" style="height: 6px"></ProgressBar>
-        </div>
         <FileUpload
+          v-else
           name="import"
           ref="fileupload"
           :file-limit="1"
@@ -373,23 +366,38 @@ function handleFileUpload(): void {
         </div>
       </form>
     </div>
-    <div v-else>
-      <div>&#10004; Text imported successfully</div>
-      <div>
-        <Message severity="warn">
-          <p>
-            Currently the text is dangling (not saved in the database). Depending on the length, the
-            performance of the editor might be affected.
-          </p>
-          <p>
-            You can edit the text, but to get a better performance, save the text and reload the
-            page.
-          </p>
-        </Message>
-      </div>
-      <div class="buttons">
-        <Button type="button" label="Ok" severity="secondary" @click="finishImport"></Button>
-      </div>
+    <div
+      class="card flex flex-column align-items-center gap-4"
+      v-else-if="currentStep === 'importing'"
+    >
+      <span> Importing data... </span>
+      <ProgressBar mode="indeterminate" style="height: 5px; width: 100%"></ProgressBar>
+    </div>
+    <div v-else class="flex flex-column align-items-center">
+      <Message class="my-2 w-full" severity="success" variant="outlined">
+        <div class="info">
+          <div>&#10004; Text imported successfully</div>
+          <ul class="m-0 pl-6">
+            <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
+            <li class="list-disc">{{ annotations.length.toLocaleString() }} annotations</li>
+          </ul>
+        </div>
+      </Message>
+
+      <Message class="my-2 w-full" severity="warn">
+        <p>
+          Currently, the text is dangling (not saved in the database). You can edit the text, but to
+          get a better performance, save the text and reload the page.
+        </p>
+        <p></p>
+      </Message>
+      <Button
+        type="button"
+        label="Ok"
+        severity="secondary"
+        class="w-3 mt-4"
+        @click="finishImport"
+      ></Button>
     </div>
   </Dialog>
 </template>
