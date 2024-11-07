@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUpdated, computed } from 'vue';
+import { ref, onUpdated, computed, ComputedRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { formatFileSize } from '../utils/helper/helper';
@@ -19,7 +19,7 @@ import ToggleButton from 'primevue/togglebutton';
 type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 
 const { annotations, initializeAnnotations } = useAnnotationStore();
-const { totalCharacters, initializeCharacters } = useCharactersStore();
+const { snippetCharacters, totalCharacters, initializeCharacters } = useCharactersStore();
 
 onUpdated((): void => {
   console.log('update');
@@ -37,6 +37,9 @@ const inputIsValid = computed(() => {
   } else {
     return fileupload.value?.files.length === 1;
   }
+});
+const documentIsEmpty: ComputedRef<boolean> = computed(() => {
+  return totalCharacters.value.length === 0 && snippetCharacters.value.length === 0;
 });
 const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
@@ -269,11 +272,21 @@ function handleImport(): void {
         v-if="currentStep === null || currentStep === 'validating'"
         class="w-full text-center m-0"
       >
-        Import JSON
+        Select JSON to import
       </h2>
     </template>
     <div v-if="currentStep === null || currentStep === 'validating'" class="choose-panel">
-      <ButtonGroup class="w-full flex">
+      <Message
+        v-if="!documentIsEmpty"
+        severity="warn"
+        icon="pi pi-exclamation-circle"
+        class="w-full my-2"
+        closable
+      >
+        Careful: This document already contains text that will be lost after the import has
+        finished.
+      </Message>
+      <ButtonGroup class="w-full flex mb-2">
         <ToggleButton
           :model-value="chooseOption === 'file'"
           class="w-full"
@@ -294,12 +307,12 @@ function handleImport(): void {
       <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closeable>{{
         msg.content
       }}</Message>
-
       <form @submit.prevent="handleImport">
         <Textarea
           v-if="chooseOption === 'raw'"
           v-model="rawJson"
           rows="10"
+          class="w-full"
           placeholder="Enter some valid JSON"
           spellcheck="false"
         />
@@ -332,7 +345,7 @@ function handleImport(): void {
             >
               <div class="flex gap-4">
                 <div class="font-semibold">
-                  <img role="presentation" :alt="file.name" :src="file.objectURL" />
+                  {{ file.name }}
                 </div>
                 <div>{{ formatFileSize(file.size) }}</div>
               </div>
@@ -383,8 +396,7 @@ function handleImport(): void {
           </ul>
         </div>
       </Message>
-
-      <Message class="my-2 w-full" severity="warn">
+      <Message icon="pi pi-send" class="my-2 w-full" severity="warn">
         <p>
           Currently, the text is dangling (not saved in the database). You can edit the text, but to
           get a better performance, save the text and reload the page.
