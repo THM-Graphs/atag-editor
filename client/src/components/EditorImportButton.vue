@@ -21,10 +21,6 @@ type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 const { annotations, initializeAnnotations } = useAnnotationStore();
 const { snippetCharacters, totalCharacters, initializeCharacters } = useCharactersStore();
 
-onUpdated((): void => {
-  console.log('update');
-});
-
 const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const dialogIsVisible = ref<boolean>(false);
 const rawJson = ref<string>('');
@@ -38,8 +34,8 @@ const inputIsValid = computed(() => {
     return fileupload.value?.files.length === 1;
   }
 });
-const documentIsEmpty: ComputedRef<boolean> = computed(() => {
-  return totalCharacters.value.length === 0 && snippetCharacters.value.length === 0;
+const editorContainsText: ComputedRef<boolean> = computed(() => {
+  return totalCharacters.value.length > 0 || snippetCharacters.value.length > 0;
 });
 const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
@@ -180,7 +176,7 @@ function transform() {
 function initializeStores(): void {
   try {
     initializeCharacters(dataToImport.value.characters, 'import');
-    initializeAnnotations(dataToImport.value.annotations);
+    initializeAnnotations(dataToImport.value.annotations, 'import');
   } catch (e: unknown) {
     throw new ImportError('An internal error during import occured. Pleasy try again.');
   }
@@ -277,7 +273,7 @@ function handleImport(): void {
     </template>
     <div v-if="currentStep === null || currentStep === 'validating'" class="choose-panel">
       <Message
-        v-if="!documentIsEmpty"
+        v-if="editorContainsText"
         severity="warn"
         icon="pi pi-exclamation-circle"
         class="w-full my-2"

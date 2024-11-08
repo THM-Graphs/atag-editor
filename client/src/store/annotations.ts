@@ -13,12 +13,25 @@ const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
 /**
  * Store for managing the state of annotations inside an editor instance. When the component is mounted,
  * the store is initialized with the fetched annotations from the database. When the component is unmounted,
- * the store is reset (annotation array is emptied).
+ * the store is reset (annotation array is emptied). The store can also be reinitialized during text import.
  */
 export function useAnnotationStore() {
-  function initializeAnnotations(annotationData: IAnnotation[]): void {
+  /**
+   * Initializes the annotation store with the provided annotation data. Called on annotation fetching from the database or on text import.
+   * This function resets the store and performs further initialization logic depending on the source.
+   *
+   * @param {IAnnotation[]} annotationData - The array of annotations to initialize the store with.
+   * @param {'database' | 'import'} source - The source of the annotation data. `database` if the initialization happens on text load,
+   *                                         `import` if it happens on text import.
+   * @return {void} This function does not return any value.
+   */
+  function initializeAnnotations(
+    annotationData: IAnnotation[],
+    source: 'database' | 'import',
+  ): void {
     resetAnnotations();
 
+    // TODO: This can be simplified, too much duplication
     // TODO: This IS slow when importing text with many annotations -> fix!
     annotations.value = annotationData.map((annotation: IAnnotation, index: number) => {
       const charUuids: string[] = [
@@ -43,7 +56,6 @@ export function useAnnotationStore() {
         console.log(annotation);
       }
 
-      // TODO: Not always "existing", can be "created" when importing text...
       return {
         characterUuids: charUuids,
         data: { ...annotation },
@@ -51,7 +63,7 @@ export function useAnnotationStore() {
         initialData: { ...annotation },
         isTruncated: isLeftTruncated || isRightTruncated,
         startUuid: charUuids[0],
-        status: 'existing',
+        status: source === 'database' ? 'existing' : 'created',
       };
     });
 
@@ -87,7 +99,11 @@ export function useAnnotationStore() {
       }
     });
 
-    initialAnnotations.value = cloneDeep(annotations.value);
+    if (source === 'database') {
+      initialAnnotations.value = cloneDeep(annotations.value);
+    } else {
+      initialAnnotations.value = [];
+    }
   }
 
   function addAnnotation(annotation: Annotation): void {

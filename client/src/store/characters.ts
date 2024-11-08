@@ -24,15 +24,16 @@ const { getAnnotationConfig } = useGuidelinesStore();
 /**
  * Store for managing the state of characters inside an editor instance. When the component is mounted,
  * the store is initialized with the fetched characters from the database. When the component is unmounted,
- * the store is reset (character array is emptied).
+ * the store is reset (character array is emptied). The store can also be reinitialized during text import.
  */
 export function useCharactersStore() {
   /**
-   * Initializes the character store with the provided character data. Called on character fetching from the database.
-   *
-   * This function resets the store, sets the total characters, and updates the snippet and initial characters based on the pagination size.
+   * Initializes the character store with the provided character data. Called on character fetching from the database or on text import.
+   * This function resets the store and performs further initialization logic depending on the source.
    *
    * @param {Character[]} characterData - The array of characters to initialize the store with.
+   * @param {'database' | 'import'} source - The source of the character data. `database` if the initialization happens on text load,
+   *                                         `import` if it happens on text import.
    * @return {void} This function does not return any value.
    */
   function initializeCharacters(characterData: Character[], source: 'database' | 'import'): void {
@@ -40,30 +41,48 @@ export function useCharactersStore() {
 
     totalCharacters.value = characterData;
 
-    // TODO: Update JSDoc
     if (source === 'database') {
-      // SLICE ACTION
-      if (totalCharacters.value.length === 0) {
-        // No characters -> snippet equals total characters (obviously) -> afterEndIndex stays at null
-      } else if (totalCharacters.value.length < PAGINATION_SIZE) {
-        // Less than default page size -> afterEndIndex needs to be null
-      } else if (totalCharacters.value.length > PAGINATION_SIZE) {
-        afterEndIndex.value = PAGINATION_SIZE;
-      }
-
-      if (afterEndIndex.value) {
-        snippetCharacters.value = JSON.parse(
-          JSON.stringify([...totalCharacters.value].slice(0, afterEndIndex.value)),
-        );
-      } else {
-        snippetCharacters.value = cloneDeep(totalCharacters.value);
-      }
+      initializeCharactersFromDatabase();
     } else {
-      // NO SLICE ACTION
+      initializeCharactersFromImport();
+    }
+  }
+
+  /**
+   * Creates the character snippet and implements the pagination logic.
+   * Called on initialization when the text is loaded from the database (this is the normal case).
+   *
+   * @return {void} This function does not return any value.
+   */
+  function initializeCharactersFromDatabase(): void {
+    // TODO: Why so many empty statements?
+    if (totalCharacters.value.length === 0) {
+      // No characters -> snippet equals total characters (obviously) -> afterEndIndex stays at null
+    } else if (totalCharacters.value.length < PAGINATION_SIZE) {
+      // Less than default page size -> afterEndIndex needs to be null
+    } else if (totalCharacters.value.length > PAGINATION_SIZE) {
+      afterEndIndex.value = PAGINATION_SIZE;
+    }
+
+    if (afterEndIndex.value) {
+      snippetCharacters.value = cloneDeep(totalCharacters.value.slice(0, afterEndIndex.value));
+    } else {
       snippetCharacters.value = cloneDeep(totalCharacters.value);
     }
 
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+  }
+
+  /**
+   * Creates the character snippet, but skips the pagination logic.
+   * Called on initialization when the text is imported. Since the snippet will contain the whole loaded text,
+   * no pagination is needed.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function initializeCharactersFromImport(): void {
+    snippetCharacters.value = cloneDeep(totalCharacters.value);
+    initialSnippetCharacters.value = [];
   }
 
   /**

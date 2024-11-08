@@ -318,7 +318,7 @@ async function getAnnotations(): Promise<void> {
 
     const fetchedAnnotations: IAnnotation[] = await response.json();
 
-    initializeAnnotations(fetchedAnnotations);
+    initializeAnnotations(fetchedAnnotations, 'database');
   } catch (error: unknown) {
     console.error('Error fetching annotations:', error);
   }
