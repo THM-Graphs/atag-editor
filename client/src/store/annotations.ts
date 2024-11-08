@@ -163,6 +163,7 @@ export function useAnnotationStore() {
     return { firstCharacter, lastCharacter, firstIndex, lastIndex };
   }
 
+  // TODO: This should really reset the store to the initial state instead of clearing everything (problems during cancel after text was imported)
   function resetAnnotations(): void {
     annotations.value = [];
   }

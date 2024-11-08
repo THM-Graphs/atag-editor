@@ -630,6 +630,7 @@ export function useCharactersStore() {
    *
    * @return {void} No return value.
    */
+  // TODO: This should really reset the store to the initial state instead of clearing everything (problems during cancel after text was imported)
   function resetCharacters(): void {
     snippetCharacters.value = [];
     totalCharacters.value = [];

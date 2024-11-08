@@ -2,11 +2,11 @@
 import { ref, onUpdated, computed, ComputedRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
-import { formatFileSize } from '../utils/helper/helper';
+import { cloneDeep, formatFileSize } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import IAnnotation from '../models/IAnnotation';
-import { Character, StandoffJson } from '../models/types';
+import { Annotation, Character, StandoffJson } from '../models/types';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
@@ -16,10 +16,30 @@ import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
 
+interface DataDump {
+  characters: {
+    snippetCharacters: Character[];
+    totalCharacters: Character[];
+    initialSnippetCharacters: Character[];
+    beforeStartIndex: number;
+    afterEndIndex: number;
+  };
+  annotations: {
+    initialAnnotations: Annotation[];
+    annotations: Annotation[];
+  };
+}
 type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 
-const { annotations, initializeAnnotations } = useAnnotationStore();
-const { snippetCharacters, totalCharacters, initializeCharacters } = useCharactersStore();
+const { initialAnnotations, annotations, initializeAnnotations } = useAnnotationStore();
+const {
+  afterEndIndex,
+  beforeStartIndex,
+  initialSnippetCharacters,
+  snippetCharacters,
+  totalCharacters,
+  initializeCharacters,
+} = useCharactersStore();
 
 const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const dialogIsVisible = ref<boolean>(false);
@@ -79,6 +99,8 @@ async function showDialog(): Promise<void> {
 }
 
 async function hideDialog(): Promise<void> {
+  clearErrorMessages();
+
   currentStep.value = null;
   rawJson.value = '';
   parsedJson.value = null;
@@ -98,6 +120,11 @@ function parse(): void {
   } catch (e: unknown) {
     throw new JsonParseError('The JSON format contains syntax errors. Please check and try again.');
   }
+}
+
+function resetPipeline() {
+  setPipelineStep(null);
+  rawJson.value = '';
 }
 
 function setPipelineStep(step: PipelineStep): void {
@@ -182,23 +209,41 @@ function initializeStores(): void {
   }
 }
 
+function createDump(): DataDump {
+  const dump: DataDump = {
+    characters: {
+      beforeStartIndex: beforeStartIndex.value,
+      afterEndIndex: afterEndIndex.value,
+      totalCharacters: totalCharacters.value,
+      snippetCharacters: snippetCharacters.value,
+      initialSnippetCharacters: initialSnippetCharacters.value,
+    },
+    annotations: { annotations: annotations.value, initialAnnotations: initialAnnotations.value },
+  };
+
+  return cloneDeep(dump);
+}
+
+function restoreDump(data: DataDump) {
+  snippetCharacters.value = data.characters.snippetCharacters;
+  totalCharacters.value = data.characters.totalCharacters;
+  initialSnippetCharacters.value = data.characters.initialSnippetCharacters;
+  afterEndIndex.value = data.characters.afterEndIndex;
+  beforeStartIndex.value = data.characters.beforeStartIndex;
+
+  annotations.value = data.annotations.annotations;
+  initialAnnotations.value = data.annotations.annotations;
+}
+
 async function importJson(): Promise<void> {
   clearErrorMessages();
-
-  // currentStep.value = 'importing';
-  // await new Promise(p => setTimeout(p, 0));
-
-  // return;
-
-  // ---------------------------------------------------------------------------------------------
-
   setPipelineStep('validating');
 
   try {
     parse();
   } catch (e: unknown) {
     addErrorMessage(e);
-    setPipelineStep(null);
+    resetPipeline();
 
     return;
   }
@@ -212,17 +257,20 @@ async function importJson(): Promise<void> {
     transform();
   } catch (e: unknown) {
     addErrorMessage(e);
-    setPipelineStep(null);
+    resetPipeline();
 
     return;
   }
 
+  const dump: DataDump = createDump();
+
   try {
     initializeStores();
   } catch (e: unknown) {
-    // TODO: Here, the initial state of the characters should be restored
+    debugger;
     addErrorMessage(e);
-    setPipelineStep(null);
+    restoreDump(dump);
+    resetPipeline();
 
     return;
   }
