@@ -243,8 +243,6 @@ async function importJson(): Promise<void> {
     parse();
   } catch (e: unknown) {
     addErrorMessage(e);
-    // TODO: No reset needed, JSON should be kept
-    resetPipeline();
 
     return;
   }
