@@ -163,9 +163,14 @@ export function useAnnotationStore() {
     return { firstCharacter, lastCharacter, firstIndex, lastIndex };
   }
 
-  // TODO: This should really reset the store to the initial state instead of clearing everything (problems during cancel after text was imported)
+  /**
+   * Resets all annotation-related state variables to their initial values. Called when the Editor component is unmounted.
+   *
+   * @return {void} No return value.
+   */
   function resetAnnotations(): void {
     annotations.value = [];
+    initialAnnotations.value = [];
   }
 
   function shiftAnnotationLeft(annotation: Annotation): void {

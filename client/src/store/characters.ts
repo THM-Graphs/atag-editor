@@ -626,11 +626,10 @@ export function useCharactersStore() {
   }
 
   /**
-   * Resets all character-related state variables to their initial values.
+   * Resets all character-related state variables to their initial values. Called when the Editor component is unmounted.
    *
    * @return {void} No return value.
    */
-  // TODO: This should really reset the store to the initial state instead of clearing everything (problems during cancel after text was imported)
   function resetCharacters(): void {
     snippetCharacters.value = [];
     totalCharacters.value = [];
