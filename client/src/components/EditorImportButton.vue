@@ -61,6 +61,19 @@ const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
 const messageCount = ref(0);
 
+// Needs to be instantiated at top-level to make Vue track changes better
+const reader: FileReader = new FileReader();
+
+reader.addEventListener('load', () => {
+  rawJson.value = reader.result as string;
+  importJson();
+});
+
+reader.addEventListener('error', (event: ProgressEvent) => {
+  const error: DOMException = (event.target as FileReader).error;
+  addErrorMessage(error);
+});
+
 function addErrorMessage(error: JsonParseError | ImportError | DOMException | unknown): void {
   if (error instanceof JsonParseError || error instanceof ImportError) {
     errorMessages.value.push({
@@ -81,21 +94,48 @@ function clearErrorMessages(): void {
   errorMessages.value = [];
 }
 
-// Needs to be instantiated at top-level to make Vue track changes better
-const reader: FileReader = new FileReader();
+/**
+ * Creates a deep copy the character and annotation stores. Called before importing data to apply old state if the import fails.
+ *
+ * @returns {DataDump} An object containing the relevant state variables of characters and annotations.
+ */
+function createDump(): DataDump {
+  const dump: DataDump = {
+    characters: {
+      beforeStartIndex: beforeStartIndex.value,
+      afterEndIndex: afterEndIndex.value,
+      totalCharacters: totalCharacters.value,
+      snippetCharacters: snippetCharacters.value,
+      initialSnippetCharacters: initialSnippetCharacters.value,
+    },
+    annotations: { annotations: annotations.value, initialAnnotations: initialAnnotations.value },
+  };
 
-reader.addEventListener('load', () => {
-  rawJson.value = reader.result as string;
-  importJson();
-});
+  return cloneDeep(dump);
+}
 
-reader.addEventListener('error', (event: ProgressEvent) => {
-  const error: DOMException = (event.target as FileReader).error;
-  addErrorMessage(error);
-});
+function finishImport(): void {
+  rawJson.value = '';
+  parsedJson.value = null;
+  dialogIsVisible.value = false;
+  currentStep.value = null;
+}
 
-async function showDialog(): Promise<void> {
-  dialogIsVisible.value = true;
+/**
+ * Handles the import of the chosen file or raw JSON input. If the option is `raw`, the import process is started directly.
+ * If the option is `file`, the chosen file is read which triggers the "load" event where the import logic is handled.
+ *
+ * @return {void} This function does not return any value.
+ */
+function handleImport(): void {
+  if (chooseOption.value === 'raw') {
+    importJson();
+  } else {
+    const file: File = fileupload.value.files[0];
+
+    // This triggers the "load" event listener attached to the reader which handles the further logic
+    reader.readAsText(file);
+  }
 }
 
 async function hideDialog(): Promise<void> {
@@ -107,13 +147,76 @@ async function hideDialog(): Promise<void> {
   dialogIsVisible.value = false;
 }
 
-function finishImport(): void {
-  rawJson.value = '';
-  parsedJson.value = null;
-  dialogIsVisible.value = false;
-  currentStep.value = null;
+/**
+ * Validates, transforms and imports the JSON data from the chosen file or raw JSON input. If one of the operation fails,
+ * an error message is displayed and the pipeline reset to the previous state.
+ *
+ * @return {Promise<void>} This function does not return any value.
+ */
+async function importJson(): Promise<void> {
+  clearErrorMessages();
+  setPipelineStep('validating');
+
+  try {
+    parse();
+  } catch (e: unknown) {
+    addErrorMessage(e);
+
+    return;
+  }
+
+  setPipelineStep('importing');
+
+  // Give the browser time to repaint (=show the progress bar)
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  try {
+    transform();
+  } catch (e: unknown) {
+    addErrorMessage(e);
+    resetPipeline();
+
+    return;
+  }
+
+  const dump: DataDump = createDump();
+
+  try {
+    initializeStores();
+  } catch (e: unknown) {
+    debugger;
+    addErrorMessage(e);
+    restoreDump(dump);
+    resetPipeline();
+
+    return;
+  }
+
+  setPipelineStep('finishing');
 }
 
+/**
+ * Initializes the characters and annotations stores with the data from the JSON import. This is the last step of the import pipeline.
+ * In case of an error during the initialization, an ImportError is thrown.
+ *
+ * @returns {void} This function does not return any value.
+ * @throws {ImportError} If an internal error occurs during the store initialization.
+ */
+function initializeStores(): void {
+  try {
+    initializeCharacters(dataToImport.value.characters, 'import');
+    initializeAnnotations(dataToImport.value.annotations, 'import');
+  } catch (e: unknown) {
+    throw new ImportError('An internal error during import occured. Pleasy try again.');
+  }
+}
+
+/**
+ * Parses the provided JSON (raw or from file). If the JSON string is malformed, a JsonParseError is thrown.
+ *
+ * @returns {void} This function does not return any value.
+ * @throws {JsonParseError} If the JSON string is malformed.
+ */
 function parse(): void {
   try {
     parsedJson.value = JSON.parse(rawJson.value);
@@ -127,9 +230,42 @@ function resetPipeline(): void {
   rawJson.value = '';
 }
 
+/**
+ * Restores the state of the editor to the provided dump of the store state. Called when the import fails.
+ *
+ * @param {DataDump} data - The dump of the store state.
+ * @returns {void} This function does not return any value.
+ */
+function restoreDump(data: DataDump): void {
+  snippetCharacters.value = data.characters.snippetCharacters;
+  totalCharacters.value = data.characters.totalCharacters;
+  initialSnippetCharacters.value = data.characters.initialSnippetCharacters;
+  afterEndIndex.value = data.characters.afterEndIndex;
+  beforeStartIndex.value = data.characters.beforeStartIndex;
+
+  annotations.value = data.annotations.annotations;
+  initialAnnotations.value = data.annotations.annotations;
+}
+
 function setPipelineStep(step: PipelineStep): void {
   currentStep.value = step;
 }
+
+async function showDialog(): Promise<void> {
+  dialogIsVisible.value = true;
+}
+
+function toggleViewMode(direction: 'raw' | 'file'): void {
+  chooseOption.value = direction;
+}
+
+/**
+ * Transforms parsed Standoff JSON data into character and annotation store objects and prepares them for import.
+ * This is the second step of the import pipeline.
+ *
+ * @returns {void} This function does not return any value.
+ * @throws {ImportError} If the JSON structure does not match the expected schema.
+ */
 
 function transform(): void {
   try {
@@ -197,98 +333,6 @@ function transform(): void {
     throw new ImportError(
       'The JSON structure does not match the expected schema. Please check the JSON format.',
     );
-  }
-}
-
-function initializeStores(): void {
-  try {
-    initializeCharacters(dataToImport.value.characters, 'import');
-    initializeAnnotations(dataToImport.value.annotations, 'import');
-  } catch (e: unknown) {
-    throw new ImportError('An internal error during import occured. Pleasy try again.');
-  }
-}
-
-function createDump(): DataDump {
-  const dump: DataDump = {
-    characters: {
-      beforeStartIndex: beforeStartIndex.value,
-      afterEndIndex: afterEndIndex.value,
-      totalCharacters: totalCharacters.value,
-      snippetCharacters: snippetCharacters.value,
-      initialSnippetCharacters: initialSnippetCharacters.value,
-    },
-    annotations: { annotations: annotations.value, initialAnnotations: initialAnnotations.value },
-  };
-
-  return cloneDeep(dump);
-}
-
-function restoreDump(data: DataDump): void {
-  snippetCharacters.value = data.characters.snippetCharacters;
-  totalCharacters.value = data.characters.totalCharacters;
-  initialSnippetCharacters.value = data.characters.initialSnippetCharacters;
-  afterEndIndex.value = data.characters.afterEndIndex;
-  beforeStartIndex.value = data.characters.beforeStartIndex;
-
-  annotations.value = data.annotations.annotations;
-  initialAnnotations.value = data.annotations.annotations;
-}
-
-async function importJson(): Promise<void> {
-  clearErrorMessages();
-  setPipelineStep('validating');
-
-  try {
-    parse();
-  } catch (e: unknown) {
-    addErrorMessage(e);
-
-    return;
-  }
-
-  setPipelineStep('importing');
-
-  // Give the browser time to repaint (=show the progress bar)
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  try {
-    transform();
-  } catch (e: unknown) {
-    addErrorMessage(e);
-    resetPipeline();
-
-    return;
-  }
-
-  const dump: DataDump = createDump();
-
-  try {
-    initializeStores();
-  } catch (e: unknown) {
-    debugger;
-    addErrorMessage(e);
-    restoreDump(dump);
-    resetPipeline();
-
-    return;
-  }
-
-  setPipelineStep('finishing');
-}
-
-function toggleViewMode(direction: 'raw' | 'file'): void {
-  chooseOption.value = direction;
-}
-
-function handleImport(): void {
-  if (chooseOption.value === 'raw') {
-    importJson();
-  } else {
-    const file: File = fileupload.value.files[0];
-
-    // This triggers the "load" event listener attached to the reader which handles the further logic
-    reader.readAsText(file);
   }
 }
 </script>
