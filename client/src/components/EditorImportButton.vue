@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUpdated, computed, ComputedRef } from 'vue';
+import { ref, computed, ComputedRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import { cloneDeep, formatFileSize } from '../utils/helper/helper';
@@ -41,11 +41,11 @@ const {
   initializeCharacters,
 } = useCharactersStore();
 
-const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const dialogIsVisible = ref<boolean>(false);
+const chooseOption = ref<'raw' | 'file'>('file');
+const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const rawJson = ref<string>('');
 const parsedJson = ref<null | StandoffJson>(null);
-const chooseOption = ref<'raw' | 'file'>('file');
 const fileupload = ref();
 const inputIsValid = computed(() => {
   if (chooseOption.value === 'raw') {
@@ -122,7 +122,7 @@ function parse(): void {
   }
 }
 
-function resetPipeline() {
+function resetPipeline(): void {
   setPipelineStep(null);
   rawJson.value = '';
 }
@@ -131,7 +131,7 @@ function setPipelineStep(step: PipelineStep): void {
   currentStep.value = step;
 }
 
-function transform() {
+function transform(): void {
   try {
     const newCharacters: Character[] = [];
     const newAnnotations: IAnnotation[] = [];
@@ -224,7 +224,7 @@ function createDump(): DataDump {
   return cloneDeep(dump);
 }
 
-function restoreDump(data: DataDump) {
+function restoreDump(data: DataDump): void {
   snippetCharacters.value = data.characters.snippetCharacters;
   totalCharacters.value = data.characters.totalCharacters;
   initialSnippetCharacters.value = data.characters.initialSnippetCharacters;
@@ -243,6 +243,7 @@ async function importJson(): Promise<void> {
     parse();
   } catch (e: unknown) {
     addErrorMessage(e);
+    // TODO: No reset needed, JSON should be kept
     resetPipeline();
 
     return;
@@ -336,6 +337,7 @@ function handleImport(): void {
           class="w-full"
           onLabel="File"
           offLabel="File"
+          title="Import JSON file"
           badge="2"
           @change="toggleViewMode('file')"
         />
@@ -344,82 +346,97 @@ function handleImport(): void {
           class="w-full"
           onLabel="Raw"
           offLabel="Raw"
+          title="Import raw JSON"
           badge="2"
           @change="toggleViewMode('raw')"
         />
       </ButtonGroup>
-      <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closeable>{{
+      <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closable>{{
         msg.content
       }}</Message>
       <form @submit.prevent="handleImport">
-        <Textarea
-          v-if="chooseOption === 'raw'"
-          v-model="rawJson"
-          rows="10"
-          class="w-full"
-          placeholder="Enter some valid JSON"
-          spellcheck="false"
-        />
-        <FileUpload
-          v-else
-          name="import"
-          ref="fileupload"
-          :file-limit="1"
-          :multiple="false"
-          accept=".json,.txt"
-        >
-          <template #header="{ chooseCallback }">
-            <div class="flex justify-content-center w-full">
-              <Button
-                v-if="!inputIsValid"
-                @click="chooseCallback()"
-                label="Browse files"
-                icon="pi pi-plus"
-                severity="secondary"
-                title="Choose file to import (.json or .txt)"
-                :disabled="inputIsValid"
-              ></Button>
-            </div>
-          </template>
-          <template #content="{ files, removeFileCallback }">
-            <div
-              v-for="(file, index) of files"
-              :key="file.name + file.type + file.size"
-              class="flex justify-content-between align-items-center h-2rem"
-            >
-              <div class="flex gap-4">
-                <div class="font-semibold">
-                  {{ file.name }}
-                </div>
-                <div>{{ formatFileSize(file.size) }}</div>
+        <div :style="{ height: '15rem' }">
+          <Textarea
+            v-if="chooseOption === 'raw'"
+            v-model="rawJson"
+            rows="10"
+            class="w-full"
+            placeholder="Enter some valid JSON"
+            spellcheck="false"
+          />
+          <FileUpload
+            v-else
+            name="import"
+            ref="fileupload"
+            :file-limit="1"
+            :multiple="false"
+            accept=".json,.txt"
+          >
+            <template #header="{ chooseCallback }">
+              <div class="flex justify-content-center w-full">
+                <Button
+                  v-if="!inputIsValid"
+                  @click="chooseCallback()"
+                  label="Browse files"
+                  icon="pi pi-plus"
+                  severity="contrast"
+                  title="Choose file to import (.json or .txt)"
+                  :disabled="inputIsValid"
+                ></Button>
               </div>
-              <Button
-                icon="pi pi-times"
-                size="small"
-                :style="{ width: '2rem', height: '2rem' }"
-                severity="danger"
-                outlined
-                rounded
-                title="Remove file"
-                aria-label="Remove file"
-                @click="removeFileCallback(index)"
-              />
-            </div>
-          </template>
+            </template>
+            <template #content="{ files, removeFileCallback }">
+              <div
+                v-for="(file, index) of files"
+                :key="file.name + file.type + file.size"
+                class="flex justify-content-between align-items-center h-2rem"
+              >
+                <div class="flex gap-4">
+                  <div class="font-semibold">
+                    {{ file.name }}
+                  </div>
+                  <div>{{ formatFileSize(file.size) }}</div>
+                </div>
+                <Button
+                  label="Remove"
+                  size="small"
+                  :style="{ height: '2rem' }"
+                  severity="danger"
+                  outlined
+                  title="Remove file"
+                  aria-label="Remove file"
+                  @click="removeFileCallback(index)"
+                />
+              </div>
+            </template>
 
-          <template #empty>
-            <div class="flex flex-column align-items-center justify-center">
-              <p class="font-italic">or</p>
-              <p class="m-0 p-3 drop-area">
-                <i class="pi pi-file-arrow-up" /> Drag and drop .json or .txt files to here to
-                upload.
-              </p>
-            </div>
-          </template>
-        </FileUpload>
-        <div class="button-container flex justify-content-end gap-2">
-          <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-          <Button type="submit" label="Import" :disabled="!inputIsValid"></Button>
+            <template #empty>
+              <div class="flex flex-column align-items-center justify-center">
+                <p class="mt-0 mb-4 font-italic">or</p>
+                <p
+                  class="m-0 p-3 h-6rem border-round-lg drop-area flex justify-content-center gap-2 align-items-center"
+                >
+                  <i class="pi pi-file-arrow-up" style="font-size: 1rem" />
+                  <span> Drag and drop files to here to upload.</span>
+                </p>
+              </div>
+            </template>
+          </FileUpload>
+        </div>
+        <div class="button-container flex justify-content-center gap-2 mt-2">
+          <Button
+            type="button"
+            label="Cancel"
+            title="Cancel"
+            severity="secondary"
+            @click="hideDialog"
+          ></Button>
+          <Button
+            type="submit"
+            label="Import"
+            title="Import JSON"
+            :disabled="!inputIsValid"
+          ></Button>
         </div>
       </form>
     </div>
@@ -431,26 +448,23 @@ function handleImport(): void {
       <ProgressBar mode="indeterminate" style="height: 5px; width: 100%"></ProgressBar>
     </div>
     <div v-else class="flex flex-column align-items-center">
-      <Message class="my-2 w-full" severity="success" variant="outlined">
+      <Message icon="pi pi-check" class="my-2 w-full" severity="success">
         <div class="info">
-          <div>&#10004; Text imported successfully</div>
-          <ul class="m-0 pl-6">
+          Text imported successfully
+          <ul class="m-0 pl-5">
             <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
             <li class="list-disc">{{ annotations.length.toLocaleString() }} annotations</li>
           </ul>
         </div>
       </Message>
-      <Message icon="pi pi-send" class="my-2 w-full" severity="warn">
-        <p>
-          Currently, the text is dangling (not saved in the database). You can edit the text, but to
-          get a better performance, save the text and reload the page.
-        </p>
-        <p></p>
+      <Message icon="pi pi-info-circle" class="my-2 w-full" severity="info">
+        Currently, the text is dangling (not saved in the database). You can edit the text, but to
+        get a better performance, save the text and reload the page.
       </Message>
       <Button
         type="button"
         label="Ok"
-        severity="secondary"
+        severity="contrast"
         class="w-3 mt-4"
         @click="finishImport"
       ></Button>
