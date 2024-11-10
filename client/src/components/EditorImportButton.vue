@@ -55,7 +55,25 @@ const inputIsValid = computed(() => {
   }
 });
 const editorContainsText: ComputedRef<boolean> = computed(() => {
-  return totalCharacters.value.length > 0 || snippetCharacters.value.length > 0;
+  const snippetContainsText: boolean = snippetCharacters.value.length > 0;
+  const textBeforeOrAfter: boolean =
+    beforeStartIndex.value !== null || afterEndIndex.value !== null;
+  // Allow import only when text was loaded empty from the database
+  const hasInitialText: boolean = initialSnippetCharacters.value.length > 0;
+
+  if (snippetContainsText) {
+    return true;
+  }
+
+  if (!snippetContainsText && textBeforeOrAfter) {
+    return true;
+  }
+
+  if (hasInitialText) {
+    return true;
+  }
+
+  return false;
 });
 const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
@@ -294,6 +312,7 @@ function transform(): void {
       }
 
       // TODO: This should come from the configuration
+      // TODO: This is made for the current Standoff JSON -> import all data from annotations in Standoff?
       // Data of the annotation
       const newAnnotationData: IAnnotation = {
         comment: '',
@@ -345,6 +364,7 @@ function transform(): void {
     class="h-2rem"
     title="Import JSON"
     label="Import"
+    :disabled="editorContainsText"
     @click="showDialog"
   ></Button>
   <Dialog
