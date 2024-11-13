@@ -6,6 +6,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { cloneDeep, formatFileSize } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
+import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 import IAnnotation from '../models/IAnnotation';
 import {
   Annotation,
@@ -22,7 +23,6 @@ import FileUpload from 'primevue/fileupload';
 import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
-import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 
 interface DataDump {
   characters: {
@@ -89,10 +89,9 @@ const editorContainsText: ComputedRef<boolean> = computed(() => {
 
 const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
-const messageCount = ref(0);
+const errorMessageCount = ref(0);
 
 const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
-const malformedAnnotations = ref<MalformedAnnotation[]>([]);
 
 // Needs to be instantiated at top-level to make Vue track changes better
 const reader: FileReader = new FileReader();
@@ -107,29 +106,30 @@ reader.addEventListener('error', (event: ProgressEvent) => {
   addErrorMessage(error);
 });
 
-function addErrorMessage(error: JsonParseError | ImportError | DOMException | unknown): void {
-  if (error instanceof JsonParseError || error instanceof ImportError) {
+function addErrorMessage(
+  error: JsonParseError | MalformedAnnotationsError | ImportError | DOMException | unknown,
+): void {
+  if (
+    error instanceof JsonParseError ||
+    error instanceof ImportError ||
+    error instanceof MalformedAnnotationsError
+  ) {
     errorMessages.value.push({
       severity: error.severity,
       content: error.message,
-      id: messageCount.value++,
-    });
-  } else if (error instanceof MalformedAnnotationsError) {
-    errorMessages.value.push({
-      severity: error.severity,
-      content: error.message,
-      id: messageCount.value++,
+      id: errorMessageCount.value++,
     });
   } else {
     errorMessages.value.push({
       severity: 'error',
       content: 'An unknown error occurred.',
-      id: messageCount.value++,
+      id: errorMessageCount.value++,
     });
   }
 }
 
 function clearErrorMessages(): void {
+  errorMessageCount.value = 0;
   errorMessages.value = [];
 }
 
@@ -185,7 +185,6 @@ async function hideDialog(): Promise<void> {
   parsedJson.value = null;
   dialogIsVisible.value = false;
   dataToImport.value = null;
-  malformedAnnotations.value = null;
 }
 
 /**
@@ -308,10 +307,11 @@ function toggleViewMode(direction: 'raw' | 'file'): void {
  */
 
 function transformStandoffToAtag(): void {
-  try {
-    const newCharacters: Character[] = [];
-    const newAnnotations: IAnnotation[] = [];
+  const newCharacters: Character[] = [];
+  const newAnnotations: IAnnotation[] = [];
+  const malformedAnnotations: MalformedAnnotation[] = [];
 
+  try {
     // Create character chain (without annotation references)
     parsedJson.value.text.split('').forEach((c: string) => {
       const char: Character = {
@@ -337,13 +337,13 @@ function transformStandoffToAtag(): void {
 
       // Catch annotations with invalid indices
       if (indicesAreInvalid) {
-        malformedAnnotations.value.push({ reason: 'indexOutOfBounds', data: a });
+        malformedAnnotations.push({ reason: 'indexOutOfBounds', data: a });
         return;
       }
 
       // Catch annotations that are not configured in the guidelines
       if (!getAnnotationConfig(a.type)) {
-        malformedAnnotations.value.push({ reason: 'unconfiguredType', data: a });
+        malformedAnnotations.push({ reason: 'unconfiguredType', data: a });
         return;
       }
 
@@ -390,8 +390,6 @@ function transformStandoffToAtag(): void {
           subtype: '',
         });
 
-        // newAnnotation.characterUuids.push(newCharacters[index].data.uuid);
-
         index++;
       } while (index <= a.end);
 
@@ -399,30 +397,32 @@ function transformStandoffToAtag(): void {
     });
 
     // Throw explicit MalformedError for detailed information to override default Import error
-    if (malformedAnnotations.value.length > 0) {
-      const invalidIndicesAnnotations: MalformedAnnotation[] = malformedAnnotations.value.filter(
+    if (malformedAnnotations.length > 0) {
+      const invalidIndicesAnnotations: MalformedAnnotation[] = malformedAnnotations.filter(
         a => a.reason === 'indexOutOfBounds',
       );
 
-      const unconfiguredTypeAnnotations: MalformedAnnotation[] = malformedAnnotations.value.filter(
+      const unconfiguredTypeAnnotations: MalformedAnnotation[] = malformedAnnotations.filter(
         a => a.reason === 'unconfiguredType',
       );
 
       const unconfiguredTypesList: string = [
-        ...new Set(unconfiguredTypeAnnotations.map(type => type.data.type)),
+        ...new Set(unconfiguredTypeAnnotations.map(type => `"${type.data.type}"`)),
       ].join(', ');
 
-      const msg: string =
+      const message: string =
         `Some annotations are not correct. ` +
         `${invalidIndicesAnnotations.length} annotations because of invalid indices, ` +
-        `${unconfiguredTypeAnnotations.length} annotations because of unconfigured types (${unconfiguredTypesList})`;
+        `${unconfiguredTypeAnnotations.length} annotations because of unconfigured types` +
+        `${unconfiguredTypesList.length > 0 ? `(${unconfiguredTypesList})` : ''}` +
+        `.`;
 
-      throw new MalformedAnnotationsError(msg);
+      throw new MalformedAnnotationsError(message);
     }
 
     dataToImport.value = { characters: newCharacters, annotations: newAnnotations };
   } catch (e: unknown) {
-    console.error(malformedAnnotations.value);
+    console.error(malformedAnnotations);
 
     if (e instanceof MalformedAnnotationsError) {
       throw e;
