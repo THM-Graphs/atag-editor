@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, ComputedRef } from 'vue';
-import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
+import { useCharactersStore } from '../store/characters';
+import { useGuidelinesStore } from '../store/guidelines';
 import { cloneDeep, formatFileSize } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import IAnnotation from '../models/IAnnotation';
-import { Annotation, Character, StandoffJson } from '../models/types';
+import {
+  Annotation,
+  AnnotationProperty,
+  Character,
+  MalformedAnnotation,
+  StandoffJson,
+} from '../models/types';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
@@ -15,6 +22,7 @@ import FileUpload from 'primevue/fileupload';
 import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
+import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 
 interface DataDump {
   characters: {
@@ -29,6 +37,7 @@ interface DataDump {
     annotations: Annotation[];
   };
 }
+
 type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 
 const { initialAnnotations, annotations, initializeAnnotations } = useAnnotationStore();
@@ -41,9 +50,10 @@ const {
   initializeCharacters,
 } = useCharactersStore();
 
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+
 const dialogIsVisible = ref<boolean>(false);
 const chooseOption = ref<'raw' | 'file'>('file');
-const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
 const rawJson = ref<string>('');
 const parsedJson = ref<null | StandoffJson>(null);
 const fileupload = ref();
@@ -54,6 +64,7 @@ const inputIsValid = computed(() => {
     return fileupload.value?.files.length === 1;
   }
 });
+
 const editorContainsText: ComputedRef<boolean> = computed(() => {
   const snippetContainsText: boolean = snippetCharacters.value.length > 0;
   const textBeforeOrAfter: boolean =
@@ -75,9 +86,13 @@ const editorContainsText: ComputedRef<boolean> = computed(() => {
 
   return false;
 });
+
 const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
 const messageCount = ref(0);
+
+const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
+const malformedAnnotations = ref<MalformedAnnotation[]>([]);
 
 // Needs to be instantiated at top-level to make Vue track changes better
 const reader: FileReader = new FileReader();
@@ -94,6 +109,12 @@ reader.addEventListener('error', (event: ProgressEvent) => {
 
 function addErrorMessage(error: JsonParseError | ImportError | DOMException | unknown): void {
   if (error instanceof JsonParseError || error instanceof ImportError) {
+    errorMessages.value.push({
+      severity: error.severity,
+      content: error.message,
+      id: messageCount.value++,
+    });
+  } else if (error instanceof MalformedAnnotationsError) {
     errorMessages.value.push({
       severity: error.severity,
       content: error.message,
@@ -163,6 +184,8 @@ async function hideDialog(): Promise<void> {
   rawJson.value = '';
   parsedJson.value = null;
   dialogIsVisible.value = false;
+  dataToImport.value = null;
+  malformedAnnotations.value = null;
 }
 
 /**
@@ -189,7 +212,7 @@ async function importJson(): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   try {
-    transform();
+    transformStandoffToAtag();
   } catch (e: unknown) {
     addErrorMessage(e);
     resetPipeline();
@@ -202,7 +225,6 @@ async function importJson(): Promise<void> {
   try {
     initializeStores();
   } catch (e: unknown) {
-    debugger;
     addErrorMessage(e);
     restoreDump(dump);
     resetPipeline();
@@ -285,7 +307,7 @@ function toggleViewMode(direction: 'raw' | 'file'): void {
  * @throws {ImportError} If the JSON structure does not match the expected schema.
  */
 
-function transform(): void {
+function transformStandoffToAtag(): void {
   try {
     const newCharacters: Character[] = [];
     const newAnnotations: IAnnotation[] = [];
@@ -306,26 +328,55 @@ function transform(): void {
 
     // Create annotation objects and annotate characters
     parsedJson.value.annotations.forEach(a => {
-      // TODO: Really?
-      if (a.start === -1 || a.end === -1) {
+      const indicesAreInvalid: boolean =
+        a.start < 0 ||
+        a.end < 0 ||
+        a.start > a.end ||
+        a.start > newCharacters.length ||
+        a.end > newCharacters.length;
+
+      // Catch annotations with invalid indices
+      if (indicesAreInvalid) {
+        malformedAnnotations.value.push({ reason: 'indexOutOfBounds', data: a });
         return;
       }
 
-      // TODO: This should come from the configuration
-      // TODO: This is made for the current Standoff JSON -> import all data from annotations in Standoff?
-      // Data of the annotation
-      const newAnnotationData: IAnnotation = {
-        comment: '',
-        commentInternal: '',
-        endIndex: a.end,
-        originalText: '',
-        startIndex: a.start,
-        subtype: '',
-        text: a.text,
-        type: a.type,
-        url: '',
-        uuid: crypto.randomUUID(),
-      };
+      // Catch annotations that are not configured in the guidelines
+      if (!getAnnotationConfig(a.type)) {
+        malformedAnnotations.value.push({ reason: 'unconfiguredType', data: a });
+        return;
+      }
+
+      const fields: AnnotationProperty[] = getAnnotationFields(a.type);
+      const newAnnotationData: IAnnotation = {} as IAnnotation;
+
+      // TODO: Improve this function, too many empty strings and duplicate field settings
+      // Base properties
+      fields.forEach((field: AnnotationProperty) => {
+        switch (field.type) {
+          case 'text':
+            newAnnotationData[field.name] = '';
+            break;
+          case 'textarea':
+            newAnnotationData[field.name] = '';
+            break;
+          case 'selection':
+            newAnnotationData[field.name] = field.options[0] ?? '';
+            break;
+          case 'checkbox':
+            newAnnotationData[field.name] = false;
+            break;
+          default:
+            newAnnotationData[field.name] = '';
+        }
+      });
+
+      // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
+      newAnnotationData.type = a.type;
+      newAnnotationData.startIndex = a.start;
+      newAnnotationData.endIndex = a.end;
+      newAnnotationData.text = a.text;
+      newAnnotationData.uuid = crypto.randomUUID();
 
       let index: number = a.start;
 
@@ -347,8 +398,36 @@ function transform(): void {
       newAnnotations.push(newAnnotationData);
     });
 
+    // Throw explicit MalformedError for detailed information to override default Import error
+    if (malformedAnnotations.value.length > 0) {
+      const invalidIndicesAnnotations: MalformedAnnotation[] = malformedAnnotations.value.filter(
+        a => a.reason === 'indexOutOfBounds',
+      );
+
+      const unconfiguredTypeAnnotations: MalformedAnnotation[] = malformedAnnotations.value.filter(
+        a => a.reason === 'unconfiguredType',
+      );
+
+      const unconfiguredTypesList: string = [
+        ...new Set(unconfiguredTypeAnnotations.map(type => type.data.type)),
+      ].join(', ');
+
+      const msg: string =
+        `Some annotations are not correct. ` +
+        `${invalidIndicesAnnotations.length} annotations because of invalid indices, ` +
+        `${unconfiguredTypeAnnotations.length} annotations because of unconfigured types (${unconfiguredTypesList})`;
+
+      throw new MalformedAnnotationsError(msg);
+    }
+
     dataToImport.value = { characters: newCharacters, annotations: newAnnotations };
   } catch (e: unknown) {
+    console.error(malformedAnnotations.value);
+
+    if (e instanceof MalformedAnnotationsError) {
+      throw e;
+    }
+
     throw new ImportError(
       'The JSON structure does not match the expected schema. Please check the JSON format.',
     );
@@ -503,8 +582,8 @@ function transform(): void {
       </form>
     </div>
     <div
-      class="card flex flex-column align-items-center gap-4"
       v-else-if="currentStep === 'importing'"
+      class="card flex flex-column align-items-center gap-4"
     >
       <span> Importing data... </span>
       <ProgressBar mode="indeterminate" style="height: 5px; width: 100%"></ProgressBar>
