@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { WritableComputedRef, computed, ref } from 'vue';
 import { useCollectionStore } from '../store/collection';
+import EditorImportButton from './EditorImportButton.vue';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 
@@ -32,10 +33,13 @@ function validate(): boolean {
 
 <template>
   <div class="header">
-    <div class="header-buttons flex mb-2">
+    <div class="header-buttons flex justify-content-between mb-2">
       <RouterLink to="/">
         <Button icon="pi pi-home" aria-label="Home" class="w-2rem h-2rem" title="Overview"></Button>
       </RouterLink>
+      <div>
+        <EditorImportButton />
+      </div>
     </div>
     <div class="label flex justify-content-center text-center">
       <form ref="formRef" action="" class="w-full px-3">

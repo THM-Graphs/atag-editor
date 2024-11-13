@@ -300,7 +300,7 @@ async function getCharacters(): Promise<void> {
 
     const fetchedCharacters: Character[] = await response.json();
 
-    initializeCharacters(fetchedCharacters);
+    initializeCharacters(fetchedCharacters, 'database');
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
   }
@@ -318,7 +318,7 @@ async function getAnnotations(): Promise<void> {
 
     const fetchedAnnotations: IAnnotation[] = await response.json();
 
-    initializeAnnotations(fetchedAnnotations);
+    initializeAnnotations(fetchedAnnotations, 'database');
   } catch (error: unknown) {
     console.error('Error fetching annotations:', error);
   }

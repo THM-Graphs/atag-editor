@@ -70,6 +70,26 @@ export function areSetsEqual(setA: Set<string>, setB: Set<string>) {
 }
 
 /**
+ * Format a file size in bytes into a human-readable string.
+ *
+ * @param {number} bytes The file size in bytes
+ * @returns {string} The formatted file size as a string (e.g. "1.23 MB")
+ */
+export function formatFileSize(bytes: number): string {
+  const k: number = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  if (bytes === 0) {
+    return `0 ${sizes[0]}`;
+  }
+
+  const i: number = Math.floor(Math.log(bytes) / Math.log(k));
+  const formattedSize: number = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+
+  return `${formattedSize} ${sizes[i]}`;
+}
+
+/**
  * Checks if the given node is the text container element with id "text".
  *
  * @param {Node} node - The node to check.

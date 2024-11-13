@@ -57,3 +57,21 @@ export type HistoryRecord = {
   annotations: Annotation[];
   characters: Character[];
 };
+
+export type MalformedAnnotation = {
+  reason: 'indexOutOfBounds' | 'unconfiguredType';
+  data: StandoffAnnotation;
+};
+
+export type StandoffAnnotation = {
+  [key: string]: string | number | boolean;
+  start: number;
+  end: number;
+  text: string;
+  type: string;
+};
+
+export type StandoffJson = {
+  annotations: StandoffAnnotation[];
+  text: string;
+};
