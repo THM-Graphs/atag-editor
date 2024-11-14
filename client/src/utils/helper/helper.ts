@@ -258,10 +258,10 @@ export function buildFetchUrl(path: string): string {
     // For production, use relative URL and leave configuration to nginx
     switch (path) {
       case '/api/collections':
-        url = '../../mockdata/collections.json';
+        url = 'mockdata/collections.json';
         break;
       case '/api/guidelines':
-        url = '../../mockdata/guidelines.json';
+        url = 'mockdata/guidelines.json';
         break;
       // case `/api/collections/${uuid}/characters`:
       //   url = `/mockdata/characters.json`;
