@@ -249,8 +249,6 @@ export function scrollIntoViewIfNeeded(span: HTMLSpanElement): void {
 export function buildFetchUrl(path: string): string {
   let url: string;
 
-  console.log(import.meta.env);
-
   if (import.meta.env.MODE === 'development') {
     // Used for development currently, fix in future with vite configuration
     url = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080${path}`;
@@ -279,8 +277,6 @@ export function buildFetchUrl(path: string): string {
     // Set prefix for github pages
     url = import.meta.env.BASE_URL + url;
   }
-
-  console.log(url);
 
   return url;
 }
