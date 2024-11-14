@@ -1,0 +1,23 @@
+[
+  {
+    "text": "Medizin",
+    "startIndex": 495,
+    "commentInternal": "",
+    "subtype": "inPlace",
+    "originalText": "",
+    "uuid": "3ad7cb2e-a043-4c99-9c6c-4523ae6e751f",
+    "endIndex": 501,
+    "comment": "",
+    "type": "correction"
+  },
+  {
+    "text": "Hildegard von Bingen ",
+    "startIndex": 0,
+    "commentInternal": "",
+    "originalText": "",
+    "uuid": "33a87d42-a48f-4566-9d49-fb98b6239622",
+    "endIndex": 20,
+    "comment": "",
+    "type": "head"
+  }
+]

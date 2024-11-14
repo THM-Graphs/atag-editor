@@ -263,12 +263,15 @@ export function buildFetchUrl(path: string): string {
       case '/api/guidelines':
         url = 'mockdata/guidelines.json';
         break;
-      // case `/api/collections/${uuid}/characters`:
-      //   url = `/mockdata/characters.json`;
-      //   break;
-      // case `/api/collections/${uuid}/annotations`:
-      //   url = `/mockdata/annotations.json`;
-      //   break;
+      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f`:
+        url = `mockdata/collection.json`;
+        break;
+      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f/characters`:
+        url = `mockdata/characters.json`;
+        break;
+      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f/annotations`:
+        url = `mockdata/annotations.json`;
+        break;
       default:
         url = path;
     }
