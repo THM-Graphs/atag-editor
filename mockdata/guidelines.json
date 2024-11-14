@@ -1,0 +1,249 @@
+{
+	"collections": {
+		"text": {
+			"additionalLabel": "Letter",
+			"properties": [
+				{
+					"name": "label",
+					"type": "text",
+					"required": true,
+					"editable": false,
+					"visible": false
+				},
+				{
+					"name": "status",
+					"type": "text",
+					"required": false,
+					"editable": true,
+					"visible": true
+				},
+				{
+					"name": "sender",
+					"type": "text",
+					"required": false,
+					"editable": true,
+					"visible": true
+				},
+				{
+					"name": "receiver",
+					"type": "text",
+					"required": false,
+					"editable": true,
+					"visible": true
+				}
+			]
+		}
+	},
+
+	"annotations": {
+		"types": [
+			{
+				"type": "emphasised",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false,
+				"properties": [
+					{
+						"name": "subtype",
+						"type": "selection",
+						"options": ["rubricated", "initial", "underlined", "italic", "bold", "smallCaps"],
+						"required": true,
+						"editable": true,
+						"visible": true
+					}
+				]
+			},
+			{
+				"type": "expansion",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false,
+				"shortcut": ["Ctrl", "Shift", "E"]
+			},
+			{
+				"type": "nonLinear",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false,
+				"properties": [
+					{
+						"name": "subtype",
+						"type": "selection",
+						"options": ["aboveLine", "marginNote"],
+						"required": true,
+						"editable": true,
+						"visible": true
+					}
+				]
+			},
+			{
+				"type": "intervention",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false,
+				"properties": [
+					{
+						"name": "subtype",
+						"type": "selection",
+						"options": ["conjecture", "correction", "normalisation"],
+						"required": true,
+						"editable": true,
+						"visible": true
+					}
+				]
+			},
+			{
+				"type": "correction",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false,
+				"properties": [
+					{
+						"name": "subtype",
+						"type": "selection",
+						"options": ["inPlace", "inRasura"],
+						"required": true,
+						"editable": true,
+						"visible": true
+					}
+				]
+			},
+			{
+				"type": "deleted",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": true
+			},
+			{
+				"type": "unclear",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "repeated",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "gap",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "addition",
+				"category": "edition",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "head",
+				"category": "layout",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "line",
+				"category": "layout",
+				"defaultSelected": false,
+				"isZeroPoint": false,
+				"shortcut": ["Ctrl", "Shift", "L"],
+				"properties": [
+					{
+						"name": "page",
+						"type": "text",
+						"required": false,
+						"editable": true,
+						"visible": true
+					},
+					{
+						"name": "url",
+						"type": "text",
+						"required": false,
+						"editable": true,
+						"visible": true
+					},
+					{
+						"name": "firstLineOfColumn",
+						"type": "checkbox",
+						"required": true,
+						"editable": true,
+						"visible": true
+					},
+					{
+						"name": "lastLineOfColumn",
+						"type": "checkbox",
+						"required": true,
+						"editable": true,
+						"visible": true
+					},
+					{
+						"name": "firstLineOfPage",
+						"type": "checkbox",
+						"required": true,
+						"editable": true,
+						"visible": true
+					},
+					{
+						"name": "lastLineOfPage",
+						"type": "checkbox",
+						"required": true,
+						"editable": true,
+						"visible": true
+					}
+				]
+			},
+			{
+				"type": "transposition",
+				"category": "layout",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			},
+			{
+				"type": "commentInternal",
+				"category": "project",
+				"defaultSelected": true,
+				"isZeroPoint": false
+			}
+		],
+		"properties": [
+			{
+				"name": "type",
+				"type": "text",
+				"required": true,
+				"editable": false,
+				"visible": true
+			},
+			{
+				"name": "text",
+				"type": "text",
+				"required": true,
+				"editable": false,
+				"visible": true
+			},
+			{
+				"name": "originalText",
+				"type": "text",
+				"required": false,
+				"editable": true,
+				"visible": true
+			},
+			{
+				"name": "comment",
+				"type": "textarea",
+				"required": false,
+				"editable": true,
+				"visible": true
+			},
+			{
+				"name": "commentInternal",
+				"type": "textarea",
+				"required": false,
+				"editable": true,
+				"visible": true
+			}
+		]
+	}
+}

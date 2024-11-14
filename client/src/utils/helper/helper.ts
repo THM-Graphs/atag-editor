@@ -249,13 +249,35 @@ export function scrollIntoViewIfNeeded(span: HTMLSpanElement): void {
 export function buildFetchUrl(path: string): string {
   let url: string;
 
+  console.log(import.meta.env);
+
   if (import.meta.env.MODE === 'development') {
     // Used for development currently, fix in future with vite configuration
     url = `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080${path}`;
   } else {
     // For production, use relative URL and leave configuration to nginx
-    url = path;
+    switch (path) {
+      case '/api/collections':
+        url = '../../mockdata/collections.json';
+        break;
+      case '/api/guidelines':
+        url = '../../mockdata/guidelines.json';
+        break;
+      // case `/api/collections/${uuid}/characters`:
+      //   url = `/mockdata/characters.json`;
+      //   break;
+      // case `/api/collections/${uuid}/annotations`:
+      //   url = `/mockdata/annotations.json`;
+      //   break;
+      default:
+        url = path;
+    }
+
+    // Set prefix for github pages
+    url = import.meta.env.BASE_URL + url;
   }
+
+  console.log(url);
 
   return url;
 }

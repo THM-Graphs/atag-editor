@@ -6,6 +6,8 @@ nginx/.htpasswd
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,webstorm+all,visualstudiocode
 
 /**/*.js
+# Keep bundle
+!client/dist/assets/*.js
 /**/*.js.map
 
 .env
@@ -104,7 +106,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist
 
 # Gatsby files
 .cache/
