@@ -196,6 +196,13 @@
         ]
       },
       {
+        "type": "paragraph",
+        "category": "layout",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "shortcut": ["Enter"]
+      },
+      {
         "type": "transposition",
         "category": "layout",
         "defaultSelected": true,

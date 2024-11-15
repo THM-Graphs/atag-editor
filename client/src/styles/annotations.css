@@ -118,7 +118,7 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-#text > span:has(span.line.end)::after {
+/* #text > span:has(span.line.end)::after {
   content: '\A';
   white-space: pre;
 }
@@ -131,13 +131,50 @@ Fix by changing classlists or annotation types? */
   height: 13px;
   width: 13px;
   display: inline-block;
-  /* TODO: Use inline svg later */
   background-image: url('../../public/other/linebreak.svg');
   background-size: contain;
   background-repeat: no-repeat;
   content: '';
   user-select: none;
   pointer-events: none;
+} */
+
+#text > span:has(span.line.end)::after {
+  /* Disable stylings from span element... */
+  background-color: white;
+  color: black;
+  font-weight: normal;
+  opacity: 1;
+  /* Space, curved arrow, newline */
+  content: '\20 \2936 \A';
+  white-space: pre;
+  user-select: none;
+}
+
+/* -------------------------------------------------------------------------------------------------------------------------- */
+
+#text > span:has(span.paragraph.start)::before {
+  /* This disables inherited styling from span element, must be set at first! */
+  all: initial;
+  content: ' ';
+  width: 100%;
+  height: 2px;
+  /* background-color: coral; */
+  display: block;
+  white-space: pre;
+  user-select: none;
+}
+
+#text > span:has(span.paragraph.end)::after {
+  /* This disables inherited styling from span element, must be set at first! */
+  all: initial;
+  content: ' ';
+  width: 100%;
+  height: 2px;
+  /* background-color: coral; */
+  display: block;
+  white-space: pre;
+  user-select: none;
 }
 
 #text > span:has(span.transposition) {

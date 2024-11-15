@@ -12,6 +12,7 @@ import repeatedIcon from '../../../public/icons/repeated.svg';
 import gapIcon from '../../../public/icons/gap.svg';
 import headIcon from '../../../public/icons/head.svg';
 import lineIcon from '../../../public/icons/line.svg';
+import paragraphIcon from '../../../public/icons/paragraph.svg';
 import transpositionIcon from '../../../public/icons/transposition.svg';
 
 const iconsMap: { [key: string]: string } = {
@@ -28,6 +29,7 @@ const iconsMap: { [key: string]: string } = {
   gap: gapIcon,
   head: headIcon,
   line: lineIcon,
+  paragraph: paragraphIcon,
   transposition: transpositionIcon,
 };
 
