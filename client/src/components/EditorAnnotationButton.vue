@@ -108,7 +108,7 @@ function handleClick(dropdownOption?: string): void {
       const annotationToSplit: Annotation | null = findAnnotationToSplit(leftChar, rightChar);
 
       // Throw error if annotation is truncated (whole annotated text must be loaded)
-      if (annotationToSplit.isTruncated) {
+      if (annotationToSplit?.isTruncated) {
         throw new AnnotationRangeError(
           'The annotation is truncated. Please load the full annotation first.',
         );
