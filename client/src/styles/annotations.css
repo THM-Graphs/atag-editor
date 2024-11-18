@@ -153,25 +153,13 @@ Fix by changing classlists or annotation types? */
 
 /* -------------------------------------------------------------------------------------------------------------------------- */
 
-#text > span:has(span.paragraph.start)::before {
-  /* This disables inherited styling from span element, must be set at first! */
-  all: initial;
-  content: ' ';
-  width: 100%;
-  height: 2px;
-  /* background-color: coral; */
-  display: block;
-  white-space: pre;
-  user-select: none;
-}
-
 #text > span:has(span.paragraph.end)::after {
   /* This disables inherited styling from span element, must be set at first! */
   all: initial;
   content: ' ';
   width: 100%;
-  height: 2px;
-  /* background-color: coral; */
+  height: 1.5rem;
+  /* background-color: rgb(231, 231, 231); */
   display: block;
   white-space: pre;
   user-select: none;
