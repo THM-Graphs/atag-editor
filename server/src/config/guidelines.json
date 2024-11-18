@@ -200,6 +200,7 @@
         "category": "layout",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "isSeparator": true,
         "shortcut": ["Enter"]
       },
       {

@@ -14,6 +14,7 @@ export type Annotation = {
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
+  isSeparator?: boolean;
   isZeroPoint?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];
