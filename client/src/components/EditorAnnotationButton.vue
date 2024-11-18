@@ -19,8 +19,9 @@ import ShortcutError from '../utils/errors/shortcut.error';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
-const { snippetCharacters, annotateCharacters } = useCharactersStore();
-const { addAnnotation } = useAnnotationStore();
+const { snippetCharacters, annotateCharacters, removeAnnotationFromCharacters } =
+  useCharactersStore();
+const { addAnnotation, deleteAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
@@ -52,22 +53,117 @@ function handleButtonClick(): void {
   handleClick();
 }
 
+function isBetweenAnnotations(leftChar: Character, rightChar: Character): boolean {
+  const leftUuid: string = leftChar.annotations.find(a => a.type === annotationType)?.uuid;
+  const rightUuid: string = rightChar.annotations.find(a => a.type === annotationType)?.uuid;
+
+  return leftUuid && rightUuid && leftUuid !== rightUuid;
+}
+
+function findAnnotationToSplitUuid(leftChar: Character, rightChar: Character): string | null {
+  const leftUuid: string = leftChar.annotations.find(a => a.type === annotationType)?.uuid;
+  const rightUuid: string = rightChar.annotations.find(a => a.type === annotationType)?.uuid;
+
+  if (leftUuid && rightUuid && leftUuid === rightUuid) {
+    return leftUuid;
+  }
+
+  return null;
+}
+
 function handleClick(dropdownOption?: string): void {
   try {
     isAnnotationTypeEnabled();
     isSelectionValid();
 
-    const selectedCharacters: Character[] = getCharactersToAnnotate();
-    const newAnnotation: Annotation = createNewAnnotation(
-      annotationType,
-      dropdownOption,
-      selectedCharacters,
-    );
+    // For paragraph annotations
+    if (config.isSeparator) {
+      const { range } = getSelectionData();
+      const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      let leftSpan: HTMLSpanElement;
+      let rightSpan: HTMLSpanElement;
+      let previousCharacters: Character[] = [];
+      let nextCharacters: Character[] = [];
 
-    addAnnotation(newAnnotation);
-    annotateCharacters(selectedCharacters, newAnnotation);
-    // pushHistoryEntry();
-    newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+      if (range.startOffset === 0) {
+        leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
+        rightSpan = referenceSpanElement;
+      } else {
+        leftSpan = referenceSpanElement;
+        rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+      }
+
+      const leftCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === leftSpan.id);
+      const rightCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === rightSpan.id);
+      const leftChar = snippetCharacters.value[leftCharIndex];
+      const rightChar = snippetCharacters.value[rightCharIndex];
+
+      if (isBetweenAnnotations(leftChar, rightChar)) {
+        throw new AnnotationRangeError(
+          `An empty ${annotationType} annotation cannot be created between two existing annotations`,
+        );
+      }
+
+      // Indicates whether to split the annotation the caret is currently inside of
+      const annotationToSplitUuid: string | null = findAnnotationToSplitUuid(leftChar, rightChar);
+
+      // Remove annotation that is being split
+      if (annotationToSplitUuid) {
+        removeAnnotationFromCharacters(annotationToSplitUuid);
+        deleteAnnotation(annotationToSplitUuid);
+      }
+
+      let current: Character = leftChar;
+      let index: number = leftCharIndex;
+      let newAnnotation: Annotation = null;
+
+      // Annotate previous characters
+
+      while (current && !current.annotations.some(a => a.type === annotationType) && index >= 0) {
+        previousCharacters.unshift(current);
+        index--;
+        current = snippetCharacters.value[index];
+      }
+
+      newAnnotation = createNewAnnotation(annotationType, dropdownOption, previousCharacters);
+
+      addAnnotation(newAnnotation);
+      annotateCharacters(previousCharacters, newAnnotation);
+
+      // Annotate next characters
+
+      current = rightChar;
+      index = rightCharIndex;
+
+      while (
+        current &&
+        !current.annotations.some(a => a.type === annotationType) &&
+        index <= snippetCharacters.value.length - 1
+      ) {
+        nextCharacters.push(current);
+        index++;
+        current = snippetCharacters.value[index];
+      }
+
+      newAnnotation = createNewAnnotation(annotationType, dropdownOption, previousCharacters);
+
+      addAnnotation(newAnnotation);
+      annotateCharacters(nextCharacters, newAnnotation);
+
+      newRangeAnchorUuid.value = previousCharacters[previousCharacters.length - 1].data.uuid;
+    } else {
+      const selectedCharacters: Character[] = getCharactersToAnnotate();
+      const newAnnotation: Annotation = createNewAnnotation(
+        annotationType,
+        dropdownOption,
+        selectedCharacters,
+      );
+
+      addAnnotation(newAnnotation);
+      annotateCharacters(selectedCharacters, newAnnotation);
+      // pushHistoryEntry();
+      newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+    }
   } catch (error) {
     if (error instanceof AnnotationRangeError) {
       toast.add({
@@ -125,11 +221,11 @@ function isSelectionValid(): boolean {
     throw new AnnotationRangeError('Text selection is outside the text component.');
   }
 
-  if (type === 'Caret' && !config.isZeroPoint) {
+  if (type === 'Caret' && !config.isZeroPoint && !config.isSeparator) {
     throw new AnnotationRangeError('Select some text to annotate.');
   }
 
-  if (type === 'Caret' && config.isZeroPoint) {
+  if ((type === 'Caret' && config.isZeroPoint) || config.isSeparator) {
     if (isEditorElement(range.startContainer)) {
       throw new AnnotationRangeError(
         'For creating zero-point annotations, place the caret between two characters',
@@ -142,9 +238,16 @@ function isSelectionValid(): boolean {
         range.startOffset === 1 && !parentSpanElement.nextElementSibling;
 
       if (caretIsAtBeginning || caretIsAtEnd) {
-        throw new AnnotationRangeError(
-          'For creating zero-point annotations, place the caret between two characters',
-        );
+        if (config.isZeroPoint) {
+          throw new AnnotationRangeError(
+            'For creating zero-point annotations, place the caret between two characters',
+          );
+        }
+        if (config.isSeparator) {
+          throw new AnnotationRangeError(
+            'To create paragraphs, place the caret between two characters',
+          );
+        }
       }
     }
   }
@@ -153,6 +256,10 @@ function isSelectionValid(): boolean {
     throw new AnnotationRangeError(
       'For creating zero-point annotations, place the caret between two characters',
     );
+  }
+
+  if (type === 'Range' && config.isSeparator) {
+    throw new AnnotationRangeError('To create paragraphs, place the caret between two characters');
   }
 
   return true;
