@@ -196,14 +196,6 @@
         ]
       },
       {
-        "type": "paragraph",
-        "category": "layout",
-        "defaultSelected": true,
-        "isZeroPoint": false,
-        "isSeparator": true,
-        "shortcut": ["Enter"]
-      },
-      {
         "type": "transposition",
         "category": "layout",
         "defaultSelected": true,
