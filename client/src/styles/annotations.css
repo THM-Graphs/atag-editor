@@ -11,7 +11,7 @@
   --gap-text-decoration: underline dotted;
   --head-font-weight: 700;
   --initial-clr: hsl(114, 100%, 37%);
-  --intervention-clr: hsl(292, 100%, 62%);
+  --intervention-clr: hsl(292, 100%, 80%);
   --marginNote-clr: hsl(34, 100%, 47%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
@@ -76,7 +76,7 @@
 }
 
 #text > span:has(span.intervention) {
-  color: var(--intervention-clr);
+  background-color: var(--intervention-clr);
 }
 
 /* TODO: This is a hack since there is a annotion type as well as a subtype "correction".
