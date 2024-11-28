@@ -34,7 +34,8 @@ onUpdated(() => {
 const { keepTextOnPagination, newRangeAnchorUuid, placeCaret } = useEditorStore();
 const { collection } = useCollectionStore();
 const {
-  initialSnippetCharacters,
+  afterEndIndex,
+  beforeStartIndex,
   snippetCharacters,
   totalCharacters,
   deleteCharactersBetweenIndexes,
@@ -46,12 +47,13 @@ const { selectedOptions } = useFilterStore();
 
 const editorRef = ref<HTMLDivElement>(null);
 
+// This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
 const charCounterMessage: ComputedRef<string> = computed(() => {
-  // This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
-  const total: number =
-    totalCharacters.value.length -
-    initialSnippetCharacters.value.length +
-    snippetCharacters.value.length;
+  const charsBeforeCount: number = beforeStartIndex.value ? beforeStartIndex.value + 1 : 0;
+  const charsAfterCount: number = afterEndIndex.value
+    ? totalCharacters.value.length - afterEndIndex.value
+    : 0;
+  const total: number = charsBeforeCount + snippetCharacters.value.length + charsAfterCount;
   const current: number = snippetCharacters.value.length;
 
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
