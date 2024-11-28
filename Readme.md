@@ -1,8 +1,15 @@
-# Text editor implementing the [Applied Text as Graph](https://git.thm.de/aksz15/atag) concept
+# Web-based Editor for texts using the [Applied Text as Graph](https://git.thm.de/aksz15/atag) concept
+
+## Demo
+
+The static page demonstrates the editor core functionalities:
+https://thm-graphs.github.io/atag-editor/
+
+This version does not always reflect the latest changes of the development process. To get a full version of the app running, follow the instructions of the next chapter.
 
 ## Installation
 
-1. If you are using Windows, make sure [Windows Subsystem for Linux](https://learn.microsoft.com/de-de/windows/wsl/install) (WSL) and [Docker Desktop](https://www.docker.com/) are installed.
+1. If you are using Windows, make sure [Windows Subsystem for Linux](https://learn.microsoft.com/de-de/windows/wsl/install) (WSL), [Docker Desktop](https://www.docker.com/) and [Node.js](https://nodejs.org/en/download/package-manager) (in WSL) are installed.
 
 2. Open a command line tool (e.g. Ubuntu), select a directory, clone the repo and move into it.
 
@@ -12,11 +19,13 @@
    cd atag-editor
    ```
 
-3. Copy the `.env.example` file to create your `.env` file. Afterwards, replace the placeholder values with actual values.
+3. Copy the `.env.example` file to create your `.env` file.
 
    ```sh
    cp .env.example .env
    ```
+
+   **Afterwards, replace the placeholder values with actual values.**
 
 4. Install dependencies in your hosts's server and client folder.
 
