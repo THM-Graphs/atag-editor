@@ -1,5 +1,8 @@
+import IActorRole from './IActorRole';
 import IAnnotation from './IAnnotation';
 import ICharacter from './ICharacter';
+import IConcept from './IConcept';
+import IEntity from './IEntity';
 
 export type Annotation = {
   characterUuids: string[];
@@ -10,6 +13,13 @@ export type Annotation = {
   startUuid: string;
   status: 'existing' | 'created' | 'deleted';
 };
+
+export interface AnnotationData {
+  properties: IAnnotation;
+  resources: {
+    [index: string]: IActorRole[] | IConcept[] | IEntity[];
+  };
+}
 
 export type AnnotationType = {
   category: string;

@@ -211,13 +211,15 @@
         "type": "person",
         "category": "entities",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "resources": ["actorRoles", "entities", "concepts"]
       },
       {
         "type": "place",
         "category": "entities",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "resources": ["entities"]
       }
     ],
     "properties": [
@@ -255,6 +257,23 @@
         "required": false,
         "editable": true,
         "visible": true
+      }
+    ],
+    "resources": [
+      {
+        "category": "actorRoles",
+        "nodeLabel": "ActorRole",
+        "relationshipType": "HAS_ROLE"
+      },
+      {
+        "category": "entities",
+        "nodeLabel": "Entity",
+        "relationshipType": "REFERS_TO"
+      },
+      {
+        "category": "concepts",
+        "nodeLabel": "Concept",
+        "relationshipType": "HAS_CONCEPT"
       }
     ]
   }
