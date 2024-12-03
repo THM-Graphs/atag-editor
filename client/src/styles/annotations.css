@@ -13,6 +13,8 @@
   --initial-clr: hsl(114, 100%, 37%);
   --intervention-clr: hsl(292, 100%, 80%);
   --marginNote-clr: hsl(34, 100%, 47%);
+  --person-clr: hsl(358, 83%, 68%);
+  --place-clr: hsl(212, 93%, 54%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
   --rubricated-clr: hsl(0, 76%, 38%);
@@ -149,6 +151,24 @@ Fix by changing classlists or annotation types? */
   content: '\20 \2936 \A';
   white-space: pre;
   user-select: none;
+}
+
+#text > span > span.person {
+  position: absolute;
+  background-color: var(--person-clr);
+  width: 100%;
+  height: 2px;
+  top: 100%;
+  left: 0;
+}
+
+#text > span > span.place {
+  position: absolute;
+  background-color: var(--place-clr);
+  width: 100%;
+  height: 2px;
+  top: 100%;
+  left: 0;
 }
 
 /* -------------------------------------------------------------------------------------------------------------------------- */

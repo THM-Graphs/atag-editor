@@ -13,6 +13,8 @@ import gapIcon from '../../../public/icons/gap.svg';
 import headIcon from '../../../public/icons/head.svg';
 import lineIcon from '../../../public/icons/line.svg';
 import paragraphIcon from '../../../public/icons/paragraph.svg';
+import personIcon from '../../../public/icons/person.svg';
+import placeIcon from '../../../public/icons/place.svg';
 import transpositionIcon from '../../../public/icons/transposition.svg';
 
 const iconsMap: { [key: string]: string } = {
@@ -30,6 +32,8 @@ const iconsMap: { [key: string]: string } = {
   head: headIcon,
   line: lineIcon,
   paragraph: paragraphIcon,
+  person: personIcon,
+  place: placeIcon,
   transposition: transpositionIcon,
 };
 
