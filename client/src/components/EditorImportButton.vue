@@ -10,6 +10,7 @@ import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.erro
 import IAnnotation from '../models/IAnnotation';
 import {
   Annotation,
+  AnnotationData,
   AnnotationProperty,
   Character,
   MalformedAnnotation,
@@ -50,7 +51,7 @@ const {
   initializeCharacters,
 } = useCharactersStore();
 
-const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const dialogIsVisible = ref<boolean>(false);
 const chooseOption = ref<'raw' | 'file'>('file');
@@ -91,7 +92,7 @@ const currentStep = ref<PipelineStep>(null);
 const errorMessages = ref([]);
 const errorMessageCount = ref(0);
 
-const dataToImport = ref<{ annotations: IAnnotation[]; characters: Character[] }>(null);
+const dataToImport = ref<{ annotations: AnnotationData[]; characters: Character[] }>(null);
 
 // Needs to be instantiated at top-level to make Vue track changes better
 const reader: FileReader = new FileReader();
@@ -308,7 +309,7 @@ function toggleViewMode(direction: 'raw' | 'file'): void {
 
 function transformStandoffToAtag(): void {
   const newCharacters: Character[] = [];
-  const newAnnotations: IAnnotation[] = [];
+  const newAnnotations: AnnotationData[] = [];
   const malformedAnnotations: MalformedAnnotation[] = [];
 
   try {
@@ -348,42 +349,49 @@ function transformStandoffToAtag(): void {
       }
 
       const fields: AnnotationProperty[] = getAnnotationFields(a.type);
-      const newAnnotationData: IAnnotation = {} as IAnnotation;
+      const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
       // TODO: Improve this function, too many empty strings and duplicate field settings
       // Base properties
       fields.forEach((field: AnnotationProperty) => {
         switch (field.type) {
           case 'text':
-            newAnnotationData[field.name] = '';
+            newAnnotationProperties[field.name] = '';
             break;
           case 'textarea':
-            newAnnotationData[field.name] = '';
+            newAnnotationProperties[field.name] = '';
             break;
           case 'selection':
-            newAnnotationData[field.name] = field.options[0] ?? '';
+            newAnnotationProperties[field.name] = field.options[0] ?? '';
             break;
           case 'checkbox':
-            newAnnotationData[field.name] = false;
+            newAnnotationProperties[field.name] = false;
             break;
           default:
-            newAnnotationData[field.name] = '';
+            newAnnotationProperties[field.name] = '';
         }
       });
 
       // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
-      newAnnotationData.type = a.type;
-      newAnnotationData.startIndex = a.start;
-      newAnnotationData.endIndex = a.end;
-      newAnnotationData.text = a.text;
-      newAnnotationData.uuid = crypto.randomUUID();
+      newAnnotationProperties.type = a.type;
+      newAnnotationProperties.startIndex = a.start;
+      newAnnotationProperties.endIndex = a.end;
+      newAnnotationProperties.text = a.text;
+      newAnnotationProperties.uuid = crypto.randomUUID();
+
+      // Metadata (= connected nodes). Not provided, but needed in Annotation structure -> empty arrays
+      const metadataCategories: string[] = guidelines.value.annotations.resources.map(
+        r => r.category,
+      );
+
+      const newAnnotationMetadata = Object.fromEntries(metadataCategories.map(m => [m, []]));
 
       let index: number = a.start;
 
       // Annotate characters (skipped in the first step since information is stored in annotations)
       do {
         newCharacters[index].annotations.push({
-          uuid: newAnnotationData.uuid,
+          uuid: newAnnotationProperties.uuid,
           isFirstCharacter: index === a.start,
           isLastCharacter: index === a.end,
           type: a.type,
@@ -393,8 +401,10 @@ function transformStandoffToAtag(): void {
         index++;
       } while (index <= a.end);
 
-      newAnnotations.push(newAnnotationData);
+      newAnnotations.push({ properties: newAnnotationProperties, metadata: newAnnotationMetadata });
     });
+
+    console.log(newAnnotations);
 
     // Throw explicit MalformedError for detailed information to override default Import error
     if (malformedAnnotations.length > 0) {

@@ -93,19 +93,19 @@ function handlePagination() {
   });
 
   annotations.value.forEach((annotation: Annotation) => {
-    if (!charUuids.has(annotation.data.uuid)) {
+    if (!charUuids.has(annotation.data.properties.uuid)) {
       annotation.isTruncated = false;
     } else {
       const isLeftTruncated: boolean =
         beforeStartIndex.value &&
         totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
+          a => a.uuid === annotation.data.properties.uuid,
         );
 
       const isRightTruncated: boolean =
         afterEndIndex.value &&
         totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.data.uuid,
+          a => a.uuid === annotation.data.properties.uuid,
         );
 
       if (isLeftTruncated || isRightTruncated) {

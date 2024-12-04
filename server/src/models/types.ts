@@ -6,9 +6,9 @@ import IEntity from './IEntity.js';
 
 export type Annotation = {
   characterUuids: string[];
-  data: IAnnotation;
+  data: AnnotationData;
   endUuid: string;
-  initialData: IAnnotation;
+  initialData: AnnotationData;
   isTruncated: boolean;
   startUuid: string;
   status: 'existing' | 'created' | 'deleted';

@@ -35,8 +35,9 @@ const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
-const config: AnnotationType = getAnnotationConfig(annotation.data.type);
-const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.type);
+const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
+const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
+const metadataCategories: string[] = config.metadata;
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
   confirm.require({
@@ -89,17 +90,20 @@ function setRangeAnchorAtEnd(): void {
 <template>
   <Panel
     class="annotation-form mb-3"
-    :data-annotation-uuid="annotation.data.uuid"
+    :data-annotation-uuid="annotation.data.properties.uuid"
     toggleable
     :collapsed="true"
   >
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
-          <img :src="`${iconsMap[annotation.data.type]}`" class="button-icon w-full h-full" />
+          <img
+            :src="`${iconsMap[annotation.data.properties.type]}`"
+            class="button-icon w-full h-full"
+          />
         </div>
         <div class="annotation-type-container">
-          <span class="font-bold">{{ annotation.data.type }}</span>
+          <span class="font-bold">{{ annotation.data.properties.type }}</span>
         </div>
         <div
           class="spy pi pi-eye cursor-pointer"
@@ -123,8 +127,8 @@ function setRangeAnchorAtEnd(): void {
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
-            :invalid="field.required && !annotation.data[field.name]"
-            v-model="annotation.data[field.name]"
+            :invalid="field.required && !annotation.data.properties[field.name]"
+            v-model="annotation.data.properties[field.name]"
             class="flex-auto w-full"
             spellcheck="false"
           />
@@ -133,8 +137,8 @@ function setRangeAnchorAtEnd(): void {
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
-            :invalid="field.required && !annotation.data[field.name]"
-            v-model="annotation.data[field.name]"
+            :invalid="field.required && !annotation.data.properties[field.name]"
+            v-model="annotation.data.properties[field.name]"
             cols="30"
             rows="5"
             class="flex-auto w-full"
@@ -144,34 +148,44 @@ function setRangeAnchorAtEnd(): void {
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
-            :invalid="field.required && !annotation.data[field.name]"
-            v-model="annotation.data[field.name]"
+            :invalid="field.required && !annotation.data.properties[field.name]"
+            v-model="annotation.data.properties[field.name]"
             :options="field.options"
             :placeholder="`Select ${field.name}`"
             class="flex-auto w-full"
           />
           <!-- <Checkbox
           v-else-if="field.type === 'checkbox'"
-          v-model="annotation.data[field.name]"
+          v-model="annotation.data.properties[field.name]"
           :inputId="field.name"
           :name="field.name"
-          :value="annotation.data[field.name]"
+          :value="annotation.data.properties[field.name]"
           /> -->
           <!-- TODO: Primevue checkboxes work differently... -> create own component or match styling -->
           <input
             v-else-if="field.type === 'checkbox'"
-            v-model="annotation.data[field.name]"
+            v-model="annotation.data.properties[field.name]"
             type="checkbox"
             :id="field.name"
             :name="field.name"
             :style="{ width: '15px', height: '15px', cursor: 'pointer' }"
           />
           <div v-else class="default-field">
-            {{ annotation.data[field.name] }}
+            {{ annotation.data.properties[field.name] }}
           </div>
         </div>
       </div>
     </form>
+    <hr />
+    Metadata:
+    <div v-for="category in metadataCategories">
+      <p class="font-bold">{{ category }}:</p>
+      <ul>
+        <li v-for="entry in annotation.data.metadata[category]">
+          {{ entry.label }}
+        </li>
+      </ul>
+    </div>
     <div class="edit-buttons flex justify-content-center">
       <Button
         icon="pi pi-angle-left"
@@ -212,7 +226,7 @@ function setRangeAnchorAtEnd(): void {
         severity="danger"
         icon="pi pi-trash"
         size="small"
-        @click="handleDeleteAnnotation($event, annotation.data.uuid)"
+        @click="handleDeleteAnnotation($event, annotation.data.properties.uuid)"
       />
     </div>
     <ConfirmPopup></ConfirmPopup>

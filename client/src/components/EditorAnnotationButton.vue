@@ -23,7 +23,7 @@ const { snippetCharacters, annotateCharacters, removeAnnotationFromCharacters } 
   useCharactersStore();
 const { annotations, addAnnotation, deleteAnnotation } = useAnnotationStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
 // const { pushHistoryEntry } = useHistoryStore();
@@ -65,7 +65,7 @@ function findAnnotationToSplit(leftChar: Character, rightChar: Character): Annot
   const rightUuid: string = rightChar.annotations.find(a => a.type === annotationType)?.uuid;
 
   if (leftUuid && rightUuid && leftUuid === rightUuid) {
-    return annotations.value.find(a => a.data.uuid === leftUuid);
+    return annotations.value.find(a => a.data.properties.uuid === leftUuid);
   }
 
   return null;
@@ -116,8 +116,8 @@ function handleClick(dropdownOption?: string): void {
 
       // Remove annotation that is being split
       if (annotationToSplit) {
-        removeAnnotationFromCharacters(annotationToSplit.data.uuid);
-        deleteAnnotation(annotationToSplit.data.uuid);
+        removeAnnotationFromCharacters(annotationToSplit.data.properties.uuid);
+        deleteAnnotation(annotationToSplit.data.properties.uuid);
       }
 
       let current: Character = leftChar;
@@ -280,46 +280,50 @@ function createNewAnnotation(
   characters: Character[],
 ): Annotation {
   const fields: AnnotationProperty[] = getAnnotationFields(type);
-  const data: IAnnotation = {} as IAnnotation;
+  const newAnnotationData: IAnnotation = {} as IAnnotation;
 
   // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
   fields.forEach((field: AnnotationProperty) => {
     switch (field.type) {
       case 'text':
-        data[field.name] = '';
+        newAnnotationData[field.name] = '';
         break;
       case 'textarea':
-        data[field.name] = '';
+        newAnnotationData[field.name] = '';
         break;
       case 'selection':
-        data[field.name] = field.options[0] ?? '';
+        newAnnotationData[field.name] = field.options[0] ?? '';
         break;
       case 'checkbox':
-        data[field.name] = false;
+        newAnnotationData[field.name] = false;
         break;
       default:
-        data[field.name] = '';
+        newAnnotationData[field.name] = '';
     }
   });
 
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
-  data.type = type;
-  data.startIndex = 0;
-  data.endIndex = 0;
-  data.text = characters.map((char: Character) => char.data.text).join('');
-  data.uuid = crypto.randomUUID();
+  newAnnotationData.type = type;
+  newAnnotationData.startIndex = 0;
+  newAnnotationData.endIndex = 0;
+  newAnnotationData.text = characters.map((char: Character) => char.data.text).join('');
+  newAnnotationData.uuid = crypto.randomUUID();
 
   // Set subtype only when a subtype property is defined in guidelines
   // If it is, set it to the given parameter subtype or use the default value if no parameter is passed
   if (subtypeField) {
-    data.subtype = subtype ?? data.subtype;
+    newAnnotationData.subtype = subtype ?? newAnnotationData.subtype;
   }
+
+  // Metadata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  const metadataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+  const newAnnotationMetadata = Object.fromEntries(metadataCategories.map(m => [m, []]));
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
-    data: data,
-    initialData: data,
+    data: { properties: newAnnotationData, metadata: newAnnotationMetadata },
+    initialData: { properties: newAnnotationData, metadata: newAnnotationMetadata },
     isTruncated: false,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,

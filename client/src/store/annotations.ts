@@ -1,6 +1,5 @@
 import { ref } from 'vue';
-import IAnnotation from '../models/IAnnotation';
-import { Annotation, AnnotationReference, Character } from '../models/types';
+import { Annotation, AnnotationData, AnnotationReference, Character } from '../models/types';
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
@@ -26,30 +25,30 @@ export function useAnnotationStore() {
    * @return {void} This function does not return any value.
    */
   function initializeAnnotations(
-    annotationData: IAnnotation[],
+    annotationData: AnnotationData[],
     source: 'database' | 'import',
   ): void {
     resetAnnotations();
 
     // TODO: This can be simplified, too much duplication
     // TODO: This IS slow when importing text with many annotations -> fix!
-    annotations.value = annotationData.map((annotation: IAnnotation, index: number) => {
+    annotations.value = annotationData.map((annotation: AnnotationData, index: number) => {
       const charUuids: string[] = [
         ...totalCharacters.value
-          .filter(c => c.annotations.some(a => a.uuid === annotationData[index].uuid))
+          .filter(c => c.annotations.some(a => a.uuid === annotationData[index].properties.uuid))
           .map(cc => cc.data.uuid),
       ];
 
       const isLeftTruncated: boolean =
         beforeStartIndex.value &&
         totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.uuid,
+          a => a.uuid === annotation.properties.uuid,
         );
 
       const isRightTruncated: boolean =
         afterEndIndex.value &&
         totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.uuid,
+          a => a.uuid === annotation.properties.uuid,
         );
 
       if (isLeftTruncated || isRightTruncated) {
@@ -76,19 +75,19 @@ export function useAnnotationStore() {
     });
 
     annotations.value.forEach((annotation: Annotation) => {
-      if (!charUuids.has(annotation.data.uuid)) {
+      if (!charUuids.has(annotation.data.properties.uuid)) {
         annotation.isTruncated = false;
       } else {
         const isLeftTruncated: boolean =
           beforeStartIndex.value &&
           totalCharacters.value[beforeStartIndex.value].annotations.some(
-            a => a.uuid === annotation.data.uuid,
+            a => a.uuid === annotation.data.properties.uuid,
           );
 
         const isRightTruncated: boolean =
           afterEndIndex.value &&
           totalCharacters.value[afterEndIndex.value].annotations.some(
-            a => a.uuid === annotation.data.uuid,
+            a => a.uuid === annotation.data.properties.uuid,
           );
 
         if (isLeftTruncated || isRightTruncated) {
@@ -111,7 +110,7 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = annotations.value.find(a => a.data.uuid === uuid);
+    const annotation: Annotation = annotations.value.find(a => a.data.properties.uuid === uuid);
     annotation.status = 'deleted';
   }
 
@@ -129,13 +128,15 @@ export function useAnnotationStore() {
     // You are the last character now
     snippetCharacters.value[lastIndex + 1].annotations.push({
       isLastCharacter: true,
-      type: annotation.data.type,
-      subtype: annotation.data.subtype ?? null,
-      uuid: annotation.data.uuid,
+      type: annotation.data.properties.type,
+      subtype: annotation.data.properties.subtype ?? null,
+      uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 
     // You are not the last anymore
-    lastCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isLastCharacter = false;
+    lastCharacter.annotations.find(
+      a => a.uuid === annotation.data.properties.uuid,
+    ).isLastCharacter = false;
   }
 
   /**
@@ -152,7 +153,7 @@ export function useAnnotationStore() {
     lastIndex: number;
   } {
     const annotatedCharacters: Character[] = snippetCharacters.value.filter(c =>
-      c.annotations.some(a => a.uuid === annotation.data.uuid),
+      c.annotations.some(a => a.uuid === annotation.data.properties.uuid),
     );
     const firstCharacter: Character = annotatedCharacters[0];
     const lastCharacter: Character = annotatedCharacters[annotatedCharacters.length - 1];
@@ -187,22 +188,24 @@ export function useAnnotationStore() {
     // You are the first character now
     snippetCharacters.value[firstIndex - 1].annotations.push({
       isFirstCharacter: true,
-      type: annotation.data.type,
-      subtype: annotation.data.subtype ?? null,
-      uuid: annotation.data.uuid,
+      type: annotation.data.properties.type,
+      subtype: annotation.data.properties.subtype ?? null,
+      uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 
     // You are not the first anymore
-    firstCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isFirstCharacter = false;
+    firstCharacter.annotations.find(
+      a => a.uuid === annotation.data.properties.uuid,
+    ).isFirstCharacter = false;
 
     // Your are not the last anymore
     lastCharacter.annotations = lastCharacter.annotations.filter(
-      a => a.uuid !== annotation.data.uuid,
+      a => a.uuid !== annotation.data.properties.uuid,
     );
 
     // You are the last character now
     snippetCharacters.value[lastIndex - 1].annotations.find(
-      a => a.uuid === annotation.data.uuid,
+      a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
   }
 
@@ -220,22 +223,24 @@ export function useAnnotationStore() {
     // You are the last character now
     snippetCharacters.value[lastIndex + 1].annotations.push({
       isLastCharacter: true,
-      type: annotation.data.type,
-      subtype: annotation.data.subtype ?? null,
-      uuid: annotation.data.uuid,
+      type: annotation.data.properties.type,
+      subtype: annotation.data.properties.subtype ?? null,
+      uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 
     // You are not the last anymore
-    lastCharacter.annotations.find(a => a.uuid === annotation.data.uuid).isLastCharacter = false;
+    lastCharacter.annotations.find(
+      a => a.uuid === annotation.data.properties.uuid,
+    ).isLastCharacter = false;
 
     // Your are not annotated anymore
     firstCharacter.annotations = firstCharacter.annotations.filter(
-      a => a.uuid !== annotation.data.uuid,
+      a => a.uuid !== annotation.data.properties.uuid,
     );
 
     // You are the first character now
     snippetCharacters.value[firstIndex + 1].annotations.find(
-      a => a.uuid === annotation.data.uuid,
+      a => a.uuid === annotation.data.properties.uuid,
     ).isFirstCharacter = true;
   }
 
@@ -252,12 +257,12 @@ export function useAnnotationStore() {
 
     // Your are not the last anymore
     lastCharacter.annotations = lastCharacter.annotations.filter(
-      a => a.uuid !== annotation.data.uuid,
+      a => a.uuid !== annotation.data.properties.uuid,
     );
 
     // You are the last character now
     snippetCharacters.value[lastIndex - 1].annotations.find(
-      a => a.uuid === annotation.data.uuid,
+      a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
   }
 
@@ -298,13 +303,13 @@ export function useAnnotationStore() {
     annotations.value
       .filter((a: Annotation) => a.status !== 'deleted')
       .forEach((a: Annotation) => {
-        const annotatedCharacters: Character[] = charMap.get(a.data.uuid) ?? [];
+        const annotatedCharacters: Character[] = charMap.get(a.data.properties.uuid) ?? [];
 
         if (annotatedCharacters.length === 0) {
           a.status = 'deleted';
         } else {
           a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
-          a.data.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
+          a.data.properties.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
           a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
           a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
         }

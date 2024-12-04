@@ -207,7 +207,7 @@ export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Re
  */
 export function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'): void {
   const annotatedSpans: NodeListOf<HTMLSpanElement> = document.querySelectorAll(
-    `#text > span:has(span[data-anno-uuid="${annotation.data.uuid}"])`,
+    `#text > span:has(span[data-anno-uuid="${annotation.data.properties.uuid}"])`,
   );
 
   if (annotatedSpans.length === 0) {

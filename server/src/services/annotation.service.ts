@@ -2,11 +2,11 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { Annotation } from '../models/types.js';
+import { Annotation, AnnotationData } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 
 export default class AnnotationService {
-  public async getAnnotations(collectionUuid: string): Promise<IAnnotation[]> {
+  public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const resources = guidelines.annotations.resources;
@@ -57,7 +57,7 @@ export default class AnnotationService {
         UNWIND $annotations AS delAnnotation
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
-        MATCH (a:Annotation {uuid: delAnnotation.data.uuid})
+        MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
         DETACH DELETE a
     }
 

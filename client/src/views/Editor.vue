@@ -20,9 +20,8 @@ import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
-import { Character, CharacterPostData } from '../models/types';
+import { AnnotationData, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
-import IAnnotation from '../models/IAnnotation';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -316,7 +315,7 @@ async function getAnnotations(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedAnnotations: IAnnotation[] = await response.json();
+    const fetchedAnnotations: AnnotationData[] = await response.json();
 
     initializeAnnotations(fetchedAnnotations, 'database');
   } catch (error: unknown) {
