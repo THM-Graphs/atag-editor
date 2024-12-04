@@ -50,6 +50,12 @@ export type AnnotationReference = {
   uuid: string;
 };
 
+export type AnnotationConfigResource = {
+  category: string;
+  nodeLabel: string;
+  relationshipType: string;
+};
+
 export type Character = {
   data: ICharacter;
   annotations: AnnotationReference[];

@@ -1,16 +1,45 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
+import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
 import { Annotation } from '../models/types.js';
+import { IGuidelines } from '../models/IGuidelines.js';
 
 export default class AnnotationService {
   public async getAnnotations(collectionUuid: string): Promise<IAnnotation[]> {
-    const query: string = `
-    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
-    RETURN COLLECT(a {.*}) as annotations
-    `;
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+    const resources = guidelines.annotations.resources;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid });
+    const query: string = `
+    // Match all annotations for given selection
+    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
+
+    // Fetch additional nodes by label and relationship defined in the guidelines
+    WITH a, $resources AS resources
+    UNWIND resources AS resource
+    
+    CALL {
+        WITH a, resource
+
+        CALL apoc.cypher.run(
+            'MATCH (a)-[r]->(x) WHERE type(r) = $relationshipType RETURN collect(x {.*}) AS nodes',
+            {a: a, relationshipType: resource.relationshipType}
+        ) YIELD value
+
+        RETURN resource.category AS key, value.nodes AS nodes
+    }
+
+    // Create key-value pair with category and matched nodes
+    WITH a, collect({category: key, nodes: nodes}) AS metadata
+
+    RETURN collect({
+        properties: a {.*},
+        metadata: apoc.map.fromPairs([m IN metadata | [m.category, m.nodes]])
+    }) AS annotations
+`;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, resources });
 
     return result.records[0]?.get('annotations');
   }
