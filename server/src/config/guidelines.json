@@ -212,14 +212,14 @@
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "resources": ["actorRoles", "entities", "concepts"]
+        "metadata": ["actorRoles", "entities", "concepts"]
       },
       {
         "type": "place",
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "resources": ["entities"]
+        "metadata": ["entities"]
       }
     ],
     "properties": [

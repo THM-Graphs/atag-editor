@@ -17,11 +17,10 @@ export interface IGuidelines {
   annotations: {
     types: AnnotationType[];
     properties: AnnotationProperty[];
-    resources: string[];
+    resources: {
+      category: string;
+      nodeLabel: string;
+      relationshipType: string;
+    }[];
   };
-  resources: {
-    category: string;
-    nodeLabel: string;
-    relationshipType: string;
-  }[];
 }
