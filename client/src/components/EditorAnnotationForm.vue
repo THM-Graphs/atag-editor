@@ -5,6 +5,7 @@ import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
 import iconsMap from '../utils/helper/icons';
+import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
@@ -14,6 +15,8 @@ import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
+import { ref } from 'vue';
+import IActorRole from '../models/IActorRole';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -37,7 +40,15 @@ const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
-const metadataCategories: string[] = config.metadata;
+const metadataCategories: string[] = config.metadata ?? [];
+
+const searchValues = ref<Record<string, string>>({}); // Store search value per category
+const suggestions = ref<Record<string, string[]>>({}); // Store suggestions per category
+
+metadataCategories.forEach(category => {
+  searchValues.value[category] = '';
+  suggestions.value[category] = [];
+});
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
   confirm.require({
@@ -84,6 +95,20 @@ function handleShrink(): void {
 function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
+}
+
+function searchMetadata(category: string) {
+  suggestions.value[category] = [...Array(10).keys()].map(i => `Suggestion ${category}-${i}`);
+}
+
+function addItem(item: string) {
+  console.log(item);
+
+  (annotation.data.metadata['actorRoles'] as IActorRole[]).push({
+    label: item,
+    type: 'Role',
+    uuid: crypto.randomUUID(),
+  });
 }
 </script>
 
@@ -178,13 +203,24 @@ function setRangeAnchorAtEnd(): void {
     </form>
     <hr />
     Metadata:
-    <div v-for="category in metadataCategories">
+    <div v-if="config.metadata" v-for="category in metadataCategories">
       <p class="font-bold">{{ category }}:</p>
-      <ul>
-        <li v-for="entry in annotation.data.metadata[category]">
+      <div
+        class="w-full metadata-entry flex justify-content-between"
+        v-for="entry in annotation.data.metadata[category]"
+      >
+        <span>
           {{ entry.label }}
-        </li>
-      </ul>
+        </span>
+        <Button icon="pi pi-times" size="small" severity="danger" rounded></Button>
+      </div>
+      <AutoComplete
+        v-model="searchValues[category]"
+        :placeholder="`Add new ${category} entry`"
+        :suggestions="suggestions[category]"
+        @complete="searchMetadata(category)"
+        @item-select="addItem($event.value)"
+      />
     </div>
     <div class="edit-buttons flex justify-content-center">
       <Button
@@ -261,5 +297,18 @@ function setRangeAnchorAtEnd(): void {
 
 .button-icon {
   object-fit: contain;
+}
+
+.metadata-entry {
+  border: 1px solid gray;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+
+  & button {
+    width: 1rem;
+    height: 1rem;
+    padding: 10px;
+  }
 }
 </style>
