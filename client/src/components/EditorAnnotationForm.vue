@@ -17,6 +17,19 @@ import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
 import { ref } from 'vue';
 import IActorRole from '../models/IActorRole';
+import IConcept from '../models/IConcept';
+import IEntity from '../models/IEntity';
+
+type MetadataEntry = IActorRole & IConcept & IEntity;
+
+interface MetadataSearchObject {
+  [key: string]: {
+    category: string;
+    searchString: string;
+    url: string;
+    items: MetadataEntry[] | string[];
+  };
+}
 
 const props = defineProps<{
   annotation: Annotation;
@@ -45,9 +58,18 @@ const metadataCategories: string[] = config.metadata ?? [];
 const searchValues = ref<Record<string, string>>({}); // Store search value per category
 const suggestions = ref<Record<string, string[]>>({}); // Store suggestions per category
 
+const metadataSearchObject = ref<MetadataSearchObject>({});
+
 metadataCategories.forEach(category => {
   searchValues.value[category] = '';
   suggestions.value[category] = [];
+
+  metadataSearchObject.value[category] = {
+    category: category,
+    searchString: '',
+    url: '',
+    items: [],
+  };
 });
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
@@ -97,18 +119,21 @@ function setRangeAnchorAtEnd(): void {
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
 
-function searchMetadata(category: string) {
-  suggestions.value[category] = [...Array(10).keys()].map(i => `Suggestion ${category}-${i}`);
-}
-
-function addItem(item: string) {
-  console.log(item);
-
-  (annotation.data.metadata['actorRoles'] as IActorRole[]).push({
-    label: item,
-    type: 'Role',
-    uuid: crypto.randomUUID(),
+function searchMetadata(category: string): void {
+  console.log('search');
+  // TODO: This should come from the database
+  metadataSearchObject.value[category].items = [...Array(10).keys()].map(i => {
+    return {
+      uuid: '574ccd1e-a0fd-4f9d-8b1d-a89610dada86',
+      label: 'Papst-' + i,
+      type: 'Role',
+      subtype: '',
+    };
   });
+}
+function addItem(item: MetadataEntry, category: string) {
+  annotation.data.metadata[category].push(item);
+  // TODO: Emtpy input field afterwards
 }
 </script>
 
@@ -212,14 +237,16 @@ function addItem(item: string) {
         <span>
           {{ entry.label }}
         </span>
-        <Button icon="pi pi-times" size="small" severity="danger" rounded></Button>
+        <Button icon="pi pi-times" size="small" severity="danger"></Button>
       </div>
       <AutoComplete
         v-model="searchValues[category]"
         :placeholder="`Add new ${category} entry`"
-        :suggestions="suggestions[category]"
+        :suggestions="metadataSearchObject[category].items"
+        optionLabel="label"
+        forceSelection
         @complete="searchMetadata(category)"
-        @item-select="addItem($event.value)"
+        @dropdown-click="addItem($event.value, category)"
       />
     </div>
     <div class="edit-buttons flex justify-content-center">
