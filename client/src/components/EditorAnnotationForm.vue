@@ -117,6 +117,12 @@ function handleShrink(): void {
   setRangeAnchorAtEnd();
 }
 
+function removeMetadataItem(item: MetadataEntry, category: string): void {
+  annotation.data.metadata[category] = annotation.data.metadata[category].filter(
+    entry => entry.uuid !== item.uuid,
+  );
+}
+
 async function searchMetadataOptions(query: string, category: string): Promise<void> {
   console.log(query, category);
 
@@ -242,9 +248,15 @@ function setRangeAnchorAtEnd(): void {
         <span>
           {{ entry.label }}
         </span>
-        <Button icon="pi pi-times" size="small" severity="danger"></Button>
+        <Button
+          icon="pi pi-times"
+          size="small"
+          severity="danger"
+          @click="removeMetadataItem(entry as MetadataEntry, category)"
+        ></Button>
       </div>
       <AutoComplete
+        v-model="metadataSearchObject[category].searchString"
         :placeholder="`Add new ${category} entry`"
         :suggestions="metadataSearchObject[category].fetchedItems"
         optionLabel="label"
