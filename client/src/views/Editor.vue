@@ -151,6 +151,7 @@ async function getCollectionByUuid(): Promise<void> {
   }
 }
 
+// TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
   if (!hasUnsavedChanges()) {
     console.log('no changes made, no request needed');

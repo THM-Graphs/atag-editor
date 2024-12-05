@@ -3,7 +3,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
-import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
+import { buildFetchUrl, capitalize, toggleTextHightlighting } from '../utils/helper/helper';
 import iconsMap from '../utils/helper/icons';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
@@ -22,12 +22,14 @@ import IEntity from '../models/IEntity';
 
 type MetadataEntry = IActorRole & IConcept & IEntity;
 
+/**
+ * Interface for relevant state information about each metadata category
+ */
 interface MetadataSearchObject {
   [key: string]: {
-    category: string;
+    fetchedItems: MetadataEntry[] | string[];
+    nodeLabel: string;
     searchString: string;
-    url: string;
-    items: MetadataEntry[] | string[];
   };
 }
 
@@ -49,30 +51,31 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
 const metadataCategories: string[] = config.metadata ?? [];
 
-const searchValues = ref<Record<string, string>>({}); // Store search value per category
-const suggestions = ref<Record<string, string[]>>({}); // Store suggestions per category
+const metadataSearchObject = ref<MetadataSearchObject>(
+  metadataCategories.reduce((object, category) => {
+    object[category] = {
+      nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
+        .nodeLabel,
+      searchString: '',
+      fetchedItems: [],
+    };
 
-const metadataSearchObject = ref<MetadataSearchObject>({});
+    return object;
+  }, {}),
+);
 
-metadataCategories.forEach(category => {
-  searchValues.value[category] = '';
-  suggestions.value[category] = [];
+function addMetadataItem(item: MetadataEntry, category: string): void {
+  console.log('Clicked item:', item, category);
+  annotation.data.metadata[category].push(item);
+}
 
-  metadataSearchObject.value[category] = {
-    category: category,
-    searchString: '',
-    url: '',
-    items: [],
-  };
-});
-
-function handleDeleteAnnotation(event: MouseEvent, uuid: string) {
+function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   confirm.require({
     target: event.currentTarget as HTMLButtonElement,
     message: 'Do you want to delete this annotation?',
@@ -114,26 +117,28 @@ function handleShrink(): void {
   setRangeAnchorAtEnd();
 }
 
+async function searchMetadataOptions(query: string, category: string): Promise<void> {
+  console.log(query, category);
+
+  const nodeLabel: string = metadataSearchObject.value[category].nodeLabel;
+  const searchString: string = query;
+
+  const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
+
+  const response: Response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+
+  const fetchedMetadata: MetadataEntry[] = await response.json();
+
+  metadataSearchObject.value[category].fetchedItems = fetchedMetadata;
+}
+
 function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
-}
-
-function searchMetadata(category: string): void {
-  console.log('search');
-  // TODO: This should come from the database
-  metadataSearchObject.value[category].items = [...Array(10).keys()].map(i => {
-    return {
-      uuid: '574ccd1e-a0fd-4f9d-8b1d-a89610dada86',
-      label: 'Papst-' + i,
-      type: 'Role',
-      subtype: '',
-    };
-  });
-}
-function addItem(item: MetadataEntry, category: string) {
-  annotation.data.metadata[category].push(item);
-  // TODO: Emtpy input field afterwards
 }
 </script>
 
@@ -240,13 +245,12 @@ function addItem(item: MetadataEntry, category: string) {
         <Button icon="pi pi-times" size="small" severity="danger"></Button>
       </div>
       <AutoComplete
-        v-model="searchValues[category]"
         :placeholder="`Add new ${category} entry`"
-        :suggestions="metadataSearchObject[category].items"
+        :suggestions="metadataSearchObject[category].fetchedItems"
         optionLabel="label"
         forceSelection
-        @complete="searchMetadata(category)"
-        @dropdown-click="addItem($event.value, category)"
+        @complete="searchMetadataOptions($event.query, category)"
+        @option-select="addMetadataItem($event.value, category)"
       />
     </div>
     <div class="edit-buttons flex justify-content-center">
