@@ -146,6 +146,15 @@ function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
+
+function renderHTML(text: string, searchStr: string): string {
+  if (searchStr !== '') {
+    const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
+  return text;
+}
 </script>
 
 <template>
@@ -263,7 +272,18 @@ function setRangeAnchorAtEnd(): void {
         forceSelection
         @complete="searchMetadataOptions($event.query, category)"
         @option-select="addMetadataItem($event.value, category)"
-      />
+      >
+        <template #header>
+          <div class="font-medium px-3 py-2">
+            {{ metadataSearchObject[category].fetchedItems.length }}
+          </div>
+        </template>
+        <template #option="slotProps">
+          <span
+            v-html="renderHTML(slotProps.option.label, metadataSearchObject[category].searchString)"
+          ></span>
+        </template>
+      </AutoComplete>
     </div>
     <div class="edit-buttons flex justify-content-center">
       <Button
@@ -353,5 +373,9 @@ function setRangeAnchorAtEnd(): void {
     height: 1rem;
     padding: 10px;
   }
+}
+
+.highlight {
+  background-color: yellow;
 }
 </style>
