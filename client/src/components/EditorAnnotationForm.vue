@@ -138,7 +138,15 @@ async function searchMetadataOptions(searchString: string, category: string): Pr
 
   const fetchedMetadata: MetadataEntry[] = await response.json();
 
-  metadataSearchObject.value[category].fetchedItems = fetchedMetadata;
+  // Show only entries that are not already part of the annotation
+  const existingUuids: string[] = annotation.data.metadata[category].map(
+    (entry: MetadataEntry) => entry.uuid,
+  );
+  const withoutDuplicates: MetadataEntry[] = fetchedMetadata.filter(
+    (entry: MetadataEntry) => !existingUuids.includes(entry.uuid),
+  );
+
+  metadataSearchObject.value[category].fetchedItems = withoutDuplicates;
 }
 
 function setRangeAnchorAtEnd(): void {
