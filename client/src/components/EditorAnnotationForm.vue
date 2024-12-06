@@ -29,7 +29,7 @@ interface MetadataSearchObject {
   [key: string]: {
     fetchedItems: MetadataEntry[] | string[];
     nodeLabel: string;
-    searchString: string;
+    currentItem: MetadataEntry | null;
   };
 }
 
@@ -62,8 +62,8 @@ const metadataSearchObject = ref<MetadataSearchObject>(
     object[category] = {
       nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
         .nodeLabel,
-      searchString: '',
       fetchedItems: [],
+      currentItem: null,
     };
 
     return object;
@@ -71,8 +71,10 @@ const metadataSearchObject = ref<MetadataSearchObject>(
 );
 
 function addMetadataItem(item: MetadataEntry, category: string): void {
-  console.log('Clicked item:', item, category);
+  // console.log('Clicked item:', item, category);
+  console.log(metadataSearchObject.value[category].currentItem);
   annotation.data.metadata[category].push(item);
+  metadataSearchObject.value[category].currentItem = null;
 }
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
@@ -123,12 +125,9 @@ function removeMetadataItem(item: MetadataEntry, category: string): void {
   );
 }
 
-async function searchMetadataOptions(query: string, category: string): Promise<void> {
-  console.log(query, category);
-
+async function searchMetadataOptions(searchString: string, category: string): Promise<void> {
+  console.log(searchString, category);
   const nodeLabel: string = metadataSearchObject.value[category].nodeLabel;
-  const searchString: string = query;
-
   const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
 
   const response: Response = await fetch(url);
@@ -148,8 +147,10 @@ function setRangeAnchorAtEnd(): void {
 }
 
 function renderHTML(text: string, searchStr: string): string {
+  console.log('render');
   if (searchStr !== '') {
     const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
     return text.replace(regex, '<span class="highlight">$1</span>');
   }
 
@@ -265,23 +266,17 @@ function renderHTML(text: string, searchStr: string): string {
         ></Button>
       </div>
       <AutoComplete
-        v-model="metadataSearchObject[category].searchString"
+        v-model="metadataSearchObject[category].currentItem"
         :placeholder="`Add new ${category} entry`"
         :suggestions="metadataSearchObject[category].fetchedItems"
         optionLabel="label"
-        forceSelection
         @complete="searchMetadataOptions($event.query, category)"
         @option-select="addMetadataItem($event.value, category)"
       >
         <template #header>
           <div class="font-medium px-3 py-2">
-            {{ metadataSearchObject[category].fetchedItems.length }}
+            {{ metadataSearchObject[category].fetchedItems.length }} Results
           </div>
-        </template>
-        <template #option="slotProps">
-          <span
-            v-html="renderHTML(slotProps.option.label, metadataSearchObject[category].searchString)"
-          ></span>
         </template>
       </AutoComplete>
     </div>
