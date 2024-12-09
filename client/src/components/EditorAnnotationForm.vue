@@ -30,6 +30,7 @@ interface MetadataSearchObject {
     fetchedItems: MetadataEntry[] | string[];
     nodeLabel: string;
     currentItem: MetadataEntry | null;
+    mode: 'edit' | 'view';
   };
 }
 
@@ -58,12 +59,13 @@ const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.propert
 const metadataCategories: string[] = config.metadata ?? [];
 
 const metadataSearchObject = ref<MetadataSearchObject>(
-  metadataCategories.reduce((object, category) => {
+  metadataCategories.reduce((object: MetadataSearchObject, category) => {
     object[category] = {
       nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
         .nodeLabel,
       fetchedItems: [],
       currentItem: null,
+      mode: 'view',
     };
 
     return object;
@@ -73,8 +75,14 @@ const metadataSearchObject = ref<MetadataSearchObject>(
 function addMetadataItem(item: MetadataEntry, category: string): void {
   // console.log('Clicked item:', item, category);
   console.log(metadataSearchObject.value[category].currentItem);
+
   annotation.data.metadata[category].push(item);
   metadataSearchObject.value[category].currentItem = null;
+  changeMetadataSelectionMode(category, 'view');
+}
+
+function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): void {
+  metadataSearchObject.value[category].mode = mode;
 }
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
@@ -260,7 +268,7 @@ function renderHTML(text: string, searchStr: string): string {
     <div v-if="config.metadata" v-for="category in metadataCategories">
       <p class="font-bold">{{ category }}:</p>
       <div
-        class="w-full metadata-entry flex justify-content-between"
+        class="metadata-entry flex justify-content-between"
         v-for="entry in annotation.data.metadata[category]"
       >
         <span>
@@ -273,11 +281,24 @@ function renderHTML(text: string, searchStr: string): string {
           @click="removeMetadataItem(entry as MetadataEntry, category)"
         ></Button>
       </div>
+      <Button
+        v-show="metadataSearchObject[category].mode === 'view'"
+        class="w-full h-2rem"
+        icon="pi pi-plus"
+        size="small"
+        severity="secondary"
+        label="Add item"
+        :disabled="annotation.isTruncated"
+        @click="changeMetadataSelectionMode(category, 'edit')"
+      />
       <AutoComplete
+        v-show="metadataSearchObject[category].mode === 'edit'"
+        :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
         v-model="metadataSearchObject[category].currentItem"
-        :placeholder="`Add new ${category} entry`"
+        :placeholder="`Type to see suggestions`"
         :suggestions="metadataSearchObject[category].fetchedItems"
         optionLabel="label"
+        class="h-2rem"
         @complete="searchMetadataOptions($event.query, category)"
         @option-select="addMetadataItem($event.value, category)"
       >
