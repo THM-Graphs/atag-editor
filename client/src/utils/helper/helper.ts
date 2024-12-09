@@ -2,6 +2,17 @@ import { Ref } from 'vue';
 import { Annotation, Character } from '../../models/types';
 
 /**
+ * Converts a camelCase or PascalCase string into a space-separated title case string
+ * (for example `"actorRoles"` to `"Actor Roles"`).
+ *
+ * @param {string} inputString - The string to be transformed.
+ * @return {string} The transformed string in title case.
+ */
+export function camelCaseToTitleCase(inputString: string): string {
+  return inputString.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, char => char.toUpperCase());
+}
+
+/**
  * Capitalizes the first letter of a given string.
  *
  * @param {string} inputString - The string to be capitalized.

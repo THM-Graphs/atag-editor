@@ -3,12 +3,17 @@ import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
-import { buildFetchUrl, capitalize, toggleTextHightlighting } from '../utils/helper/helper';
+import {
+  buildFetchUrl,
+  camelCaseToTitleCase,
+  toggleTextHightlighting,
+} from '../utils/helper/helper';
 import iconsMap from '../utils/helper/icons';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
+import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import Select from 'primevue/select';
@@ -56,6 +61,8 @@ const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesSt
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
+const propertiesAreCollapsed = ref<boolean>(false);
+const metadataAreCollapsed = ref<boolean>(false);
 const metadataCategories: string[] = config.metadata ?? [];
 
 const metadataSearchObject = ref<MetadataSearchObject>(
@@ -202,12 +209,24 @@ function renderHTML(text: string, searchStr: string): string {
         <Tag severity="warn" value="Truncated"></Tag>
       </div>
     </template>
-    <!-- TODO: Make "id" attributes unique -->
-    <form>
-      <div class="input-container" v-for="field in fields" :key="field.name" v-show="field.visible">
-        <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
+    <Fieldset
+      legend="Properties"
+      :toggleable="true"
+      @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
+    >
+      <template #toggleicon>
+        <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <!-- TODO: Make "id" attributes unique -->
+      <form>
+        <div
+          v-for="field in fields"
+          :key="field.name"
+          class="flex align-items-center gap-3 mb-3"
+          v-show="field.visible"
+        >
           <label :for="field.name" class="w-10rem font-semibold"
-            >{{ capitalize(field.name) }}
+            >{{ camelCaseToTitleCase(field.name) }}
           </label>
           <InputText
             v-if="field.type === 'text'"
@@ -261,54 +280,64 @@ function renderHTML(text: string, searchStr: string): string {
             {{ annotation.data.properties[field.name] }}
           </div>
         </div>
-      </div>
-    </form>
-    <hr />
-    Metadata:
-    <div v-if="config.metadata" v-for="category in metadataCategories">
-      <p class="font-bold">{{ category }}:</p>
-      <div
-        class="metadata-entry flex justify-content-between"
-        v-for="entry in annotation.data.metadata[category]"
-      >
-        <span>
-          {{ entry.label }}
-        </span>
+      </form>
+    </Fieldset>
+    <Fieldset
+      v-if="config.metadata"
+      legend="Metadata"
+      :toggleable="true"
+      @toggle="metadataAreCollapsed = !metadataAreCollapsed"
+    >
+      <template #toggleicon>
+        <span :class="`pi pi-chevron-${metadataAreCollapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <div v-for="category in metadataCategories">
+        <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
+        <div
+          class="metadata-entry flex justify-content-between align-items-center"
+          v-for="entry in annotation.data.metadata[category]"
+        >
+          <span>
+            {{ entry.label }}
+          </span>
+          <Button
+            icon="pi pi-times"
+            size="small"
+            severity="danger"
+            @click="removeMetadataItem(entry as MetadataEntry, category)"
+          ></Button>
+        </div>
         <Button
-          icon="pi pi-times"
+          v-show="metadataSearchObject[category].mode === 'view'"
+          class="mt-2 w-full h-2rem"
+          icon="pi pi-plus"
           size="small"
-          severity="danger"
-          @click="removeMetadataItem(entry as MetadataEntry, category)"
-        ></Button>
+          severity="secondary"
+          label="Add item"
+          :disabled="annotation.isTruncated"
+          @click="changeMetadataSelectionMode(category, 'edit')"
+        />
+        <AutoComplete
+          v-show="metadataSearchObject[category].mode === 'edit'"
+          v-model="metadataSearchObject[category].currentItem"
+          :placeholder="`Type to see suggestions`"
+          :suggestions="metadataSearchObject[category].fetchedItems"
+          optionLabel="label"
+          class="mt-2 w-full h-2rem"
+          variant="filled"
+          :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
+          input-class="w-full"
+          @complete="searchMetadataOptions($event.query, category)"
+          @option-select="addMetadataItem($event.value, category)"
+        >
+          <template #header>
+            <div class="font-medium px-3 py-2">
+              {{ metadataSearchObject[category].fetchedItems.length }} Results
+            </div>
+          </template>
+        </AutoComplete>
       </div>
-      <Button
-        v-show="metadataSearchObject[category].mode === 'view'"
-        class="w-full h-2rem"
-        icon="pi pi-plus"
-        size="small"
-        severity="secondary"
-        label="Add item"
-        :disabled="annotation.isTruncated"
-        @click="changeMetadataSelectionMode(category, 'edit')"
-      />
-      <AutoComplete
-        v-show="metadataSearchObject[category].mode === 'edit'"
-        :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
-        v-model="metadataSearchObject[category].currentItem"
-        :placeholder="`Type to see suggestions`"
-        :suggestions="metadataSearchObject[category].fetchedItems"
-        optionLabel="label"
-        class="h-2rem"
-        @complete="searchMetadataOptions($event.query, category)"
-        @option-select="addMetadataItem($event.value, category)"
-      >
-        <template #header>
-          <div class="font-medium px-3 py-2">
-            {{ metadataSearchObject[category].fetchedItems.length }} Results
-          </div>
-        </template>
-      </AutoComplete>
-    </div>
+    </Fieldset>
     <div class="edit-buttons flex justify-content-center">
       <Button
         icon="pi pi-angle-left"
@@ -371,6 +400,15 @@ function renderHTML(text: string, searchStr: string): string {
 
 .existing {
   background-color: gray;
+}
+
+.x {
+  background-color: white;
+  outline: 0;
+
+  &:not(:hover) {
+    border-color: transparent;
+  }
 }
 
 .created {
