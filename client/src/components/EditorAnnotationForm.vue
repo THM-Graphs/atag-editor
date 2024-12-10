@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { nextTick, Ref, ref } from 'vue';
+import { templateRef } from '@vueuse/core';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
@@ -20,7 +22,6 @@ import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
-import { ref } from 'vue';
 import IActorRole from '../models/IActorRole';
 import IConcept from '../models/IConcept';
 import IEntity from '../models/IEntity';
@@ -36,6 +37,7 @@ interface MetadataSearchObject {
     nodeLabel: string;
     currentItem: MetadataEntry | null;
     mode: 'edit' | 'view';
+    elm: Ref<any>;
   };
 }
 
@@ -73,6 +75,8 @@ const metadataSearchObject = ref<MetadataSearchObject>(
       fetchedItems: [],
       currentItem: null,
       mode: 'view',
+      // TODO: Use useTemplateRef when upgraded to Vue 3.5
+      elm: templateRef(`input-${category}`),
     };
 
     return object;
@@ -90,6 +94,29 @@ function addMetadataItem(item: MetadataEntry, category: string): void {
 
 function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): void {
   metadataSearchObject.value[category].mode = mode;
+  // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
+  const elm = metadataSearchObject.value[category].elm[0];
+  console.log(elm);
+
+  if (mode === 'view') {
+    return;
+  }
+
+  // Wait for DOM to update before trying to focus the element
+  nextTick(() => {
+    // The metadataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
+    // that holds the component. Is an array because since the refs are set in a loop in the template (TODO: Fix later, bit hacky)
+    const elm = metadataSearchObject.value[category].elm[0];
+
+    if (!elm) {
+      console.warn(`Focus failed: Element not found for category "${category}"`);
+      return;
+    }
+
+    const inputElement: HTMLInputElement = elm.$el?.querySelector('input');
+
+    inputElement?.focus();
+  });
 }
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
@@ -325,6 +352,7 @@ function renderHTML(text: string, searchStr: string): string {
           optionLabel="label"
           class="mt-2 w-full h-2rem"
           variant="filled"
+          :ref="`input-${category}`"
           :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
           input-class="w-full"
           @complete="searchMetadataOptions($event.query, category)"
