@@ -26,7 +26,7 @@ import IActorRole from '../models/IActorRole';
 import IConcept from '../models/IConcept';
 import IEntity from '../models/IEntity';
 
-type MetadataEntry = IActorRole & IConcept & IEntity;
+type MetadataEntry = IActorRole & IConcept & IEntity & { html: string };
 
 /**
  * Interface for relevant state information about each metadata category
@@ -188,7 +188,13 @@ async function searchMetadataOptions(searchString: string, category: string): Pr
     (entry: MetadataEntry) => !existingUuids.includes(entry.uuid),
   );
 
-  metadataSearchObject.value[category].fetchedItems = withoutDuplicates;
+  // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
+  const withHtml = withoutDuplicates.map((entry: MetadataEntry) => ({
+    ...entry,
+    html: renderHTML(entry.label, searchString),
+  }));
+
+  metadataSearchObject.value[category].fetchedItems = withHtml;
 }
 
 function setRangeAnchorAtEnd(): void {
@@ -197,11 +203,10 @@ function setRangeAnchorAtEnd(): void {
 }
 
 function renderHTML(text: string, searchStr: string): string {
-  console.log('render');
   if (searchStr !== '') {
     const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
 
-    return text.replace(regex, '<span class="highlight">$1</span>');
+    return text.replace(regex, '<span style="background-color: yellow">$1</span>');
   }
 
   return text;
@@ -347,6 +352,8 @@ function renderHTML(text: string, searchStr: string): string {
         <AutoComplete
           v-show="metadataSearchObject[category].mode === 'edit'"
           v-model="metadataSearchObject[category].currentItem"
+          dropdown
+          dropdownMode="current"
           :placeholder="`Type to see suggestions`"
           :suggestions="metadataSearchObject[category].fetchedItems"
           optionLabel="label"
@@ -358,10 +365,13 @@ function renderHTML(text: string, searchStr: string): string {
           @complete="searchMetadataOptions($event.query, category)"
           @option-select="addMetadataItem($event.value, category)"
         >
-          <template #header>
+          <template #header v-if="metadataSearchObject[category].fetchedItems.length > 0">
             <div class="font-medium px-3 py-2">
               {{ metadataSearchObject[category].fetchedItems.length }} Results
             </div>
+          </template>
+          <template #option="slotProps">
+            <span v-html="slotProps.option.html"></span>
           </template>
         </AutoComplete>
       </div>
@@ -466,6 +476,6 @@ function renderHTML(text: string, searchStr: string): string {
 }
 
 .highlight {
-  background-color: yellow;
+  background-color: yellow !important;
 }
 </style>
