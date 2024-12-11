@@ -63,10 +63,10 @@ const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesSt
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
+
 const propertiesAreCollapsed = ref<boolean>(false);
 const metadataAreCollapsed = ref<boolean>(false);
 const metadataCategories: string[] = config.metadata ?? [];
-
 const metadataSearchObject = ref<MetadataSearchObject>(
   metadataCategories.reduce((object: MetadataSearchObject, category) => {
     object[category] = {
@@ -83,17 +83,31 @@ const metadataSearchObject = ref<MetadataSearchObject>(
   }, {}),
 );
 
+/**
+ * Adds a metadata item to the specified category in the annotation's data.
+ *
+ * @param {MetadataEntry} item - The metadata item to be added.
+ */
 function addMetadataItem(item: MetadataEntry, category: string): void {
   annotation.data.metadata[category].push(item);
-  metadataSearchObject.value[category].currentItem = null;
-
-  changeMetadataSelectionMode(category, 'view');
 }
 
+/**
+ * Changes the mode of the metadata search component for the given category. This triggers
+ * re-renders in the template.
+ *
+ * - If set to `view`, the search bar will be hidden and its related state variables reset.
+ * - If set to `edit`, the search bar will be shown and and focused.
+ *
+ * @param {string} category - The category for which the mode should be changed.
+ * @param {'view' | 'edit'} mode - The new mode.
+ */
 function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): void {
   metadataSearchObject.value[category].mode = mode;
 
   if (mode === 'view') {
+    metadataSearchObject.value[category].currentItem = null;
+
     return;
   }
 
@@ -101,7 +115,7 @@ function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): v
   nextTick(() => {
     // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
     // The metadataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
-    // that holds the component. Is an array because since the refs are set in a loop in the template (TODO: Fix later, bit hacky)
+    // that holds the component. Is an array because since the refs are set in a loop in the template
     const elm = metadataSearchObject.value[category].elm[0];
 
     if (!elm) {
@@ -137,6 +151,18 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
+/**
+ * Handles the selection of a metadata item by adding it to the annotation and resetting the search component.
+ *  Called on selection of an item from the autocomplete dropdown pane.
+ *
+ * @param {MetadataEntry} item - The metadata item to be added.
+ * @param {string} category - The category to which the item should be added.
+ */
+function handleMetadataItemSelect(item: MetadataEntry, category: string): void {
+  addMetadataItem(item, category);
+  changeMetadataSelectionMode(category, 'view');
+}
+
 function handleShiftLeft(): void {
   shiftAnnotationLeft(annotation);
   setRangeAnchorAtEnd();
@@ -157,12 +183,44 @@ function handleShrink(): void {
   setRangeAnchorAtEnd();
 }
 
+/**
+ * Removes a metadata item from the given category in the annotation's data.
+ *
+ * @param {MetadataEntry} item - The metadata item to be removed.
+ * @param {string} category - The category from which the item should be removed.
+ */
 function removeMetadataItem(item: MetadataEntry, category: string): void {
   annotation.data.metadata[category] = annotation.data.metadata[category].filter(
     entry => entry.uuid !== item.uuid,
   );
 }
 
+/**
+ * Replaces all occurrences of a search string in a given text with a highlighted HTML
+ * equivalent. If the search string is empty, the original text is returned.
+ *
+ * @param {string} text - The text in which the search string should be found.
+ * @param {string} searchStr - The string to be searched for.
+ *
+ * @returns {string} The text with all occurrences of the search string highlighted.
+ */
+function renderHTML(text: string, searchStr: string): string {
+  if (searchStr !== '') {
+    const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+    return text.replace(regex, '<span style="background-color: yellow">$1</span>');
+  }
+
+  return text;
+}
+
+/**
+ * Fetches metadata items from the server whose's label matches the given search string and stores the results
+ * in the corresponding metadataSearchObject entry.
+ *
+ * @param {string} searchString - The string to be searched for.
+ * @param {string} category - The category for which the search should be performed.
+ */
 async function searchMetadataOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = metadataSearchObject.value[category].nodeLabel;
   const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
@@ -179,6 +237,7 @@ async function searchMetadataOptions(searchString: string, category: string): Pr
   const existingUuids: string[] = annotation.data.metadata[category].map(
     (entry: MetadataEntry) => entry.uuid,
   );
+
   const withoutDuplicates: MetadataEntry[] = fetchedMetadata.filter(
     (entry: MetadataEntry) => !existingUuids.includes(entry.uuid),
   );
@@ -195,16 +254,6 @@ async function searchMetadataOptions(searchString: string, category: string): Pr
 function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
-}
-
-function renderHTML(text: string, searchStr: string): string {
-  if (searchStr !== '') {
-    const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-
-    return text.replace(regex, '<span style="background-color: yellow">$1</span>');
-  }
-
-  return text;
 }
 </script>
 
@@ -357,7 +406,7 @@ function renderHTML(text: string, searchStr: string): string {
           :ref="`input-${category}`"
           input-class="w-full"
           @complete="searchMetadataOptions($event.query, category)"
-          @option-select="addMetadataItem($event.value, category)"
+          @option-select="handleMetadataItemSelect($event.value, category)"
         >
           <template #header v-if="metadataSearchObject[category].fetchedItems.length > 0">
             <div class="font-medium px-3 py-2">
