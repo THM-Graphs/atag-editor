@@ -84,19 +84,14 @@ const metadataSearchObject = ref<MetadataSearchObject>(
 );
 
 function addMetadataItem(item: MetadataEntry, category: string): void {
-  // console.log('Clicked item:', item, category);
-  console.log(metadataSearchObject.value[category].currentItem);
-
   annotation.data.metadata[category].push(item);
   metadataSearchObject.value[category].currentItem = null;
+
   changeMetadataSelectionMode(category, 'view');
 }
 
 function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): void {
   metadataSearchObject.value[category].mode = mode;
-  // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-  const elm = metadataSearchObject.value[category].elm[0];
-  console.log(elm);
 
   if (mode === 'view') {
     return;
@@ -104,6 +99,7 @@ function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): v
 
   // Wait for DOM to update before trying to focus the element
   nextTick(() => {
+    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
     // The metadataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
     // that holds the component. Is an array because since the refs are set in a loop in the template (TODO: Fix later, bit hacky)
     const elm = metadataSearchObject.value[category].elm[0];
@@ -168,7 +164,6 @@ function removeMetadataItem(item: MetadataEntry, category: string): void {
 }
 
 async function searchMetadataOptions(searchString: string, category: string): Promise<void> {
-  console.log(searchString, category);
   const nodeLabel: string = metadataSearchObject.value[category].nodeLabel;
   const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
 
@@ -340,7 +335,7 @@ function renderHTML(text: string, searchStr: string): string {
           ></Button>
         </div>
         <Button
-          v-show="metadataSearchObject[category].mode === 'view'"
+          v-if="metadataSearchObject[category].mode === 'view'"
           class="mt-2 w-full h-2rem"
           icon="pi pi-plus"
           size="small"
@@ -350,7 +345,7 @@ function renderHTML(text: string, searchStr: string): string {
           @click="changeMetadataSelectionMode(category, 'edit')"
         />
         <AutoComplete
-          v-show="metadataSearchObject[category].mode === 'edit'"
+          v-else="metadataSearchObject[category].mode === 'edit'"
           v-model="metadataSearchObject[category].currentItem"
           dropdown
           dropdownMode="current"
@@ -360,7 +355,6 @@ function renderHTML(text: string, searchStr: string): string {
           class="mt-2 w-full h-2rem"
           variant="filled"
           :ref="`input-${category}`"
-          :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
           input-class="w-full"
           @complete="searchMetadataOptions($event.query, category)"
           @option-select="addMetadataItem($event.value, category)"
