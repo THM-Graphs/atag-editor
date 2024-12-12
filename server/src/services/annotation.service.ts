@@ -23,8 +23,8 @@ export default class AnnotationService {
         WITH a, resource
 
         CALL apoc.cypher.run(
-            'MATCH (a)-[r]->(x) WHERE type(r) = $relationshipType RETURN collect(x {.*}) AS nodes',
-            {a: a, relationshipType: resource.relationshipType}
+            'MATCH (a)-[r:REFERS_TO]->(x) WHERE $nodeLabel IN labels(x) RETURN collect(x {.*}) AS nodes',
+            {a: a, nodeLabel: resource.nodeLabel}
         ) YIELD value
 
         RETURN resource.category AS key, value.nodes AS nodes

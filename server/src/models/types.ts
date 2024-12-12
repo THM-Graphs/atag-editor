@@ -1,8 +1,5 @@
-import IActorRole from './IActorRole.js';
 import IAnnotation from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
-import IConcept from './IConcept.js';
-import IEntity from './IEntity.js';
 
 export type Annotation = {
   characterUuids: string[];
@@ -16,9 +13,7 @@ export type Annotation = {
 
 export interface AnnotationData {
   properties: IAnnotation;
-  metadata: {
-    [index: string]: IActorRole[] | IConcept[] | IEntity[];
-  };
+  metadata: boolean;
 }
 
 export type AnnotationType = {
@@ -26,7 +21,7 @@ export type AnnotationType = {
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
-  metadata?: string[];
+  hasMetadata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];
   text: string;

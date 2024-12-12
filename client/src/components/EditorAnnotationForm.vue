@@ -66,7 +66,8 @@ const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.propert
 
 const propertiesAreCollapsed = ref<boolean>(false);
 const metadataAreCollapsed = ref<boolean>(false);
-const metadataCategories: string[] = config.metadata ?? [];
+const metadataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+
 const metadataSearchObject = ref<MetadataSearchObject>(
   metadataCategories.reduce((object: MetadataSearchObject, category) => {
     object[category] = {
@@ -359,7 +360,7 @@ function setRangeAnchorAtEnd(): void {
       </form>
     </Fieldset>
     <Fieldset
-      v-if="config.metadata"
+      v-if="config.hasMetadata === true"
       legend="Metadata"
       :toggleable="true"
       @toggle="metadataAreCollapsed = !metadataAreCollapsed"

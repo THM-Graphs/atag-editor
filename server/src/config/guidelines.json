@@ -212,14 +212,14 @@
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "metadata": ["actorRoles", "entities", "concepts"]
+        "hasMetadata": true
       },
       {
         "type": "place",
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "metadata": ["entities"]
+        "hasMetadata": true
       }
     ],
     "properties": [
@@ -261,19 +261,29 @@
     ],
     "resources": [
       {
-        "category": "actorRoles",
-        "nodeLabel": "ActorRole",
-        "relationshipType": "HAS_ROLE"
-      },
-      {
-        "category": "entities",
-        "nodeLabel": "Entity",
+        "category": "concepts",
+        "nodeLabel": "Concept",
         "relationshipType": "REFERS_TO"
       },
       {
-        "category": "concepts",
-        "nodeLabel": "Concept",
-        "relationshipType": "HAS_CONCEPT"
+        "category": "events",
+        "nodeLabel": "Event",
+        "relationshipType": "REFERS_TO"
+      },
+      {
+        "category": "persons",
+        "nodeLabel": "Person",
+        "relationshipType": "REFERS_TO"
+      },
+      {
+        "category": "places",
+        "nodeLabel": "Place",
+        "relationshipType": "REFERS_TO"
+      },
+      {
+        "category": "roles",
+        "nodeLabel": "Role",
+        "relationshipType": "REFERS_TO"
       }
     ]
   }
