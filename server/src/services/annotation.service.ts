@@ -5,6 +5,19 @@ import IAnnotation from '../models/IAnnotation.js';
 import { Annotation, AnnotationData } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 
+/**
+ * Data type for annotation data before saving them in the database. Contains only the
+ * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
+ */
+type ProcessedAnnotation = Omit<Annotation, 'data'> & {
+  data: Omit<AnnotationData, 'metadata'> & {
+    metadata: {
+      deleted: string[];
+      created: string[];
+    };
+  };
+};
+
 export default class AnnotationService {
   public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
@@ -44,10 +57,53 @@ export default class AnnotationService {
     return result.records[0]?.get('annotations');
   }
 
+  /**
+   * Process the given annotations before saving them in the database.
+   *
+   * This function replaces the metadata of the annotation with an object with two entries: `deleted` and `created`.
+   * Each entry contains the uuids of the nodes should be (dis-)connected to the annotation node. Used to simplify the cypher queries.
+   *
+   * @param {Annotation[]} annotations - The annotations to process.
+   * @return {ProcessedAnnotation[]} The processed annotations.
+   */
+  public processAnnotationsBeforeSaving(annotations: Annotation[]): ProcessedAnnotation[] {
+    return annotations.map(annotation => {
+      const initialMetadataUuids: string[] = Object.values(annotation.initialData.metadata)
+        .flat()
+        .map(item => item.uuid);
+
+      const newMetadataUuids: string[] = Object.values(annotation.data.metadata)
+        .flat()
+        .map(item => item.uuid);
+
+      const createdUuids: string[] = newMetadataUuids.filter(
+        uuid => !initialMetadataUuids.includes(uuid),
+      );
+
+      const deletedUuids: string[] = initialMetadataUuids.filter(
+        uuid => !newMetadataUuids.includes(uuid),
+      );
+
+      return {
+        ...annotation,
+        data: {
+          ...annotation.data,
+          metadata: {
+            deleted: deletedUuids,
+            created: createdUuids,
+          },
+        },
+      };
+    });
+  }
+
   public async saveAnnotations(
     collectionUuid: string,
     annotations: Annotation[],
   ): Promise<IAnnotation[]> {
+    const processedAnnotations: ProcessedAnnotation[] =
+      this.processAnnotationsBeforeSaving(annotations);
+
     // TODO: Improve query speed, way too many db hits
     const query: string = `
     WITH $annotations as allAnnotations
@@ -71,17 +127,33 @@ export default class AnnotationService {
     WHERE ann.status <> 'deleted'
 
     // Create (new) annotation node
-    MERGE (a:Annotation {uuid: ann.data.uuid})
+    MERGE (a:Annotation {uuid: ann.data.properties.uuid})
 
     // Set data
-    SET a = ann.data
+    SET a = ann.data.properties
 
     // Create edge to text node
     MERGE (t)-[:HAS_ANNOTATION]->(a)
 
-    // Remove existing relationships between annotation and character nodes before creating new ones
-    WITH a, ann
+    // Remove edges to nodes that are not longer part of the annotation data
+    WITH ann, a
 
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.metadata.deleted AS deleteUuid
+        MATCH (a)-[r:REFERS_TO]->(e:Entity {uuid: deleteUuid})
+        DELETE r
+    }
+
+    // Create edges to nodes that were added to the annotation data
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.metadata.created AS createdUuid
+        MATCH (e:Entity {uuid: createdUuid})
+        MERGE (a)-[r:REFERS_TO]->(e)
+    }
+
+    // Remove existing relationships between annotation and character nodes before creating new ones
     CALL {
         WITH a
         MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(:Character)
@@ -122,7 +194,10 @@ export default class AnnotationService {
     RETURN annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, annotations });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      collectionUuid,
+      annotations: processedAnnotations,
+    });
 
     return result.records[0]?.get('annotations');
   }

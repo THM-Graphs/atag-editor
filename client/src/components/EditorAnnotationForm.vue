@@ -90,7 +90,9 @@ const metadataSearchObject = ref<MetadataSearchObject>(
  * @param {MetadataEntry} item - The metadata item to be added.
  */
 function addMetadataItem(item: MetadataEntry, category: string): void {
-  annotation.data.metadata[category].push(item);
+  // Omit 'html' property from entry since it was only created for rendering purposes
+  const { html, ...rest } = item;
+  annotation.data.metadata[category].push(rest);
 }
 
 /**

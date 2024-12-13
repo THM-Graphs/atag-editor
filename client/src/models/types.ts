@@ -1,5 +1,8 @@
+import IActorRole from './IActorRole';
 import IAnnotation from './IAnnotation';
 import ICharacter from './ICharacter';
+import IConcept from './IConcept';
+import IEntity from './IEntity';
 
 export type Annotation = {
   characterUuids: string[];
@@ -13,7 +16,9 @@ export type Annotation = {
 
 export interface AnnotationData {
   properties: IAnnotation;
-  metadata: boolean;
+  metadata: {
+    [index: string]: IActorRole[] | IConcept[] | IEntity[];
+  };
 }
 
 export type AnnotationType = {
