@@ -19,9 +19,8 @@ export function useAnnotationStore() {
    * Initializes the annotation store with the provided annotation data. Called on annotation fetching from the database or on text import.
    * This function resets the store and performs further initialization logic depending on the source.
    *
-   * @param {IAnnotation[]} annotationData - The array of annotations to initialize the store with.
-   * @param {'database' | 'import'} source - The source of the annotation data. `database` if the initialization happens on text load,
-   *                                         `import` if it happens on text import.
+   * @param {AnnotationData[]} annotationData - The array of annotation data objects to initialize the store with.
+   * @param {'database' | 'import'} source - The source of the annotation data. `database` if the initialization happens on text load, `import` if it happens on text import.
    * @return {void} This function does not return any value.
    */
   function initializeAnnotations(
@@ -57,9 +56,9 @@ export function useAnnotationStore() {
 
       return {
         characterUuids: charUuids,
-        data: { ...annotation },
+        data: cloneDeep(annotation),
         endUuid: charUuids[charUuids.length - 1],
-        initialData: { ...annotation },
+        initialData: cloneDeep(annotation),
         isTruncated: isLeftTruncated || isRightTruncated,
         startUuid: charUuids[0],
         status: source === 'database' ? 'existing' : 'created',
@@ -328,7 +327,7 @@ export function useAnnotationStore() {
 
     annotations.value.forEach((a: Annotation) => {
       a.status = 'existing';
-      a.initialData = { ...a.data };
+      a.initialData = cloneDeep(a.data);
     });
   }
 
