@@ -53,7 +53,6 @@ export type AnnotationReference = {
 export type AnnotationConfigResource = {
   category: string;
   nodeLabel: string;
-  relationshipType: string;
 };
 
 export type Character = {

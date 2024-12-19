@@ -2,7 +2,7 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { Annotation, AnnotationData } from '../models/types.js';
+import { Annotation, AnnotationConfigResource, AnnotationData } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 
 /**
@@ -22,19 +22,20 @@ export default class AnnotationService {
   public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const resources = guidelines.annotations.resources;
+    const resources: AnnotationConfigResource[] = guidelines.annotations.resources;
 
     const query: string = `
     // Match all annotations for given selection
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
 
-    // Fetch additional nodes by label and relationship defined in the guidelines
+    // Fetch additional nodes by label defined in the guidelines
     WITH a, $resources AS resources
     UNWIND resources AS resource
     
     CALL {
         WITH a, resource
-
+        
+        // TODO: This query can be improved (direct label access instead of WHERE filter)
         CALL apoc.cypher.run(
             'MATCH (a)-[r:REFERS_TO]->(x) WHERE $nodeLabel IN labels(x) RETURN collect(x {.*}) AS nodes',
             {a: a, nodeLabel: resource.nodeLabel}

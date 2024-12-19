@@ -2,6 +2,7 @@
 import additionIcon from '../../../public/icons/addition.svg';
 import commentInternalIcon from '../../../public/icons/commentInternal.svg';
 import emphasisedIcon from '../../../public/icons/emphasised.svg';
+import entityIcon from '../../../public/icons/entity.svg';
 import expansionIcon from '../../../public/icons/expansion.svg';
 import nonLinearIcon from '../../../public/icons/nonLinear.svg';
 import interventionIcon from '../../../public/icons/intervention.svg';
@@ -13,14 +14,13 @@ import gapIcon from '../../../public/icons/gap.svg';
 import headIcon from '../../../public/icons/head.svg';
 import lineIcon from '../../../public/icons/line.svg';
 import paragraphIcon from '../../../public/icons/paragraph.svg';
-import personIcon from '../../../public/icons/person.svg';
-import placeIcon from '../../../public/icons/place.svg';
 import transpositionIcon from '../../../public/icons/transposition.svg';
 
 const iconsMap: { [key: string]: string } = {
   addition: additionIcon,
   commentInternal: commentInternalIcon,
   emphasised: emphasisedIcon,
+  entity: entityIcon,
   expansion: expansionIcon,
   nonLinear: nonLinearIcon,
   intervention: interventionIcon,
@@ -32,8 +32,6 @@ const iconsMap: { [key: string]: string } = {
   head: headIcon,
   line: lineIcon,
   paragraph: paragraphIcon,
-  person: personIcon,
-  place: placeIcon,
   transposition: transpositionIcon,
 };
 
