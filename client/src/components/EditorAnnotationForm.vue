@@ -387,7 +387,7 @@ function setRangeAnchorAtEnd(): void {
           ></Button>
         </div>
         <Button
-          v-if="metadataSearchObject[category].mode === 'view'"
+          v-show="metadataSearchObject[category].mode === 'view'"
           class="mt-2 w-full h-2rem"
           icon="pi pi-plus"
           size="small"
@@ -397,12 +397,13 @@ function setRangeAnchorAtEnd(): void {
           @click="changeMetadataSelectionMode(category, 'edit')"
         />
         <AutoComplete
-          v-else="metadataSearchObject[category].mode === 'edit'"
+          v-show="metadataSearchObject[category].mode === 'edit'"
           v-model="metadataSearchObject[category].currentItem"
           dropdown
           dropdownMode="current"
           :placeholder="`Type to see suggestions`"
           :suggestions="metadataSearchObject[category].fetchedItems"
+          :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
           optionLabel="label"
           class="mt-2 w-full h-2rem"
           variant="filled"
@@ -417,7 +418,7 @@ function setRangeAnchorAtEnd(): void {
             </div>
           </template>
           <template #option="slotProps">
-            <span v-html="slotProps.option.html"></span>
+            <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
           </template>
         </AutoComplete>
       </div>
@@ -523,5 +524,9 @@ function setRangeAnchorAtEnd(): void {
 
 .highlight {
   background-color: yellow !important;
+}
+
+.hidden {
+  display: none;
 }
 </style>
