@@ -302,7 +302,7 @@ function setRangeAnchorAtEnd(): void {
           class="flex align-items-center gap-3 mb-3"
           v-show="field.visible"
         >
-          <label :for="field.name" class="w-10rem font-semibold"
+          <label :for="field.name" class="form-label font-semibold"
             >{{ camelCaseToTitleCase(field.name) }}
           </label>
           <InputText
@@ -505,6 +505,10 @@ function setRangeAnchorAtEnd(): void {
 
 .button-icon {
   object-fit: contain;
+}
+
+.form-label {
+  flex-basis: 10rem;
 }
 
 .normdata-entry {
