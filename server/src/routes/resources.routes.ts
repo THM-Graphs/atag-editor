@@ -7,7 +7,6 @@ const router: Router = express.Router({ mergeParams: true });
 
 const resourceService: ResourceService = new ResourceService();
 
-// TODO: Handle missing parameters (e.g. when user wants all nodes without searching for a match)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const nodeLabel: string = capitalize(req.query.node as string);
   const searchStr: string = (req.query.searchStr as string).toLowerCase();
