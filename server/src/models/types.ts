@@ -1,21 +1,30 @@
 import IAnnotation from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
+import IEntity from './IEntity.js';
 
 export type Annotation = {
   characterUuids: string[];
-  data: IAnnotation;
+  data: AnnotationData;
   endUuid: string;
-  initialData: IAnnotation;
+  initialData: AnnotationData;
   isTruncated: boolean;
   startUuid: string;
   status: 'existing' | 'created' | 'deleted';
 };
+
+export interface AnnotationData {
+  properties: IAnnotation;
+  normdata: {
+    [index: string]: IEntity[];
+  };
+}
 
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
+  hasNormdata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];
   text: string;
@@ -37,6 +46,11 @@ export type AnnotationReference = {
   subtype: string | null;
   type: string;
   uuid: string;
+};
+
+export type AnnotationConfigResource = {
+  category: string;
+  nodeLabel: string;
 };
 
 export type Character = {

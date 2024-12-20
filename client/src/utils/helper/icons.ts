@@ -2,6 +2,7 @@
 import additionIcon from '../../../public/icons/addition.svg';
 import commentInternalIcon from '../../../public/icons/commentInternal.svg';
 import emphasisedIcon from '../../../public/icons/emphasised.svg';
+import entityIcon from '../../../public/icons/entity.svg';
 import expansionIcon from '../../../public/icons/expansion.svg';
 import nonLinearIcon from '../../../public/icons/nonLinear.svg';
 import interventionIcon from '../../../public/icons/intervention.svg';
@@ -19,6 +20,7 @@ const iconsMap: { [key: string]: string } = {
   addition: additionIcon,
   commentInternal: commentInternalIcon,
   emphasised: emphasisedIcon,
+  entity: entityIcon,
   expansion: expansionIcon,
   nonLinear: nonLinearIcon,
   intervention: interventionIcon,

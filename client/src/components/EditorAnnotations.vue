@@ -47,7 +47,7 @@ watch(
       });
 
       displayedAnnotations.value = annotations.value.filter((annotation: Annotation) => {
-        return charUuids.has(annotation.data.uuid) && annotation.status !== 'deleted';
+        return charUuids.has(annotation.data.properties.uuid) && annotation.status !== 'deleted';
       });
     } else {
       displayedAnnotations.value = annotations.value.filter(a => a.status !== 'deleted');
@@ -77,13 +77,13 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
       };
 
       const annos: Annotation[] = displayedAnnotations.value.filter(
-        a => a.data.type === annoType.type,
+        a => a.data.properties.type === annoType.type,
       );
 
       annos.forEach((anno: Annotation, k: number) => {
         const newAnnotation: TreeNode = {
           key: i.toString() + '-' + j.toString() + '-' + k.toString(),
-          label: anno.data.text,
+          label: anno.data.properties.text,
           type: 'annotation',
           data: anno,
         };
@@ -224,7 +224,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
             >
               <div
                 class="ml-2 anno-entry preview"
-                :data-annotation-uuid="slotProps.node.data.data.uuid"
+                :data-annotation-uuid="slotProps.node.data.data.properties.uuid"
               >
                 <!-- TODO: Fix overflow -->
                 <Tag

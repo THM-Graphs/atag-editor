@@ -84,7 +84,7 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
     annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
 
     cachedAnnotationsInSelection.value = annotations.value.filter(a =>
-      annotationUuids.has(a.data.uuid),
+      annotationUuids.has(a.data.properties.uuid),
     );
   }
 
@@ -173,12 +173,12 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
       <Badge :value="annotationsInSelection.length" severity="contrast" />
     </div>
     <div class="annotation-list flex-grow-1 overflow-y-auto p-1">
-      <template v-for="annotation in displayedAnnotations" :key="annotation.data.uuid">
+      <template v-for="annotation in displayedAnnotations" :key="annotation.data.properties.uuid">
         <EditorAnnotationForm
           :annotation="annotation"
           v-if="
             annotationsInSelection.includes(annotation) &&
-            selectedOptions.includes(annotation.data.type)
+            selectedOptions.includes(annotation.data.properties.type)
           "
         />
       </template>

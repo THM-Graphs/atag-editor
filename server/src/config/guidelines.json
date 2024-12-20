@@ -206,6 +206,23 @@
         "category": "project",
         "defaultSelected": true,
         "isZeroPoint": false
+      },
+      {
+        "type": "entity",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasNormdata": true,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "selection",
+            "options": ["concept", "event", "imagery", "person", "place", "reference"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       }
     ],
     "properties": [
@@ -243,6 +260,28 @@
         "required": false,
         "editable": true,
         "visible": true
+      }
+    ],
+    "resources": [
+      {
+        "category": "concepts",
+        "nodeLabel": "Concept"
+      },
+      {
+        "category": "events",
+        "nodeLabel": "Event"
+      },
+      {
+        "category": "persons",
+        "nodeLabel": "Person"
+      },
+      {
+        "category": "places",
+        "nodeLabel": "Place"
+      },
+      {
+        "category": "roles",
+        "nodeLabel": "Role"
       }
     ]
   }

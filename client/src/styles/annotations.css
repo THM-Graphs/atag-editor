@@ -151,6 +151,42 @@ Fix by changing classlists or annotation types? */
   user-select: none;
 }
 
+#text > span:has(span.entity.person) {
+  text-decoration: underline;
+  text-decoration-color: hsl(358, 83%, 68%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.place) {
+  text-decoration: underline;
+  text-decoration-color: hsl(212, 93%, 54%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.concept) {
+  text-decoration: underline;
+  text-decoration-color: hsl(45, 90%, 60%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.event) {
+  text-decoration: underline;
+  text-decoration-color: hsl(134, 61%, 41%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.imagery) {
+  text-decoration: underline;
+  text-decoration-color: hsl(296, 72%, 66%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.reference) {
+  text-decoration: underline;
+  text-decoration-color: hsl(17, 22%, 50%);
+  text-decoration-thickness: 2px;
+}
+
 /* -------------------------------------------------------------------------------------------------------------------------- */
 
 #text > span:has(span.paragraph.end)::after {

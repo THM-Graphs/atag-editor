@@ -590,9 +590,9 @@ export function useCharactersStore() {
   function annotateCharacters(characters: Character[], annotation: Annotation): void {
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
-        uuid: annotation.data.uuid,
-        type: annotation.data.type,
-        subtype: annotation.data.subtype ?? null,
+        uuid: annotation.data.properties.uuid,
+        type: annotation.data.properties.type,
+        subtype: annotation.data.properties.subtype ?? null,
         isFirstCharacter: index === 0 ? true : false,
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),

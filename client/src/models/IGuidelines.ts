@@ -1,4 +1,4 @@
-import { AnnotationProperty, AnnotationType } from './types';
+import { AnnotationConfigResource, AnnotationProperty, AnnotationType } from './types';
 
 export interface IGuidelines {
   collections: {
@@ -17,5 +17,6 @@ export interface IGuidelines {
   annotations: {
     types: AnnotationType[];
     properties: AnnotationProperty[];
+    resources: AnnotationConfigResource[];
   };
 }
