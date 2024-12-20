@@ -212,7 +212,7 @@
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "hasMetadata": true,
+        "hasNormdata": true,
         "properties": [
           {
             "name": "subtype",

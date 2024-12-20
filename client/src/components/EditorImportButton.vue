@@ -379,12 +379,12 @@ function transformStandoffToAtag(): void {
       newAnnotationProperties.text = a.text;
       newAnnotationProperties.uuid = crypto.randomUUID();
 
-      // Metadata (= connected nodes). Not provided, but needed in Annotation structure -> empty arrays
-      const metadataCategories: string[] = guidelines.value.annotations.resources.map(
+      // Normdata (= connected nodes). Not provided, but needed in Annotation structure -> empty arrays
+      const normdataCategories: string[] = guidelines.value.annotations.resources.map(
         r => r.category,
       );
 
-      const newAnnotationMetadata = Object.fromEntries(metadataCategories.map(m => [m, []]));
+      const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
 
       let index: number = a.start;
 
@@ -401,7 +401,7 @@ function transformStandoffToAtag(): void {
         index++;
       } while (index <= a.end);
 
-      newAnnotations.push({ properties: newAnnotationProperties, metadata: newAnnotationMetadata });
+      newAnnotations.push({ properties: newAnnotationProperties, normdata: newAnnotationNormdata });
     });
 
     console.log(newAnnotations);

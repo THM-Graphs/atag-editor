@@ -103,13 +103,13 @@ export function useEditorStore() {
     for (let i = 0; i < annotations.value.length; i++) {
       const a: Annotation = annotations.value[i];
 
-      const metadataUuids: Set<string> = new Set(
-        Object.values(a.data.metadata)
+      const normdataUuids: Set<string> = new Set(
+        Object.values(a.data.normdata)
           .flat()
           .map(m => m.uuid),
       );
-      const initialMetadataUuids: Set<string> = new Set(
-        Object.values(a.initialData.metadata)
+      const initialNormdataUuids: Set<string> = new Set(
+        Object.values(a.initialData.normdata)
           .flat()
           .map(m => m.uuid),
       );
@@ -118,7 +118,7 @@ export function useEditorStore() {
         a.status === 'deleted' ||
         a.status === 'created' ||
         !areObjectsEqual(a.data.properties, a.initialData.properties) ||
-        !areSetsEqual(metadataUuids, initialMetadataUuids)
+        !areSetsEqual(normdataUuids, initialNormdataUuids)
       ) {
         console.log(`Annotation at index ${i} has a changed status or data.`);
         return true;

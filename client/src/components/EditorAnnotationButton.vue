@@ -316,14 +316,14 @@ function createNewAnnotation(
     newAnnotationData.subtype = subtype ?? newAnnotationData.subtype;
   }
 
-  // Metadata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const metadataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
-  const newAnnotationMetadata = Object.fromEntries(metadataCategories.map(m => [m, []]));
+  // Normdata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+  const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
-    data: { properties: newAnnotationData, metadata: newAnnotationMetadata },
-    initialData: { properties: newAnnotationData, metadata: newAnnotationMetadata },
+    data: { properties: newAnnotationData, normdata: newAnnotationNormdata },
+    initialData: { properties: newAnnotationData, normdata: newAnnotationNormdata },
     isTruncated: false,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,

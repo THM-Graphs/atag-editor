@@ -10,8 +10,8 @@ import { IGuidelines } from '../models/IGuidelines.js';
  * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
  */
 type ProcessedAnnotation = Omit<Annotation, 'data'> & {
-  data: Omit<AnnotationData, 'metadata'> & {
-    metadata: {
+  data: Omit<AnnotationData, 'normdata'> & {
+    normdata: {
       deleted: string[];
       created: string[];
     };
@@ -45,11 +45,11 @@ export default class AnnotationService {
     }
 
     // Create key-value pair with category and matched nodes
-    WITH a, collect({category: key, nodes: nodes}) AS metadata
+    WITH a, collect({category: key, nodes: nodes}) AS normdata
 
     RETURN collect({
         properties: a {.*},
-        metadata: apoc.map.fromPairs([m IN metadata | [m.category, m.nodes]])
+        normdata: apoc.map.fromPairs([m IN normdata | [m.category, m.nodes]])
     }) AS annotations
 `;
 
@@ -61,7 +61,7 @@ export default class AnnotationService {
   /**
    * Process the given annotations before saving them in the database.
    *
-   * This function replaces the metadata of the annotation with an object with two entries: `deleted` and `created`.
+   * This function replaces the normdata of the annotation with an object with two entries: `deleted` and `created`.
    * Each entry contains the uuids of the nodes should be (dis-)connected to the annotation node. Used to simplify the cypher queries.
    *
    * @param {Annotation[]} annotations - The annotations to process.
@@ -69,27 +69,27 @@ export default class AnnotationService {
    */
   public processAnnotationsBeforeSaving(annotations: Annotation[]): ProcessedAnnotation[] {
     return annotations.map(annotation => {
-      const initialMetadataUuids: string[] = Object.values(annotation.initialData.metadata)
+      const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
         .flat()
         .map(item => item.uuid);
 
-      const newMetadataUuids: string[] = Object.values(annotation.data.metadata)
+      const newNormdataUuids: string[] = Object.values(annotation.data.normdata)
         .flat()
         .map(item => item.uuid);
 
-      const createdUuids: string[] = newMetadataUuids.filter(
-        uuid => !initialMetadataUuids.includes(uuid),
+      const createdUuids: string[] = newNormdataUuids.filter(
+        uuid => !initialNormdataUuids.includes(uuid),
       );
 
-      const deletedUuids: string[] = initialMetadataUuids.filter(
-        uuid => !newMetadataUuids.includes(uuid),
+      const deletedUuids: string[] = initialNormdataUuids.filter(
+        uuid => !newNormdataUuids.includes(uuid),
       );
 
       return {
         ...annotation,
         data: {
           ...annotation.data,
-          metadata: {
+          normdata: {
             deleted: deletedUuids,
             created: createdUuids,
           },
@@ -141,7 +141,7 @@ export default class AnnotationService {
 
     CALL {
         WITH ann, a
-        UNWIND ann.data.metadata.deleted AS deleteUuid
+        UNWIND ann.data.normdata.deleted AS deleteUuid
         MATCH (a)-[r:REFERS_TO]->(e:Entity {uuid: deleteUuid})
         DELETE r
     }
@@ -149,7 +149,7 @@ export default class AnnotationService {
     // Create edges to nodes that were added to the annotation data
     CALL {
         WITH ann, a
-        UNWIND ann.data.metadata.created AS createdUuid
+        UNWIND ann.data.normdata.created AS createdUuid
         MATCH (e:Entity {uuid: createdUuid})
         MERGE (a)-[r:REFERS_TO]->(e)
     }

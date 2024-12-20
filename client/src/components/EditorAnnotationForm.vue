@@ -26,16 +26,16 @@ import IActorRole from '../models/IActorRole';
 import IConcept from '../models/IConcept';
 import IEntity from '../models/IEntity';
 
-type MetadataEntry = IActorRole & IConcept & IEntity & { html: string };
+type NormdataEntry = IActorRole & IConcept & IEntity & { html: string };
 
 /**
- * Interface for relevant state information about each metadata category
+ * Interface for relevant state information about each normdata category
  */
-interface MetadataSearchObject {
+interface NormdataSearchObject {
   [key: string]: {
-    fetchedItems: MetadataEntry[] | string[];
+    fetchedItems: NormdataEntry[] | string[];
     nodeLabel: string;
-    currentItem: MetadataEntry | null;
+    currentItem: NormdataEntry | null;
     mode: 'edit' | 'view';
     elm: Ref<any>;
   };
@@ -65,11 +65,11 @@ const config: AnnotationType = getAnnotationConfig(annotation.data.properties.ty
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
 
 const propertiesAreCollapsed = ref<boolean>(false);
-const metadataAreCollapsed = ref<boolean>(false);
-const metadataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+const normdataAreCollapsed = ref<boolean>(false);
+const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
 
-const metadataSearchObject = ref<MetadataSearchObject>(
-  metadataCategories.reduce((object: MetadataSearchObject, category) => {
+const normdataSearchObject = ref<NormdataSearchObject>(
+  normdataCategories.reduce((object: NormdataSearchObject, category) => {
     object[category] = {
       nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
         .nodeLabel,
@@ -85,18 +85,18 @@ const metadataSearchObject = ref<MetadataSearchObject>(
 );
 
 /**
- * Adds a metadata item to the specified category in the annotation's data.
+ * Adds a normdata item to the specified category in the annotation's data.
  *
- * @param {MetadataEntry} item - The metadata item to be added.
+ * @param {NormdataEntry} item - The normdata item to be added.
  */
-function addMetadataItem(item: MetadataEntry, category: string): void {
+function addNormdataItem(item: NormdataEntry, category: string): void {
   // Omit 'html' property from entry since it was only created for rendering purposes
   const { html, ...rest } = item;
-  annotation.data.metadata[category].push(rest);
+  annotation.data.normdata[category].push(rest);
 }
 
 /**
- * Changes the mode of the metadata search component for the given category. This triggers
+ * Changes the mode of the normdata search component for the given category. This triggers
  * re-renders in the template.
  *
  * - If set to `view`, the search bar will be hidden and its related state variables reset.
@@ -105,11 +105,11 @@ function addMetadataItem(item: MetadataEntry, category: string): void {
  * @param {string} category - The category for which the mode should be changed.
  * @param {'view' | 'edit'} mode - The new mode.
  */
-function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): void {
-  metadataSearchObject.value[category].mode = mode;
+function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): void {
+  normdataSearchObject.value[category].mode = mode;
 
   if (mode === 'view') {
-    metadataSearchObject.value[category].currentItem = null;
+    normdataSearchObject.value[category].currentItem = null;
 
     return;
   }
@@ -117,9 +117,9 @@ function changeMetadataSelectionMode(category: string, mode: 'view' | 'edit'): v
   // Wait for DOM to update before trying to focus the element
   nextTick(() => {
     // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    // The metadataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
+    // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
     // that holds the component. Is an array because since the refs are set in a loop in the template
-    const elm = metadataSearchObject.value[category].elm[0];
+    const elm = normdataSearchObject.value[category].elm[0];
 
     if (!elm) {
       console.warn(`Focus failed: Element not found for category "${category}"`);
@@ -155,15 +155,15 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
 }
 
 /**
- * Handles the selection of a metadata item by adding it to the annotation and resetting the search component.
+ * Handles the selection of a normdata item by adding it to the annotation and resetting the search component.
  *  Called on selection of an item from the autocomplete dropdown pane.
  *
- * @param {MetadataEntry} item - The metadata item to be added.
+ * @param {NormdataEntry} item - The normdata item to be added.
  * @param {string} category - The category to which the item should be added.
  */
-function handleMetadataItemSelect(item: MetadataEntry, category: string): void {
-  addMetadataItem(item, category);
-  changeMetadataSelectionMode(category, 'view');
+function handleNormdataItemSelect(item: NormdataEntry, category: string): void {
+  addNormdataItem(item, category);
+  changeNormdataSelectionMode(category, 'view');
 }
 
 function handleShiftLeft(): void {
@@ -187,13 +187,13 @@ function handleShrink(): void {
 }
 
 /**
- * Removes a metadata item from the given category in the annotation's data.
+ * Removes a normdata item from the given category in the annotation's data.
  *
- * @param {MetadataEntry} item - The metadata item to be removed.
+ * @param {NormdataEntry} item - The normdata item to be removed.
  * @param {string} category - The category from which the item should be removed.
  */
-function removeMetadataItem(item: MetadataEntry, category: string): void {
-  annotation.data.metadata[category] = annotation.data.metadata[category].filter(
+function removeNormdataItem(item: NormdataEntry, category: string): void {
+  annotation.data.normdata[category] = annotation.data.normdata[category].filter(
     entry => entry.uuid !== item.uuid,
   );
 }
@@ -218,14 +218,14 @@ function renderHTML(text: string, searchStr: string): string {
 }
 
 /**
- * Fetches metadata items from the server whose's label matches the given search string and stores the results
- * in the corresponding metadataSearchObject entry.
+ * Fetches normdata items from the server whose's label matches the given search string and stores the results
+ * in the corresponding normdataSearchObject entry.
  *
  * @param {string} searchString - The string to be searched for.
  * @param {string} category - The category for which the search should be performed.
  */
-async function searchMetadataOptions(searchString: string, category: string): Promise<void> {
-  const nodeLabel: string = metadataSearchObject.value[category].nodeLabel;
+async function searchNormdataOptions(searchString: string, category: string): Promise<void> {
+  const nodeLabel: string = normdataSearchObject.value[category].nodeLabel;
   const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
 
   const response: Response = await fetch(url);
@@ -234,24 +234,24 @@ async function searchMetadataOptions(searchString: string, category: string): Pr
     throw new Error('Network response was not ok');
   }
 
-  const fetchedMetadata: MetadataEntry[] = await response.json();
+  const fetchedNormdata: NormdataEntry[] = await response.json();
 
   // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = annotation.data.metadata[category].map(
-    (entry: MetadataEntry) => entry.uuid,
+  const existingUuids: string[] = annotation.data.normdata[category].map(
+    (entry: NormdataEntry) => entry.uuid,
   );
 
-  const withoutDuplicates: MetadataEntry[] = fetchedMetadata.filter(
-    (entry: MetadataEntry) => !existingUuids.includes(entry.uuid),
+  const withoutDuplicates: NormdataEntry[] = fetchedNormdata.filter(
+    (entry: NormdataEntry) => !existingUuids.includes(entry.uuid),
   );
 
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = withoutDuplicates.map((entry: MetadataEntry) => ({
+  const withHtml = withoutDuplicates.map((entry: NormdataEntry) => ({
     ...entry,
     html: renderHTML(entry.label, searchString),
   }));
 
-  metadataSearchObject.value[category].fetchedItems = withHtml;
+  normdataSearchObject.value[category].fetchedItems = withHtml;
 }
 
 function setRangeAnchorAtEnd(): void {
@@ -362,19 +362,19 @@ function setRangeAnchorAtEnd(): void {
       </form>
     </Fieldset>
     <Fieldset
-      v-if="config.hasMetadata === true"
-      legend="Metadata"
+      v-if="config.hasNormdata === true"
+      legend="Normdata"
       :toggleable="true"
-      @toggle="metadataAreCollapsed = !metadataAreCollapsed"
+      @toggle="normdataAreCollapsed = !normdataAreCollapsed"
     >
       <template #toggleicon>
-        <span :class="`pi pi-chevron-${metadataAreCollapsed ? 'down' : 'up'}`"></span>
+        <span :class="`pi pi-chevron-${normdataAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <div v-for="category in metadataCategories">
+      <div v-for="category in normdataCategories">
         <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
         <div
-          class="metadata-entry flex justify-content-between align-items-center"
-          v-for="entry in annotation.data.metadata[category]"
+          class="normdata-entry flex justify-content-between align-items-center"
+          v-for="entry in annotation.data.normdata[category]"
         >
           <span>
             {{ entry.label }}
@@ -383,38 +383,38 @@ function setRangeAnchorAtEnd(): void {
             icon="pi pi-times"
             size="small"
             severity="danger"
-            @click="removeMetadataItem(entry as MetadataEntry, category)"
+            @click="removeNormdataItem(entry as NormdataEntry, category)"
           ></Button>
         </div>
         <Button
-          v-show="metadataSearchObject[category].mode === 'view'"
+          v-show="normdataSearchObject[category].mode === 'view'"
           class="mt-2 w-full h-2rem"
           icon="pi pi-plus"
           size="small"
           severity="secondary"
           label="Add item"
           :disabled="annotation.isTruncated"
-          @click="changeMetadataSelectionMode(category, 'edit')"
+          @click="changeNormdataSelectionMode(category, 'edit')"
         />
         <AutoComplete
-          v-show="metadataSearchObject[category].mode === 'edit'"
-          v-model="metadataSearchObject[category].currentItem"
+          v-show="normdataSearchObject[category].mode === 'edit'"
+          v-model="normdataSearchObject[category].currentItem"
           dropdown
           dropdownMode="current"
           :placeholder="`Type to see suggestions`"
-          :suggestions="metadataSearchObject[category].fetchedItems"
-          :overlayClass="metadataSearchObject[category].mode === 'view' ? 'hidden' : ''"
+          :suggestions="normdataSearchObject[category].fetchedItems"
+          :overlayClass="normdataSearchObject[category].mode === 'view' ? 'hidden' : ''"
           optionLabel="label"
           class="mt-2 w-full h-2rem"
           variant="filled"
           :ref="`input-${category}`"
           input-class="w-full"
-          @complete="searchMetadataOptions($event.query, category)"
-          @option-select="handleMetadataItemSelect($event.value, category)"
+          @complete="searchNormdataOptions($event.query, category)"
+          @option-select="handleNormdataItemSelect($event.value, category)"
         >
-          <template #header v-if="metadataSearchObject[category].fetchedItems.length > 0">
+          <template #header v-if="normdataSearchObject[category].fetchedItems.length > 0">
             <div class="font-medium px-3 py-2">
-              {{ metadataSearchObject[category].fetchedItems.length }} Results
+              {{ normdataSearchObject[category].fetchedItems.length }} Results
             </div>
           </template>
           <template #option="slotProps">
@@ -509,7 +509,7 @@ function setRangeAnchorAtEnd(): void {
   object-fit: contain;
 }
 
-.metadata-entry {
+.normdata-entry {
   border: 1px solid gray;
   border-radius: 5px;
   margin-bottom: 0.5rem;

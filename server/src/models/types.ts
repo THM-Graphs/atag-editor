@@ -16,7 +16,7 @@ export type Annotation = {
 
 export interface AnnotationData {
   properties: IAnnotation;
-  metadata: {
+  normdata: {
     [index: string]: IActorRole[] | IConcept[] | IEntity[];
   };
 }
@@ -26,7 +26,7 @@ export type AnnotationType = {
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
-  hasMetadata?: boolean;
+  hasNormdata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];
   text: string;
