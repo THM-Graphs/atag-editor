@@ -1,7 +1,5 @@
-import IActorRole from './IActorRole.js';
 import IAnnotation from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
-import IConcept from './IConcept.js';
 import IEntity from './IEntity.js';
 
 export type Annotation = {
@@ -17,7 +15,7 @@ export type Annotation = {
 export interface AnnotationData {
   properties: IAnnotation;
   normdata: {
-    [index: string]: IActorRole[] | IConcept[] | IEntity[];
+    [index: string]: IEntity[];
   };
 }
 

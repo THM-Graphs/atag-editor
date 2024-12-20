@@ -1,7 +1,5 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
-import IActorRole from '../models/IActorRole.js';
-import IConcept from '../models/IConcept.js';
 import IEntity from '../models/IEntity.js';
 
 export default class ResourceService {
@@ -11,12 +9,9 @@ export default class ResourceService {
    *
    * @param {string} nodeLabel - The node label to search, e.g. "ActorRole" or "Entity"
    * @param {string} searchStr - The search string to search for.
-   * @return {Promise<IEntity[] | IActorRole[] | IConcept[]>} A promise that resolves to an array of resources with the given label.
+   * @return {Promise<IEntity[]>} A promise that resolves to an array of resources with the given label.
    */
-  async searchByLabel(
-    nodeLabel: string,
-    searchStr: string,
-  ): Promise<IEntity[] | IActorRole[] | IConcept[]> {
+  async searchByLabel(nodeLabel: string, searchStr: string): Promise<IEntity[]> {
     const query: string = `
 		MATCH (n:${nodeLabel})
     WHERE toLower(n.label) CONTAINS toLower($searchStr)

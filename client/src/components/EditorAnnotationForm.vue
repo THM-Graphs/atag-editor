@@ -22,11 +22,9 @@ import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
-import IActorRole from '../models/IActorRole';
-import IConcept from '../models/IConcept';
 import IEntity from '../models/IEntity';
 
-type NormdataEntry = IActorRole & IConcept & IEntity & { html: string };
+type NormdataEntry = IEntity & { html: string };
 
 /**
  * Interface for relevant state information about each normdata category
