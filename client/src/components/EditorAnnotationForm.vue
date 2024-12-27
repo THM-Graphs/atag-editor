@@ -243,6 +243,9 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
     (entry: NormdataEntry) => !existingUuids.includes(entry.uuid),
   );
 
+  console.log('Fetched normdata:', fetchedNormdata.length);
+  console.log('Displayed:', withoutDuplicates.length);
+
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
   const withHtml = withoutDuplicates.map((entry: NormdataEntry) => ({
     ...entry,

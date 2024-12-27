@@ -105,6 +105,9 @@ export default class AnnotationService {
     const processedAnnotations: ProcessedAnnotation[] =
       this.processAnnotationsBeforeSaving(annotations);
 
+    console.log('Annotations to be saved:');
+    console.log(JSON.parse(JSON.stringify(processedAnnotations)));
+
     // TODO: Improve query speed, way too many db hits
     const query: string = `
     WITH $annotations as allAnnotations
