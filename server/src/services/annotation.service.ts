@@ -105,12 +105,6 @@ export default class AnnotationService {
     const processedAnnotations: ProcessedAnnotation[] =
       this.processAnnotationsBeforeSaving(annotations);
 
-    console.log('Annotations to be saved:');
-    console.dir(
-      processedAnnotations.filter(ann => ann.data.properties.type === 'entity'),
-      { depth: null },
-    );
-
     // TODO: Improve query speed, way too many db hits
     const query: string = `
     WITH $annotations as allAnnotations

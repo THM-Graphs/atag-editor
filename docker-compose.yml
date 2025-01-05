@@ -58,3 +58,4 @@ services:
    apoc.initializer.neo4j.0: CREATE CONSTRAINT collection_uuid IF NOT EXISTS FOR (c:Collection) REQUIRE c.uuid IS UNIQUE
    apoc.initializer.neo4j.1: CREATE CONSTRAINT character_uuid IF NOT EXISTS FOR (ch:Character) REQUIRE ch.uuid IS UNIQUE
    apoc.initializer.neo4j.2: CREATE CONSTRAINT annotation_uuid IF NOT EXISTS FOR (a:Annotation) REQUIRE a.uuid IS UNIQUE
+   apoc.initializer.neo4j.3: CREATE CONSTRAINT entity_uuid IF NOT EXISTS FOR (e:Entity) REQUIRE e.uuid IS UNIQUE

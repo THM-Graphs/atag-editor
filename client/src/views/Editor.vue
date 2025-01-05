@@ -272,15 +272,6 @@ async function saveAnnotations(): Promise<void> {
 
   const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
 
-  console.log('Annotations to be saved:');
-  console.log(
-    JSON.parse(
-      JSON.stringify(
-        annotations.value.filter(a => a.data.properties.type === 'entity').map(a => a.data),
-      ),
-    ),
-  );
-
   const response: Response = await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
