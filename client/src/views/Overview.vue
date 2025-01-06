@@ -5,6 +5,7 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionList from '../components/CollectionList.vue';
+import CollectionTable from '../components/CollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
 
@@ -103,13 +104,13 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       >
     </div>
 
-    <CollectionList :collections="filteredCollections" />
+    <CollectionTable :collections="filteredCollections" />
   </div>
 </template>
 
 <style scoped>
 .container {
-  width: 40%;
+  width: 60%;
   min-width: 800px;
 }
 </style>
