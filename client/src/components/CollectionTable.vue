@@ -48,7 +48,15 @@ async function getGuidelines(): Promise<void> {
 
 <template>
   <div class="card flex-grow-1 overflow-y-auto">
-    <DataTable :value="collections" stripedRows removableSort resizableColumns>
+    <DataTable
+      :value="collections"
+      paginator
+      :rows="5"
+      :rowsPerPageOptions="[5, 10, 20, 50, 100]"
+      removableSort
+      resizableColumns
+      rowHover
+    >
       <Column
         v-for="col of columns"
         :key="col.name"
