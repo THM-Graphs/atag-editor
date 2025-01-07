@@ -110,7 +110,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 
 <style scoped>
 .container {
-  width: 60%;
+  width: 80%;
   min-width: 800px;
 }
 </style>

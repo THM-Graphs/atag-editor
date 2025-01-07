@@ -49,6 +49,9 @@ async function getGuidelines(): Promise<void> {
   <div class="card flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!collections" />
     <DataTable
+      v-else
+      scrollable
+      scrollHeight="flex"
       :value="collections"
       paginator
       :rows="5"
