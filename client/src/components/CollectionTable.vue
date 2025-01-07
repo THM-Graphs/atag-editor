@@ -25,8 +25,7 @@ onMounted(async (): Promise<void> => {
   columns.value = getCollectionFields();
 });
 
-// TODO: Add loading spinner to overview again (better than before)
-
+// TODO: getGuidelines exists in multiple components now, should be moved to a shared location
 async function getGuidelines(): Promise<void> {
   try {
     const url: string = buildFetchUrl(`/api/guidelines`);
@@ -48,6 +47,7 @@ async function getGuidelines(): Promise<void> {
 
 <template>
   <div class="card flex-grow-1 overflow-y-auto">
+    <LoadingSpinner v-if="!collections" />
     <DataTable
       :value="collections"
       paginator
