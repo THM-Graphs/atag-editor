@@ -102,7 +102,7 @@ function handleSearchInput(): void {
         </InputIcon>
         <InputText
           spellcheck="false"
-          ceholder="Filter texts"
+          placeholder="Filter texts by label"
           v-model="searchInput"
           @input="handleSearchInput"
         />
