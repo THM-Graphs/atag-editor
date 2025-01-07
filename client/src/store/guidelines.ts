@@ -52,8 +52,12 @@ export function useGuidelinesStore() {
     ];
   }
 
+  /**
+   * Retrieves the collection fields for the 'text' collection.
+   *
+   * @returns {CollectionProperty[]} An array of collection propertie configurations.
+   */
   function getCollectionFields(): CollectionProperty[] {
-    console.log(guidelines);
     return guidelines.value.collections['text'].properties;
   }
 
