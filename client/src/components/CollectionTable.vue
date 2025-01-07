@@ -64,20 +64,39 @@ async function getGuidelines(): Promise<void> {
         :field="col.name"
         :header="capitalize(col.name)"
         sortable
-        :style="{
-          overflowX: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }"
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
-          <a v-if="col.name === 'label'" :href="'/texts/' + data.uuid">{{ data[col.name] }}</a>
-          <span v-else>{{ data[col.name] }}</span>
+          <a
+            v-if="col.name === 'label'"
+            class="cell-link"
+            :href="'/texts/' + data.uuid"
+            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
+            >{{ data[col.name] }}</a
+          >
+          <span
+            v-else
+            class="cell-info"
+            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
+            >{{ data[col.name] }}</span
+          >
         </template>
       </Column>
     </DataTable>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.cell-info,
+.cell-link {
+  display: block;
+  width: 100%;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-info {
+  cursor: default;
+}
+</style>
