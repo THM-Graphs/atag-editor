@@ -52,11 +52,13 @@ async function getGuidelines(): Promise<void> {
       :value="collections"
       paginator
       :rows="10"
-      :rowsPerPageOptions="[5, 10, 20, 50, 100]"
+      :rowsPerPageOptions="[10, 20, 50, 100]"
       removableSort
       resizableColumns
       rowHover
       tableStyle="table-layout: fixed;"
+      paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
+      currentPageReportTemplate="{first} to {last} of {totalRecords}"
     >
       <Column
         v-for="col of columns"
