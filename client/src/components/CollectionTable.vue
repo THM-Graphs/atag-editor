@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import LoadingSpinner from './LoadingSpinner.vue';
-import ICollection from '../models/ICollection';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import ColumnGroup from 'primevue/columngroup'; // optional
-import Row from 'primevue/row'; // optional
-import Button from 'primevue/button';
-import { CollectionProperty } from '../models/types';
-import { useGuidelinesStore } from '../store/guidelines';
-import { buildFetchUrl, capitalize } from '../utils/helper/helper';
-import { IGuidelines } from '../models/IGuidelines';
 import { onMounted, ref } from 'vue';
+import { useGuidelinesStore } from '../store/guidelines';
+import LoadingSpinner from './LoadingSpinner.vue';
+import { buildFetchUrl, capitalize } from '../utils/helper/helper';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import ICollection from '../models/ICollection';
+import { IGuidelines } from '../models/IGuidelines';
+import { CollectionProperty } from '../models/types';
 
 defineProps<{
   collections: ICollection[] | null;
@@ -54,11 +51,12 @@ async function getGuidelines(): Promise<void> {
       scrollHeight="flex"
       :value="collections"
       paginator
-      :rows="5"
+      :rows="10"
       :rowsPerPageOptions="[5, 10, 20, 50, 100]"
       removableSort
       resizableColumns
       rowHover
+      tableStyle="table-layout: fixed;"
     >
       <Column
         v-for="col of columns"
@@ -66,13 +64,16 @@ async function getGuidelines(): Promise<void> {
         :field="col.name"
         :header="capitalize(col.name)"
         sortable
+        :style="{
+          overflowX: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }"
       >
-        <template #body="slotProps">
+        <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
-          <a v-if="col.name === 'label'" :href="'/texts/' + slotProps.data.uuid">{{
-            slotProps.data[col.name]
-          }}</a>
-          <span v-else>{{ slotProps.data[col.name] }}</span>
+          <a v-if="col.name === 'label'" :href="'/texts/' + data.uuid">{{ data[col.name] }}</a>
+          <span v-else>{{ data[col.name] }}</span>
         </template>
       </Column>
     </DataTable>
