@@ -4,7 +4,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
-import CollectionTable from '../components/CollectionTable.vue';
+import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
 
@@ -94,7 +94,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       <strong class="text-base">{{ collections ? collections.length : 0 }} texts in total</strong>
     </div>
 
-    <CollectionTable :collections="filteredCollections" />
+    <OverviewCollectionTable :collections="filteredCollections" />
   </div>
 </template>
 
