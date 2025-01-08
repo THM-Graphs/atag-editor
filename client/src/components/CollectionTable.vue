@@ -59,6 +59,7 @@ async function getGuidelines(): Promise<void> {
       tableStyle="table-layout: fixed;"
       paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
       currentPageReportTemplate="{first} to {last} of {totalRecords}"
+      size="small"
     >
       <Column
         v-for="col of columns"
