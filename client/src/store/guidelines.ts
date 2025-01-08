@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationProperty, AnnotationType } from '../models/types';
+import { AnnotationProperty, AnnotationType, CollectionProperty } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -53,6 +53,15 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the collection fields for the 'text' collection.
+   *
+   * @returns {CollectionProperty[]} An array of collection propertie configurations.
+   */
+  function getCollectionFields(): CollectionProperty[] {
+    return guidelines.value.collections['text'].properties;
+  }
+
+  /**
    * Groups the annotation types by category.
    *
    * @return {Record<string, AnnotationType[]>} An object where the keys are the categories and the values are arrays of annotation types belonging to that category.
@@ -79,6 +88,7 @@ export function useGuidelinesStore() {
     guidelines,
     getAnnotationConfig,
     getAnnotationFields,
+    getCollectionFields,
     initializeGuidelines,
   };
 }

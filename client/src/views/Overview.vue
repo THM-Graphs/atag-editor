@@ -1,23 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch, ComputedRef } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
-import CollectionList from '../components/CollectionList.vue';
+import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
 
 const collections = ref<ICollection[] | null>(null);
 const filteredCollections = ref<ICollection[] | null>(null);
 const searchInput = ref<string>('');
-
-const collectionsCount: ComputedRef<number> = computed(() =>
-  collections.value ? collections.value.length : 0,
-);
-const filteredCollectionsCount: ComputedRef<number> = computed(() =>
-  filteredCollections.value ? filteredCollections.value.length : 0,
-);
 
 const toast: ToastServiceMethods = useToast();
 
@@ -97,19 +90,17 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       @search-input-changed="handleSearchInputChange"
     />
 
-    <div class="counter text-right mx-3">
-      <small class="text-base"
-        >{{ filteredCollectionsCount }} of {{ collectionsCount }} texts displayed</small
-      >
+    <div class="counter text-right pt-2 pb-3">
+      <strong class="text-base">{{ collections ? collections.length : 0 }} texts in total</strong>
     </div>
 
-    <CollectionList :collections="filteredCollections" />
+    <OverviewCollectionTable :collections="filteredCollections" />
   </div>
 </template>
 
 <style scoped>
 .container {
-  width: 40%;
+  width: 80%;
   min-width: 800px;
 }
 </style>
