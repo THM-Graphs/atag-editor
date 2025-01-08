@@ -90,6 +90,10 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       @search-input-changed="handleSearchInputChange"
     />
 
+    <div class="counter text-right pt-2 pb-3">
+      <strong class="text-base">{{ collections ? collections.length : 0 }} texts in total</strong>
+    </div>
+
     <CollectionTable :collections="filteredCollections" />
   </div>
 </template>

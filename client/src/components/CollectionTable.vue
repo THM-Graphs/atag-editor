@@ -43,7 +43,7 @@ async function getGuidelines(): Promise<void> {
 </script>
 
 <template>
-  <div class="card flex-grow-1 overflow-y-auto">
+  <div class="flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!collections" />
     <DataTable
       v-else
