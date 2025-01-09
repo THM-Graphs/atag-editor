@@ -19,11 +19,15 @@ const guidelines = ref<IGuidelines>({} as IGuidelines);
 
 const dialogIsVisible = ref<boolean>(false);
 const guidelinesAreLoaded = ref<boolean>(false);
+const asyncOperationRunning = ref<boolean>(false);
 
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
   console.log(cloneDeep(newCollectionData.value));
+
+  asyncOperationRunning.value = true;
+
   try {
     const url: string = buildFetchUrl('/api/collections');
 
@@ -50,6 +54,8 @@ async function createNewCollection(): Promise<void> {
     emit('collectionCreated', createdCollection);
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
 }
 
@@ -155,7 +161,7 @@ function handleSearchInput(): void {
 
       <div class="button-container flex justify-content-end gap-2">
         <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-        <Button type="submit" label="Create"></Button>
+        <Button type="submit" label="Create" :loading="asyncOperationRunning"></Button>
       </div>
     </form>
   </Dialog>
