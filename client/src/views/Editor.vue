@@ -18,9 +18,9 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
+import { areObjectsEqual, areSetsEqual, buildFetchUrl, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
-import { AnnotationData, Character, CharacterPostData } from '../models/types';
+import { Annotation, AnnotationData, Character, CharacterPostData } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
@@ -93,6 +93,7 @@ const {
   annotations,
   initialAnnotations,
   initializeAnnotations,
+  getAnnotationsToSave,
   resetAnnotations,
   updateAnnotationsBeforeSave,
   updateAnnotationStatuses,
@@ -270,6 +271,9 @@ async function saveCharacters(): Promise<void> {
 async function saveAnnotations(): Promise<void> {
   updateAnnotationsBeforeSave();
 
+  // Reduce amount of data that need to sent to the backend
+  const annotationsToSave: Annotation[] = getAnnotationsToSave();
+
   const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
 
   const response: Response = await fetch(url, {
@@ -280,7 +284,7 @@ async function saveAnnotations(): Promise<void> {
       'Content-Type': 'application/json',
     },
     referrerPolicy: 'no-referrer',
-    body: JSON.stringify(annotations.value),
+    body: JSON.stringify(annotationsToSave),
   });
 
   if (!response.ok) {

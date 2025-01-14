@@ -163,6 +163,28 @@ export function useAnnotationStore() {
     return { firstCharacter, lastCharacter, firstIndex, lastIndex };
   }
 
+  // TODO: Shouldnt this be in another file (Editor.vue, editor store etc.) or maybe even in the backend?
+  // TODO: This should be more advanced to create a real changeset (annotated characters, updated information etc.)
+  /**
+   * Retrieves the annotations that need to be saved to the database. This includes annotations connected to
+   * at least one character in the snippet as well as annotations marked as deleted.
+   *
+   * @returns {Annotation[]} An array of annotations to be saved.
+   */
+  function getAnnotationsToSave(): Annotation[] {
+    let charUuids: Set<string> = new Set();
+
+    snippetCharacters.value.forEach(c => {
+      c.annotations.forEach(a => charUuids.add(a.uuid));
+    });
+
+    const affectedAnnotations: Annotation[] = annotations.value.filter((annotation: Annotation) => {
+      return charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted';
+    });
+
+    return affectedAnnotations;
+  }
+
   /**
    * Resets all annotation-related state variables to their initial values. Called when the Editor component is unmounted.
    *
@@ -338,6 +360,7 @@ export function useAnnotationStore() {
     deleteAnnotation,
     expandAnnotation,
     getAnnotationInfo,
+    getAnnotationsToSave,
     initializeAnnotations,
     resetAnnotations,
     shiftAnnotationLeft,
