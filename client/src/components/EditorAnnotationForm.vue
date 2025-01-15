@@ -13,6 +13,7 @@ import {
 import iconsMap from '../utils/helper/icons';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
+import Card from 'primevue/card';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
@@ -64,6 +65,7 @@ const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.propert
 
 const propertiesAreCollapsed = ref<boolean>(false);
 const normdataAreCollapsed = ref<boolean>(false);
+const additionalTextIsCollapsed = ref<boolean>(false);
 const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
 
 const normdataSearchObject = ref<NormdataSearchObject>(
@@ -81,6 +83,8 @@ const normdataSearchObject = ref<NormdataSearchObject>(
     return object;
   }, {}),
 );
+
+console.log(config.hasAdditionalText);
 
 /**
  * Adds a normdata item to the specified category in the annotation's data.
@@ -420,6 +424,28 @@ function setRangeAnchorAtEnd(): void {
           </template>
         </AutoComplete>
       </div>
+    </Fieldset>
+    <Fieldset
+      v-if="config.hasAdditionalText === true"
+      legend="Additional text"
+      :toggleable="true"
+      @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
+    >
+      <template #toggleicon>
+        <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <RouterLink to="/">
+        <Card>
+          <template #content>
+            <div class="flex align-items-center gap-4">
+              <span class="pi pi-external-link"></span>
+              <span>
+                {{ annotation.data.additionalText.text }}
+              </span>
+            </div>
+          </template>
+        </Card>
+      </RouterLink>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
       <Button
