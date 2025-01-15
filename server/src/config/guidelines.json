@@ -205,7 +205,8 @@
         "type": "commentInternal",
         "category": "project",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalText": true
       },
       {
         "type": "entity",
