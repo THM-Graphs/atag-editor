@@ -47,11 +47,23 @@ export default class AnnotationService {
     // Create key-value pair with category and matched nodes
     WITH a, collect({category: key, nodes: nodes}) AS normdata
 
+    // Fetch additional text optionally
+    CALL {
+        WITH a
+        
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(t:Text)
+
+        RETURN t {.*} as additionalText
+    }
+
+    WITH a, normdata, additionalText
+
     RETURN collect({
         properties: a {.*},
-        normdata: apoc.map.fromPairs([m IN normdata | [m.category, m.nodes]])
+        normdata: apoc.map.fromPairs([m IN normdata | [m.category, m.nodes]]),
+        additionalText: additionalText
     }) AS annotations
-`;
+    `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, resources });
 
