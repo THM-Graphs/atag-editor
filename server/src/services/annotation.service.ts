@@ -127,7 +127,9 @@ export default class AnnotationService {
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
-        DETACH DELETE a
+        // TODO: This should also delete character chain, annotations etc. (essentially the whole network)
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(t:Text)
+        DETACH DELETE a, t
     }
 
     WITH allAnnotations
@@ -164,6 +166,17 @@ export default class AnnotationService {
         UNWIND ann.data.normdata.created AS createdUuid
         MATCH (e:Entity {uuid: createdUuid})
         MERGE (a)-[r:REFERS_TO]->(e)
+    }
+
+    // Conditionally merge REFERS_TO relationship to additional Text node
+    // The doubled WITH clause is needed since the WHERE clause does not work otherwise
+    // (see https://neo4j.com/docs/cypher-manual/current/subqueries/call-subquery/#importing-with)
+    CALL {
+        WITH ann, a
+          WITH ann, a
+          // TODO: Should the guidelines be checked also? To prevent unwanted operations...
+          WHERE ann.data.additionalText IS NOT NULL
+        MERGE (a)-[:REFERS_TO]->(t:Text {uuid: ann.data.additionalText.uuid})
     }
 
     // Remove existing relationships between annotation and character nodes before creating new ones
