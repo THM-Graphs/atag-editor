@@ -434,18 +434,18 @@ function setRangeAnchorAtEnd(): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <RouterLink to="/">
+      <a :href="`/texts/${annotation.data.additionalText.uuid}`" target="_blank">
         <Card>
           <template #content>
             <div class="flex align-items-center gap-4">
               <span class="pi pi-external-link"></span>
               <span>
-                {{ annotation.data.additionalText.text }}
+                {{ annotation.data.additionalText?.text }}
               </span>
             </div>
           </template>
         </Card>
-      </RouterLink>
+      </a>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
       <Button
