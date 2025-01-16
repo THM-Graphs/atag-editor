@@ -12,6 +12,7 @@ import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
+import IText from '../models/IText';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import { ToastServiceMethods } from 'primevue/toastservice';
@@ -319,11 +320,22 @@ function createNewAnnotation(
   // Normdata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
   const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
   const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
+  const additionalText: IText | null = config.hasAdditionalText
+    ? { text: '', uuid: crypto.randomUUID() }
+    : null;
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
-    data: { properties: newAnnotationData, normdata: newAnnotationNormdata },
-    initialData: { properties: newAnnotationData, normdata: newAnnotationNormdata },
+    data: {
+      properties: newAnnotationData,
+      normdata: newAnnotationNormdata,
+      additionalText: additionalText,
+    },
+    initialData: {
+      properties: newAnnotationData,
+      normdata: newAnnotationNormdata,
+      additionalText: additionalText,
+    },
     isTruncated: false,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,
