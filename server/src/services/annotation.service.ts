@@ -23,6 +23,7 @@ export default class AnnotationService {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const resources: AnnotationConfigResource[] = guidelines.annotations.resources;
+    const additionalTexts = guidelines.annotations.additionalTexts;
 
     const query: string = `
     // Match all annotations for given selection
@@ -47,25 +48,37 @@ export default class AnnotationService {
     // Create key-value pair with category and matched nodes
     WITH a, collect({category: key, nodes: nodes}) AS normdata
 
-    // Fetch additional text optionally
-    CALL {
-        WITH a
-        
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(t:Text)
+    // Fetch additional text nodes
+    WITH a, normdata
+    UNWIND additionalTexts AS additionalText
 
-        RETURN t {.*} as additionalText
+    CALL {
+      WITH a, additionalText
+
+      CALL apoc.cypher.run(
+      'OPTIONAL MATCH (a)-[r:REFERS_TO]->(c:Collection {name: $name}) 
+       WHERE $nodeLabel IN labels(c)
+       RETURN c {.*} AS nodes',
+      {a: a, nodeLabel: additionalText.nodeLabel, name: additionalText.name}
+      ) YIELD value
+
+      RETURN [additionalText.name, value.nodes] AS at
     }
 
-    WITH a, normdata, additionalText
+    WITH a, normdata, apoc.map.fromPairs(collect(at)) AS additionalText
 
     RETURN collect({
         properties: a {.*},
-        normdata: apoc.map.fromPairs([m IN normdata | [m.category, m.nodes]]),
-        additionalText: additionalText
+        normdata: normdata,
+        additionalTexts: additionalText
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, resources });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      collectionUuid,
+      resources,
+      additionalTexts,
+    });
 
     return result.records[0]?.get('annotations');
   }
@@ -127,9 +140,9 @@ export default class AnnotationService {
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
+        DETACH DELETE a
         // TODO: This should also delete character chain, annotations etc. (essentially the whole network)
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(t:Text)
-        DETACH DELETE a, t
+        // OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t:Text)
     }
 
     WITH allAnnotations
@@ -171,13 +184,13 @@ export default class AnnotationService {
     // Conditionally merge REFERS_TO relationship to additional Text node
     // The doubled WITH clause is needed since the WHERE clause does not work otherwise
     // (see https://neo4j.com/docs/cypher-manual/current/subqueries/call-subquery/#importing-with)
-    CALL {
-        WITH ann, a
-          WITH ann, a
-          // TODO: Should the guidelines be checked also? To prevent unwanted operations...
-          WHERE ann.data.additionalText IS NOT NULL
-        MERGE (a)-[:REFERS_TO]->(t:Text {uuid: ann.data.additionalText.uuid})
-    }
+    // CALL {
+    //     WITH ann, a
+    //       WITH ann, a
+    //       // TODO: Should the guidelines be checked also? To prevent unwanted operations...
+    //       WHERE ann.data.additionalText IS NOT NULL
+    //     MERGE (a)-[:REFERS_TO]->(t:Text {uuid: ann.data.additionalText.uuid})
+    // }
 
     // Remove existing relationships between annotation and character nodes before creating new ones
     CALL {
