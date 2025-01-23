@@ -13,10 +13,10 @@ import {
 import iconsMap from '../utils/helper/icons';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
-import Card from 'primevue/card';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
+import Message from 'primevue/message';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import Select from 'primevue/select';
@@ -37,6 +37,20 @@ interface NormdataSearchObject {
     currentItem: NormdataEntry | null;
     mode: 'edit' | 'view';
     elm: Ref<any>;
+  };
+}
+
+/**
+ * Interface for relevant state information about additional texts of the annotation
+ */
+interface AdditionalTextObject {
+  [key: string]: {
+    data: {
+      uuid: string;
+      text: string;
+    } | null;
+    inputText: string;
+    status: 'created' | 'existing';
   };
 }
 
@@ -84,7 +98,21 @@ const normdataSearchObject = ref<NormdataSearchObject>(
   }, {}),
 );
 
-console.log(config.hasAdditionalText);
+const additionalTextObject = ref<AdditionalTextObject>(
+  Object.entries(annotation.data.additionalTexts).reduce((acc, [key, value]) => {
+    acc[key] = {
+      data: value
+        ? {
+            uuid: value.uuid,
+            text: value.text,
+          }
+        : null,
+      inputText: '',
+      status: 'existing',
+    };
+    return acc;
+  }, {}),
+);
 
 /**
  * Adds a normdata item to the specified category in the annotation's data.
@@ -260,6 +288,35 @@ function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
+
+function addAdditionalText(event, name: string | number): void {
+  confirm.require({
+    target: event.currentTarget,
+    group: 'templating',
+    message: 'Please confirm to proceed moving forward.',
+    icon: 'pi pi-exclamation-circle',
+    rejectProps: {
+      icon: 'pi pi-times',
+      label: 'Cancel',
+      outlined: true,
+    },
+    acceptProps: {
+      icon: 'pi pi-check',
+      label: 'Confirm',
+    },
+    accept: () => {
+      annotation.data.additionalTexts[name] = {
+        uuid: crypto.randomUUID(),
+        text: additionalTextObject.value[name].inputText,
+      };
+    },
+    reject: () => {
+      alert('You have rejected');
+    },
+  });
+}
+
+console.log(annotation.data);
 </script>
 
 <template>
@@ -426,7 +483,7 @@ function setRangeAnchorAtEnd(): void {
       </div>
     </Fieldset>
     <Fieldset
-      v-if="config.hasAdditionalText === true"
+      v-if="config.additionalTexts"
       legend="Additional text"
       :toggleable="true"
       @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
@@ -434,18 +491,47 @@ function setRangeAnchorAtEnd(): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <a :href="`/texts/${annotation.data.additionalText.uuid}`" target="_blank">
-        <Card>
-          <template #content>
+      <div v-for="(text, fieldName) in annotation.data.additionalTexts" :key="fieldName">
+        <div>{{ fieldName }}</div>
+
+        <div v-if="text === null">
+          <Button
+            icon="pi pi-plus"
+            label="Add text"
+            @click="addAdditionalText($event, fieldName)"
+          />
+          <ConfirmPopup group="templating">
+            <template #message>
+              <div class="p-2 pt-0">
+                <p>Enter base text of comment</p>
+                <InputText
+                  v-model="additionalTextObject[fieldName].inputText"
+                  required="true"
+                  class="flex-auto w-full"
+                  spellcheck="false"
+                />
+              </div>
+            </template>
+          </ConfirmPopup>
+        </div>
+
+        <div v-else>
+          <a :href="`/texts/${text.uuid}`" target="_blank">
             <div class="flex align-items-center gap-4">
               <span class="pi pi-external-link"></span>
               <span>
-                {{ annotation.data.additionalText?.text }}
+                {{ text.text }}
               </span>
             </div>
-          </template>
-        </Card>
-      </a>
+          </a>
+          <Message
+            v-if="annotation.initialData.additionalTexts[fieldName] === null"
+            severity="warn"
+          >
+            Save to edit new text...
+          </Message>
+        </div>
+      </div>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
       <Button

@@ -22,17 +22,15 @@ export default class AnnotationService {
   public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const resources: AnnotationConfigResource[] = guidelines.annotations.resources;
-    const additionalTexts = guidelines.annotations.additionalTexts;
 
     const query: string = `
     // Match all annotations for given selection
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
-    WITH a, $resources AS resources
+    WITH a, $guidelines.annotations.resources AS resources
     UNWIND resources AS resource
-    
+
     CALL {
         WITH a, resource
         
@@ -46,38 +44,37 @@ export default class AnnotationService {
     }
 
     // Create key-value pair with category and matched nodes
-    WITH a, collect({category: key, nodes: nodes}) AS normdata
+    WITH a as annotations, collect({category: key, nodes: nodes}) AS normdata
 
     // Fetch additional text nodes
-    WITH a, normdata
-    UNWIND additionalTexts AS additionalText
+    UNWIND annotations as a
 
     CALL {
-      WITH a, additionalText
+        WITH a
+        
+        UNWIND $guidelines.annotations.types as annoConfig
 
-      CALL apoc.cypher.run(
-      'OPTIONAL MATCH (a)-[r:REFERS_TO]->(c:Collection {name: $name}) 
-       WHERE $nodeLabel IN labels(c)
-       RETURN c {.*} AS nodes',
-      {a: a, nodeLabel: additionalText.nodeLabel, name: additionalText.name}
-      ) YIELD value
+        WITH annoConfig, a
+        WHERE annoConfig.type = a.type
 
-      RETURN [additionalText.name, value.nodes] AS at
+        UNWIND annoConfig.additionalTexts as atConfig
+
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t2:Text)
+        WHERE atConfig.nodeLabel IN labels(c)
+
+        RETURN apoc.map.fromPairs(collect([atConfig.name, c {.uuid, text: t2.text}])) AS additionalTexts
     }
-
-    WITH a, normdata, apoc.map.fromPairs(collect(at)) AS additionalText
 
     RETURN collect({
         properties: a {.*},
-        normdata: normdata,
-        additionalTexts: additionalText
+        normdata: apoc.map.fromPairs([n in normdata | [n.category, n.nodes]]),
+        additionalTexts: additionalTexts
     }) AS annotations
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
       collectionUuid,
-      resources,
-      additionalTexts,
+      guidelines,
     });
 
     return result.records[0]?.get('annotations');

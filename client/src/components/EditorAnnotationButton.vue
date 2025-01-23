@@ -320,21 +320,23 @@ function createNewAnnotation(
   // Normdata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
   const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
   const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
-  const additionalText: IText | null = config.hasAdditionalText
-    ? { text: '', uuid: crypto.randomUUID() }
-    : null;
+
+  // Additional texts (= connected Collection->Text nodes). Not existing when created, but needed in Annotation structure -> null
+  const additionalTexts = Object.fromEntries(
+    guidelines.value.annotations.additionalTexts.map(t => [t.name, null]),
+  );
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
     data: {
       properties: newAnnotationData,
       normdata: newAnnotationNormdata,
-      additionalText: additionalText,
+      additionalTexts: additionalTexts,
     },
     initialData: {
       properties: newAnnotationData,
       normdata: newAnnotationNormdata,
-      additionalText: additionalText,
+      additionalTexts: additionalTexts,
     },
     isTruncated: false,
     startUuid: characters[0].data.uuid,

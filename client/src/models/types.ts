@@ -14,7 +14,10 @@ export type Annotation = {
 };
 
 export interface AnnotationData {
-  additionalText: IText | null;
+  additionalTexts: {
+    // TODO: Technically, this is not an IText. Fix when changing route structure
+    [index: string]: IText | null;
+  };
   normdata: {
     [index: string]: IEntity[];
   };
@@ -22,11 +25,11 @@ export interface AnnotationData {
 }
 
 export type AnnotationType = {
+  additionalTexts: { name: string; nodeLabel: string }[];
   category: string;
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
-  hasAdditionalText: boolean;
   hasNormdata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];

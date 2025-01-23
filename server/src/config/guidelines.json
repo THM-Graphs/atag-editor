@@ -34,7 +34,6 @@
       ]
     }
   },
-
   "annotations": {
     "types": [
       {
@@ -206,7 +205,16 @@
         "category": "project",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "hasAdditionalText": true
+        "additionalTexts": [
+          {
+            "name": "atagComment",
+            "nodeLabel": "Comment"
+          },
+          {
+            "name": "anotherComment",
+            "nodeLabel": "Test"
+          }
+        ]
       },
       {
         "type": "entity",
