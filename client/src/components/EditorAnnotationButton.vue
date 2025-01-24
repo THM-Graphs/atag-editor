@@ -322,7 +322,9 @@ function createNewAnnotation(
   const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
 
   // Additional texts (= connected Collection->Text nodes). Not existing when created, but needed in Annotation structure -> null
-  const additionalTexts = Object.fromEntries(config.additionalTexts.map(t => [t.name, null]));
+  const additionalTexts = Object.fromEntries(
+    (config.additionalTexts ?? []).map(t => [t.name, null]),
+  );
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),

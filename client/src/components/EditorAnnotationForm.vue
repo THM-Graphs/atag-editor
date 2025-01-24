@@ -43,14 +43,13 @@ interface NormdataSearchObject {
 /**
  * Interface for relevant state information about additional texts of the annotation
  */
-interface AdditionalTextObject {
+interface AdditionalTextInputObject {
   [key: string]: {
     data: {
       uuid: string;
       text: string;
     } | null;
     inputText: string;
-    status: 'created' | 'existing';
   };
 }
 
@@ -98,9 +97,9 @@ const normdataSearchObject = ref<NormdataSearchObject>(
   }, {}),
 );
 
-const additionalTextObject = ref<AdditionalTextObject>(
-  Object.entries(annotation.data.additionalTexts).reduce((acc, [key, value]) => {
-    acc[key] = {
+const additionalTextInputObject = ref<AdditionalTextInputObject>(
+  Object.entries(annotation.data.additionalTexts).reduce((object, [key, value]) => {
+    object[key] = {
       data: value
         ? {
             uuid: value.uuid,
@@ -108,9 +107,9 @@ const additionalTextObject = ref<AdditionalTextObject>(
           }
         : null,
       inputText: '',
-      status: 'existing',
     };
-    return acc;
+
+    return object;
   }, {}),
 );
 
@@ -289,7 +288,7 @@ function setRangeAnchorAtEnd(): void {
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
 
-function addAdditionalText(event, name: string | number): void {
+function handleAddAdditionalText(event, name: string | number): void {
   confirm.require({
     target: event.currentTarget,
     group: 'templating',
@@ -307,8 +306,10 @@ function addAdditionalText(event, name: string | number): void {
     accept: () => {
       annotation.data.additionalTexts[name] = {
         uuid: crypto.randomUUID(),
-        text: additionalTextObject.value[name].inputText,
+        text: additionalTextInputObject.value[name].inputText,
       };
+
+      additionalTextInputObject.value[name].inputText = '';
     },
     reject: () => {
       alert('You have rejected');
@@ -316,7 +317,9 @@ function addAdditionalText(event, name: string | number): void {
   });
 }
 
-console.log(annotation.data);
+function handleDeleteAdditionalText(fieldName: string | number): void {
+  annotation.data.additionalTexts[fieldName] = null;
+}
 </script>
 
 <template>
@@ -498,14 +501,14 @@ console.log(annotation.data);
           <Button
             icon="pi pi-plus"
             label="Add text"
-            @click="addAdditionalText($event, fieldName)"
+            @click="handleAddAdditionalText($event, fieldName)"
           />
           <ConfirmPopup group="templating">
             <template #message>
               <div class="p-2 pt-0">
                 <p>Enter base text of comment</p>
                 <InputText
-                  v-model="additionalTextObject[fieldName].inputText"
+                  v-model="additionalTextInputObject[fieldName].inputText"
                   required="true"
                   class="flex-auto w-full"
                   spellcheck="false"
@@ -514,16 +517,22 @@ console.log(annotation.data);
             </template>
           </ConfirmPopup>
         </div>
-
         <div v-else>
-          <a :href="`/texts/${text.uuid}`" target="_blank">
-            <div class="flex align-items-center gap-4">
-              <span class="pi pi-external-link"></span>
-              <span>
-                {{ text.text }}
-              </span>
-            </div>
-          </a>
+          <div class="additional-text-entry flex align-items-center">
+            <a :href="`/texts/${text.uuid}`" target="_blank">
+              <div class="flex align-items-center gap-4">
+                <span class="pi pi-external-link"></span>
+                <span>
+                  {{ text.text }}
+                </span>
+              </div>
+            </a>
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              @click="handleDeleteAdditionalText(fieldName)"
+            />
+          </div>
           <Message
             v-if="annotation.initialData.additionalTexts[fieldName] === null"
             severity="warn"
@@ -629,6 +638,14 @@ console.log(annotation.data);
   margin-bottom: 0.5rem;
   padding: 0.5rem;
 
+  & button {
+    width: 1rem;
+    height: 1rem;
+    padding: 10px;
+  }
+}
+
+.additional-text-entry {
   & button {
     width: 1rem;
     height: 1rem;

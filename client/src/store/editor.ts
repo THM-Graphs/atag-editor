@@ -114,6 +114,16 @@ export function useEditorStore() {
           .map(m => m.uuid),
       );
 
+      // Check if additional texts have changed (new one added, old one removed/replaced)
+      for (const [fieldName, text] of Object.entries(a.data.additionalTexts)) {
+        const textReferenceHasChanged: boolean =
+          text?.uuid !== a.initialData.additionalTexts[fieldName]?.uuid;
+
+        if (textReferenceHasChanged) {
+          return true;
+        }
+      }
+
       if (
         a.status === 'deleted' ||
         a.status === 'created' ||
