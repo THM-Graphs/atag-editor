@@ -2,20 +2,30 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { Annotation, AnnotationConfigResource, AnnotationData } from '../models/types.js';
+import { Annotation, AnnotationData, AnnotationType } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
+import IText from '../models/IText.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
  * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
  */
 type ProcessedAnnotation = Omit<Annotation, 'data'> & {
-  data: Omit<AnnotationData, 'normdata'> & {
+  data: Omit<AnnotationData, 'normdata' | 'additionalTexts'> & {
+    additionalTexts: {
+      deleted: AdditionalTextConfig[];
+      created: AdditionalTextConfig[];
+    };
     normdata: {
       deleted: string[];
       created: string[];
     };
   };
+};
+
+type AdditionalTextConfig = {
+  config: any;
+  data: IText;
 };
 
 export default class AnnotationService {
@@ -89,7 +99,12 @@ export default class AnnotationService {
    * @param {Annotation[]} annotations - The annotations to process.
    * @return {ProcessedAnnotation[]} The processed annotations.
    */
-  public processAnnotationsBeforeSaving(annotations: Annotation[]): ProcessedAnnotation[] {
+  public async processAnnotationsBeforeSaving(
+    annotations: Annotation[],
+  ): Promise<ProcessedAnnotation[]> {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
     return annotations.map(annotation => {
       const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
         .flat()
@@ -99,21 +114,79 @@ export default class AnnotationService {
         .flat()
         .map(item => item.uuid);
 
-      const createdUuids: string[] = newNormdataUuids.filter(
+      const createdNormdataUuids: string[] = newNormdataUuids.filter(
         uuid => !initialNormdataUuids.includes(uuid),
       );
 
-      const deletedUuids: string[] = initialNormdataUuids.filter(
+      const deletedNormdataUuids: string[] = initialNormdataUuids.filter(
         uuid => !newNormdataUuids.includes(uuid),
       );
+
+      // ------------------------------------------------------------------------------------------------
+
+      const createdAdditionalTexts: AdditionalTextConfig[] = [];
+      const deletedAdditionalTexts: AdditionalTextConfig[] = [];
+
+      const annotationConfig: AnnotationType | undefined = guidelines.annotations.types.find(
+        t => t.type === annotation.data.properties.type,
+      );
+
+      for (const [fieldName, text] of Object.entries(annotation.data.additionalTexts)) {
+        const additionalTextConfig = annotationConfig!.additionalTexts.find(
+          at => at.name === fieldName,
+        );
+
+        const newText: IText | null = text;
+        const oldText: IText | null = annotation.initialData.additionalTexts[fieldName];
+
+        // If nothing was changed, skip
+        if (!newText && !oldText) {
+          continue;
+        }
+
+        // Text added
+        if (newText !== null && oldText === null) {
+          createdAdditionalTexts.push({
+            data: newText,
+            config: additionalTextConfig,
+          });
+        }
+
+        // Text removed
+        if (!newText && oldText !== null) {
+          deletedAdditionalTexts.push({
+            data: oldText,
+            config: additionalTextConfig,
+          });
+        }
+
+        // Text reference changed
+        if (newText !== null && oldText !== null && newText.uuid !== oldText.uuid) {
+          createdAdditionalTexts.push({
+            data: newText,
+            config: additionalTextConfig,
+          });
+          deletedAdditionalTexts.push({
+            data: oldText,
+            config: additionalTextConfig,
+          });
+        }
+      }
+
+      // console.log('added:', createdAdditionalTexts);
+      // console.log('deleted:', deletedAdditionalTexts);
 
       return {
         ...annotation,
         data: {
           ...annotation.data,
           normdata: {
-            deleted: deletedUuids,
-            created: createdUuids,
+            deleted: deletedNormdataUuids,
+            created: createdNormdataUuids,
+          },
+          additionalTexts: {
+            created: createdAdditionalTexts,
+            deleted: deletedAdditionalTexts,
           },
         },
       };
@@ -125,7 +198,9 @@ export default class AnnotationService {
     annotations: Annotation[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
-      this.processAnnotationsBeforeSaving(annotations);
+      await this.processAnnotationsBeforeSaving(annotations);
+
+    console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     const query: string = `
