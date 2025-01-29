@@ -25,7 +25,8 @@ import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
 import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
+import ICollection from '../models/ICollection';
+import IText from '../models/IText';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -46,13 +47,10 @@ interface NormdataSearchObject {
  * Interface for relevant state information about additional texts of the annotation
  */
 interface AdditionalTextInputObject {
-  [key: string]: {
-    data: {
-      uuid: string;
-      text: string;
-    } | null;
-    inputText: string;
-  };
+  availableLabels: string[];
+  inputLabel: string;
+  inputText: string;
+  mode: 'edit' | 'view';
 }
 
 const props = defineProps<{
@@ -99,22 +97,12 @@ const normdataSearchObject = ref<NormdataSearchObject>(
   }, {}),
 );
 
-// TODO: This needs to be included when adding new text
-const additionalTextInputObject = ref<AdditionalTextInputObject>(null);
-//   Object.entries(annotation.data.additionalTexts).reduce((object, [key, value]) => {
-//     // object[key] = {
-//     //   data: value
-//     //     ? {
-//     //         uuid: value.uuid,
-//     //         text: value.text,
-//     //       }
-//     //     : null,
-//     //   inputText: '',
-//     // };
-
-//     return object;
-//   }, {}),
-// );
+const additionalTextInputObject = ref<AdditionalTextInputObject>({
+  inputText: '',
+  availableLabels: guidelines.value.annotations.additionalTexts,
+  inputLabel: guidelines.value.annotations.additionalTexts[0],
+  mode: 'view',
+});
 
 /**
  * Adds a normdata item to the specified category in the annotation's data.
@@ -125,6 +113,32 @@ function addNormdataItem(item: NormdataEntry, category: string): void {
   // Omit 'html' property from entry since it was only created for rendering purposes
   const { html, ...rest } = item;
   annotation.data.normdata[category].push(rest);
+}
+
+function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
+  additionalTextInputObject.value.mode = mode;
+
+  // if (mode === 'view') {
+
+  //   return;
+  // }
+
+  // // Wait for DOM to update before trying to focus the element
+  // nextTick(() => {
+  //   // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
+  //   // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
+  //   // that holds the component. Is an array because since the refs are set in a loop in the template
+  //   const elm = normdataSearchObject.value[category].elm[0];
+
+  //   if (!elm) {
+  //     console.warn(`Focus failed: Element not found for category "${category}"`);
+  //     return;
+  //   }
+
+  //   const inputElement: HTMLInputElement = elm.$el?.querySelector('input');
+
+  //   inputElement?.focus();
+  // });
 }
 
 /**
@@ -291,33 +305,32 @@ function setRangeAnchorAtEnd(): void {
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
 
-function handleAddAdditionalText(event, name: string | number): void {
-  confirm.require({
-    target: event.currentTarget,
-    group: 'templating',
-    message: 'Please confirm to proceed moving forward.',
-    icon: 'pi pi-exclamation-circle',
-    rejectProps: {
-      icon: 'pi pi-times',
-      label: 'Cancel',
-      outlined: true,
-    },
-    acceptProps: {
-      icon: 'pi pi-check',
-      label: 'Confirm',
-    },
-    accept: () => {
-      annotation.data.additionalTexts[name] = {
+function addAdditionalText(): void {
+  annotation.data.additionalTexts.push({
+    nodeLabel: additionalTextInputObject.value.inputLabel,
+    data: {
+      collection: {
         uuid: crypto.randomUUID(),
-        text: additionalTextInputObject.value[name].inputText,
-      };
-
-      additionalTextInputObject.value[name].inputText = '';
-    },
-    reject: () => {
-      alert('You have rejected');
+        label: `${additionalTextInputObject.value.inputLabel} for annotation ${annotation.data.properties.uuid}`,
+      } as ICollection,
+      text: {
+        uuid: crypto.randomUUID(),
+        text: additionalTextInputObject.value.inputText,
+      } as IText,
     },
   });
+
+  additionalTextInputObject.value.inputLabel = additionalTextInputObject.value.availableLabels[0];
+  additionalTextInputObject.value.inputText = '';
+
+  changeAdditionalTextSelectionMode('view');
+}
+
+function cancelAdditionalTextOperation() {
+  additionalTextInputObject.value.inputLabel = additionalTextInputObject.value.availableLabels[0];
+  additionalTextInputObject.value.inputText = '';
+
+  changeAdditionalTextSelectionMode('view');
 }
 
 function handleDeleteAdditionalText(collectionUuid: string): void {
@@ -499,52 +512,11 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <!-- <InputGroup>
-        <Select
-          v-model="selectedCity"
-          :options="cities"
-          optionLabel="name"
-          placeholder="Choose a label"
-        />
-        <InputText placeholder="Enter text" />
-        <InputGroupAddon>
-          <Button icon="pi pi-check" severity="secondary" />
-        </InputGroupAddon>
-        <InputGroupAddon>
-          <Button icon="pi pi-times" severity="secondary" />
-        </InputGroupAddon>
-      </InputGroup> -->
       <div
         v-for="additionalText in annotation.data.additionalTexts"
         :key="additionalText.data.collection.uuid"
         class="additional-text-entry flex align-items-center gap-3 mb-3"
       >
-        <!-- <div v-if="text === null">
-          <Button
-            icon="pi pi-plus"
-            label="Add text"
-            @click="handleAddAdditionalText($event, fieldName)"
-          />
-          <ConfirmPopup group="templating">
-            <template #message>
-              <InputGroup>
-                <Select
-                  v-model="selectedCity"
-                  :options="cities"
-                  optionLabel="name"
-                  placeholder="Choose a label"
-                />
-                <InputText placeholder="Enter text" />
-                <InputGroupAddon>
-                  <Button icon="pi pi-check" severity="secondary" size="small" />
-                </InputGroupAddon>
-                <InputGroupAddon>
-                  <Button icon="pi pi-times" severity="secondary" size="small" />
-                </InputGroupAddon>
-              </InputGroup>
-            </template>
-          </ConfirmPopup>
-        </div> -->
         <div class="additional-text-label font-semibold">
           {{ camelCaseToTitleCase(additionalText.nodeLabel) }}
         </div>
@@ -558,17 +530,57 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             </div>
           </a>
         </div>
-        <!-- <Message
-          v-if="annotation.initialData.additionalTexts[fieldName] === null"
+        <Message
+          v-if="
+            !annotation.initialData.additionalTexts
+              .map(t => t.data.collection.uuid)
+              .includes(additionalText.data.collection.uuid)
+          "
           severity="warn"
-          >
-          Save to edit new text...
-        </Message> -->
+        >
+          Save changes to edit new text...
+        </Message>
         <Button
           icon="pi pi-times"
           severity="danger"
+          title="Remove this text from annotation"
           @click="handleDeleteAdditionalText(additionalText.data.collection.uuid)"
         />
+      </div>
+      <div>
+        <Button
+          v-show="additionalTextInputObject.mode === 'view'"
+          class="mt-2 w-full h-2rem"
+          icon="pi pi-plus"
+          size="small"
+          severity="secondary"
+          label="Add text"
+          title="Add new additional text entry"
+          :disabled="annotation.isTruncated"
+          @click="changeAdditionalTextSelectionMode('edit')"
+        />
+        <InputGroup v-show="additionalTextInputObject.mode === 'edit'">
+          <Select
+            v-model="additionalTextInputObject.inputLabel"
+            :options="additionalTextInputObject.availableLabels"
+            placeholder="Choose a label"
+          />
+          <InputText v-model="additionalTextInputObject.inputText" placeholder="Enter text" />
+          <Button
+            icon="pi pi-check"
+            severity="secondary"
+            size="small"
+            title="Add new text"
+            @click="addAdditionalText"
+          />
+          <Button
+            icon="pi pi-times"
+            severity="secondary"
+            size="small"
+            title="Cancel"
+            @click="cancelAdditionalTextOperation"
+          />
+        </InputGroup>
       </div>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
@@ -663,6 +675,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
 
 .additional-text-label {
   flex-basis: 8rem;
+  cursor: default;
 }
 
 .normdata-entry {
