@@ -32,6 +32,18 @@
           "visible": true
         }
       ]
+    },
+    "comment": {
+      "additionalLabel": "Comment",
+      "properties": [
+        {
+          "name": "label",
+          "type": "text",
+          "required": true,
+          "editable": false,
+          "visible": false
+        }
+      ]
     }
   },
   "annotations": {
@@ -205,16 +217,7 @@
         "category": "project",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "additionalTexts": [
-          {
-            "name": "atagComment",
-            "nodeLabel": "Comment"
-          },
-          {
-            "name": "anotherComment",
-            "nodeLabel": "Test"
-          }
-        ]
+        "hasAdditionalTexts": true
       },
       {
         "type": "entity",
@@ -292,6 +295,7 @@
         "category": "roles",
         "nodeLabel": "Role"
       }
-    ]
+    ],
+    "additionalTexts": ["Comment", "Test"]
   }
 }

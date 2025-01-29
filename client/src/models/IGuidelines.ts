@@ -13,7 +13,7 @@ export interface IGuidelines {
     };
   };
   annotations: {
-    additionalTexts: { name: string; nodeLabel: string }[];
+    additionalTexts: string[];
     types: AnnotationType[];
     properties: AnnotationProperty[];
     resources: AnnotationConfigResource[];

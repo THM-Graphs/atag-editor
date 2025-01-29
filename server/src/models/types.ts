@@ -1,5 +1,6 @@
 import IAnnotation from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
+import ICollection from './ICollection.js';
 import IEntity from './IEntity.js';
 import IText from './IText.js';
 
@@ -15,9 +16,12 @@ export type Annotation = {
 
 export interface AnnotationData {
   additionalTexts: {
-    // TODO: Technically, this is not an IText. Fix when changing route structure
-    [index: string]: IText | null;
-  };
+    nodeLabel: string;
+    data: {
+      collection: ICollection;
+      text: IText;
+    };
+  }[];
   normdata: {
     [index: string]: IEntity[];
   };
@@ -25,11 +29,11 @@ export interface AnnotationData {
 }
 
 export type AnnotationType = {
-  additionalTexts: { name: string; nodeLabel: string }[];
   category: string;
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
+  hasAdditionalTexts?: boolean;
   hasNormdata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];

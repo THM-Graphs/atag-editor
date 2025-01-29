@@ -54,26 +54,27 @@ export default class AnnotationService {
     }
 
     // Create key-value pair with category and matched nodes
-    WITH a as annotations, collect({category: key, nodes: nodes}) AS normdata
+    WITH a AS annotations, collect({category: key, nodes: nodes}) AS normdata
 
     // Fetch additional text nodes
-    UNWIND annotations as a
+    UNWIND annotations AS a
+    UNWIND $guidelines.annotations.additionalTexts AS atLabel
 
     CALL {
-        WITH a
-        
-        UNWIND $guidelines.annotations.types as annoConfig
+        WITH a, atLabel
 
-        WITH annoConfig, a
-        WHERE annoConfig.type = a.type
-
-        UNWIND annoConfig.additionalTexts as atConfig
-
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t2:Text)
-        WHERE atConfig.nodeLabel IN labels(c)
-
-        RETURN apoc.map.fromPairs(collect([atConfig.name, c {.uuid, text: t2.text}])) AS additionalTexts
+        MATCH (a)-[r:REFERS_TO]->(x:Collection)-[:HAS_TEXT]->(t2:Text)
+        WHERE atLabel IN labels(x)
+        RETURN collect({
+            nodeLabel: atLabel,
+            data: {
+                collection: x {.*},
+                text: t2{.*}
+            }
+        }) AS atNodes
     }
+
+    WITH a, normdata, apoc.coll.flatten(collect(atNodes)) AS additionalTexts
 
     RETURN collect({
         properties: a {.*},
@@ -123,6 +124,7 @@ export default class AnnotationService {
       );
 
       // ------------------------------------------------------------------------------------------------
+      // TODO: This needs to be restructured a lot
 
       const createdAdditionalTexts: AdditionalTextConfig[] = [];
       const deletedAdditionalTexts: AdditionalTextConfig[] = [];
@@ -131,47 +133,47 @@ export default class AnnotationService {
         t => t.type === annotation.data.properties.type,
       );
 
-      for (const [fieldName, text] of Object.entries(annotation.data.additionalTexts)) {
-        const additionalTextConfig = annotationConfig!.additionalTexts.find(
-          at => at.name === fieldName,
-        );
+      // for (const [fieldName, text] of Object.entries(annotation.data.additionalTexts)) {
+      //   const additionalTextConfig = annotationConfig!.additionalTexts.find(
+      //     at => at.name === fieldName,
+      //   );
 
-        const newText: IText | null = text;
-        const oldText: IText | null = annotation.initialData.additionalTexts[fieldName];
+      //   const newText: IText | null = text;
+      //   const oldText: IText | null = annotation.initialData.additionalTexts[fieldName];
 
-        // If nothing was changed, skip
-        if (!newText && !oldText) {
-          continue;
-        }
+      //   // If nothing was changed, skip
+      //   if (!newText && !oldText) {
+      //     continue;
+      //   }
 
-        // Text added
-        if (newText !== null && oldText === null) {
-          createdAdditionalTexts.push({
-            data: newText,
-            config: additionalTextConfig,
-          });
-        }
+      //   // Text added
+      //   if (newText !== null && oldText === null) {
+      //     createdAdditionalTexts.push({
+      //       data: newText,
+      //       config: additionalTextConfig,
+      //     });
+      //   }
 
-        // Text removed
-        if (!newText && oldText !== null) {
-          deletedAdditionalTexts.push({
-            data: oldText,
-            config: additionalTextConfig,
-          });
-        }
+      //   // Text removed
+      //   if (!newText && oldText !== null) {
+      //     deletedAdditionalTexts.push({
+      //       data: oldText,
+      //       config: additionalTextConfig,
+      //     });
+      //   }
 
-        // Text reference changed
-        if (newText !== null && oldText !== null && newText.uuid !== oldText.uuid) {
-          createdAdditionalTexts.push({
-            data: newText,
-            config: additionalTextConfig,
-          });
-          deletedAdditionalTexts.push({
-            data: oldText,
-            config: additionalTextConfig,
-          });
-        }
-      }
+      //   // Text reference changed
+      //   if (newText !== null && oldText !== null && newText.uuid !== oldText.uuid) {
+      //     createdAdditionalTexts.push({
+      //       data: newText,
+      //       config: additionalTextConfig,
+      //     });
+      //     deletedAdditionalTexts.push({
+      //       data: oldText,
+      //       config: additionalTextConfig,
+      //     });
+      //   }
+      // }
 
       // console.log('added:', createdAdditionalTexts);
       // console.log('deleted:', deletedAdditionalTexts);

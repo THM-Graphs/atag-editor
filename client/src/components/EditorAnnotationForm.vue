@@ -24,6 +24,8 @@ import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
 import IEntity from '../models/IEntity';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -97,21 +99,22 @@ const normdataSearchObject = ref<NormdataSearchObject>(
   }, {}),
 );
 
-const additionalTextInputObject = ref<AdditionalTextInputObject>(
-  Object.entries(annotation.data.additionalTexts).reduce((object, [key, value]) => {
-    object[key] = {
-      data: value
-        ? {
-            uuid: value.uuid,
-            text: value.text,
-          }
-        : null,
-      inputText: '',
-    };
+// TODO: This needs to be included when adding new text
+const additionalTextInputObject = ref<AdditionalTextInputObject>(null);
+//   Object.entries(annotation.data.additionalTexts).reduce((object, [key, value]) => {
+//     // object[key] = {
+//     //   data: value
+//     //     ? {
+//     //         uuid: value.uuid,
+//     //         text: value.text,
+//     //       }
+//     //     : null,
+//     //   inputText: '',
+//     // };
 
-    return object;
-  }, {}),
-);
+//     return object;
+//   }, {}),
+// );
 
 /**
  * Adds a normdata item to the specified category in the annotation's data.
@@ -317,8 +320,10 @@ function handleAddAdditionalText(event, name: string | number): void {
   });
 }
 
-function handleDeleteAdditionalText(fieldName: string | number): void {
-  annotation.data.additionalTexts[fieldName] = null;
+function handleDeleteAdditionalText(collectionUuid: string): void {
+  annotation.data.additionalTexts = annotation.data.additionalTexts.filter(
+    t => t.data.collection.uuid !== collectionUuid,
+  );
 }
 </script>
 
@@ -486,18 +491,35 @@ function handleDeleteAdditionalText(fieldName: string | number): void {
       </div>
     </Fieldset>
     <Fieldset
-      v-if="config.additionalTexts"
-      legend="Additional text"
+      v-if="config.hasAdditionalTexts === true"
+      legend="Additional texts"
       :toggleable="true"
       @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
     >
       <template #toggleicon>
         <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <div v-for="(text, fieldName) in annotation.data.additionalTexts" :key="fieldName">
-        <div>{{ fieldName }}</div>
-
-        <div v-if="text === null">
+      <!-- <InputGroup>
+        <Select
+          v-model="selectedCity"
+          :options="cities"
+          optionLabel="name"
+          placeholder="Choose a label"
+        />
+        <InputText placeholder="Enter text" />
+        <InputGroupAddon>
+          <Button icon="pi pi-check" severity="secondary" />
+        </InputGroupAddon>
+        <InputGroupAddon>
+          <Button icon="pi pi-times" severity="secondary" />
+        </InputGroupAddon>
+      </InputGroup> -->
+      <div
+        v-for="additionalText in annotation.data.additionalTexts"
+        :key="additionalText.data.collection.uuid"
+        class="additional-text-entry flex align-items-center gap-3 mb-3"
+      >
+        <!-- <div v-if="text === null">
           <Button
             icon="pi pi-plus"
             label="Add text"
@@ -505,41 +527,48 @@ function handleDeleteAdditionalText(fieldName: string | number): void {
           />
           <ConfirmPopup group="templating">
             <template #message>
-              <div class="p-2 pt-0">
-                <p>Enter base text of comment</p>
-                <InputText
-                  v-model="additionalTextInputObject[fieldName].inputText"
-                  required="true"
-                  class="flex-auto w-full"
-                  spellcheck="false"
+              <InputGroup>
+                <Select
+                  v-model="selectedCity"
+                  :options="cities"
+                  optionLabel="name"
+                  placeholder="Choose a label"
                 />
-              </div>
+                <InputText placeholder="Enter text" />
+                <InputGroupAddon>
+                  <Button icon="pi pi-check" severity="secondary" size="small" />
+                </InputGroupAddon>
+                <InputGroupAddon>
+                  <Button icon="pi pi-times" severity="secondary" size="small" />
+                </InputGroupAddon>
+              </InputGroup>
             </template>
           </ConfirmPopup>
+        </div> -->
+        <div class="additional-text-label font-semibold">
+          {{ camelCaseToTitleCase(additionalText.nodeLabel) }}
         </div>
-        <div v-else>
-          <div class="additional-text-entry flex align-items-center">
-            <a :href="`/texts/${text.uuid}`" target="_blank">
-              <div class="flex align-items-center gap-4">
-                <span class="pi pi-external-link"></span>
-                <span>
-                  {{ text.text }}
-                </span>
-              </div>
-            </a>
-            <Button
-              icon="pi pi-times"
-              severity="danger"
-              @click="handleDeleteAdditionalText(fieldName)"
-            />
-          </div>
-          <Message
-            v-if="annotation.initialData.additionalTexts[fieldName] === null"
-            severity="warn"
+        <div class="flex flex-auto align-items-center gap-2">
+          <a :href="`/texts/${additionalText.data.collection.uuid}`" target="_blank">
+            <div class="flex align-items-center gap-1">
+              <span>
+                {{ additionalText.data.text.text }}
+              </span>
+              <span class="pi pi-external-link"></span>
+            </div>
+          </a>
+        </div>
+        <!-- <Message
+          v-if="annotation.initialData.additionalTexts[fieldName] === null"
+          severity="warn"
           >
-            Save to edit new text...
-          </Message>
-        </div>
+          Save to edit new text...
+        </Message> -->
+        <Button
+          icon="pi pi-times"
+          severity="danger"
+          @click="handleDeleteAdditionalText(additionalText.data.collection.uuid)"
+        />
       </div>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
@@ -630,6 +659,10 @@ function handleDeleteAdditionalText(fieldName: string | number): void {
 
 .form-label {
   flex-basis: 10rem;
+}
+
+.additional-text-label {
+  flex-basis: 8rem;
 }
 
 .normdata-entry {
