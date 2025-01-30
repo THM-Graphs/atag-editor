@@ -15,9 +15,14 @@ import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
-import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
+import {
+  AdditionalText,
+  Annotation,
+  AnnotationProperty,
+  AnnotationType,
+  Character,
+} from '../models/types';
 import IAnnotation from '../models/IAnnotation';
-import IText from '../models/IText';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import { ToastServiceMethods } from 'primevue/toastservice';
@@ -326,10 +331,8 @@ function createNewAnnotation(
   const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
   const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
 
-  // Additional texts (= connected Collection->Text nodes). Not existing when created, but needed in Annotation structure -> null
-  const additionalTexts = Object.fromEntries(
-    (config.additionalTexts ?? []).map(t => [t.name, null]),
-  );
+  // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  const additionalTexts: AdditionalText[] = [];
 
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),

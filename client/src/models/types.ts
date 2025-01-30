@@ -4,6 +4,14 @@ import ICollection from './ICollection';
 import IEntity from './IEntity';
 import IText from './IText';
 
+export type AdditionalText = {
+  nodeLabel: string;
+  data: {
+    collection: ICollection;
+    text: IText;
+  };
+};
+
 export type Annotation = {
   characterUuids: string[];
   data: AnnotationData;
@@ -15,13 +23,7 @@ export type Annotation = {
 };
 
 export interface AnnotationData {
-  additionalTexts: {
-    nodeLabel: string;
-    data: {
-      collection: ICollection;
-      text: IText;
-    };
-  }[];
+  additionalTexts: AdditionalText[];
   normdata: {
     [index: string]: IEntity[];
   };

@@ -2,9 +2,9 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { Annotation, AnnotationData, AnnotationType } from '../models/types.js';
+import { AdditionalText, Annotation, AnnotationData, AnnotationType } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import IText from '../models/IText.js';
+import ICharacter from '../models/ICharacter.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
@@ -13,8 +13,8 @@ import IText from '../models/IText.js';
 type ProcessedAnnotation = Omit<Annotation, 'data'> & {
   data: Omit<AnnotationData, 'normdata' | 'additionalTexts'> & {
     additionalTexts: {
-      deleted: AdditionalTextConfig[];
-      created: AdditionalTextConfig[];
+      deleted: AdditionalText[];
+      created: CreatedAdditionalText[];
     };
     normdata: {
       deleted: string[];
@@ -23,9 +23,10 @@ type ProcessedAnnotation = Omit<Annotation, 'data'> & {
   };
 };
 
-type AdditionalTextConfig = {
-  config: any;
-  data: IText;
+type CreatedAdditionalText = AdditionalText & {
+  data: {
+    characters: ICharacter[];
+  };
 };
 
 export default class AnnotationService {
@@ -103,9 +104,6 @@ export default class AnnotationService {
   public async processAnnotationsBeforeSaving(
     annotations: Annotation[],
   ): Promise<ProcessedAnnotation[]> {
-    const guidelineService: GuidelinesService = new GuidelinesService();
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
-
     return annotations.map(annotation => {
       const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
         .flat()
@@ -126,57 +124,40 @@ export default class AnnotationService {
       // ------------------------------------------------------------------------------------------------
       // TODO: This needs to be restructured a lot
 
-      const createdAdditionalTexts: AdditionalTextConfig[] = [];
-      const deletedAdditionalTexts: AdditionalTextConfig[] = [];
+      const createdAdditionalTexts: CreatedAdditionalText[] = [];
+      const deletedAdditionalTexts: AdditionalText[] = [];
 
-      const annotationConfig: AnnotationType | undefined = guidelines.annotations.types.find(
-        t => t.type === annotation.data.properties.type,
+      const oldTextUuids: string[] = annotation.initialData.additionalTexts.map(
+        t => t.data.collection.uuid,
+      );
+      const newTextUuids: string[] = annotation.data.additionalTexts.map(
+        t => t.data.collection.uuid,
       );
 
-      // for (const [fieldName, text] of Object.entries(annotation.data.additionalTexts)) {
-      //   const additionalTextConfig = annotationConfig!.additionalTexts.find(
-      //     at => at.name === fieldName,
-      //   );
+      // Characters need to be created to be saved in the query
+      annotation.data.additionalTexts.forEach(additionalText => {
+        if (!oldTextUuids.includes(additionalText.data.collection.uuid)) {
+          createdAdditionalTexts.push({
+            ...additionalText,
+            data: {
+              ...additionalText.data,
+              characters: additionalText.data.text.text.split('').map(c => {
+                return {
+                  letterLabel: additionalText.data.collection.label,
+                  text: c,
+                  uuid: crypto.randomUUID(),
+                };
+              }),
+            },
+          });
+        }
+      });
 
-      //   const newText: IText | null = text;
-      //   const oldText: IText | null = annotation.initialData.additionalTexts[fieldName];
-
-      //   // If nothing was changed, skip
-      //   if (!newText && !oldText) {
-      //     continue;
-      //   }
-
-      //   // Text added
-      //   if (newText !== null && oldText === null) {
-      //     createdAdditionalTexts.push({
-      //       data: newText,
-      //       config: additionalTextConfig,
-      //     });
-      //   }
-
-      //   // Text removed
-      //   if (!newText && oldText !== null) {
-      //     deletedAdditionalTexts.push({
-      //       data: oldText,
-      //       config: additionalTextConfig,
-      //     });
-      //   }
-
-      //   // Text reference changed
-      //   if (newText !== null && oldText !== null && newText.uuid !== oldText.uuid) {
-      //     createdAdditionalTexts.push({
-      //       data: newText,
-      //       config: additionalTextConfig,
-      //     });
-      //     deletedAdditionalTexts.push({
-      //       data: oldText,
-      //       config: additionalTextConfig,
-      //     });
-      //   }
-      // }
-
-      // console.log('added:', createdAdditionalTexts);
-      // console.log('deleted:', deletedAdditionalTexts);
+      annotation.initialData.additionalTexts.forEach(additionalText => {
+        if (!newTextUuids.includes(additionalText.data.collection.uuid)) {
+          deletedAdditionalTexts.push(additionalText);
+        }
+      });
 
       return {
         ...annotation,
@@ -255,16 +236,42 @@ export default class AnnotationService {
         MERGE (a)-[r:REFERS_TO]->(e)
     }
 
-    // Conditionally merge REFERS_TO relationship to additional Text node
-    // The doubled WITH clause is needed since the WHERE clause does not work otherwise
-    // (see https://neo4j.com/docs/cypher-manual/current/subqueries/call-subquery/#importing-with)
-    // CALL {
-    //     WITH ann, a
-    //       WITH ann, a
-    //       // TODO: Should the guidelines be checked also? To prevent unwanted operations...
-    //       WHERE ann.data.additionalText IS NOT NULL
-    //     MERGE (a)-[:REFERS_TO]->(t:Text {uuid: ann.data.additionalText.uuid})
-    // }
+    // Remove additional text nodes
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.additionalTexts.deleted as textToDelete
+
+        MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})-[:HAS_TEXT]->(t:Text)
+        OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
+        OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(ax:Annotation)
+
+        DETACH DELETE c, t, ax, ch
+    }
+
+    // Create additional text nodes
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.additionalTexts.created as textToCreate
+        
+        CREATE (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t:Text)
+
+        WITH textToCreate, a, c, t
+
+        CALL apoc.create.addLabels(c, [textToCreate.nodeLabel]) YIELD node
+        SET c += textToCreate.data.collection
+        SET t += textToCreate.data.text
+
+        WITH textToCreate, a, c, t
+
+        CALL atag.chains.update(t.uuid, null, null, textToCreate.data.characters, {
+          textLabel: "Text",
+          elementLabel: "Character",
+          relationshipType: "NEXT_CHARACTER"
+        }) YIELD path
+
+        // TODO: This return makes problems, characters are not annotated afterwards
+        RETURN path
+    }
 
     // Remove existing relationships between annotation and character nodes before creating new ones
     CALL {

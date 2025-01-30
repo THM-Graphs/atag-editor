@@ -8,8 +8,8 @@ import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 import IAnnotation from '../models/IAnnotation';
-import IText from '../models/IText';
 import {
+  AdditionalText,
   Annotation,
   AnnotationData,
   AnnotationProperty,
@@ -389,9 +389,7 @@ function transformStandoffToAtag(): void {
       );
 
       const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
-      const newAdditionalText: IText | null = config.hasAdditionalText
-        ? { text: '', uuid: crypto.randomUUID() }
-        : null;
+      const newAdditionalTexts: AdditionalText[] = [];
 
       let index: number = a.start;
 
@@ -411,7 +409,7 @@ function transformStandoffToAtag(): void {
       newAnnotations.push({
         properties: newAnnotationProperties,
         normdata: newAnnotationNormdata,
-        additionalText: newAdditionalText,
+        additionalTexts: newAdditionalTexts,
       });
     });
 

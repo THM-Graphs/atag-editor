@@ -114,21 +114,20 @@ export function useEditorStore() {
           .map(m => m.uuid),
       );
 
-      // Check if additional texts have changed (new one added, old one removed/replaced)
-      for (const [fieldName, text] of Object.entries(a.data.additionalTexts)) {
-        const textReferenceHasChanged: boolean =
-          text?.uuid !== a.initialData.additionalTexts[fieldName]?.uuid;
+      const initialAdditionalTextUuids: Set<string> = new Set(
+        a.initialData.additionalTexts.map(at => at.data.collection.uuid),
+      );
 
-        if (textReferenceHasChanged) {
-          return true;
-        }
-      }
+      const additionalTextUuids: Set<string> = new Set(
+        a.data.additionalTexts.map(at => at.data.collection.uuid),
+      );
 
       if (
         a.status === 'deleted' ||
         a.status === 'created' ||
         !areObjectsEqual(a.data.properties, a.initialData.properties) ||
-        !areSetsEqual(normdataUuids, initialNormdataUuids)
+        !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+        !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
         console.log(`Annotation at index ${i} has a changed status or data.`);
         return true;
