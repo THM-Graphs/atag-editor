@@ -195,9 +195,10 @@ export default class AnnotationService {
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
-        DETACH DELETE a
-        // TODO: This should also delete character chain, annotations etc. (essentially the whole network)
-        // OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t:Text)
+        WITH a
+        // This deletes the whole network attached to the annotation node
+        OPTIONAL MATCH p = (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION | NEXT_CHARACTER*]->(x:Collection | Text | Character | Annotation)
+        DETACH DELETE a, p
     }
 
     WITH allAnnotations
@@ -241,11 +242,8 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})-[:HAS_TEXT]->(t:Text)
-        OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
-        OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(ax:Annotation)
-
-        DETACH DELETE c, t, ax, ch
+        OPTIONAL MATCH p = (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION | NEXT_CHARACTER*]->(x:Collection | Text | Character | Annotation)
+        DETACH DELETE x
     }
 
     // Create additional text nodes
@@ -269,8 +267,7 @@ export default class AnnotationService {
           relationshipType: "NEXT_CHARACTER"
         }) YIELD path
 
-        // TODO: This return makes problems, characters are not annotated afterwards
-        RETURN path
+        RETURN collect(textToCreate) as createdText
     }
 
     // Remove existing relationships between annotation and character nodes before creating new ones
