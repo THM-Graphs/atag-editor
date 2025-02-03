@@ -5,6 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
+import { Collection } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -46,7 +47,8 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const collection: ICollection = await collectionService.getCollectionById(uuid);
+    // TODO: Part of the collection metadata workaround, fix later
+    const collection: Collection = await collectionService.getExtendedCollectionById(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {

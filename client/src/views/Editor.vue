@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
+import { ComputedRef, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useCharactersStore } from '../store/characters';
 import { useCollectionStore } from '../store/collection';
@@ -19,8 +19,13 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
-import ICollection from '../models/ICollection';
-import { Annotation, AnnotationData, Character, CharacterPostData } from '../models/types';
+import {
+  Annotation,
+  AnnotationData,
+  Character,
+  CharacterPostData,
+  Collection,
+} from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
@@ -143,7 +148,7 @@ async function getCollectionByUuid(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollection: ICollection = await response.json();
+    const fetchedCollection: Collection = await response.json();
 
     isValidCollection.value = true;
     initializeCollection(fetchedCollection);

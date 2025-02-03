@@ -78,6 +78,11 @@ export type CharacterPostData = {
   uuidStart: string;
 };
 
+export type Collection = {
+  data: ICollection;
+  nodeLabel: string;
+};
+
 export type CollectionProperty = {
   name: string /* folioEnd, label, websiteUrl */;
   type: string /* raw string, dropdown, multiple options */;

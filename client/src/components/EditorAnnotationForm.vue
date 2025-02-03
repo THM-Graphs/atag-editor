@@ -22,7 +22,12 @@ import Tag from 'primevue/tag';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import { Annotation, AnnotationProperty, AnnotationType } from '../models/types';
+import {
+  Annotation,
+  AnnotationProperty,
+  AnnotationType,
+  CollectionProperty,
+} from '../models/types';
 import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
@@ -306,10 +311,26 @@ function setRangeAnchorAtEnd(): void {
 }
 
 function addAdditionalText(): void {
+  // TODO: This should be dynamic since the key is not always 'comment'.
+  const fields = guidelines.value.collections['comment'].properties;
+  const newCollectionProperties: ICollection = {} as ICollection;
+
+  fields.forEach((field: CollectionProperty) => {
+    // TODO: Is this needed? Or should Collection Properties always be text?
+    switch (field.type) {
+      case 'text':
+        newCollectionProperties[field.name] = '';
+        break;
+      default:
+        newCollectionProperties[field.name] = '';
+    }
+  });
+
   annotation.data.additionalTexts.push({
     nodeLabel: additionalTextInputObject.value.inputLabel,
     data: {
       collection: {
+        ...newCollectionProperties,
         uuid: crypto.randomUUID(),
         label: `${additionalTextInputObject.value.inputLabel} for annotation ${annotation.data.properties.uuid}`,
       } as ICollection,
