@@ -196,9 +196,12 @@ export default class AnnotationService {
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
         WITH a
-        // This deletes the whole network attached to the annotation node
-        OPTIONAL MATCH p = (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION | NEXT_CHARACTER*]->(x:Collection | Text | Character | Annotation)
-        DETACH DELETE a, p
+        // Match connected Text, Annotation and Annotation nodes
+        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        WITH a, x
+        // Find optional character chain for text nodes
+        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
+        DETACH DELETE a, x, ch
     }
 
     WITH allAnnotations
@@ -242,8 +245,12 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        OPTIONAL MATCH p = (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION | NEXT_CHARACTER*]->(x:Collection | Text | Character | Annotation)
-        DETACH DELETE x
+        // Match connected Text, Annotation and Annotation nodes
+        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        WITH x
+        // Find optional character chain for text nodes
+        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
+        DETACH DELETE x, ch
     }
 
     // Create additional text nodes
