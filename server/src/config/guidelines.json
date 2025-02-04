@@ -296,6 +296,6 @@
         "nodeLabel": "Role"
       }
     ],
-    "additionalTexts": ["Comment", "Test"]
+    "additionalTexts": ["Comment"]
   }
 }
