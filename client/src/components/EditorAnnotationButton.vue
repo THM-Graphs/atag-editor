@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
-import { getParentCharacterSpan, getSelectionData, isEditorElement } from '../utils/helper/helper';
+import {
+  cloneDeep,
+  getParentCharacterSpan,
+  getSelectionData,
+  isEditorElement,
+} from '../utils/helper/helper';
 import iconsMap from '../utils/helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
@@ -10,7 +15,13 @@ import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
-import { Annotation, AnnotationProperty, AnnotationType, Character } from '../models/types';
+import {
+  AdditionalText,
+  Annotation,
+  AnnotationProperty,
+  AnnotationType,
+  Character,
+} from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
@@ -316,14 +327,25 @@ function createNewAnnotation(
     newAnnotationData.subtype = subtype ?? newAnnotationData.subtype;
   }
 
-  // Normdata (= connected nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
   const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
   const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
 
+  // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  const additionalTexts: AdditionalText[] = [];
+
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
-    data: { properties: newAnnotationData, normdata: newAnnotationNormdata },
-    initialData: { properties: newAnnotationData, normdata: newAnnotationNormdata },
+    data: {
+      properties: cloneDeep(newAnnotationData),
+      normdata: cloneDeep(newAnnotationNormdata),
+      additionalTexts: cloneDeep(additionalTexts),
+    },
+    initialData: {
+      properties: cloneDeep(newAnnotationData),
+      normdata: cloneDeep(newAnnotationNormdata),
+      additionalTexts: cloneDeep(additionalTexts),
+    },
     isTruncated: false,
     startUuid: characters[0].data.uuid,
     endUuid: characters[characters.length - 1].data.uuid,

@@ -2,15 +2,20 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { Annotation, AnnotationConfigResource, AnnotationData } from '../models/types.js';
+import { AdditionalText, Annotation, AnnotationData, AnnotationType } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
+import ICharacter from '../models/ICharacter.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
  * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
  */
 type ProcessedAnnotation = Omit<Annotation, 'data'> & {
-  data: Omit<AnnotationData, 'normdata'> & {
+  data: Omit<AnnotationData, 'normdata' | 'additionalTexts'> & {
+    additionalTexts: {
+      deleted: AdditionalText[];
+      created: CreatedAdditionalText[];
+    };
     normdata: {
       deleted: string[];
       created: string[];
@@ -18,20 +23,25 @@ type ProcessedAnnotation = Omit<Annotation, 'data'> & {
   };
 };
 
+type CreatedAdditionalText = AdditionalText & {
+  data: {
+    characters: ICharacter[];
+  };
+};
+
 export default class AnnotationService {
   public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const resources: AnnotationConfigResource[] = guidelines.annotations.resources;
 
     const query: string = `
     // Match all annotations for given selection
     MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
-    WITH a, $resources AS resources
+    WITH a, $guidelines.annotations.resources AS resources
     UNWIND resources AS resource
-    
+
     CALL {
         WITH a, resource
         
@@ -45,15 +55,39 @@ export default class AnnotationService {
     }
 
     // Create key-value pair with category and matched nodes
-    WITH a, collect({category: key, nodes: nodes}) AS normdata
+    WITH a AS annotations, collect({category: key, nodes: nodes}) AS normdata
+
+    // Fetch additional text nodes
+    UNWIND annotations AS a
+    UNWIND $guidelines.annotations.additionalTexts AS atLabel
+
+    CALL {
+        WITH a, atLabel
+
+        MATCH (a)-[r:REFERS_TO]->(x:Collection)-[:HAS_TEXT]->(t2:Text)
+        WHERE atLabel IN labels(x)
+        RETURN collect({
+            nodeLabel: atLabel,
+            data: {
+                collection: x {.*},
+                text: t2{.*}
+            }
+        }) AS atNodes
+    }
+
+    WITH a, normdata, apoc.coll.flatten(collect(atNodes)) AS additionalTexts
 
     RETURN collect({
         properties: a {.*},
-        normdata: apoc.map.fromPairs([m IN normdata | [m.category, m.nodes]])
+        normdata: apoc.map.fromPairs([n in normdata | [n.category, n.nodes]]),
+        additionalTexts: additionalTexts
     }) AS annotations
-`;
+    `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid, resources });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      collectionUuid,
+      guidelines,
+    });
 
     return result.records[0]?.get('annotations');
   }
@@ -67,7 +101,9 @@ export default class AnnotationService {
    * @param {Annotation[]} annotations - The annotations to process.
    * @return {ProcessedAnnotation[]} The processed annotations.
    */
-  public processAnnotationsBeforeSaving(annotations: Annotation[]): ProcessedAnnotation[] {
+  public async processAnnotationsBeforeSaving(
+    annotations: Annotation[],
+  ): Promise<ProcessedAnnotation[]> {
     return annotations.map(annotation => {
       const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
         .flat()
@@ -77,21 +113,63 @@ export default class AnnotationService {
         .flat()
         .map(item => item.uuid);
 
-      const createdUuids: string[] = newNormdataUuids.filter(
+      const createdNormdataUuids: string[] = newNormdataUuids.filter(
         uuid => !initialNormdataUuids.includes(uuid),
       );
 
-      const deletedUuids: string[] = initialNormdataUuids.filter(
+      const deletedNormdataUuids: string[] = initialNormdataUuids.filter(
         uuid => !newNormdataUuids.includes(uuid),
       );
+
+      // ------------------------------------------------------------------------------------------------
+      // TODO: This needs to be restructured a lot
+
+      const createdAdditionalTexts: CreatedAdditionalText[] = [];
+      const deletedAdditionalTexts: AdditionalText[] = [];
+
+      const oldTextUuids: string[] = annotation.initialData.additionalTexts.map(
+        t => t.data.collection.uuid,
+      );
+      const newTextUuids: string[] = annotation.data.additionalTexts.map(
+        t => t.data.collection.uuid,
+      );
+
+      // Characters need to be created to be saved in the query
+      annotation.data.additionalTexts.forEach(additionalText => {
+        if (!oldTextUuids.includes(additionalText.data.collection.uuid)) {
+          createdAdditionalTexts.push({
+            ...additionalText,
+            data: {
+              ...additionalText.data,
+              characters: additionalText.data.text.text.split('').map(c => {
+                return {
+                  letterLabel: additionalText.data.collection.label,
+                  text: c,
+                  uuid: crypto.randomUUID(),
+                };
+              }),
+            },
+          });
+        }
+      });
+
+      annotation.initialData.additionalTexts.forEach(additionalText => {
+        if (!newTextUuids.includes(additionalText.data.collection.uuid)) {
+          deletedAdditionalTexts.push(additionalText);
+        }
+      });
 
       return {
         ...annotation,
         data: {
           ...annotation.data,
           normdata: {
-            deleted: deletedUuids,
-            created: createdUuids,
+            deleted: deletedNormdataUuids,
+            created: createdNormdataUuids,
+          },
+          additionalTexts: {
+            created: createdAdditionalTexts,
+            deleted: deletedAdditionalTexts,
           },
         },
       };
@@ -103,7 +181,9 @@ export default class AnnotationService {
     annotations: Annotation[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
-      this.processAnnotationsBeforeSaving(annotations);
+      await this.processAnnotationsBeforeSaving(annotations);
+
+    console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     const query: string = `
@@ -115,7 +195,13 @@ export default class AnnotationService {
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
-        DETACH DELETE a
+        WITH a
+        // Match connected Text, Annotation and Annotation nodes
+        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        WITH a, x
+        // Find optional character chain for text nodes
+        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
+        DETACH DELETE a, x, ch
     }
 
     WITH allAnnotations
@@ -152,6 +238,43 @@ export default class AnnotationService {
         UNWIND ann.data.normdata.created AS createdUuid
         MATCH (e:Entity {uuid: createdUuid})
         MERGE (a)-[r:REFERS_TO]->(e)
+    }
+
+    // Remove additional text nodes
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.additionalTexts.deleted as textToDelete
+
+        // Match connected Text, Annotation and Annotation nodes
+        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        WITH x
+        // Find optional character chain for text nodes
+        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
+        DETACH DELETE x, ch
+    }
+
+    // Create additional text nodes
+    CALL {
+        WITH ann, a
+        UNWIND ann.data.additionalTexts.created as textToCreate
+        
+        CREATE (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t:Text)
+
+        WITH textToCreate, a, c, t
+
+        CALL apoc.create.addLabels(c, [textToCreate.nodeLabel]) YIELD node
+        SET c += textToCreate.data.collection
+        SET t += textToCreate.data.text
+
+        WITH textToCreate, a, c, t
+
+        CALL atag.chains.update(t.uuid, null, null, textToCreate.data.characters, {
+          textLabel: "Text",
+          elementLabel: "Character",
+          relationshipType: "NEXT_CHARACTER"
+        }) YIELD path
+
+        RETURN collect(textToCreate) as createdText
     }
 
     // Remove existing relationships between annotation and character nodes before creating new ones

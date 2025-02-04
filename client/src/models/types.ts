@@ -1,6 +1,16 @@
 import IAnnotation from './IAnnotation';
 import ICharacter from './ICharacter';
+import ICollection from './ICollection';
 import IEntity from './IEntity';
+import IText from './IText';
+
+export type AdditionalText = {
+  nodeLabel: string;
+  data: {
+    collection: ICollection;
+    text: IText;
+  };
+};
 
 export type Annotation = {
   characterUuids: string[];
@@ -13,10 +23,11 @@ export type Annotation = {
 };
 
 export interface AnnotationData {
-  properties: IAnnotation;
+  additionalTexts: AdditionalText[];
   normdata: {
     [index: string]: IEntity[];
   };
+  properties: IAnnotation;
 }
 
 export type AnnotationType = {
@@ -24,6 +35,7 @@ export type AnnotationType = {
   defaultSelected: boolean;
   isSeparator?: boolean;
   isZeroPoint?: boolean;
+  hasAdditionalTexts?: boolean;
   hasNormdata?: boolean;
   properties?: AnnotationProperty[];
   shortcut: string[];
@@ -64,6 +76,11 @@ export type CharacterPostData = {
   text: string;
   uuidEnd: string;
   uuidStart: string;
+};
+
+export type Collection = {
+  data: ICollection;
+  nodeLabel: string;
 };
 
 export type CollectionProperty = {

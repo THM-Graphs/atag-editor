@@ -114,11 +114,20 @@ export function useEditorStore() {
           .map(m => m.uuid),
       );
 
+      const initialAdditionalTextUuids: Set<string> = new Set(
+        a.initialData.additionalTexts.map(at => at.data.collection.uuid),
+      );
+
+      const additionalTextUuids: Set<string> = new Set(
+        a.data.additionalTexts.map(at => at.data.collection.uuid),
+      );
+
       if (
         a.status === 'deleted' ||
         a.status === 'created' ||
         !areObjectsEqual(a.data.properties, a.initialData.properties) ||
-        !areSetsEqual(normdataUuids, initialNormdataUuids)
+        !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+        !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
         console.log(`Annotation at index ${i} has a changed status or data.`);
         return true;

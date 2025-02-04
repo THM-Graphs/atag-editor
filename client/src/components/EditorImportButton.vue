@@ -9,9 +9,11 @@ import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 import IAnnotation from '../models/IAnnotation';
 import {
+  AdditionalText,
   Annotation,
   AnnotationData,
   AnnotationProperty,
+  AnnotationType,
   Character,
   MalformedAnnotation,
   StandoffJson,
@@ -342,8 +344,10 @@ function transformStandoffToAtag(): void {
         return;
       }
 
+      const config: AnnotationType = getAnnotationConfig(a.type);
+
       // Catch annotations that are not configured in the guidelines
-      if (!getAnnotationConfig(a.type)) {
+      if (!config) {
         malformedAnnotations.push({ reason: 'unconfiguredType', data: a });
         return;
       }
@@ -385,6 +389,7 @@ function transformStandoffToAtag(): void {
       );
 
       const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
+      const newAdditionalTexts: AdditionalText[] = [];
 
       let index: number = a.start;
 
@@ -401,7 +406,11 @@ function transformStandoffToAtag(): void {
         index++;
       } while (index <= a.end);
 
-      newAnnotations.push({ properties: newAnnotationProperties, normdata: newAnnotationNormdata });
+      newAnnotations.push({
+        properties: newAnnotationProperties,
+        normdata: newAnnotationNormdata,
+        additionalTexts: newAdditionalTexts,
+      });
     });
 
     console.log(newAnnotations);

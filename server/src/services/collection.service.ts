@@ -4,6 +4,7 @@ import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
+import { Collection } from '../models/types.js';
 
 export default class CollectionService {
   /**
@@ -37,6 +38,32 @@ export default class CollectionService {
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
     const collection: ICollection = result.records[0]?.get('collection');
+
+    if (!collection) {
+      throw new NotFoundError(`Collection with UUID ${uuid} not found`);
+    }
+
+    return collection;
+  }
+
+  /**
+   * Retrieves extended data of a specified collection node (node properties and additional label of Collection node).
+   * TODO: This is currently a workaround to differentiate between diffenent collection types when displaying
+   * the metadata in the frontend (Letter collections have status, sender etc., while additional texts don't
+   * have metadata other than a label). Fix when rebuilding architecture to focus the Text node instead of Collection node...
+   * @param {string} uuid - The UUID of the collection node to retrieve.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<Collection>} A promise that resolves to the retrieved extended collection.
+   */
+  public async getExtendedCollectionById(uuid: string): Promise<Collection> {
+    // TODO: This query is not working with more than one additional node label. Considerate
+    const query: string = `
+    MATCH (c:Collection {uuid: $uuid})
+    RETURN {data: c {.*}, nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0]} as collection
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+    const collection: Collection = result.records[0]?.get('collection');
 
     if (!collection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
