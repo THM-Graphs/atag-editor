@@ -150,27 +150,22 @@ function addNormdataItem(item: NormdataEntry, category: string): void {
 function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
   additionalTextInputObject.value.mode = mode;
 
-  // if (mode === 'view') {
-
-  //   return;
-  // }
+  if (mode === 'view') {
+    return;
+  }
 
   // // Wait for DOM to update before trying to focus the element
-  // nextTick(() => {
-  //   // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-  //   // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
-  //   // that holds the component. Is an array because since the refs are set in a loop in the template
-  //   const elm = normdataSearchObject.value[category].elm[0];
+  nextTick(() => {
+    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
+    const inputElm: HTMLInputElement | null = additionalTextInputObject.value.inputElm.$el;
 
-  //   if (!elm) {
-  //     console.warn(`Focus failed: Element not found for category "${category}"`);
-  //     return;
-  //   }
+    if (!inputElm) {
+      console.warn('Focus failed: Element not found');
+      return;
+    }
 
-  //   const inputElement: HTMLInputElement = elm.$el?.querySelector('input');
-
-  //   inputElement?.focus();
-  // });
+    inputElm.focus();
+  });
 }
 
 /**
