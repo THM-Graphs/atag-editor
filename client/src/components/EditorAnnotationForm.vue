@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref } from 'vue';
+import { nextTick, Ref, ref, watch } from 'vue';
 import { templateRef } from '@vueuse/core';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
@@ -108,6 +108,31 @@ const additionalTextInputObject = ref<AdditionalTextInputObject>({
   inputLabel: guidelines.value.annotations.additionalTexts[0],
   mode: 'view',
 });
+
+// Used for toggling additional text preview mode. Bit hacky for now, but works.
+const additionalTextStatusObject = ref<Map<string, 'collapsed' | 'expanded'>>(new Map());
+
+watch(
+  () => annotation.data.additionalTexts,
+  (newTexts, oldTexts) => {
+    // Add new text if it doesn't already exist
+    newTexts.forEach(text => {
+      if (!additionalTextStatusObject.value.has(text.data.collection.uuid)) {
+        additionalTextStatusObject.value.set(text.data.collection.uuid, 'collapsed');
+      }
+    });
+
+    // Remove texts that no longer exist
+    if (oldTexts) {
+      oldTexts.forEach(text => {
+        if (!newTexts.some(newText => newText.data.collection.uuid === text.data.collection.uuid)) {
+          additionalTextStatusObject.value.delete(text.data.collection.uuid);
+        }
+      });
+    }
+  },
+  { deep: true, immediate: true },
+);
 
 /**
  * Adds a normdata item to the specified category in the annotation's data.
@@ -310,8 +335,22 @@ function setRangeAnchorAtEnd(): void {
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
 }
 
+/**
+ * Toggles the view modeof an additional text entry. By default, the whole text is shown as preview to keep
+ * the form compact, but can be expanded on button click.
+ *
+ * @param {string} uuid - The UUID of the additional text for which the mode should be toggled.
+ */
+function toggleAdditionalTextPreviewMode(uuid: string): void {
+  const currentViewMode: 'collapsed' | 'expanded' = additionalTextStatusObject.value.get(uuid);
+  additionalTextStatusObject.value.set(
+    uuid,
+    currentViewMode === 'collapsed' ? 'expanded' : 'collapsed',
+  );
+}
+
 function addAdditionalText(): void {
-  // TODO: This should be dynamic since the key is not always 'comment'.
+  // TODO: This should be dynamic since the key is not always 'comment'
   const fields = guidelines.value.collections['comment'].properties;
   const newCollectionProperties: ICollection = {} as ICollection;
 
@@ -533,41 +572,69 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <div
+      <template
         v-for="additionalText in annotation.data.additionalTexts"
         :key="additionalText.data.collection.uuid"
-        class="additional-text-entry flex align-items-center gap-3 mb-3"
       >
-        <div class="additional-text-label font-semibold">
-          {{ camelCaseToTitleCase(additionalText.nodeLabel) }}
-        </div>
-        <div class="flex flex-auto align-items-center gap-2">
-          <a :href="`/texts/${additionalText.data.collection.uuid}`" target="_blank">
-            <div class="flex align-items-center gap-1">
-              <span>
+        <div class="additional-text-entry">
+          <div
+            class="additional-text-header flex justify-content-between align-items-center font-semibold"
+          >
+            <span>
+              {{ camelCaseToTitleCase(additionalText.nodeLabel) }}
+            </span>
+            <Button
+              icon="pi pi-times"
+              severity="danger"
+              title="Remove this text from annotation"
+              @click="handleDeleteAdditionalText(additionalText.data.collection.uuid)"
+            />
+          </div>
+          <div class="flex align-items-center gap-2 overflow">
+            <a
+              :href="`/texts/${additionalText.data.collection.uuid}`"
+              title="Open text in new editor tab"
+              class="flex align-items-center gap-1"
+              target="_blank"
+            >
+              <div
+                :class="`preview ${additionalTextStatusObject.get(additionalText.data.collection.uuid)}`"
+              >
                 {{ additionalText.data.text.text }}
-              </span>
-              <span class="pi pi-external-link"></span>
-            </div>
-          </a>
+              </div>
+              <i class="pi pi-external-link"></i>
+            </a>
+          </div>
+          <Button
+            :icon="
+              additionalTextStatusObject.get(additionalText.data.collection.uuid) === 'collapsed'
+                ? 'pi pi-angle-double-down'
+                : 'pi pi-angle-double-up'
+            "
+            severity="secondary"
+            size="small"
+            class="w-full"
+            :title="
+              additionalTextStatusObject.get(additionalText.data.collection.uuid) === 'collapsed'
+                ? 'Show full text'
+                : 'Hide full text'
+            "
+            @click="toggleAdditionalTextPreviewMode(additionalText.data.collection.uuid)"
+          />
+          <Message
+            v-if="
+              !annotation.initialData.additionalTexts
+                .map(t => t.data.collection.uuid)
+                .includes(additionalText.data.collection.uuid)
+            "
+            severity="warn"
+          >
+            Save changes to edit new text...
+          </Message>
         </div>
-        <Message
-          v-if="
-            !annotation.initialData.additionalTexts
-              .map(t => t.data.collection.uuid)
-              .includes(additionalText.data.collection.uuid)
-          "
-          severity="warn"
-        >
-          Save changes to edit new text...
-        </Message>
-        <Button
-          icon="pi pi-times"
-          severity="danger"
-          title="Remove this text from annotation"
-          @click="handleDeleteAdditionalText(additionalText.data.collection.uuid)"
-        />
-      </div>
+
+        <hr />
+      </template>
       <div>
         <Button
           v-show="additionalTextInputObject.mode === 'view'"
@@ -668,6 +735,18 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
   background-color: gray;
 }
 
+.preview.collapsed {
+  --fade-start: 50%;
+  max-height: 4rem;
+  mask-image: linear-gradient(to bottom, white var(--fade-start), transparent);
+  transition: max-height 500ms;
+}
+
+.preview.expanded {
+  max-height: auto;
+  max-height: calc-size(auto);
+}
+
 .x {
   background-color: white;
   outline: 0;
@@ -694,25 +773,17 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
   flex-basis: 10rem;
 }
 
-.additional-text-label {
-  flex-basis: 8rem;
+.additional-text-header {
   cursor: default;
 }
 
-.normdata-entry {
+.normdata-entry,
+.additional-text-entry {
   border: 1px solid gray;
   border-radius: 5px;
   margin-bottom: 0.5rem;
   padding: 0.5rem;
 
-  & button {
-    width: 1rem;
-    height: 1rem;
-    padding: 10px;
-  }
-}
-
-.additional-text-entry {
   & button {
     width: 1rem;
     height: 1rem;
