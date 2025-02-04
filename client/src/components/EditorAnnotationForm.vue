@@ -53,6 +53,7 @@ interface NormdataSearchObject {
  */
 interface AdditionalTextInputObject {
   availableLabels: string[];
+  inputElm: Ref<HTMLInputElement>;
   inputLabel: string;
   inputText: string;
   mode: 'edit' | 'view';
@@ -107,6 +108,7 @@ const additionalTextInputObject = ref<AdditionalTextInputObject>({
   availableLabels: guidelines.value.annotations.additionalTexts,
   inputLabel: guidelines.value.annotations.additionalTexts[0],
   mode: 'view',
+  inputElm: templateRef('additional-text-input'),
 });
 
 // Used for toggling additional text preview mode. Bit hacky for now, but works.
@@ -647,28 +649,39 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           :disabled="annotation.isTruncated"
           @click="changeAdditionalTextSelectionMode('edit')"
         />
-        <InputGroup v-show="additionalTextInputObject.mode === 'edit'">
-          <Select
-            v-model="additionalTextInputObject.inputLabel"
-            :options="additionalTextInputObject.availableLabels"
-            placeholder="Choose a label"
-          />
-          <InputText v-model="additionalTextInputObject.inputText" placeholder="Enter text" />
-          <Button
-            icon="pi pi-check"
-            severity="secondary"
-            size="small"
-            title="Add new text"
-            @click="addAdditionalText"
-          />
-          <Button
-            icon="pi pi-times"
-            severity="secondary"
-            size="small"
-            title="Cancel"
-            @click="cancelAdditionalTextOperation"
-          />
-        </InputGroup>
+        <form
+          v-show="additionalTextInputObject.mode === 'edit'"
+          @submit.prevent="addAdditionalText"
+        >
+          <InputGroup>
+            <Select
+              v-model="additionalTextInputObject.inputLabel"
+              :options="additionalTextInputObject.availableLabels"
+              placeholder="Choose a label"
+            />
+            <InputText
+              ref="additional-text-input"
+              required
+              v-model="additionalTextInputObject.inputText"
+              placeholder="Enter text"
+            />
+            <Button
+              type="submit"
+              icon="pi pi-check"
+              severity="secondary"
+              size="small"
+              title="Add new text"
+            />
+            <Button
+              type="button"
+              icon="pi pi-times"
+              severity="secondary"
+              size="small"
+              title="Cancel"
+              @click="cancelAdditionalTextOperation"
+            />
+          </InputGroup>
+        </form>
       </div>
     </Fieldset>
     <div class="edit-buttons flex justify-content-center">
