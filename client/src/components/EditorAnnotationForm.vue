@@ -53,7 +53,7 @@ interface NormdataSearchObject {
  */
 interface AdditionalTextInputObject {
   availableLabels: string[];
-  inputElm: Ref<HTMLInputElement>;
+  inputElm: Ref<any>;
   inputLabel: string;
   inputText: string;
   mode: 'edit' | 'view';
