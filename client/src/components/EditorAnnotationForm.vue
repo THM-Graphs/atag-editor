@@ -425,6 +425,9 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         <Tag severity="warn" value="Truncated"></Tag>
       </div>
     </template>
+    <template #toggleicon="{ collapsed }">
+      <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
+    </template>
     <Fieldset
       legend="Properties"
       :toggleable="true"

@@ -162,6 +162,9 @@ function toggleViewMode(direction: 'current' | 'all'): void {
     <template #header>
       <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
     </template>
+    <template #toggleicon="{ collapsed }">
+      <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
+    </template>
     <div class="tab-buttons">
       <ButtonGroup class="w-full flex">
         <ToggleButton

@@ -37,6 +37,9 @@ function validate(): boolean {
 
 <template>
   <Panel header="Metadata" class="metadata-container mb-3" toggleable>
+    <template #toggleicon="{ collapsed }">
+      <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
+    </template>
     <div class="flex align-items-center gap-3 mb-3">
       <InputText
         id="uuid"
