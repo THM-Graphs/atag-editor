@@ -431,7 +431,11 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         ></div>
       </div>
       <div v-if="annotation.isTruncated" class="truncated-indicator">
-        <Tag severity="warn" value="Truncated"></Tag>
+        <Tag
+          severity="warn"
+          title="Annotation extends beyond the displayed text snippet"
+          value="Truncated"
+        ></Tag>
       </div>
     </template>
     <template #toggleicon="{ collapsed }">
@@ -439,6 +443,9 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     </template>
     <Fieldset
       legend="Properties"
+      :toggle-button-props="{
+        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
+      }"
       :toggleable="true"
       @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
     >
@@ -514,6 +521,9 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       v-if="config.hasNormdata === true"
       legend="Normdata"
       :toggleable="true"
+      :toggle-button-props="{
+        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} normdata`,
+      }"
       @toggle="normdataAreCollapsed = !normdataAreCollapsed"
     >
       <template #toggleicon>
@@ -575,6 +585,9 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     <Fieldset
       v-if="config.hasAdditionalTexts === true"
       legend="Additional texts"
+      :toggle-button-props="{
+        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} additional texts`,
+      }"
       :toggleable="true"
       @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
     >
@@ -664,6 +677,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             <Select
               v-model="additionalTextInputObject.inputLabel"
               :options="additionalTextInputObject.availableLabels"
+              title="Select label of new text"
               placeholder="Choose a label"
             />
             <InputText
@@ -671,6 +685,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
               required
               v-model="additionalTextInputObject.inputText"
               placeholder="Enter text"
+              title="Enter text"
             />
             <Button
               type="submit"
