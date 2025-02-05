@@ -667,7 +667,7 @@ function getCharacterIndex(span: HTMLSpanElement): number {
 <template>
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
-    <ToggleSwitch v-model="keepTextOnPagination" />
+    <ToggleSwitch title="Switch pagination mode" v-model="keepTextOnPagination" />
   </div>
   <div class="counter text-right mb-1">
     <small>{{ charCounterMessage }}</small>

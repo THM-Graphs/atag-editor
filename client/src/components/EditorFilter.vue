@@ -40,6 +40,7 @@ function toggleDropdown(): void {
       class="w-full"
       icon="pi pi-filter-fill"
       label="Filter"
+      :title="isCollapsed ? 'Show filter pane' : 'Hide filter pane'"
       @click="toggleDropdown"
       :badge="badgeContent"
       :badgeSeverity="badgeSeverity"
@@ -48,8 +49,18 @@ function toggleDropdown(): void {
       <template #content>
         <div class="dropwn-header">
           <div class="buttons flex gap-1 mb-2 align-items-center">
-            <Button label="Select all" size="small" @click="selectAllOptions" />
-            <Button label="Reset to default" size="small" @click="selectDefaultOptions" />
+            <Button
+              label="Select all"
+              title="Select all options"
+              size="small"
+              @click="selectAllOptions"
+            />
+            <Button
+              label="Reset to default"
+              title="Reset to default options"
+              size="small"
+              @click="selectDefaultOptions"
+            />
           </div>
         </div>
         <div class="container flex gap-2">

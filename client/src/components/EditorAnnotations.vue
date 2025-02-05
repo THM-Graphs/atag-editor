@@ -158,7 +158,16 @@ function toggleViewMode(direction: 'current' | 'all'): void {
 </script>
 
 <template>
-  <Panel class="annotations-container mb-3 overflow-y-auto" toggleable>
+  <Panel
+    class="annotations-container mb-3 overflow-y-auto"
+    toggleable
+    :toggle-button-props="{
+      severity: 'secondary',
+      title: 'Toggle full view',
+      rounded: true,
+      text: true,
+    }"
+  >
     <template #header>
       <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
     </template>
@@ -172,6 +181,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
           class="w-full"
           onLabel="Current"
           offLabel="Current"
+          title="Show only annotations in current snippet"
           badge="2"
           @change="toggleViewMode('current')"
         />
@@ -180,18 +190,27 @@ function toggleViewMode(direction: 'current' | 'all'): void {
           class="w-full"
           onLabel="All"
           offLabel="All"
+          title="Show all annotations of text"
           badge="2"
           @change="toggleViewMode('all')"
         />
       </ButtonGroup>
     </div>
     <div class="collapse-buttons">
-      <Button type="button" icon="pi pi-plus" size="small" label="Expand All" @click="expandAll" />
+      <Button
+        type="button"
+        icon="pi pi-plus"
+        size="small"
+        label="Expand All"
+        title="Expand annotation tree"
+        @click="expandAll"
+      />
       <Button
         type="button"
         icon="pi pi-minus"
         size="small"
         label="Collapse All"
+        title="Collapse annotation tree"
         @click="collapseAll"
       />
     </div>

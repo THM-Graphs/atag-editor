@@ -116,7 +116,13 @@ function handleSearchInput(): void {
     </template>
 
     <template #end>
-      <Button icon="pi pi-plus" aria-label="Submit" label="Add text" @click="showDialog" />
+      <Button
+        icon="pi pi-plus"
+        aria-label="Submit"
+        label="Add text"
+        title="Add new text"
+        @click="showDialog"
+      />
     </template>
   </Toolbar>
   <Dialog
@@ -160,8 +166,19 @@ function handleSearchInput(): void {
       </div>
 
       <div class="button-container flex justify-content-end gap-2">
-        <Button type="button" label="Cancel" severity="secondary" @click="hideDialog"></Button>
-        <Button type="submit" label="Create" :loading="asyncOperationRunning"></Button>
+        <Button
+          type="button"
+          label="Cancel"
+          title="Cancel"
+          severity="secondary"
+          @click="hideDialog"
+        ></Button>
+        <Button
+          type="submit"
+          label="Create"
+          title="Create new text"
+          :loading="asyncOperationRunning"
+        ></Button>
       </div>
     </form>
   </Dialog>

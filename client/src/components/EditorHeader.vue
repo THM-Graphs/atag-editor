@@ -35,7 +35,12 @@ function validate(): boolean {
   <div class="header">
     <div class="header-buttons flex justify-content-between mb-2">
       <RouterLink to="/">
-        <Button icon="pi pi-home" aria-label="Home" class="w-2rem h-2rem" title="Overview"></Button>
+        <Button
+          icon="pi pi-home"
+          aria-label="Home"
+          class="w-2rem h-2rem"
+          title="Go to overview"
+        ></Button>
       </RouterLink>
       <div>
         <EditorImportButton />

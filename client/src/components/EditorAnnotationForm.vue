@@ -214,10 +214,12 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
       label: 'Cancel',
       severity: 'secondary',
       outlined: true,
+      title: 'Cancel',
     },
     acceptProps: {
       label: 'Delete',
       severity: 'danger',
+      title: 'Delete annotation',
     },
     accept: () => {
       deleteAnnotation(uuid);
@@ -403,6 +405,12 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     :data-annotation-uuid="annotation.data.properties.uuid"
     toggleable
     :collapsed="true"
+    :toggle-button-props="{
+      severity: 'secondary',
+      title: 'Toggle full view',
+      rounded: true,
+      text: true,
+    }"
   >
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
@@ -417,6 +425,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         </div>
         <div
           class="spy pi pi-eye cursor-pointer"
+          title="Show annotated text"
           @mouseover="toggleTextHightlighting(annotation, 'on')"
           @mouseleave="toggleTextHightlighting(annotation, 'off')"
         ></div>
@@ -688,6 +697,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         size="small"
         severity="secondary"
         rounded
+        title="Move annotation left by one character"
         :disabled="annotation.isTruncated"
         @click="handleShiftLeft"
       />
@@ -696,6 +706,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         size="small"
         severity="secondary"
         rounded
+        title="Move annotation right by one character"
         :disabled="annotation.isTruncated"
         @click="handleShiftRight"
       />
@@ -704,6 +715,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         size="small"
         severity="secondary"
         rounded
+        title="Expand annotation right by one character"
         :disabled="annotation.isTruncated || config.isZeroPoint"
         @click="handleExpand"
       />
@@ -712,6 +724,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         size="small"
         severity="secondary"
         rounded
+        title="Shrink annotation from the right by one character"
         :disabled="annotation.isTruncated || config.isZeroPoint"
         @click="handleShrink"
       />
@@ -719,6 +732,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     <div class="action-buttons flex justify-content-center">
       <Button
         label="Delete"
+        title="Delete annotation"
         severity="danger"
         icon="pi pi-trash"
         size="small"

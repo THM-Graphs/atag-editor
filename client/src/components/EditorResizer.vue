@@ -41,6 +41,7 @@ function toggleSidebar() {
       :class="['handle', `handle-${position}`]"
       :icon="arrowDirection"
       severity="secondary"
+      :title="sidebarIsCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
       @click="toggleSidebar"
     ></Button>
   </div>

@@ -36,7 +36,17 @@ function validate(): boolean {
 </script>
 
 <template>
-  <Panel header="Metadata" class="metadata-container mb-3" toggleable>
+  <Panel
+    header="Metadata"
+    class="metadata-container mb-3"
+    toggleable
+    :toggle-button-props="{
+      severity: 'secondary',
+      title: 'Toggle full view',
+      rounded: true,
+      text: true,
+    }"
+  >
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
@@ -54,7 +64,7 @@ function validate(): boolean {
         severity="secondary"
         size="small"
         aria-label="Copy UUID"
-        v-tooltip.hover.top="{ value: 'Copy UUID', showDelay: 150 }"
+        title="Copy UUID"
         @click="handleCopy"
       />
     </div>
