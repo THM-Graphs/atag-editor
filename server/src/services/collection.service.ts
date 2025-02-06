@@ -98,7 +98,7 @@ export default class CollectionService {
     data = { ...data, uuid: crypto.randomUUID() };
 
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} $data)-[:HAS_TEXT]->(t:Text {uuid: $textUuid})
+    CREATE (c:Collection:${additionalLabel} $data)<-[:PART_OF]-(t:Text {uuid: $textUuid})
     RETURN c {.*} AS collection
     `;
 
@@ -140,7 +140,7 @@ export default class CollectionService {
    */
   public async deleteCollection(uuid: string): Promise<ICollection> {
     const query: string = `
-    MATCH (c:Collection {uuid: $uuid})-[:HAS_TEXT]->(t:Text)
+    MATCH (c:Collection {uuid: $uuid})<-[:PART_OF]-(t:Text)
     OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(chars:Character)
     WITH c, t, chars, c {.*} as collection
     DETACH DELETE c, t, chars
