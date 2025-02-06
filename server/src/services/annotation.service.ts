@@ -245,12 +245,13 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        // Match connected Text, Annotation and Annotation nodes
-        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
-        WITH x
-        // Find optional character chain for text nodes
+        // Match connected Collection, Text and Annotation nodes
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})
+        -[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        WITH c, x
+        // Find optional character chain for Text nodes
         OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
-        DETACH DELETE x, ch
+        DETACH DELETE c, x, ch
     }
 
     // Create additional text nodes
