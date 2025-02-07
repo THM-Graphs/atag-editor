@@ -196,12 +196,14 @@ export default class AnnotationService {
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
         WITH a
-        // Match connected Text, Annotation and Annotation nodes
-        OPTIONAL MATCH (a)-[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
-        WITH a, x
+        // Match connected Collection, Text and Annotation nodes. Collection nodes need to be matched separately
+        // as entry point into subgraph, and from there can be matched safely in both directions 
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)
+        -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
+        WITH a, x, c
         // Find optional character chain for text nodes
         OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
-        DETACH DELETE a, x, ch
+        DETACH DELETE a, c, x, ch
     }
 
     WITH allAnnotations
@@ -245,7 +247,8 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        // Match connected Collection, Text and Annotation nodes
+        // Match connected Collection, Text and Annotation nodes. Collection node needs to be matched separately
+        // as entry point into subgraph, and from there can be matched safely in both directions 
         OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})
         -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
         WITH c, x
