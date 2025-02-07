@@ -36,7 +36,7 @@ export default class AnnotationService {
 
     const query: string = `
     // Match all annotations for given selection
-    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
+    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a, $guidelines.annotations.resources AS resources
@@ -64,7 +64,7 @@ export default class AnnotationService {
     CALL {
         WITH a, atLabel
 
-        MATCH (a)-[r:REFERS_TO]->(x:Collection)-[:HAS_TEXT]->(t2:Text)
+        MATCH (a)-[r:REFERS_TO]->(x:Collection)<-[:PART_OF]-(t2:Text)
         WHERE atLabel IN labels(x)
         RETURN collect({
             nodeLabel: atLabel,
@@ -196,17 +196,19 @@ export default class AnnotationService {
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
         WITH a
-        // Match connected Text, Annotation and Annotation nodes
-        OPTIONAL MATCH (a)-[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
-        WITH a, x
+        // Match connected Collection, Text and Annotation nodes. Collection nodes need to be matched separately
+        // as entry point into subgraph, and from there can be matched safely in both directions 
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)
+        -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
+        WITH a, x, c
         // Find optional character chain for text nodes
         OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
-        DETACH DELETE a, x, ch
+        DETACH DELETE a, c, x, ch
     }
 
     WITH allAnnotations
 
-    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)
+    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)
 
     // 2. Handle other annotations (merge)
     UNWIND allAnnotations AS ann
@@ -245,9 +247,10 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        // Match connected Collection, Text and Annotation nodes
+        // Match connected Collection, Text and Annotation nodes. Collection node needs to be matched separately
+        // as entry point into subgraph, and from there can be matched safely in both directions 
         OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})
-        -[:REFERS_TO | HAS_TEXT | HAS_ANNOTATION*]->(x:Collection | Text | Annotation)
+        -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
         WITH c, x
         // Find optional character chain for Text nodes
         OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
@@ -259,7 +262,7 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.created as textToCreate
         
-        CREATE (a)-[:REFERS_TO]->(c:Collection)-[:HAS_TEXT]->(t:Text)
+        CREATE (a)-[:REFERS_TO]->(c:Collection)<-[:PART_OF]-(t:Text)
 
         WITH textToCreate, a, c, t
 
@@ -304,7 +307,7 @@ export default class AnnotationService {
 
     // Set startIndex and andIndex properties of Annotation nodes
     
-    MATCH (c:Collection {uuid: $collectionUuid})-[:HAS_TEXT]->(t:Text)-[:NEXT_CHARACTER*]->(ch:Character)
+    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)-[:NEXT_CHARACTER*]->(ch:Character)
     WITH collect(ch) as characters, annotations
 
     UNWIND range(0, size(characters) - 1) AS idx
