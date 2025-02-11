@@ -71,15 +71,21 @@ export type Character = {
 };
 
 export type CharacterPostData = {
-  collectionUuid: string;
-  uuidStart: string;
-  uuidEnd: string;
   characters: ICharacter[];
+  text: string;
+  textUuid: string;
+  uuidEnd: string;
+  uuidStart: string;
 };
 
 export type Collection = {
   data: ICollection;
   nodeLabel: string;
+};
+
+export type CollectionAccessObject = {
+  collection: Collection;
+  texts: Text;
 };
 
 export type CollectionProperty = {

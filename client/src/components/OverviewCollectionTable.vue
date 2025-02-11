@@ -5,12 +5,11 @@ import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
-import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
-import { CollectionProperty } from '../models/types';
+import { CollectionAccessObject, CollectionProperty } from '../models/types';
 
 defineProps<{
-  collections: ICollection[] | null;
+  collections: CollectionAccessObject[] | null;
 }>();
 
 const { guidelines, getCollectionFields } = useGuidelinesStore();
@@ -45,6 +44,7 @@ async function getGuidelines(): Promise<void> {
 <template>
   <div class="flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!collections" />
+    <!-- TODO: Fix sorting... -->
     <DataTable
       v-else
       scrollable
@@ -70,18 +70,19 @@ async function getGuidelines(): Promise<void> {
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
+          <!-- TODO: the link creation works only when exactly ONE text is connected -> fix! -->
           <a
             v-if="col.name === 'label'"
             class="cell-link"
-            :href="'/texts/' + data.uuid"
-            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
-            >{{ data[col.name] }}</a
+            :href="'/texts/' + data.texts[0].data.uuid"
+            v-tooltip.hover.top="{ value: data.collection.data[col.name], showDelay: 0 }"
+            >{{ data.collection.data[col.name] }}</a
           >
           <span
             v-else
             class="cell-info"
-            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
-            >{{ data[col.name] }}</span
+            v-tooltip.hover.top="{ value: data.collection.data[col.name], showDelay: 0 }"
+            >{{ data.collection.data[col.name] }}</span
           >
         </template>
       </Column>

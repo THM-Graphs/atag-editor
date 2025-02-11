@@ -5,7 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection } from '../models/types.js';
+import { Collection, CollectionAccessObject } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -17,7 +17,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const additionalLabel = guidelines.collections['text'].additionalLabel;
 
-    const collections: ICollection[] = await collectionService.getCollections(additionalLabel);
+    const collections: CollectionAccessObject[] =
+      await collectionService.getCollectionsWithText(additionalLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {

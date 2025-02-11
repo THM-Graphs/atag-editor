@@ -24,7 +24,7 @@ import {
   AnnotationData,
   Character,
   CharacterPostData,
-  Collection,
+  TextAccessObject,
 } from '../models/types';
 import { IGuidelines } from '../models/IGuidelines';
 import { useAnnotationStore } from '../store/annotations';
@@ -40,9 +40,9 @@ interface SidebarConfig {
 }
 
 onMounted(async (): Promise<void> => {
-  await getCollectionByUuid();
+  await getTextAccessObject();
 
-  if (isValidCollection.value) {
+  if (isValidText.value) {
     await getGuidelines();
     await getCharacters();
     await getAnnotations();
@@ -74,11 +74,11 @@ onUnmounted((): void => {
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
 
 const route: RouteLocationNormalizedLoaded = useRoute();
-const uuid: string = route.params.uuid as string;
+const textUuid: string = route.params.uuid as string;
 
 // Initial page load
 const isLoading = ref<boolean>(true);
-const isValidCollection = ref<boolean>(false);
+const isValidText = ref<boolean>(false);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
@@ -138,9 +138,9 @@ const editorRef = ref<HTMLDivElement>(null);
 
 const toast: ToastServiceMethods = useToast();
 
-async function getCollectionByUuid(): Promise<void> {
+async function getTextAccessObject(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${uuid}`);
+    const url: string = buildFetchUrl(`/api/texts/${textUuid}`);
 
     const response: Response = await fetch(url);
 
@@ -148,10 +148,10 @@ async function getCollectionByUuid(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollection: Collection = await response.json();
+    const fetchedTextAccessObject: TextAccessObject = await response.json();
 
-    isValidCollection.value = true;
-    initializeCollection(fetchedCollection);
+    isValidText.value = true;
+    initializeCollection(fetchedTextAccessObject.collection);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -159,6 +159,7 @@ async function getCollectionByUuid(): Promise<void> {
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
+  return;
   if (!hasUnsavedChanges()) {
     console.log('no changes made, no request needed');
     return;
@@ -203,7 +204,7 @@ async function handleCancelChanges(): Promise<void> {
 }
 
 async function saveCollection(): Promise<void> {
-  const url: string = buildFetchUrl(`/api/collections/${uuid}`);
+  const url: string = buildFetchUrl(`/api/collections/${collection.value.uuid}`);
 
   const response: Response = await fetch(url, {
     method: 'POST',
@@ -248,14 +249,14 @@ async function saveCharacters(): Promise<void> {
   console.log(snippetToUpdate.map((c: Character) => c.data.text));
 
   const characterPostData: CharacterPostData = {
-    collectionUuid: collection.value.uuid,
+    textUuid: collection.value.uuid,
     uuidStart: uuidStart,
     uuidEnd: uuidEnd,
     characters: snippetToUpdate.map((c: Character) => c.data),
     text: totalCharacters.value.map(c => c.data.text).join(''),
   };
 
-  const url: string = buildFetchUrl(`/api/collections/${uuid}/characters`);
+  const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
 
   const response: Response = await fetch(url, {
     method: 'POST',
@@ -279,7 +280,7 @@ async function saveAnnotations(): Promise<void> {
   // Reduce amount of data that need to sent to the backend
   const annotationsToSave: Annotation[] = getAnnotationsToSave();
 
-  const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
+  const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
 
   const response: Response = await fetch(url, {
     method: 'POST',
@@ -299,7 +300,7 @@ async function saveAnnotations(): Promise<void> {
 
 async function getCharacters(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${uuid}/characters`);
+    const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
 
     const response: Response = await fetch(url);
 
@@ -317,7 +318,7 @@ async function getCharacters(): Promise<void> {
 
 async function getAnnotations(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${uuid}/annotations`);
+    const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
 
     const response: Response = await fetch(url);
 
@@ -473,7 +474,7 @@ function findChangesetBoundaries(): {
 }
 
 function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
-  if (!isValidCollection.value) {
+  if (!isValidText.value) {
     return;
   }
 
@@ -490,7 +491,7 @@ function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
 }
 
 function preventUserFromRouteLeaving(): boolean {
-  if (!isValidCollection.value) {
+  if (!isValidText.value) {
     return true;
   }
 
@@ -510,7 +511,7 @@ function preventUserFromRouteLeaving(): boolean {
 
 <template>
   <LoadingSpinner v-if="isLoading === true" />
-  <EditorError v-else-if="isValidCollection === false" :uuid="uuid" />
+  <EditorError v-else-if="isValidText === false" :uuid="textUuid" />
   <div v-else class="container flex h-screen">
     <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
       <LoadingSpinner />

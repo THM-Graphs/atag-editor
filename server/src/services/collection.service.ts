@@ -4,7 +4,7 @@ import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection } from '../models/types.js';
+import { Collection, CollectionAccessObject } from '../models/types.js';
 
 export default class CollectionService {
   /**
@@ -15,7 +15,36 @@ export default class CollectionService {
    */
   public async getCollections(additionalLabel: string): Promise<ICollection[]> {
     const query: string = `
-    MATCH (n:Collection:${additionalLabel}) RETURN COLLECT(n {.*}) as collections
+    MATCH (n:Collection:${additionalLabel}) RETURN collect(n {.*}) as collections
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query);
+
+    return result.records[0]?.get('collections');
+  }
+
+  /**
+   * Retrieves collection nodes together with connected text nodes based on the additional label provided.
+   *
+   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
+   * @return {Promise<CollectionAccessObject[]>} A promise that resolves to an array of collection access objects.
+   */
+  public async getCollectionsWithText(additionalLabel: string): Promise<CollectionAccessObject[]> {
+    const query: string = `
+    MATCH (c:Collection:${additionalLabel})<-[:PART_OF]-(t:Text)
+    WITH c, collect(t) AS texts
+    RETURN collect({
+        collection: {
+            nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0] ,
+            data: c {.*}
+        }, 
+        texts: [
+            t IN texts | {
+                nodeLabel: [l IN labels(t) WHERE l <> 'Text' | l][0],
+                data: t {.*}
+            }
+        ]
+    }) AS collections
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query);

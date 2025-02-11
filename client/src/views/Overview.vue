@@ -7,9 +7,10 @@ import OverviewToolbar from '../components/OverviewToolbar.vue';
 import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
+import { CollectionAccessObject } from '../models/types';
 
-const collections = ref<ICollection[] | null>(null);
-const filteredCollections = ref<ICollection[] | null>(null);
+const collections = ref<CollectionAccessObject[] | null>(null);
+const filteredCollections = ref<CollectionAccessObject[] | null>(null);
 const searchInput = ref<string>('');
 
 const toast: ToastServiceMethods = useToast();
@@ -36,13 +37,13 @@ async function getCollections(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollections: ICollection[] = await response.json();
+    const fetchedCollections: CollectionAccessObject[] = await response.json();
 
-    fetchedCollections.sort((a: ICollection, b: ICollection) => {
-      if (a.label.toLowerCase() < b.label.toLowerCase()) {
+    fetchedCollections.sort((a: CollectionAccessObject, b: CollectionAccessObject) => {
+      if (a.collection.data.label.toLowerCase() < b.collection.data.label.toLowerCase()) {
         return -1;
       }
-      if (a.label.toLowerCase() > b.label.toLowerCase()) {
+      if (a.collection.data.label.toLowerCase() > b.collection.data.label.toLowerCase()) {
         return 1;
       }
       return 0;
@@ -55,8 +56,8 @@ async function getCollections(): Promise<void> {
 }
 
 function filterCollections(): void {
-  filteredCollections.value = collections.value.filter((c: ICollection) => {
-    return c.label.toLowerCase().includes(searchInput.value);
+  filteredCollections.value = collections.value.filter((c: CollectionAccessObject) => {
+    return c.collection.data.label.toLowerCase().includes(searchInput.value);
   });
 }
 

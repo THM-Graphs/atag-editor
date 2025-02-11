@@ -8,10 +8,10 @@ const router: Router = express.Router({ mergeParams: true });
 const annotationService: AnnotationService = new AnnotationService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const collectionUuid: string = req.params.uuid;
+  const textUuid: string = req.params.uuid;
 
   try {
-    const annotations: AnnotationData[] = await annotationService.getAnnotations(collectionUuid);
+    const annotations: AnnotationData[] = await annotationService.getAnnotations(textUuid);
 
     res.status(200).json(annotations);
   } catch (error: unknown) {
@@ -20,12 +20,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const collectionUuid: string = req.params.uuid;
+  const textUuid: string = req.params.uuid;
   const annotations = req.body;
 
   try {
     const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
-      collectionUuid,
+      textUuid,
       annotations as Annotation[],
     );
 
