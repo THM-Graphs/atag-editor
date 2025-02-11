@@ -48,8 +48,8 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    // TODO: Part of the collection metadata workaround, fix later
-    const collection: Collection = await collectionService.getExtendedCollectionById(uuid);
+    const collection: CollectionAccessObject =
+      await collectionService.getExtendedCollectionById(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {

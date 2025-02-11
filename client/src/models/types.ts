@@ -85,7 +85,7 @@ export type Collection = {
 
 export type CollectionAccessObject = {
   collection: Collection;
-  texts: Text;
+  texts: Text[];
 };
 
 export type CollectionProperty = {

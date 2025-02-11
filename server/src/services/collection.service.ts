@@ -82,17 +82,30 @@ export default class CollectionService {
    * have metadata other than a label). Fix when rebuilding architecture to focus the Text node instead of Collection node...
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the retrieved extended collection.
+   * @return {Promise<CollectionAccessObject>} A promise that resolves to the retrieved extended collection.
    */
-  public async getExtendedCollectionById(uuid: string): Promise<Collection> {
+  public async getExtendedCollectionById(uuid: string): Promise<CollectionAccessObject> {
     // TODO: This query is not working with more than one additional node label. Considerate
     const query: string = `
-    MATCH (c:Collection {uuid: $uuid})
-    RETURN {data: c {.*}, nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0]} as collection
+    MATCH (c:Collection {uuid: $uuid})<-[:PART_OF]-(t:Text)
+
+    WITH c, collect(t) AS texts
+    RETURN {
+        collection: {
+            nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0] ,
+            data: c {.*}
+        }, 
+        texts: [
+            t IN texts | {
+                nodeLabel: [l IN labels(t) WHERE l <> 'Text' | l][0],
+                data: t {.*}
+            }
+        ]
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const collection: Collection = result.records[0]?.get('collection');
+    const collection: CollectionAccessObject = result.records[0]?.get('collection');
 
     if (!collection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
