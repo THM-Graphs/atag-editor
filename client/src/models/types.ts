@@ -116,3 +116,14 @@ export type StandoffJson = {
   annotations: StandoffAnnotation[];
   text: string;
 };
+
+export type Text = {
+  nodeLabel: string;
+  data: IText;
+};
+
+export type TextAccessObject = {
+  collection: Collection;
+  path: Record<string, any>[];
+  text: Text;
+};

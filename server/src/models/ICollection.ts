@@ -1,17 +1,8 @@
 export default interface ICollection {
-  doctype: string;
-  explicit: string;
-  folioEnd: string;
-  folioStart: string;
-  // guid: string;
-  incipit: string;
-  inscriptio: string;
+  [keyof: string]: string | number;
   label: string;
-  normalizedLabel: string;
   receivedBy: string;
   sentBy: string;
   status: string;
-  textGuid: string;
   uuid: string;
-  websiteUrl: string;
 }
