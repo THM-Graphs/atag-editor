@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { CollectionAccessObject } from '../models/types';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+import Button from 'primevue/button';
 import Card from 'primevue/card';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 
@@ -36,8 +37,20 @@ async function getCollection(): Promise<void> {
 <template>
   <LoadingSpinner v-if="!collectionAccessObject" />
 
-  <div v-else class="container flex flex-column h-screen m-auto">
-    You are seeing the collection with the UUID {{ collectionUuid }} and its texts :)
+  <div v-else class="container h-screen m-auto">
+    <div class="header flex align-items-center justify-content-center gap-3">
+      <RouterLink to="/">
+        <Button
+          icon="pi pi-home"
+          aria-label="Home"
+          class="w-2rem h-2rem"
+          title="Go to overview"
+        ></Button>
+      </RouterLink>
+      <h3 class="info">
+        You are seeing the collection with the UUID {{ collectionUuid }} and its texts :)
+      </h3>
+    </div>
     <Card>
       <template #title
         ><div>
@@ -53,7 +66,7 @@ async function getCollection(): Promise<void> {
           It has {{ collectionAccessObject.texts.length }} texts:
           <div class="flex">
             <div v-for="text in collectionAccessObject.texts" class="text-box">
-              {{ text.data }}
+              <a :href="`/texts/${text.data.uuid}`"> {{ text.data.text.slice(0, 100) }}... </a>
             </div>
           </div>
         </div>
@@ -69,7 +82,6 @@ async function getCollection(): Promise<void> {
 }
 
 .text-box {
-  width: 400px;
   border: 2px solid grey;
 }
 </style>

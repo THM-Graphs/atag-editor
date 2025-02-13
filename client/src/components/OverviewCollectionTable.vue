@@ -70,11 +70,10 @@ async function getGuidelines(): Promise<void> {
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
-          <!-- TODO: the link creation works only when exactly ONE text is connected -> fix! -->
           <a
             v-if="col.name === 'label'"
             class="cell-link"
-            :href="'/texts/' + data.texts[0].data.uuid"
+            :href="'/collections/' + data.collection.data.uuid"
             v-tooltip.hover.top="{ value: data.collection.data[col.name], showDelay: 0 }"
             >{{ data.collection.data[col.name] }}</a
           >
