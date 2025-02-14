@@ -29,10 +29,13 @@ export default class CollectionService {
    * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
    * @return {Promise<CollectionAccessObject[]>} A promise that resolves to an array of collection access objects.
    */
-  public async getCollectionsWithText(additionalLabel: string): Promise<CollectionAccessObject[]> {
+  public async getCollectionsWithTexts(additionalLabel: string): Promise<CollectionAccessObject[]> {
     const query: string = `
-    MATCH (c:Collection:${additionalLabel})<-[:PART_OF]-(t:Text)
+    MATCH (c:Collection:${additionalLabel})
+    OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+
     WITH c, collect(t) AS texts
+
     RETURN collect({
         collection: {
             nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0] ,
@@ -76,20 +79,20 @@ export default class CollectionService {
   }
 
   /**
-   * Retrieves extended data of a specified collection node (node properties and additional label of Collection node).
-   * TODO: This is currently a workaround to differentiate between diffenent collection types when displaying
-   * the metadata in the frontend (Letter collections have status, sender etc., while additional texts don't
-   * have metadata other than a label). Fix when rebuilding architecture to focus the Text node instead of Collection node...
+   * Retrieves collection node with given UUID together with connected text nodes.
+  
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<CollectionAccessObject>} A promise that resolves to the retrieved extended collection.
+   * @return {Promise<CollectionAccessObject>} A promise that resolves to the retrieved collection and text nodes.
    */
   public async getExtendedCollectionById(uuid: string): Promise<CollectionAccessObject> {
     // TODO: This query is not working with more than one additional node label. Considerate
     const query: string = `
-    MATCH (c:Collection {uuid: $uuid})<-[:PART_OF]-(t:Text)
+    MATCH (c:Collection {uuid: $uuid})
+    OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
 
     WITH c, collect(t) AS texts
+
     RETURN {
         collection: {
             nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0] ,
@@ -115,7 +118,7 @@ export default class CollectionService {
   }
 
   /**
-   * Creates a new collection node with given data as properties, along with an associated text node.
+   * Creates a new collection node with given data as properties.
    *
    * @param {Record<string, string>} data - JSON data for the new collection node.
    * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
@@ -128,8 +131,6 @@ export default class CollectionService {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
-    const textUuid: string = crypto.randomUUID();
-
     // Add default properties if they are not sent in the request
     guidelines.collections['text'].properties.forEach(property => {
       if (!data[property.name]) {
@@ -140,11 +141,11 @@ export default class CollectionService {
     data = { ...data, uuid: crypto.randomUUID() };
 
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} $data)<-[:PART_OF]-(t:Text {uuid: $textUuid})
+    CREATE (c:Collection:${additionalLabel} $data)
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, textUuid });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data });
 
     return result.records[0]?.get('collection');
   }

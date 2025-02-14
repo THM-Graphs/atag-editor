@@ -18,7 +18,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const additionalLabel = guidelines.collections['text'].additionalLabel;
 
     const collections: CollectionAccessObject[] =
-      await collectionService.getCollectionsWithText(additionalLabel);
+      await collectionService.getCollectionsWithTexts(additionalLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
