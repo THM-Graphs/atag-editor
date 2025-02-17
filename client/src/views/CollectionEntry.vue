@@ -6,11 +6,21 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { IGuidelines } from '../models/IGuidelines';
+import { Text } from '../models/types';
 import Button from 'primevue/button';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
+
+type TextTableEntry = {
+  label: string;
+  length: number;
+  text: string;
+  uuid: string;
+};
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 
@@ -19,6 +29,7 @@ const collectionUuid: string = route.params.uuid as string;
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
 const asyncOperationRunning = ref<boolean>(false);
+const columns = ref<string[]>(['label', 'text', 'length']);
 
 const toast: ToastServiceMethods = useToast();
 const { guidelines, initializeGuidelines } = useGuidelinesStore();
@@ -31,6 +42,28 @@ const fields: ComputedRef<CollectionProperty[]> = computed(() => {
     return guidelines.value ? guidelines.value.collections['comment'].properties : [];
   }
 });
+
+const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
+  return collectionAccessObject.value.texts.map((text: Text) => {
+    return {
+      label: text.nodeLabel,
+      text: text.data.text,
+      uuid: text.data.uuid,
+      length: text.data.text.length,
+    };
+  });
+});
+
+function getColumnWidth(colName: string): string {
+  switch (colName) {
+    case 'length':
+      return '5rem';
+    case 'label':
+      return '10rem';
+    default:
+      return '';
+  }
+}
 
 async function getGuidelines(): Promise<void> {
   try {
@@ -114,7 +147,7 @@ async function getCollection(): Promise<void> {
 
 <template>
   <LoadingSpinner v-if="!collectionAccessObject" />
-  <div v-else class="container h-screen m-auto flex flex-column">
+  <div v-else class="container justify-content-stretch h-screen m-auto flex flex-column">
     <Toast />
     <div class="header flex align-items-center justify-content-center gap-3">
       <RouterLink to="/">
@@ -129,7 +162,7 @@ async function getCollection(): Promise<void> {
         {{ collectionAccessObject?.collection.data.label }}
       </h2>
     </div>
-    <div class="flex flex-grow-1">
+    <div class="flex-grow-1 flex">
       <div class="properties-pane">
         <h3 class="text-center">Properties</h3>
         <form>
@@ -155,11 +188,35 @@ async function getCollection(): Promise<void> {
       <div class="texts-pane">
         <h3 class="text-center">Texts</h3>
         <div class="text-pane-content">
-          <div class="scrollbox">
-            <div v-for="text in collectionAccessObject.texts" class="text-box">
-              <a :href="`/texts/${text.data.uuid}`"> {{ text.data.text.slice(0, 100) }}... </a>
-            </div>
-          </div>
+          <DataTable
+            :value="tableData"
+            scrollable
+            scrollHeight="flex"
+            resizableColumns
+            rowHover
+            tableStyle="table-layout: fixed;"
+            size="small"
+          >
+            <Column
+              v-for="col of columns"
+              :value="tableData"
+              :key="col"
+              :field="col"
+              :header="capitalize(col)"
+              :headerStyle="`width: ${getColumnWidth(col)}`"
+            >
+              <template #body="{ data }">
+                <!-- TODO: This should come from the configuration... -->
+                <!-- TODO: Bit hacky. Beautify? -->
+                <a v-if="col === 'text'" class="cell-link" :href="'/texts/' + data.uuid">{{
+                  data[col]
+                }}</a>
+                <span v-else-if="col !== 'length'" class="cell-info">{{ data[col] }}</span>
+                <span v-else class="cell-info">{{ data[col] }}</span>
+              </template>
+            </Column>
+          </DataTable>
+
           <Button
             label="Add new text"
             title="Add new text to collection"
@@ -199,11 +256,6 @@ async function getCollection(): Promise<void> {
 </template>
 
 <style scoped>
-.container {
-  width: 80%;
-  min-width: 800px;
-}
-
 .properties-pane,
 .texts-pane {
   outline: 1px solid green;

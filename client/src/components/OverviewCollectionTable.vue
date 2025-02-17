@@ -61,7 +61,6 @@ async function getGuidelines(): Promise<void> {
     <DataTable
       v-else
       scrollable
-      :rowClass="() => 'bitch'"
       scrollHeight="flex"
       :value="tableData"
       paginator
@@ -99,7 +98,7 @@ async function getGuidelines(): Promise<void> {
             v-tooltip.hover.top="{ value: data[col], showDelay: 0 }"
             >{{ data[col] }}</span
           >
-          <span v-else class="cell-info w-2rem">{{ data.texts }}</span>
+          <span v-else class="cell-info">{{ data[col] }}</span>
         </template>
       </Column>
     </DataTable>
