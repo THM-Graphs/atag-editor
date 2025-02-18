@@ -97,6 +97,11 @@ export type CollectionProperty = {
   // options?: string[] /* Options if type is dropdown */;
 };
 
+export type CollectionPostData = {
+  data: CollectionAccessObject;
+  initialData: CollectionAccessObject;
+};
+
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;

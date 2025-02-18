@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, ref } from 'vue';
-import { CollectionAccessObject, CollectionProperty } from '../models/types';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
-import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
-import { Text } from '../models/types';
+import {
+  CollectionAccessObject,
+  CollectionPostData,
+  CollectionProperty,
+  Text,
+} from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -23,16 +28,19 @@ type TextTableEntry = {
 };
 
 const route: RouteLocationNormalizedLoaded = useRoute();
+const toast: ToastServiceMethods = useToast();
+const { guidelines, initializeGuidelines } = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
 
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
+const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
 const asyncOperationRunning = ref<boolean>(false);
 const columns = ref<string[]>(['label', 'text', 'length']);
 
-const toast: ToastServiceMethods = useToast();
-const { guidelines, initializeGuidelines } = useGuidelinesStore();
+// TODO: Make dynamic (guidelines)
+const allowedTextLabels = ['Comment', 'Normal'];
 
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
@@ -52,6 +60,11 @@ const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
       length: text.data.text.length,
     };
   });
+});
+
+onMounted(async (): Promise<void> => {
+  await getGuidelines();
+  await getCollection();
 });
 
 function getColumnWidth(colName: string): string {
@@ -83,6 +96,34 @@ async function getGuidelines(): Promise<void> {
   }
 }
 
+function handleAddNewText(): void {
+  const newText: Text = {
+    // TODO: This is not good, fix
+    nodeLabel: 'Text',
+    data: {
+      uuid: crypto.randomUUID(),
+      text: '',
+    },
+  };
+
+  collectionAccessObject.value.texts.push(newText);
+}
+
+async function handleCopy(): Promise<void> {
+  await navigator.clipboard.writeText(collectionAccessObject.value.collection.data.uuid);
+}
+
+async function handleDeleteText(uuid: string) {
+  collectionAccessObject.value.texts = collectionAccessObject.value.texts.filter(
+    (text: Text) => text.data.uuid !== uuid,
+  );
+}
+
+async function handleCancelChanges(): Promise<void> {
+  collectionAccessObject.value = cloneDeep(initialCollectionAccessObject.value);
+  toggleEditMode();
+}
+
 async function handleSaveChanges(): Promise<void> {
   // return;
   // if (!hasUnsavedChanges()) {
@@ -90,10 +131,31 @@ async function handleSaveChanges(): Promise<void> {
   //   return;
   // }
 
+  // const createdTexts = collectionAccessObject.value.texts.filter(
+  //   (text: Text) =>
+  //     !initialCollectionAccessObject.value.texts.some(
+  //       (initialText: Text) => initialText.data.uuid === text.data.uuid,
+  //     ),
+  // );
+
+  // const deletedTexts = initialCollectionAccessObject.value.texts.filter(
+  //   (initialText: Text) =>
+  //     !collectionAccessObject.value.texts.some(
+  //       (text: Text) => text.data.uuid === initialText.data.uuid,
+  //     ),
+  // );
+
+  // console.log('Created: ', createdTexts);
+  // console.log('Deleted: ', deletedTexts);
+  // console.log('Total: ', collectionAccessObject.value.texts);
+
   asyncOperationRunning.value = true;
 
   try {
-    asyncOperationRunning.value = false;
+    await saveCollection();
+
+    initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
+
     toggleEditMode();
     showMessage('success');
   } catch (error: unknown) {
@@ -104,9 +166,30 @@ async function handleSaveChanges(): Promise<void> {
   }
 }
 
-async function handleCancelChanges(): Promise<void> {
-  // TODO: Set initial data again...
-  toggleEditMode();
+async function saveCollection(): Promise<void> {
+  const collectionPostData: CollectionPostData = {
+    data: collectionAccessObject.value,
+    initialData: initialCollectionAccessObject.value,
+  };
+
+  const url: string = buildFetchUrl(
+    `/api/collections/${collectionAccessObject.value.collection.data.uuid}`,
+  );
+
+  const response: Response = await fetch(url, {
+    method: 'POST',
+    cache: 'no-cache',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    referrerPolicy: 'no-referrer',
+    body: JSON.stringify(collectionPostData),
+  });
+
+  if (!response.ok) {
+    throw new Error('Could not be saved, try again...');
+  }
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
@@ -122,11 +205,6 @@ function toggleEditMode(): void {
   mode.value = mode.value === 'view' ? 'edit' : 'view';
 }
 
-onMounted(async (): Promise<void> => {
-  await getGuidelines();
-  await getCollection();
-});
-
 async function getCollection(): Promise<void> {
   try {
     const url: string = buildFetchUrl(`/api/collections/${collectionUuid}`);
@@ -139,6 +217,7 @@ async function getCollection(): Promise<void> {
 
     const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
     collectionAccessObject.value = fetchedCollectionAccessObject;
+    initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -166,6 +245,24 @@ async function getCollection(): Promise<void> {
       <div class="properties-pane">
         <h3 class="text-center">Properties</h3>
         <form>
+          <div class="flex align-items-center gap-3 mb-3">
+            <InputText
+              id="uuid"
+              :disabled="true"
+              :value="collectionAccessObject.collection.data.uuid"
+              class="flex-auto w-full"
+              size="small"
+              spellcheck="false"
+            />
+            <Button
+              icon="pi pi-copy"
+              severity="secondary"
+              size="small"
+              aria-label="Copy UUID"
+              title="Copy UUID"
+              @click="handleCopy"
+            />
+          </div>
           <div class="input-container" v-for="field in fields">
             <div class="flex align-items-center gap-3 mb-3">
               <label :for="field.name" class="w-10rem font-semibold"
@@ -173,7 +270,7 @@ async function getCollection(): Promise<void> {
               </label>
               <InputText
                 :id="field.name"
-                :disabled="!field.editable"
+                :disabled="mode === 'view' || !field.editable"
                 :required="field.required"
                 :invalid="field.required && !collectionAccessObject.collection.data[field.name]"
                 :key="field.name"
@@ -208,20 +305,45 @@ async function getCollection(): Promise<void> {
               <template #body="{ data }">
                 <!-- TODO: This should come from the configuration... -->
                 <!-- TODO: Bit hacky. Beautify? -->
-                <a v-if="col === 'text'" class="cell-link" :href="'/texts/' + data.uuid">{{
+                <!-- TODO: Selection is not applied to state, why? -->
+                <Select
+                  v-if="col === 'label' && mode === 'edit'"
+                  v-model="
+                    collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabel
+                  "
+                  :options="allowedTextLabels"
+                  placeholder="Select a label"
+                  class="w-full md:w-56"
+                  title="Select a label for the new text"
+                />
+                <a v-else-if="col === 'text'" class="cell-link" :href="'/texts/' + data.uuid">{{
                   data[col]
                 }}</a>
                 <span v-else-if="col !== 'length'" class="cell-info">{{ data[col] }}</span>
                 <span v-else class="cell-info">{{ data[col] }}</span>
               </template>
             </Column>
+            <Column headerStyle="width: 5rem">
+              <template #body="{ data }">
+                <Button
+                  v-if="mode === 'edit'"
+                  title="Delete text"
+                  severity="danger"
+                  icon="pi pi-trash"
+                  size="small"
+                  @click="handleDeleteText(data.uuid)"
+                />
+              </template>
+            </Column>
           </DataTable>
 
           <Button
+            v-show="mode === 'edit'"
             label="Add new text"
             title="Add new text to collection"
             icon="pi pi-plus"
             style="display: block; margin: 0 auto"
+            @click="handleAddNewText"
           ></Button>
         </div>
       </div>
