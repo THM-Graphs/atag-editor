@@ -222,6 +222,25 @@ async function getCollection(): Promise<void> {
     console.error('Error fetching collection:', error);
   }
 }
+
+function shiftText(textUuid: string, direction: 'up' | 'down') {
+  const texts: Text[] = collectionAccessObject.value.texts;
+  const text: Text = texts.find(t => t.data.uuid === textUuid);
+  const index: number = texts.indexOf(text);
+
+  const isFirst: boolean = index === 0;
+  const isLast: boolean = index === texts.length - 1;
+
+  if ((isFirst && direction === 'up') || (isLast && direction === 'down')) {
+    return;
+  }
+
+  const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+  [texts[index], texts[swapIndex]] = [texts[swapIndex], texts[index]];
+
+  console.log(text, index);
+}
 </script>
 
 <template>
@@ -323,16 +342,44 @@ async function getCollection(): Promise<void> {
                 <span v-else class="cell-info">{{ data[col] }}</span>
               </template>
             </Column>
-            <Column headerStyle="width: 5rem">
+            <Column headerStyle="width: 10rem">
               <template #body="{ data }">
-                <Button
-                  v-if="mode === 'edit'"
-                  title="Delete text"
-                  severity="danger"
-                  icon="pi pi-trash"
-                  size="small"
-                  @click="handleDeleteText(data.uuid)"
-                />
+                <div class="flex">
+                  <div style="display: flex; flex-direction: column">
+                    <Button
+                      v-if="mode === 'edit'"
+                      :disabled="
+                        collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) === 0
+                      "
+                      class="h-1rem"
+                      title="Move text up"
+                      severity="secondary"
+                      icon="pi pi-chevron-up"
+                      size="small"
+                      @click="shiftText(data.uuid, 'up')"
+                    /><Button
+                      v-if="mode === 'edit'"
+                      :disabled="
+                        collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) ===
+                        collectionAccessObject.texts.length - 1
+                      "
+                      class="h-1rem"
+                      title="Move text down"
+                      severity="secondary"
+                      icon="pi pi-chevron-down"
+                      size="small"
+                      @click="shiftText(data.uuid, 'down')"
+                    />
+                  </div>
+                  <Button
+                    v-if="mode === 'edit'"
+                    title="Delete text"
+                    severity="danger"
+                    icon="pi pi-trash"
+                    size="small"
+                    @click="handleDeleteText(data.uuid)"
+                  />
+                </div>
               </template>
             </Column>
           </DataTable>
