@@ -240,8 +240,20 @@ export default class CollectionService {
     CALL {
       UNWIND $texts.deleted as textToDelete
       MATCH (t:Text {uuid: textToDelete.data.uuid})
-      // TODO: Delete whole subgraph
-      DETACH DELETE t
+      
+      OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+      OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
+      WITH t, collect(distinct a) as a, c
+
+      OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
+      WITH t, c, a, collect(ch) as baseChars
+      OPTIONAL MATCH (c)-[:NEXT_CHARACTER*]->(ch:Character)
+      WITH t, a, baseChars, collect(ch) as furtherChars
+      WITH t + a + baseChars + furtherChars as nodesToDelete
+
+      FOREACH (n in nodesToDelete | DETACH DELETE n)
+
+      RETURN collect(nodesToDelete) as nodesToDelete
     }
 
     // Create Text nodes
