@@ -324,9 +324,9 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               <template #body="{ data }">
                 <!-- TODO: This should come from the configuration... -->
                 <!-- TODO: Bit hacky. Beautify? -->
-                <!-- TODO: Selection is not applied to state, why? -->
                 <Select
                   v-if="col === 'label' && mode === 'edit'"
+                  showClear
                   v-model="
                     collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabel
                   "

@@ -251,10 +251,22 @@ export default class CollectionService {
       UNWIND $texts.created as textToCreate
       MERGE (t:Text {uuid: textToCreate.data.uuid})-[:PART_OF]->(c)
       WITH t, textToCreate
-      CALL apoc.create.addLabels(t, [textToCreate.nodeLabel]) YIELD node
       SET t = textToCreate.data
 
       RETURN collect(t) as createdTexts
+    }
+
+    // Set new labels to ALL text nodes
+    CALL {
+      WITH c
+
+      UNWIND $texts.all as text
+      MATCH (c)<-[:PART_OF]-(t:Text {uuid: text.data.uuid})
+      WITH t, text, [l IN labels(t) WHERE l <> 'Text'] AS labelsToRemove
+      CALL apoc.create.removeLabels(t, labelsToRemove) YIELD node AS nodeBefore
+      CALL apoc.create.addLabels(t, [text.nodeLabel]) YIELD node AS nodeAfter
+
+      RETURN collect(t) as relabeledTexts
     }
     
     // Remove NEXT relationships from all texts
