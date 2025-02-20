@@ -52,7 +52,7 @@ export default class TextService {
             nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0],
             data: c {.*}
         },
-        path: p
+        path: [n IN reverse(nodes(p)) | {nodeLabels: labels(n), data: n {.*}}]
     } as text
     `;
 

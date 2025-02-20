@@ -5,7 +5,7 @@ import { cloneDeep } from '../utils/helper/helper';
 const text = ref<Text>(null);
 const initialText = ref<Text>(null);
 const correspondingCollection = ref<Collection>(null);
-const path = ref<Record<string, any>[]>([]);
+const path = ref<Text[] | Collection[]>([]);
 
 function initializeText(newText: TextAccessObject): void {
   text.value = newText.text;

@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import EditorImportButton from './EditorImportButton.vue';
 import { useTextStore } from '../store/text';
+import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
 
-const { text } = useTextStore();
+const { text, correspondingCollection } = useTextStore();
+
+const home = ref({ label: '(C) ' + correspondingCollection.value.data.label });
+const items = ref([{ label: text.value.nodeLabel }]);
 </script>
 
 <template>
@@ -21,8 +26,14 @@ const { text } = useTextStore();
         <EditorImportButton />
       </div>
     </div>
-    <div class="label flex justify-content-center text-center">
-      {{ text.nodeLabel ?? 'no Text label provided yet :/' }}
+
+    <div class="flex justify-content-center">
+      <Breadcrumb :home="home" :model="items">
+        <template #item="{ item }">
+          <span v-if="item.label">{{ item.label }}</span>
+          <span v-else><i>No label yet</i></span>
+        </template>
+      </Breadcrumb>
     </div>
   </div>
 </template>

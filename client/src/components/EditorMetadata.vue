@@ -52,30 +52,43 @@ async function handleCopy(): Promise<void> {
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
-    Text UUID:
-    <div class="flex align-items-center gap-3 mb-3">
-      <InputText
-        id="uuid"
-        :disabled="true"
-        :value="text.data.uuid"
-        class="flex-auto w-full"
-        size="small"
-        spellcheck="false"
-      />
-      <Button
-        icon="pi pi-copy"
-        severity="secondary"
-        size="small"
-        aria-label="Copy UUID"
-        title="Copy UUID"
-        @click="handleCopy"
-      />
+    <div class="mb-3">
+      <div class="flex align-items-center gap-3">
+        <InputText
+          id="uuid"
+          :disabled="true"
+          :value="text.data.uuid"
+          class="flex-auto w-full"
+          size="small"
+          spellcheck="false"
+        />
+        <Button
+          icon="pi pi-copy"
+          severity="secondary"
+          size="small"
+          aria-label="Copy UUID"
+          title="Copy UUID"
+          @click="handleCopy"
+        />
+      </div>
+      <small>Text UUID</small>
     </div>
     <div>
       Path:
       <ul>
-        <li v-for="segment in path['segments']" class="mx-2 list-disc">
-          {{ segment.start.labels }}
+        <li v-for="(node, index) in path" :style="`margin-left: ${index}rem`">
+          <span v-if="index !== 0">-></span>
+
+          <RouterLink
+            v-if="node['nodeLabels'].includes('Collection')"
+            :to="`/collections/${node.data.uuid}`"
+          >
+            {{ node['nodeLabels'] }}
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <span v-else>
+            {{ node['nodeLabels'] }}
+          </span>
         </li>
       </ul>
     </div>

@@ -127,6 +127,6 @@ export type Text = {
 
 export type TextAccessObject = {
   collection: Collection;
-  path: Record<string, any>[];
+  path: Text[] | Collection[];
   text: Text;
 };
