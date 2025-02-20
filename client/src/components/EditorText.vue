@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
-import { useCollectionStore } from '../store/collection';
+import { useTextStore } from '../store/text';
 import EditorTextNavigation from './EditorTextNavigation.vue';
 import {
   findEndOfWord,
@@ -32,7 +32,7 @@ onUpdated(() => {
 });
 
 const { keepTextOnPagination, newRangeAnchorUuid, placeCaret } = useEditorStore();
-const { collection } = useCollectionStore();
+const { correspondingCollection } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -635,7 +635,7 @@ function createNewCharacter(char: string): Character {
   return {
     data: {
       text: char,
-      letterLabel: collection.value.label,
+      letterLabel: correspondingCollection.value.data.label,
       uuid: crypto.randomUUID(),
     },
     annotations: [],

@@ -53,12 +53,14 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves the collection fields for the 'text' collection.
+   * Retrieves field configuration of a collection of given type. Contains information about rendering behaviour as well as validation rules.
+   * Used for rendering data tables or input fields in forms.
    *
-   * @returns {CollectionProperty[]} An array of collection propertie configurations.
+   * @param {string} type - The type of the collection.
+   * @return {CollectionProperty[]} The field configurations for the collection type.
    */
-  function getCollectionFields(): CollectionProperty[] {
-    return guidelines.value.collections['text'].properties;
+  function getCollectionFields(type: string): CollectionProperty[] {
+    return guidelines.value.collections[type].properties;
   }
 
   /**

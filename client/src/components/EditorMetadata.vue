@@ -1,37 +1,39 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
-import { useCollectionStore } from '../store/collection';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useTextStore } from '../store/text';
 import { capitalize } from '../utils/helper/helper';
+import { CollectionProperty } from '../models/types';
 import Button from 'primevue/button';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
-import { CollectionProperty } from '../models/types';
 
-defineExpose({
-  validate,
-});
+type CollectionTableEntry = {
+  property: string;
+  value: string | number;
+};
 
-const { collection, collectionNodeLabel } = useCollectionStore();
-const { guidelines } = useGuidelinesStore();
+const { text, correspondingCollection, path } = useTextStore();
+const { getCollectionFields } = useGuidelinesStore();
 
-// TODO: Still a workaround, should be mady dynamic.
-const fields: ComputedRef<CollectionProperty[]> = computed(() => {
-  if (collectionNodeLabel.value === 'Letter') {
-    return guidelines.value.collections['text'].properties;
-  } else {
-    return guidelines.value.collections['comment'].properties;
-  }
-});
+const tableData: CollectionTableEntry[] = getTableData();
 
-const formRef = ref<HTMLFormElement | null>(null);
+function getTableData() {
+  // TODO: Still a workaround, should be mady dynamic.
+  const fields: CollectionProperty[] =
+    correspondingCollection.value.nodeLabel === 'Letter'
+      ? getCollectionFields('text')
+      : getCollectionFields('comment');
 
-async function handleCopy(): Promise<void> {
-  await navigator.clipboard.writeText(collection.value.uuid);
+  return fields.map(field => ({
+    property: field.name,
+    value: correspondingCollection.value.data[field.name],
+  }));
 }
 
-function validate(): boolean {
-  return formRef.value.reportValidity();
+async function handleCopy(): Promise<void> {
+  await navigator.clipboard.writeText(text.value.data.uuid);
 }
 </script>
 
@@ -50,11 +52,12 @@ function validate(): boolean {
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
+    Text UUID:
     <div class="flex align-items-center gap-3 mb-3">
       <InputText
         id="uuid"
         :disabled="true"
-        :value="collection.uuid"
+        :value="text.data.uuid"
         class="flex-auto w-full"
         size="small"
         spellcheck="false"
@@ -68,26 +71,39 @@ function validate(): boolean {
         @click="handleCopy"
       />
     </div>
+    <div>
+      Path:
+      <ul>
+        <li v-for="segment in path['segments']" class="mx-2 list-disc">
+          {{ segment.start.labels }}
+        </li>
+      </ul>
+    </div>
 
-    <form ref="formRef" @submit.prevent="validate">
-      <div class="input-container" v-for="field in fields" v-show="field.visible">
-        <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
-          <label :for="field.name" class="w-10rem font-semibold"
-            >{{ capitalize(field.name) }}
-          </label>
-          <InputText
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !collection[field.name]"
-            :key="field.name"
-            v-model="collection[field.name]"
-            class="flex-auto w-full"
-            spellcheck="false"
-          />
-        </div>
-      </div>
-    </form>
+    <a :href="`/collections/${correspondingCollection.data.uuid}`">Collection</a>
+    <i class="pi pi-external-link"></i>
+    Data
+
+    <DataTable
+      :value="tableData"
+      scrollable
+      scrollHeight="flex"
+      resizableColumns
+      rowHover
+      tableStyle="table-layout: fixed;"
+      size="small"
+    >
+      <Column field="property" header="Property">
+        <template #body="{ data }">
+          <span>{{ capitalize(data['property']) }}</span>
+        </template>
+      </Column>
+      <Column field="value" header="Value">
+        <template #body="{ data }">
+          <span>{{ data['value'] }}</span>
+        </template>
+      </Column>
+    </DataTable>
   </Panel>
 </template>
 

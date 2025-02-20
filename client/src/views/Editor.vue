@@ -2,7 +2,6 @@
 import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useCharactersStore } from '../store/characters';
-import { useCollectionStore } from '../store/collection';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
@@ -31,6 +30,7 @@ import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
+import { useTextStore } from '../store/text';
 // import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
@@ -83,7 +83,7 @@ const isValidText = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
 const { hasUnsavedChanges, resetEditor } = useEditorStore();
-const { collection, initialCollection, initializeCollection } = useCollectionStore();
+const { text, initialText, path, initializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -151,31 +151,24 @@ async function getTextAccessObject(): Promise<void> {
     const fetchedTextAccessObject: TextAccessObject = await response.json();
 
     isValidText.value = true;
-    initializeCollection(fetchedTextAccessObject.collection);
+    initializeText(fetchedTextAccessObject);
   } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
+    console.error('Error fetching text:', error);
   }
 }
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
-  return;
   if (!hasUnsavedChanges()) {
     console.log('no changes made, no request needed');
-    return;
-  }
-
-  const metadataAreValid: boolean = metadataRef.value.validate();
-  const labelInputIsValid: boolean = labelInputRef.value.validate();
-
-  if (!metadataAreValid || !labelInputIsValid) {
     return;
   }
 
   asyncOperationRunning.value = true;
 
   try {
-    await saveCollection();
+    // TODO: Text needs to be saved to when labels are changed
+    // await saveText();
     await saveCharacters();
     await saveAnnotations();
 
@@ -183,14 +176,14 @@ async function handleSaveChanges(): Promise<void> {
     updateAnnotationStatuses();
 
     // Reset initial values of all state components
-    initialCollection.value = { ...collection.value };
+    initialText.value = cloneDeep(text.value);
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
     initialAnnotations.value = cloneDeep(annotations.value);
 
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);
-    console.error('Error updating collection:', error);
+    console.error('Error updating text:', error);
   } finally {
     asyncOperationRunning.value = false;
   }
@@ -198,28 +191,9 @@ async function handleSaveChanges(): Promise<void> {
 
 async function handleCancelChanges(): Promise<void> {
   // Also works, needs less condition checking in stores and skips requests
-  collection.value = { ...initialCollection.value };
+  text.value = cloneDeep(initialText.value);
   snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
   annotations.value = cloneDeep(initialAnnotations.value);
-}
-
-async function saveCollection(): Promise<void> {
-  const url: string = buildFetchUrl(`/api/collections/${collection.value.uuid}`);
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(collection.value),
-  });
-
-  if (!response.ok) {
-    throw new Error('Neither metadata nor text could be saved');
-  }
 }
 
 async function saveCharacters(): Promise<void> {
@@ -248,8 +222,9 @@ async function saveCharacters(): Promise<void> {
   const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
   console.log(snippetToUpdate.map((c: Character) => c.data.text));
 
+  // TODO: textUuid is not really needed since it is parsed from the url parameter
   const characterPostData: CharacterPostData = {
-    textUuid: collection.value.uuid,
+    textUuid: text.value.data.uuid,
     uuidStart: uuidStart,
     uuidEnd: uuidEnd,
     characters: snippetToUpdate.map((c: Character) => c.data),

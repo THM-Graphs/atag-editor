@@ -31,7 +31,7 @@ const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
 onMounted(async (): Promise<void> => {
   await getGuidelines();
 
-  columns.value = [...getCollectionFields().map(f => f.name), 'texts'];
+  columns.value = [...getCollectionFields('text').map(f => f.name), 'texts'];
 });
 
 // TODO: getGuidelines exists in multiple components now, should be moved to a shared location
