@@ -7,8 +7,8 @@ import Button from 'primevue/button';
 
 const { text, correspondingCollection } = useTextStore();
 
-const home = ref({ label: '(C) ' + correspondingCollection.value.data.label });
-const items = ref([{ label: text.value.nodeLabel }]);
+const home = ref({ labels: '(C) ' + correspondingCollection.value.data.label });
+const items = ref([{ labels: text.value.nodeLabels }]);
 </script>
 
 <template>
@@ -30,7 +30,7 @@ const items = ref([{ label: text.value.nodeLabel }]);
     <div class="flex justify-content-center">
       <Breadcrumb :home="home" :model="items">
         <template #item="{ item }">
-          <span v-if="item.label">{{ item.label }}</span>
+          <span v-if="item.labels.length > 0">{{ item.labels }}</span>
           <span v-else><i>No label yet</i></span>
         </template>
       </Breadcrumb>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useTextStore } from '../store/text';
 import { capitalize } from '../utils/helper/helper';
@@ -10,7 +9,7 @@ import DataTable from 'primevue/datatable';
 import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
-import RadioButton from 'primevue/radiobutton';
+import Tag from 'primevue/tag';
 
 type CollectionTableEntry = {
   property: string;
@@ -20,20 +19,13 @@ type CollectionTableEntry = {
 const { text, correspondingCollection, path } = useTextStore();
 const { getCollectionFields } = useGuidelinesStore();
 
-const currentTextLabel = ref();
-const allowedTextLabels = ref([
-  { name: 'MainText', key: 'M' },
-  { name: 'Comment', key: 'C' },
-]);
+const tableData: CollectionTableEntry[] = getCollectionTableData();
 
-const tableData: CollectionTableEntry[] = getTableData();
-
-function getTableData() {
+function getCollectionTableData() {
   // TODO: Still a workaround, should be mady dynamic.
-  const fields: CollectionProperty[] =
-    correspondingCollection.value.nodeLabel === 'Letter'
-      ? getCollectionFields('text')
-      : getCollectionFields('comment');
+  const fields: CollectionProperty[] = correspondingCollection.value.nodeLabels.includes('Letter')
+    ? getCollectionFields('text')
+    : getCollectionFields('comment');
 
   return fields.map(field => ({
     property: field.name,
@@ -86,19 +78,11 @@ async function handleCopy(): Promise<void> {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <div
-        v-for="category in allowedTextLabels"
-        :key="category.key"
-        class="flex items-center gap-2"
-      >
-        <RadioButton
-          variant="filled"
-          v-model="currentTextLabel"
-          :inputId="category.key"
-          name="dynamic"
-          :value="category.name"
-        />
-        <label :for="category.key">{{ category.name }}</label>
+      <div class="flex gap-2">
+        <div v-if="text.nodeLabels.length > 0" v-for="label in text.nodeLabels" :key="label">
+          <Tag :value="label" severity="secondary" class="mr-1" />
+        </div>
+        <div v-else><i>This text has no labels yet</i></div>
       </div>
     </Fieldset>
 

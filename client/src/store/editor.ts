@@ -64,7 +64,7 @@ export function useEditorStore() {
   function hasUnsavedChanges(): boolean {
     // Compare text labels
     // TODO: This needs to be adjusted as soon as labels can be edited
-    if (!areSetsEqual(new Set(initialText.value.nodeLabel), new Set(text.value.nodeLabel))) {
+    if (!areSetsEqual(new Set(initialText.value.nodeLabels), new Set(text.value.nodeLabels))) {
       return true;
     }
 

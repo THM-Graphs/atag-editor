@@ -49,12 +49,12 @@ export default class CollectionService {
 
     RETURN collect({
         collection: {
-            nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0] ,
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
             data: c {.*}
         }, 
         texts: [
             t IN texts | {
-                nodeLabel: [l IN labels(t) WHERE l <> 'Text' | l][0],
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
             }
         ]
@@ -111,12 +111,12 @@ export default class CollectionService {
 
     RETURN {
         collection: {
-            nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0],
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
             data: c {.*}
         }, 
         texts: [
             t IN texts | {
-                nodeLabel: [l IN labels(t) WHERE l <> 'Text' | l][0],
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
             }
         ]
@@ -276,7 +276,7 @@ export default class CollectionService {
       MATCH (c)<-[:PART_OF]-(t:Text {uuid: text.data.uuid})
       WITH t, text, [l IN labels(t) WHERE l <> 'Text'] AS labelsToRemove
       CALL apoc.create.removeLabels(t, labelsToRemove) YIELD node AS nodeBefore
-      CALL apoc.create.addLabels(t, [text.nodeLabel]) YIELD node AS nodeAfter
+      CALL apoc.create.addLabels(t, text.nodeLabels) YIELD node AS nodeAfter
 
       RETURN collect(t) as relabeledTexts
     }

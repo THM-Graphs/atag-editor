@@ -15,13 +15,14 @@ import Button from 'primevue/button';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
+import MultiSelect from 'primevue/multiselect';
+import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 
 type TextTableEntry = {
-  label: string;
+  labels: string[];
   length: number;
   text: string;
   uuid: string;
@@ -37,14 +38,13 @@ const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
 const asyncOperationRunning = ref<boolean>(false);
-const columns = ref<string[]>(['label', 'text', 'length']);
 
 // TODO: Make dynamic (guidelines)
 const allowedTextLabels = ['Comment', 'Normal'];
 
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
-  if (collectionAccessObject.value.collection.nodeLabel === 'Letter') {
+  if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
     return guidelines.value ? guidelines.value.collections['text'].properties : [];
   } else {
     return guidelines.value ? guidelines.value.collections['comment'].properties : [];
@@ -54,7 +54,7 @@ const fields: ComputedRef<CollectionProperty[]> = computed(() => {
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
   return collectionAccessObject.value.texts.map((text: Text) => {
     return {
-      label: text.nodeLabel,
+      labels: text.nodeLabels,
       text: text.data.text,
       uuid: text.data.uuid,
       length: text.data.text.length,
@@ -66,17 +66,6 @@ onMounted(async (): Promise<void> => {
   await getGuidelines();
   await getCollection();
 });
-
-function getColumnWidth(colName: string): string {
-  switch (colName) {
-    case 'length':
-      return '5rem';
-    case 'label':
-      return '10rem';
-    default:
-      return '';
-  }
-}
 
 async function getGuidelines(): Promise<void> {
   try {
@@ -99,7 +88,7 @@ async function getGuidelines(): Promise<void> {
 function handleAddNewText(): void {
   const newText: Text = {
     // TODO: This is not good, fix
-    nodeLabel: 'Text',
+    nodeLabels: ['Text'],
     data: {
       uuid: crypto.randomUUID(),
       text: '',
@@ -313,36 +302,39 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             tableStyle="table-layout: fixed;"
             size="small"
           >
-            <Column
-              v-for="col of columns"
-              :value="tableData"
-              :key="col"
-              :field="col"
-              :header="capitalize(col)"
-              :headerStyle="`width: ${getColumnWidth(col)}`"
-            >
+            <Column field="labels" header="Labels" headerStyle="width: 15rem">
               <template #body="{ data }">
-                <!-- TODO: This should come from the configuration... -->
-                <!-- TODO: Bit hacky. Beautify? -->
-                <Select
-                  v-if="col === 'label' && mode === 'edit'"
-                  showClear
+                <MultiSelect
+                  v-if="mode === 'edit'"
                   v-model="
-                    collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabel
+                    collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabels
                   "
                   :options="allowedTextLabels"
-                  placeholder="Select a label"
-                  class="w-full md:w-56"
-                  title="Select a label for the new text"
-                />
-                <a v-else-if="col === 'text'" class="cell-link" :href="'/texts/' + data.uuid">{{
-                  data[col]
-                }}</a>
-                <span v-else-if="col !== 'length'" class="cell-info">{{ data[col] }}</span>
-                <span v-else class="cell-info">{{ data[col] }}</span>
+                  display="chip"
+                  placeholder="Select labels"
+                >
+                  <template #chip="{ value }">
+                    <Tag :value="value" severity="secondary" class="mr-1" />
+                  </template>
+                </MultiSelect>
+                <span v-else class="cell-info">
+                  <template v-for="label in data.labels">
+                    <Tag :value="label" severity="secondary" class="mr-1" />
+                  </template>
+                </span>
               </template>
             </Column>
-            <Column headerStyle="width: 10rem">
+            <Column field="text" header="Text">
+              <template #body="{ data }">
+                <a class="cell-link" :href="'/texts/' + data.uuid">{{ data.text }}</a>
+              </template>
+            </Column>
+            <Column field="length" header="Length" headerStyle="width: 5rem">
+              <template #body="{ data }">
+                <span class="cell-info">{{ data.length.toLocaleString() }}</span>
+              </template>
+            </Column>
+            <Column field="actions" headerStyle="width: 5rem">
               <template #body="{ data }">
                 <div class="flex">
                   <div style="display: flex; flex-direction: column">

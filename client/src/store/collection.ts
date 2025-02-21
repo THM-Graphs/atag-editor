@@ -4,18 +4,18 @@ import { Collection } from '../models/types';
 
 const collection = ref<ICollection>();
 const initialCollection = ref<ICollection>();
-const collectionNodeLabel = ref<string>();
+const collectionNodeLabels = ref<string[]>([]);
 
 function initializeCollection(newCollection: Collection): void {
   collection.value = newCollection.data;
-  collectionNodeLabel.value = newCollection.nodeLabel;
+  collectionNodeLabels.value = newCollection.nodeLabels;
   initialCollection.value = { ...newCollection.data };
 }
 export function useCollectionStore() {
   return {
     collection,
     initialCollection,
-    collectionNodeLabel,
+    collectionNodeLabels,
     initializeCollection,
   };
 }

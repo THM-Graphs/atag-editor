@@ -80,7 +80,7 @@ export type CharacterPostData = {
 
 export type Collection = {
   data: ICollection;
-  nodeLabel: string;
+  nodeLabels: string[];
 };
 
 export type CollectionAccessObject = {
@@ -128,7 +128,7 @@ export type StandoffJson = {
 };
 
 export type Text = {
-  nodeLabel: string;
+  nodeLabels: string[];
   data: IText;
 };
 

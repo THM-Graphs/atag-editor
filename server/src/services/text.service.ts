@@ -45,11 +45,11 @@ export default class TextService {
 
     RETURN {
         text: {
-            nodeLabel: [l in labels(t) WHERE l <> 'Text' | l][0],
+            nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
             data: t {.*}
         },
         collection: {
-            nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0],
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
             data: c {.*}
         },
         path: [n IN reverse(nodes(p)) | {nodeLabels: labels(n), data: n {.*}}]

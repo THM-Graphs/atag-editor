@@ -83,7 +83,7 @@ const isValidText = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
 const { hasUnsavedChanges, resetEditor } = useEditorStore();
-const { text, initialText, path, initializeText } = useTextStore();
+const { text, initialText, initializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
