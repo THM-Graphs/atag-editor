@@ -4,11 +4,12 @@ import EditorImportButton from './EditorImportButton.vue';
 import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
+import Tag from 'primevue/tag';
 
 const { text, correspondingCollection } = useTextStore();
 
-const home = ref({ labels: '(C) ' + correspondingCollection.value.data.label });
-const items = ref([{ labels: text.value.nodeLabels }]);
+const breadcrumbRoot = ref({ role: 'Collection', label: correspondingCollection.value.data.label });
+const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
 </script>
 
 <template>
@@ -28,10 +29,19 @@ const items = ref([{ labels: text.value.nodeLabels }]);
     </div>
 
     <div class="flex justify-content-center">
-      <Breadcrumb :home="home" :model="items">
+      <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
         <template #item="{ item }">
-          <span v-if="item.labels.length > 0">{{ item.labels }}</span>
-          <span v-else><i>No label yet</i></span>
+          <div v-if="item.role === 'Collection'">
+            <span>
+              {{ item.label }}
+            </span>
+          </div>
+          <div v-else>
+            <template v-if="item.labels.length > 0" v-for="label in item.labels">
+              <Tag :value="label" severity="secondary" class="mr-1" />
+            </template>
+            <span v-else><i>No label yet</i></span>
+          </div>
         </template>
       </Breadcrumb>
     </div>
