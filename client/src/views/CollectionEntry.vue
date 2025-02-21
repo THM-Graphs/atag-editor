@@ -253,7 +253,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     <Splitter style="height: 100%">
       <SplitterPanel :size="10">
         <div class="properties-pane w-full">
-          <h3 class="text-center">Properties</h3>
+          <h2 class="text-center">Properties</h2>
           <form>
             <div class="flex align-items-center gap-3 mb-3">
               <InputText
@@ -295,7 +295,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
       </SplitterPanel>
       <SplitterPanel>
         <div class="texts-pane w-full">
-          <h3 class="text-center">Texts</h3>
+          <h2 class="text-center">Texts ({{ collectionAccessObject.texts.length }})</h2>
           <div class="text-pane-content">
             <DataTable
               :value="tableData"
@@ -306,7 +306,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               tableStyle="table-layout: fixed;"
               size="small"
             >
-              <Column field="labels" header="Labels" headerStyle="width: 15rem">
+              <Column field="labels" header="Labels" headerStyle="width: 12rem">
                 <template #body="{ data }">
                   <!-- TODO: Remove filter. Can be fixed when Primevue version is upgraded -->
                   <MultiSelect
@@ -324,15 +324,27 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                     </template>
                   </MultiSelect>
                   <span v-else class="cell-info">
-                    <template v-for="label in data.labels">
-                      <Tag :value="label" severity="secondary" class="mr-1" />
-                    </template>
+                    <div class="box flex" style="flex-wrap: wrap">
+                      <Tag
+                        v-for="label in data.labels"
+                        :value="label"
+                        severity="secondary"
+                        class="mr-1 mb-1 inline-block"
+                      />
+                    </div>
                   </span>
                 </template>
               </Column>
               <Column field="text" header="Text">
                 <template #body="{ data }">
-                  <a class="cell-link" :href="'/texts/' + data.uuid">{{ data.text }}</a>
+                  <a
+                    class="cell-link block w-full"
+                    :href="`/texts/${data.uuid}`"
+                    title="Open Text in Editor"
+                  >
+                    <span v-if="data.text.length > 0">{{ data.text }}</span>
+                    <i v-else>No text yet...</i>
+                  </a>
                 </template>
               </Column>
               <Column field="length" header="Length" headerStyle="width: 5rem">
@@ -340,7 +352,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   <span class="cell-info">{{ data.length.toLocaleString() }}</span>
                 </template>
               </Column>
-              <Column field="actions" headerStyle="width: 5rem">
+              <Column v-if="mode === 'edit'" field="actions" headerStyle="width: 5rem">
                 <template #body="{ data }">
                   <div class="flex">
                     <div style="display: flex; flex-direction: column">

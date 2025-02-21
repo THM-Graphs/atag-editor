@@ -84,7 +84,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
 
-    <h1 class="text-center text-5xl line-height-2">Texts</h1>
+    <h1 class="text-center text-5xl line-height-2">Collections</h1>
 
     <OverviewToolbar
       @collection-created="handleCollectionCreation"
@@ -92,7 +92,9 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     />
 
     <div class="counter text-right pt-2 pb-3">
-      <strong class="text-base">{{ collections ? collections.length : 0 }} texts in total</strong>
+      <strong class="text-base"
+        >{{ collections ? collections.length : 0 }} Collections in total</strong
+      >
     </div>
 
     <OverviewCollectionTable :collections="filteredCollections" />
