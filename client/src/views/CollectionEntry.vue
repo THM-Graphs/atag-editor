@@ -16,6 +16,8 @@ import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
+import Splitter from 'primevue/splitter';
+import SplitterPanel from 'primevue/splitterpanel';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
@@ -249,144 +251,151 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
         {{ collectionAccessObject?.collection.data.label }}
       </h2>
     </div>
-    <div class="flex-grow-1 flex">
-      <div class="properties-pane">
-        <h3 class="text-center">Properties</h3>
-        <form>
-          <div class="flex align-items-center gap-3 mb-3">
-            <InputText
-              id="uuid"
-              :disabled="true"
-              :value="collectionAccessObject.collection.data.uuid"
-              class="flex-auto w-full"
-              size="small"
-              spellcheck="false"
-            />
-            <Button
-              icon="pi pi-copy"
-              severity="secondary"
-              size="small"
-              aria-label="Copy UUID"
-              title="Copy UUID"
-              @click="handleCopy"
-            />
-          </div>
-          <div class="input-container" v-for="field in fields">
+    <Splitter style="height: 100%">
+      <SplitterPanel :size="10">
+        <div class="properties-pane w-full">
+          <h3 class="text-center">Properties</h3>
+          <form>
             <div class="flex align-items-center gap-3 mb-3">
-              <label :for="field.name" class="w-10rem font-semibold"
-                >{{ capitalize(field.name) }}
-              </label>
               <InputText
-                :id="field.name"
-                :disabled="mode === 'view' || !field.editable"
-                :required="field.required"
-                :invalid="field.required && !collectionAccessObject.collection.data[field.name]"
-                :key="field.name"
-                v-model="collectionAccessObject.collection.data[field.name] as string"
+                id="uuid"
+                :disabled="true"
+                :value="collectionAccessObject.collection.data.uuid"
                 class="flex-auto w-full"
+                size="small"
                 spellcheck="false"
               />
+              <Button
+                icon="pi pi-copy"
+                severity="secondary"
+                size="small"
+                aria-label="Copy UUID"
+                title="Copy UUID"
+                @click="handleCopy"
+              />
             </div>
-          </div>
-        </form>
-      </div>
-      <div class="texts-pane">
-        <h3 class="text-center">Texts</h3>
-        <div class="text-pane-content">
-          <DataTable
-            :value="tableData"
-            scrollable
-            scrollHeight="flex"
-            resizableColumns
-            rowHover
-            tableStyle="table-layout: fixed;"
-            size="small"
-          >
-            <Column field="labels" header="Labels" headerStyle="width: 15rem">
-              <template #body="{ data }">
-                <MultiSelect
-                  v-if="mode === 'edit'"
-                  v-model="
-                    collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabels
-                  "
-                  :options="allowedTextLabels"
-                  display="chip"
-                  placeholder="Select labels"
-                >
-                  <template #chip="{ value }">
-                    <Tag :value="value" severity="secondary" class="mr-1" />
-                  </template>
-                </MultiSelect>
-                <span v-else class="cell-info">
-                  <template v-for="label in data.labels">
-                    <Tag :value="label" severity="secondary" class="mr-1" />
-                  </template>
-                </span>
-              </template>
-            </Column>
-            <Column field="text" header="Text">
-              <template #body="{ data }">
-                <a class="cell-link" :href="'/texts/' + data.uuid">{{ data.text }}</a>
-              </template>
-            </Column>
-            <Column field="length" header="Length" headerStyle="width: 5rem">
-              <template #body="{ data }">
-                <span class="cell-info">{{ data.length.toLocaleString() }}</span>
-              </template>
-            </Column>
-            <Column field="actions" headerStyle="width: 5rem">
-              <template #body="{ data }">
-                <div class="flex">
-                  <div style="display: flex; flex-direction: column">
+            <div class="input-container" v-for="field in fields">
+              <div class="flex align-items-center gap-3 mb-3">
+                <label :for="field.name" class="w-10rem font-semibold"
+                  >{{ capitalize(field.name) }}
+                </label>
+                <InputText
+                  :id="field.name"
+                  :disabled="mode === 'view' || !field.editable"
+                  :required="field.required"
+                  :invalid="field.required && !collectionAccessObject.collection.data[field.name]"
+                  :key="field.name"
+                  v-model="collectionAccessObject.collection.data[field.name] as string"
+                  class="flex-auto w-full"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      </SplitterPanel>
+      <SplitterPanel>
+        <div class="texts-pane w-full">
+          <h3 class="text-center">Texts</h3>
+          <div class="text-pane-content">
+            <DataTable
+              :value="tableData"
+              scrollable
+              scrollHeight="flex"
+              resizableColumns
+              rowHover
+              tableStyle="table-layout: fixed;"
+              size="small"
+            >
+              <Column field="labels" header="Labels" headerStyle="width: 15rem">
+                <template #body="{ data }">
+                  <!-- TODO: Remove filter. Can be fixed when Primevue version is upgraded -->
+                  <MultiSelect
+                    v-if="mode === 'edit'"
+                    v-model="
+                      collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabels
+                    "
+                    :options="allowedTextLabels"
+                    display="chip"
+                    placeholder="Select labels"
+                    :filter="false"
+                  >
+                    <template #chip="{ value }">
+                      <Tag :value="value" severity="secondary" class="mr-1" />
+                    </template>
+                  </MultiSelect>
+                  <span v-else class="cell-info">
+                    <template v-for="label in data.labels">
+                      <Tag :value="label" severity="secondary" class="mr-1" />
+                    </template>
+                  </span>
+                </template>
+              </Column>
+              <Column field="text" header="Text">
+                <template #body="{ data }">
+                  <a class="cell-link" :href="'/texts/' + data.uuid">{{ data.text }}</a>
+                </template>
+              </Column>
+              <Column field="length" header="Length" headerStyle="width: 5rem">
+                <template #body="{ data }">
+                  <span class="cell-info">{{ data.length.toLocaleString() }}</span>
+                </template>
+              </Column>
+              <Column field="actions" headerStyle="width: 5rem">
+                <template #body="{ data }">
+                  <div class="flex">
+                    <div style="display: flex; flex-direction: column">
+                      <Button
+                        v-if="mode === 'edit'"
+                        :disabled="
+                          collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) ===
+                          0
+                        "
+                        class="h-1rem"
+                        title="Move text up"
+                        severity="secondary"
+                        icon="pi pi-chevron-up"
+                        size="small"
+                        @click="shiftText(data.uuid, 'up')"
+                      /><Button
+                        v-if="mode === 'edit'"
+                        :disabled="
+                          collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) ===
+                          collectionAccessObject.texts.length - 1
+                        "
+                        class="h-1rem"
+                        title="Move text down"
+                        severity="secondary"
+                        icon="pi pi-chevron-down"
+                        size="small"
+                        @click="shiftText(data.uuid, 'down')"
+                      />
+                    </div>
                     <Button
                       v-if="mode === 'edit'"
-                      :disabled="
-                        collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) === 0
-                      "
-                      class="h-1rem"
-                      title="Move text up"
-                      severity="secondary"
-                      icon="pi pi-chevron-up"
+                      title="Delete text"
+                      severity="danger"
+                      icon="pi pi-trash"
                       size="small"
-                      @click="shiftText(data.uuid, 'up')"
-                    /><Button
-                      v-if="mode === 'edit'"
-                      :disabled="
-                        collectionAccessObject.texts.findIndex(t => t.data.uuid === data.uuid) ===
-                        collectionAccessObject.texts.length - 1
-                      "
-                      class="h-1rem"
-                      title="Move text down"
-                      severity="secondary"
-                      icon="pi pi-chevron-down"
-                      size="small"
-                      @click="shiftText(data.uuid, 'down')"
+                      @click="handleDeleteText(data.uuid)"
                     />
                   </div>
-                  <Button
-                    v-if="mode === 'edit'"
-                    title="Delete text"
-                    severity="danger"
-                    icon="pi pi-trash"
-                    size="small"
-                    @click="handleDeleteText(data.uuid)"
-                  />
-                </div>
-              </template>
-            </Column>
-          </DataTable>
-
-          <Button
-            v-show="mode === 'edit'"
-            label="Add new text"
-            title="Add new text to collection"
-            icon="pi pi-plus"
-            style="display: block; margin: 0 auto"
-            @click="handleAddNewText"
-          ></Button>
+                </template>
+              </Column>
+            </DataTable>
+            <Button
+              v-show="mode === 'edit'"
+              label="Add new text"
+              title="Add new text to collection"
+              icon="pi pi-plus"
+              style="display: block; margin: 0 auto"
+              @click="handleAddNewText"
+            ></Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </SplitterPanel>
+    </Splitter>
+
     <div class="action-button-container flex justify-content-center gap-3 p-3">
       <Button
         v-if="mode === 'view'"
@@ -419,7 +428,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 <style scoped>
 .properties-pane,
 .texts-pane {
-  outline: 1px solid green;
   padding: 1rem;
 }
 
