@@ -89,8 +89,7 @@ async function getGuidelines(): Promise<void> {
 
 function handleAddNewText(): void {
   const newText: Text = {
-    // TODO: This is not good, fix
-    nodeLabels: ['Text'],
+    nodeLabels: [],
     data: {
       uuid: crypto.randomUUID(),
       text: '',
