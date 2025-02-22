@@ -13,6 +13,7 @@ import {
 } from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
+import ConfirmPopup from 'primevue/confirmpopup';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
@@ -21,6 +22,7 @@ import SplitterPanel from 'primevue/splitterpanel';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
+import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 
 type TextTableEntry = {
@@ -32,6 +34,7 @@ type TextTableEntry = {
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
+const confirm = useConfirm();
 const { guidelines, getAvailableTextLabels, initializeGuidelines } = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
@@ -103,9 +106,28 @@ async function handleCopy(): Promise<void> {
 }
 
 async function handleDeleteText(uuid: string) {
-  collectionAccessObject.value.texts = collectionAccessObject.value.texts.filter(
-    (text: Text) => text.data.uuid !== uuid,
-  );
+  confirm.require({
+    target: event.currentTarget as HTMLButtonElement,
+    message: 'Do you want to delete this text?',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+      title: 'Cancel',
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+      title: 'Delete annotation',
+    },
+    accept: () => {
+      collectionAccessObject.value.texts = collectionAccessObject.value.texts.filter(
+        (text: Text) => text.data.uuid !== uuid,
+      );
+    },
+    reject: () => {},
+  });
 }
 
 async function handleCancelChanges(): Promise<void> {
@@ -234,6 +256,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
   <LoadingSpinner v-if="!collectionAccessObject" />
   <div v-else class="container h-screen m-auto flex flex-column">
     <Toast />
+    <ConfirmPopup />
     <RouterLink to="/" class="pl-2 pt-2">
       <Button
         icon="pi pi-home"
