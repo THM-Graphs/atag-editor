@@ -234,20 +234,37 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
   <LoadingSpinner v-if="!collectionAccessObject" />
   <div v-else class="container h-screen m-auto flex flex-column">
     <Toast />
+    <RouterLink to="/" class="pl-2 pt-2">
+      <Button
+        icon="pi pi-home"
+        aria-label="Home"
+        class="w-2rem h-2rem"
+        title="Go to overview"
+      ></Button>
+    </RouterLink>
     <div class="header flex align-items-center justify-content-center gap-3">
-      <RouterLink to="/">
-        <Button
-          icon="pi pi-home"
-          aria-label="Home"
-          class="w-2rem h-2rem"
-          title="Go to overview"
-        ></Button>
-      </RouterLink>
-      <h2 class="info">
+      <h2 class="info mt-0">
         {{ collectionAccessObject?.collection.data.label }}
       </h2>
     </div>
-    <Splitter class="flex-grow-1 overflow-y-auto">
+    <Splitter
+      class="flex-grow-1 overflow-y-auto"
+      :pt="{
+        gutter: {
+          style: {
+            width: '4px',
+          },
+        },
+        gutterHandle: {
+          style: {
+            width: '6px',
+            position: 'absolute',
+            backgroundColor: 'darkgray',
+            height: '40px',
+          },
+        },
+      }"
+    >
       <SplitterPanel :size="10" class="overflow-y-auto">
         <div class="properties-pane w-full">
           <h2 class="text-center">Properties</h2>
@@ -349,9 +366,9 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   <span class="cell-info">{{ data.length.toLocaleString() }}</span>
                 </template>
               </Column>
-              <Column v-if="mode === 'edit'" field="actions" headerStyle="width: 5rem">
+              <Column v-if="mode === 'edit'" field="actions" headerStyle="width: 7rem">
                 <template #body="{ data }">
-                  <div class="flex">
+                  <div class="flex gap-2">
                     <div style="display: flex; flex-direction: column">
                       <Button
                         v-if="mode === 'edit'"
