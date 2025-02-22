@@ -1,4 +1,7 @@
 {
+  "texts": {
+    "additionalLabels": ["CommentText", "LetterText"]
+  },
   "collections": {
     "text": {
       "additionalLabel": "Letter",
@@ -7,7 +10,7 @@
           "name": "label",
           "type": "text",
           "required": true,
-          "editable": false,
+          "editable": true,
           "visible": false
         },
         {

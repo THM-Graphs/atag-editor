@@ -32,7 +32,7 @@ type TextTableEntry = {
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
-const { guidelines, initializeGuidelines } = useGuidelinesStore();
+const { guidelines, getAvailableTextLabels, initializeGuidelines } = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
 
@@ -41,8 +41,7 @@ const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
 const asyncOperationRunning = ref<boolean>(false);
 
-// TODO: Make dynamic (guidelines)
-const allowedTextLabels = ['Comment', 'Normal'];
+const availableTextLabels = computed(getAvailableTextLabels);
 
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
@@ -228,8 +227,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
   const swapIndex = direction === 'up' ? index - 1 : index + 1;
 
   [texts[index], texts[swapIndex]] = [texts[swapIndex], texts[index]];
-
-  console.log(text, index);
 }
 </script>
 
@@ -314,7 +311,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                     v-model="
                       collectionAccessObject.texts.find(t => t.data.uuid === data.uuid).nodeLabels
                     "
-                    :options="allowedTextLabels"
+                    :options="availableTextLabels"
                     display="chip"
                     placeholder="Select labels"
                     :filter="false"

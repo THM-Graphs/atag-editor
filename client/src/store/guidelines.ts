@@ -53,6 +53,16 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the available labels that can be assigned to a no Text node.
+   *
+   * @return {string[]} The available labels.
+   */
+  function getAvailableTextLabels(): string[] {
+    console.log(guidelines.value);
+    return guidelines.value.texts.additionalLabels;
+  }
+
+  /**
    * Retrieves field configuration of a collection of given type. Contains information about rendering behaviour as well as validation rules.
    * Used for rendering data tables or input fields in forms.
    *
@@ -90,6 +100,7 @@ export function useGuidelinesStore() {
     guidelines,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableTextLabels,
     getCollectionFields,
     initializeGuidelines,
   };
