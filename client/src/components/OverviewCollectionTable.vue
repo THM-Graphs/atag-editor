@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
@@ -85,12 +86,12 @@ async function getGuidelines(): Promise<void> {
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
           <!-- TODO: Bit hacky. Beautify? -->
-          <a
+          <RouterLink
             v-if="col === 'label'"
             class="cell-link"
-            :href="'/collections/' + data.uuid"
+            :to="`/collections/${data.uuid}`"
             v-tooltip.hover.top="{ value: data[col], showDelay: 0 }"
-            >{{ data[col] }}</a
+            >{{ data[col] }}</RouterLink
           >
           <span
             v-else-if="col !== 'texts'"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useTextStore } from '../store/text';
 import { capitalize } from '../utils/helper/helper';
@@ -112,7 +113,7 @@ async function handleCopy(): Promise<void> {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <a :href="`/collections/${correspondingCollection.data.uuid}`">Collection</a>
+      <RouterLink :to="`/collections/${correspondingCollection.data.uuid}`">Collection</RouterLink>
       <i class="pi pi-external-link"></i>
       <DataTable
         :value="tableData"

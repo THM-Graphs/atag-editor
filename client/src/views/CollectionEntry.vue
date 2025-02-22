@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, ref } from 'vue';
-import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+import { RouteLocationNormalizedLoaded, RouterLink, useRoute } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
@@ -337,14 +337,14 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               </Column>
               <Column field="text" header="Text">
                 <template #body="{ data }">
-                  <a
+                  <RouterLink
                     class="cell-link block w-full"
-                    :href="`/texts/${data.uuid}`"
+                    :to="`/texts/${data.uuid}`"
                     title="Open Text in Editor"
                   >
                     <span v-if="data.text.length > 0">{{ data.text }}</span>
                     <i v-else>No text yet...</i>
-                  </a>
+                  </RouterLink>
                 </template>
               </Column>
               <Column field="length" header="Length" headerStyle="width: 5rem">
