@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, ref } from 'vue';
-import { RouteLocationNormalizedLoaded, RouterLink, useRoute } from 'vue-router';
+import {
+  onBeforeRouteLeave,
+  RouteLocationNormalizedLoaded,
+  RouterLink,
+  useRoute,
+} from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import CollectionError from '../components/CollectionError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
+import { areObjectsEqual, buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   CollectionAccessObject,
@@ -40,8 +46,13 @@ const { guidelines, getAvailableTextLabels, initializeGuidelines } = useGuidelin
 const collectionUuid: string = route.params.uuid as string;
 
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
+const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
+
+// Initial pageload
+const isLoading = ref<boolean>(true);
+// For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
 const availableTextLabels = computed(getAvailableTextLabels);
@@ -66,9 +77,17 @@ const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
   });
 });
 
+onBeforeRouteLeave(() => preventUserFromRouteLeaving());
+
 onMounted(async (): Promise<void> => {
-  await getGuidelines();
   await getCollection();
+
+  if (isValidCollection.value) {
+    await getGuidelines();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  }
+
+  isLoading.value = false;
 });
 
 async function getGuidelines(): Promise<void> {
@@ -99,6 +118,10 @@ function handleAddNewText(): void {
   };
 
   collectionAccessObject.value.texts.push(newText);
+}
+
+function handleBeforeUnload(event: BeforeUnloadEvent): void {
+  preventUserFromPageLeaving(event);
 }
 
 async function handleCopy(): Promise<void> {
@@ -177,6 +200,65 @@ async function handleSaveChanges(): Promise<void> {
   }
 }
 
+function hasUnsavedChanges(): boolean {
+  // TODO: When Collection labels should be editable, this needs to be catched here
+
+  // Compare collection properties
+  if (
+    !areObjectsEqual(
+      collectionAccessObject.value.collection.data,
+      initialCollectionAccessObject.value.collection.data,
+    )
+  ) {
+    return true;
+  }
+
+  // Compare texts. JSON.stringify can be used since the order of the array entries matters
+  if (
+    JSON.stringify(collectionAccessObject.value.texts) !==
+    JSON.stringify(initialCollectionAccessObject.value.texts)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
+  if (!isValidCollection.value) {
+    return;
+  }
+
+  if (!hasUnsavedChanges()) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const confirmationMessage = 'Do you really want to leave? You have unsaved changes.';
+  event.returnValue = confirmationMessage;
+
+  return confirmationMessage;
+}
+
+function preventUserFromRouteLeaving(): boolean {
+  if (!isValidCollection.value) {
+    return true;
+  }
+
+  if (!hasUnsavedChanges()) {
+    return true;
+  }
+
+  // TODO: Use PrimeVue confirmation dialog instead of browser default?
+  const answer: boolean = window.confirm('Do you really want to leave? you have unsaved changes');
+
+  // cancel the navigation and stay on the same page
+  if (!answer) {
+    return false;
+  }
+}
+
 async function saveCollection(): Promise<void> {
   const collectionPostData: CollectionPostData = {
     data: collectionAccessObject.value,
@@ -229,6 +311,7 @@ async function getCollection(): Promise<void> {
     const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
     collectionAccessObject.value = fetchedCollectionAccessObject;
     initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
+    isValidCollection.value = true;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -253,7 +336,8 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 </script>
 
 <template>
-  <LoadingSpinner v-if="!collectionAccessObject" />
+  <LoadingSpinner v-if="isLoading === true" />
+  <CollectionError v-else-if="isValidCollection === false" :uuid="collectionUuid" />
   <div v-else class="container h-screen m-auto flex flex-column">
     <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
       <LoadingSpinner />

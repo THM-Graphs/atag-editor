@@ -42,6 +42,7 @@ export function cloneDeep(json: Record<any, any>) {
  * @return {boolean} Returns true if the objects are equal, otherwise false.
  */
 export function areObjectsEqual(obj1: Record<string, any>, obj2: Record<string, any>): boolean {
+  // TODO: This function needs to be rewritten when there are more complex objects...
   const keys1: string[] = Object.keys(obj1);
   const keys2: string[] = Object.keys(obj2);
 
@@ -66,7 +67,7 @@ export function areObjectsEqual(obj1: Record<string, any>, obj2: Record<string, 
  * @param {Set<string>} setB - The second set to compare.
  * @return {boolean} Returns true if the sets are equal, otherwise false.
  */
-export function areSetsEqual(setA: Set<string>, setB: Set<string>) {
+export function areSetsEqual(setA: Set<string>, setB: Set<string>): boolean {
   if (setA.size !== setB.size) {
     return false;
   }

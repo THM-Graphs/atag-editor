@@ -7,13 +7,14 @@ const initialText = ref<Text>(null);
 const correspondingCollection = ref<Collection>(null);
 const path = ref<Text[] | Collection[]>([]);
 
-function initializeText(newText: TextAccessObject): void {
-  text.value = newText.text;
-  initialText.value = cloneDeep(newText.text);
-  correspondingCollection.value = newText.collection;
-  path.value = newText.path;
-}
 export function useTextStore() {
+  function initializeText(newText: TextAccessObject): void {
+    text.value = newText.text;
+    initialText.value = cloneDeep(newText.text);
+    correspondingCollection.value = newText.collection;
+    path.value = newText.path;
+  }
+
   return {
     correspondingCollection,
     initialText,
