@@ -255,6 +255,9 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 <template>
   <LoadingSpinner v-if="!collectionAccessObject" />
   <div v-else class="container h-screen m-auto flex flex-column">
+    <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
+      <LoadingSpinner />
+    </div>
     <Toast />
     <ConfirmPopup />
     <RouterLink to="/" class="pl-2 pt-2">
@@ -456,6 +459,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
       />
       <Button
         v-if="mode === 'edit'"
+        :loading="asyncOperationRunning"
         aria-label="Save changes"
         title="Save changes"
         label="Save"
@@ -474,6 +478,10 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 </template>
 
 <style scoped>
+.overlay {
+  z-index: 99999;
+}
+
 .properties-pane,
 .texts-pane {
   padding: 1rem;

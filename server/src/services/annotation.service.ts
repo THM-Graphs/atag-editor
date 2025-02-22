@@ -180,7 +180,7 @@ export default class AnnotationService {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
 
-    console.dir(processedAnnotations, { depth: null });
+    // console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     const query: string = `
