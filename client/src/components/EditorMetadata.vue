@@ -37,6 +37,19 @@ function getCollectionTableData() {
 async function handleCopy(): Promise<void> {
   await navigator.clipboard.writeText(text.value.data.uuid);
 }
+
+function getNodeLabelTagColor(nodeLabels: string[]) {
+  switch (true) {
+    case nodeLabels.includes('Collection'):
+      return 'contrast';
+    case nodeLabels.includes('Text'):
+      return 'secondary';
+    case nodeLabels.includes('Annotation'):
+      return 'warn';
+    default:
+      return '';
+  }
+}
 </script>
 
 <template>
@@ -87,23 +100,32 @@ async function handleCopy(): Promise<void> {
       </div>
     </Fieldset>
 
-    <Fieldset legend="Ancestry path" toggleable>
+    <Fieldset legend="Ancestry path" toggleable collapsed>
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
       <ul>
-        <li v-for="(node, index) in path" :style="`margin-left: ${index}rem`">
+        <li v-for="(node, index) in path" class="mb-1" :style="`margin-left: ${index}rem`">
           <span v-if="index !== 0">-></span>
 
           <RouterLink
-            v-if="node['nodeLabels'].includes('Collection')"
+            v-if="node.nodeLabels.includes('Collection')"
             :to="`/collections/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
           >
-            {{ node['nodeLabels'] }}
+            <Tag
+              :value="node.nodeLabels.join(' | ')"
+              :severity="getNodeLabelTagColor(node.nodeLabels)"
+              class="mr-2"
+            />
             <i class="pi pi-external-link"></i>
           </RouterLink>
           <span v-else>
-            {{ node['nodeLabels'] }}
+            <Tag
+              :value="node.nodeLabels.join(' | ')"
+              :severity="getNodeLabelTagColor(node.nodeLabels)"
+              class="mr-2"
+            />
           </span>
         </li>
       </ul>
@@ -113,8 +135,12 @@ async function handleCopy(): Promise<void> {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <RouterLink :to="`/collections/${correspondingCollection.data.uuid}`">Collection</RouterLink>
-      <i class="pi pi-external-link"></i>
+      <RouterLink
+        :to="`/collections/${correspondingCollection.data.uuid}`"
+        class="block w-full text-center"
+        >Go to Collection <i class="pi pi-external-link"></i
+      ></RouterLink>
+
       <DataTable
         :value="tableData"
         scrollable
