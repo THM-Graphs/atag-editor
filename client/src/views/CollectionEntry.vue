@@ -232,7 +232,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 
 <template>
   <LoadingSpinner v-if="!collectionAccessObject" />
-  <div v-else class="container justify-content-stretch h-screen m-auto flex flex-column">
+  <div v-else class="container h-screen m-auto flex flex-column">
     <Toast />
     <div class="header flex align-items-center justify-content-center gap-3">
       <RouterLink to="/">
@@ -247,8 +247,8 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
         {{ collectionAccessObject?.collection.data.label }}
       </h2>
     </div>
-    <Splitter style="height: 100%">
-      <SplitterPanel :size="10">
+    <Splitter class="flex-grow-1 overflow-y-auto">
+      <SplitterPanel :size="10" class="overflow-y-auto">
         <div class="properties-pane w-full">
           <h2 class="text-center">Properties</h2>
           <form>
@@ -290,7 +290,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           </form>
         </div>
       </SplitterPanel>
-      <SplitterPanel>
+      <SplitterPanel class="overflow-y-auto">
         <div class="texts-pane w-full">
           <h2 class="text-center">Texts ({{ collectionAccessObject.texts.length }})</h2>
           <div class="text-pane-content">
