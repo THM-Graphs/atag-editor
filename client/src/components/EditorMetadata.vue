@@ -96,7 +96,13 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
         <div v-if="text.nodeLabels.length > 0" v-for="label in text.nodeLabels" :key="label">
           <Tag :value="label" severity="secondary" class="mr-1" />
         </div>
-        <div v-else><i>This text has no labels yet</i></div>
+        <div v-else>
+          <i
+            >This text has no labels yet. To add some, go to the
+            <RouterLink :to="`/collections/${correspondingCollection.data.uuid}`"
+              >Collection page.<i class="pi pi-external-link ml-2"></i></RouterLink
+          ></i>
+        </div>
       </div>
     </Fieldset>
 
@@ -138,7 +144,7 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
       <RouterLink
         :to="`/collections/${correspondingCollection.data.uuid}`"
         class="block w-full text-center"
-        >Go to Collection <i class="pi pi-external-link"></i
+        >Go to Collection page<i class="pi pi-external-link ml-2"></i
       ></RouterLink>
 
       <DataTable
