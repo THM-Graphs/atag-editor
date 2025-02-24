@@ -71,16 +71,21 @@ export type Character = {
 };
 
 export type CharacterPostData = {
-  collectionUuid: string;
   characters: ICharacter[];
   text: string;
+  textUuid: string;
   uuidEnd: string;
   uuidStart: string;
 };
 
 export type Collection = {
   data: ICollection;
-  nodeLabel: string;
+  nodeLabels: string[];
+};
+
+export type CollectionAccessObject = {
+  collection: Collection;
+  texts: Text[];
 };
 
 export type CollectionProperty = {
@@ -90,6 +95,11 @@ export type CollectionProperty = {
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;
   // options?: string[] /* Options if type is dropdown */;
+};
+
+export type CollectionPostData = {
+  data: CollectionAccessObject;
+  initialData: CollectionAccessObject;
 };
 
 export type HistoryStack = HistoryRecord[];
@@ -115,4 +125,15 @@ export type StandoffAnnotation = {
 export type StandoffJson = {
   annotations: StandoffAnnotation[];
   text: string;
+};
+
+export type Text = {
+  nodeLabels: string[];
+  data: IText;
+};
+
+export type TextAccessObject = {
+  collection: Collection;
+  path: Text[] | Collection[];
+  text: Text;
 };

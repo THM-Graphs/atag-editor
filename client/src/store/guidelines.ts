@@ -53,12 +53,24 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves the collection fields for the 'text' collection.
+   * Retrieves the available labels that can be assigned to a no Text node.
    *
-   * @returns {CollectionProperty[]} An array of collection propertie configurations.
+   * @return {string[]} The available labels.
    */
-  function getCollectionFields(): CollectionProperty[] {
-    return guidelines.value.collections['text'].properties;
+  function getAvailableTextLabels(): string[] {
+    console.log(guidelines.value);
+    return guidelines.value.texts.additionalLabels;
+  }
+
+  /**
+   * Retrieves field configuration of a collection of given type. Contains information about rendering behaviour as well as validation rules.
+   * Used for rendering data tables or input fields in forms.
+   *
+   * @param {string} type - The type of the collection.
+   * @return {CollectionProperty[]} The field configurations for the collection type.
+   */
+  function getCollectionFields(type: string): CollectionProperty[] {
+    return guidelines.value.collections[type].properties;
   }
 
   /**
@@ -88,6 +100,7 @@ export function useGuidelinesStore() {
     guidelines,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableTextLabels,
     getCollectionFields,
     initializeGuidelines,
   };

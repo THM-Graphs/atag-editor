@@ -30,13 +30,13 @@ type CreatedAdditionalText = AdditionalText & {
 };
 
 export default class AnnotationService {
-  public async getAnnotations(collectionUuid: string): Promise<AnnotationData[]> {
+  public async getAnnotations(textUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
     const query: string = `
     // Match all annotations for given selection
-    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)-[:HAS_ANNOTATION]->(a:Annotation)
+    MATCH (t:Text {uuid: $textUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a, $guidelines.annotations.resources AS resources
@@ -84,10 +84,7 @@ export default class AnnotationService {
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      collectionUuid,
-      guidelines,
-    });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid, guidelines });
 
     return result.records[0]?.get('annotations');
   }
@@ -177,13 +174,13 @@ export default class AnnotationService {
   }
 
   public async saveAnnotations(
-    collectionUuid: string,
+    textUuid: string,
     annotations: Annotation[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
 
-    console.dir(processedAnnotations, { depth: null });
+    // console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     const query: string = `
@@ -208,7 +205,7 @@ export default class AnnotationService {
 
     WITH allAnnotations
 
-    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)
+    MATCH (t:Text {uuid: $textUuid})
 
     // 2. Handle other annotations (merge)
     UNWIND allAnnotations AS ann
@@ -307,7 +304,7 @@ export default class AnnotationService {
 
     // Set startIndex and andIndex properties of Annotation nodes
     
-    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)-[:NEXT_CHARACTER*]->(ch:Character)
+    MATCH (t:Text {uuid: $textUuid})-[:NEXT_CHARACTER*]->(ch:Character)
     WITH collect(ch) as characters, annotations
 
     UNWIND range(0, size(characters) - 1) AS idx
@@ -323,7 +320,7 @@ export default class AnnotationService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      collectionUuid,
+      textUuid,
       annotations: processedAnnotations,
     });
 

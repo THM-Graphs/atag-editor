@@ -18,4 +18,7 @@ export interface IGuidelines {
     properties: AnnotationProperty[];
     resources: AnnotationConfigResource[];
   };
+  texts: {
+    additionalLabels: string[];
+  };
 }

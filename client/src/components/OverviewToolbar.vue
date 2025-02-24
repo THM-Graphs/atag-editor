@@ -108,7 +108,7 @@ function handleSearchInput(): void {
         </InputIcon>
         <InputText
           spellcheck="false"
-          placeholder="Filter texts by label"
+          placeholder="Filter Collections by label"
           v-model="searchInput"
           @input="handleSearchInput"
         />
@@ -119,22 +119,21 @@ function handleSearchInput(): void {
       <Button
         icon="pi pi-plus"
         aria-label="Submit"
-        label="Add text"
-        title="Add new text"
+        label="Add Collection"
+        title="Add new Collection"
         @click="showDialog"
       />
     </template>
   </Toolbar>
   <Dialog
     v-model:visible="dialogIsVisible"
-    header="Add new text"
     modal
     :closable="false"
     :close-on-escape="false"
     :style="{ width: '25rem' }"
   >
     <template #header>
-      <h2 class="w-full text-center m-0">Add new text</h2>
+      <h2 class="w-full text-center m-0">Add new Collection</h2>
     </template>
     <form @submit.prevent="createNewCollection">
       <div

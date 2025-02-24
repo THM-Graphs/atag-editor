@@ -1,37 +1,54 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
-import { useCollectionStore } from '../store/collection';
+import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useTextStore } from '../store/text';
 import { capitalize } from '../utils/helper/helper';
+import { CollectionProperty } from '../models/types';
 import Button from 'primevue/button';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
-import { CollectionProperty } from '../models/types';
+import Tag from 'primevue/tag';
 
-defineExpose({
-  validate,
-});
+type CollectionTableEntry = {
+  property: string;
+  value: string | number;
+};
 
-const { collection, collectionNodeLabel } = useCollectionStore();
-const { guidelines } = useGuidelinesStore();
+const { text, correspondingCollection, path } = useTextStore();
+const { getCollectionFields } = useGuidelinesStore();
 
-// TODO: Still a workaround, should be mady dynamic.
-const fields: ComputedRef<CollectionProperty[]> = computed(() => {
-  if (collectionNodeLabel.value === 'Letter') {
-    return guidelines.value.collections['text'].properties;
-  } else {
-    return guidelines.value.collections['comment'].properties;
-  }
-});
+const tableData: CollectionTableEntry[] = getCollectionTableData();
 
-const formRef = ref<HTMLFormElement | null>(null);
+function getCollectionTableData() {
+  // TODO: Still a workaround, should be mady dynamic.
+  const fields: CollectionProperty[] = correspondingCollection.value.nodeLabels.includes('Letter')
+    ? getCollectionFields('text')
+    : getCollectionFields('comment');
 
-async function handleCopy(): Promise<void> {
-  await navigator.clipboard.writeText(collection.value.uuid);
+  return fields.map(field => ({
+    property: field.name,
+    value: correspondingCollection.value.data[field.name],
+  }));
 }
 
-function validate(): boolean {
-  return formRef.value.reportValidity();
+async function handleCopy(): Promise<void> {
+  await navigator.clipboard.writeText(text.value.data.uuid);
+}
+
+function getNodeLabelTagColor(nodeLabels: string[]) {
+  switch (true) {
+    case nodeLabels.includes('Collection'):
+      return 'contrast';
+    case nodeLabels.includes('Text'):
+      return 'secondary';
+    case nodeLabels.includes('Annotation'):
+      return 'warn';
+    default:
+      return '';
+  }
 }
 </script>
 
@@ -50,44 +67,107 @@ function validate(): boolean {
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
-    <div class="flex align-items-center gap-3 mb-3">
-      <InputText
-        id="uuid"
-        :disabled="true"
-        :value="collection.uuid"
-        class="flex-auto w-full"
-        size="small"
-        spellcheck="false"
-      />
-      <Button
-        icon="pi pi-copy"
-        severity="secondary"
-        size="small"
-        aria-label="Copy UUID"
-        title="Copy UUID"
-        @click="handleCopy"
-      />
+    <div class="mb-3">
+      <div class="flex align-items-center gap-3">
+        <InputText
+          id="uuid"
+          :disabled="true"
+          :value="text.data.uuid"
+          class="flex-auto w-full"
+          size="small"
+          spellcheck="false"
+        />
+        <Button
+          icon="pi pi-copy"
+          severity="secondary"
+          size="small"
+          aria-label="Copy UUID"
+          title="Copy UUID"
+          @click="handleCopy"
+        />
+      </div>
+      <small>Text UUID</small>
     </div>
-
-    <form ref="formRef" @submit.prevent="validate">
-      <div class="input-container" v-for="field in fields" v-show="field.visible">
-        <div class="flex align-items-center gap-3 mb-3" v-show="field.visible">
-          <label :for="field.name" class="w-10rem font-semibold"
-            >{{ capitalize(field.name) }}
-          </label>
-          <InputText
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !collection[field.name]"
-            :key="field.name"
-            v-model="collection[field.name]"
-            class="flex-auto w-full"
-            spellcheck="false"
-          />
+    <Fieldset legend="Text labels" toggleable>
+      <template #toggleicon="{ collapsed }">
+        <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <div class="flex gap-2">
+        <div v-if="text.nodeLabels.length > 0" v-for="label in text.nodeLabels" :key="label">
+          <Tag :value="label" severity="secondary" class="mr-1" />
+        </div>
+        <div v-else>
+          <i
+            >This text has no labels yet. To add some, go to the
+            <RouterLink :to="`/collections/${correspondingCollection.data.uuid}`"
+              >Collection page.<i class="pi pi-external-link ml-2"></i></RouterLink
+          ></i>
         </div>
       </div>
-    </form>
+    </Fieldset>
+
+    <Fieldset legend="Ancestry path" toggleable collapsed>
+      <template #toggleicon="{ collapsed }">
+        <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <ul>
+        <li v-for="(node, index) in path" class="mb-1" :style="`margin-left: ${index}rem`">
+          <span v-if="index !== 0">-></span>
+
+          <RouterLink
+            v-if="node.nodeLabels.includes('Collection')"
+            :to="`/collections/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
+          >
+            <Tag
+              :value="node.nodeLabels.join(' | ')"
+              :severity="getNodeLabelTagColor(node.nodeLabels)"
+              class="mr-2"
+            />
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <span v-else>
+            <Tag
+              :value="node.nodeLabels.join(' | ')"
+              :severity="getNodeLabelTagColor(node.nodeLabels)"
+              class="mr-2"
+            />
+          </span>
+        </li>
+      </ul>
+    </Fieldset>
+
+    <Fieldset legend="Collection" toggleable>
+      <template #toggleicon="{ collapsed }">
+        <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <RouterLink
+        :to="`/collections/${correspondingCollection.data.uuid}`"
+        class="block w-full text-center"
+        >Go to Collection page<i class="pi pi-external-link ml-2"></i
+      ></RouterLink>
+
+      <DataTable
+        :value="tableData"
+        scrollable
+        scrollHeight="flex"
+        resizableColumns
+        rowHover
+        tableStyle="table-layout: fixed;"
+        size="small"
+      >
+        <Column field="property" header="Property">
+          <template #body="{ data }">
+            <span>{{ capitalize(data['property']) }}</span>
+          </template>
+        </Column>
+        <Column field="value" header="Value">
+          <template #body="{ data }">
+            <span>{{ data['value'] }}</span>
+          </template>
+        </Column>
+      </DataTable>
+    </Fieldset>
   </Panel>
 </template>
 

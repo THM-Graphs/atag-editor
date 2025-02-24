@@ -5,7 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection } from '../models/types.js';
+import { CollectionAccessObject, CollectionPostData } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -17,7 +17,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     const additionalLabel = guidelines.collections['text'].additionalLabel;
 
-    const collections: ICollection[] = await collectionService.getCollections(additionalLabel);
+    const collections: CollectionAccessObject[] =
+      await collectionService.getCollectionsWithTexts(additionalLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -47,8 +48,8 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    // TODO: Part of the collection metadata workaround, fix later
-    const collection: Collection = await collectionService.getExtendedCollectionById(uuid);
+    const collection: CollectionAccessObject =
+      await collectionService.getExtendedCollectionById(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {
@@ -58,7 +59,7 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
 
 router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
-  const data: Record<string, string> = req.body;
+  const data: CollectionPostData = req.body;
 
   try {
     const collection: ICollection = await collectionService.updateCollection(uuid, data);

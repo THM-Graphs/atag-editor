@@ -8,10 +8,10 @@ const router: Router = express.Router({ mergeParams: true });
 const characterService: CharacterService = new CharacterService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const collectionUuid: string = req.params.uuid;
+  const textUuid: string = req.params.uuid;
 
   try {
-    const characters: Character[] = await characterService.getCharacters(collectionUuid);
+    const characters: Character[] = await characterService.getCharacters(textUuid);
 
     res.status(200).json(characters);
   } catch (error: unknown) {
@@ -20,13 +20,13 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const collectionUuid: string = req.params.uuid;
+  const textUuid: string = req.params.uuid;
 
   const { uuidStart, uuidEnd, characters, text } = req.body;
 
   try {
     const updatedCharacters: ICharacter[] = await characterService.saveCharacters(
-      collectionUuid,
+      textUuid,
       uuidStart,
       uuidEnd,
       characters,

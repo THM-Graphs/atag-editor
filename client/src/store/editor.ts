@@ -1,11 +1,11 @@
 import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
-import { useCollectionStore } from './collection';
 import { useCharactersStore } from './characters';
 import { areObjectsEqual, areSetsEqual } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
+import { useTextStore } from './text';
 
-const { collection, initialCollection } = useCollectionStore();
+const { text, initialText } = useTextStore();
 const { snippetCharacters, initialSnippetCharacters } = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
@@ -62,8 +62,9 @@ export function useEditorStore() {
   }
 
   function hasUnsavedChanges(): boolean {
-    // Compare collection properties
-    if (!areObjectsEqual(collection.value, initialCollection.value)) {
+    // Compare text labels
+    // TODO: This needs to be adjusted as soon as labels can be edited
+    if (!areSetsEqual(new Set(initialText.value.nodeLabels), new Set(text.value.nodeLabels))) {
       return true;
     }
 

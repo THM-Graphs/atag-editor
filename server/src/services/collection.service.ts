@@ -4,7 +4,13 @@ import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection } from '../models/types.js';
+import { CollectionAccessObject, CollectionPostData, Text } from '../models/types.js';
+
+type CollectionTextObject = {
+  all: Text[];
+  created: Text[];
+  deleted: Text[];
+};
 
 export default class CollectionService {
   /**
@@ -15,7 +21,44 @@ export default class CollectionService {
    */
   public async getCollections(additionalLabel: string): Promise<ICollection[]> {
     const query: string = `
-    MATCH (n:Collection:${additionalLabel}) RETURN COLLECT(n {.*}) as collections
+    MATCH (n:Collection:${additionalLabel}) RETURN collect(n {.*}) as collections
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query);
+
+    return result.records[0]?.get('collections');
+  }
+
+  /**
+   * Retrieves collection nodes together with connected text nodes based on the additional label provided.
+   *
+   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
+   * @return {Promise<CollectionAccessObject[]>} A promise that resolves to an array of collection access objects.
+   */
+  public async getCollectionsWithTexts(additionalLabel: string): Promise<CollectionAccessObject[]> {
+    const query: string = `
+    MATCH (c:Collection:${additionalLabel})
+
+    // Match optional Text node chain
+    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+    WHERE NOT ()-[:NEXT]->(tStart)
+    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+
+    WITH c, tStart, collect(t) AS nextTexts
+    WITH c, coalesce(tStart, []) + nextTexts AS texts
+
+    RETURN collect({
+        collection: {
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+            data: c {.*}
+        }, 
+        texts: [
+            t IN texts | {
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                data: t {.*}
+            }
+        ]
+    }) AS collections
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query);
@@ -47,23 +90,41 @@ export default class CollectionService {
   }
 
   /**
-   * Retrieves extended data of a specified collection node (node properties and additional label of Collection node).
-   * TODO: This is currently a workaround to differentiate between diffenent collection types when displaying
-   * the metadata in the frontend (Letter collections have status, sender etc., while additional texts don't
-   * have metadata other than a label). Fix when rebuilding architecture to focus the Text node instead of Collection node...
+   * Retrieves collection node with given UUID together with connected text nodes.
+  
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the retrieved extended collection.
+   * @return {Promise<CollectionAccessObject>} A promise that resolves to the retrieved collection and text nodes.
    */
-  public async getExtendedCollectionById(uuid: string): Promise<Collection> {
+  public async getExtendedCollectionById(uuid: string): Promise<CollectionAccessObject> {
     // TODO: This query is not working with more than one additional node label. Considerate
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    RETURN {data: c {.*}, nodeLabel: [l in labels(c) WHERE l <> 'Collection' | l][0]} as collection
+
+    // Match optional Text node chain
+    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+    WHERE NOT ()-[:NEXT]->(tStart)
+    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+
+    WITH c, tStart, collect(t) AS nextTexts
+    WITH c, coalesce(tStart, []) + nextTexts AS texts    
+
+    RETURN {
+        collection: {
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+            data: c {.*}
+        }, 
+        texts: [
+            t IN texts | {
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                data: t {.*}
+            }
+        ]
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const collection: Collection = result.records[0]?.get('collection');
+    const collection: CollectionAccessObject = result.records[0]?.get('collection');
 
     if (!collection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
@@ -73,7 +134,7 @@ export default class CollectionService {
   }
 
   /**
-   * Creates a new collection node with given data as properties, along with an associated text node.
+   * Creates a new collection node with given data as properties.
    *
    * @param {Record<string, string>} data - JSON data for the new collection node.
    * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
@@ -86,8 +147,6 @@ export default class CollectionService {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
-    const textUuid: string = crypto.randomUUID();
-
     // Add default properties if they are not sent in the request
     guidelines.collections['text'].properties.forEach(property => {
       if (!data[property.name]) {
@@ -98,31 +157,128 @@ export default class CollectionService {
     data = { ...data, uuid: crypto.randomUUID() };
 
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} $data)<-[:PART_OF]-(t:Text {uuid: $textUuid})
+    CREATE (c:Collection:${additionalLabel} $data)
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, textUuid });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data });
 
     return result.records[0]?.get('collection');
   }
 
+  public processCollectionTextsBeforeSaving(data: CollectionPostData): CollectionTextObject {
+    const newData: CollectionAccessObject = data.data;
+    const initialData: CollectionAccessObject = data.initialData;
+
+    const initialTextUuids: string[] = initialData.texts.map(t => t.data.uuid);
+    const newTextUUids: string[] = newData.texts.map(t => t.data.uuid);
+
+    const createdTexts: Text[] = newData.texts.filter(
+      text => !initialTextUuids.includes(text.data.uuid),
+    );
+
+    const deletedTexts: Text[] = initialData.texts.filter(
+      text => !newTextUUids.includes(text.data.uuid),
+    );
+
+    const collectionTextObject: CollectionTextObject = {
+      all: newData.texts,
+      created: createdTexts,
+      deleted: deletedTexts,
+    };
+
+    return collectionTextObject;
+  }
+
   /**
-   * Updates the properties of a collection node with given UUID.
+   * Updates the properties of a Collection node with given UUID as well as its Text node network
+   * (creating new nodes, deleting old nodes, changing order of existing nodes).
    *
    * @param {string} uuid - The UUID of the collection node to update.
-   * @param {Record<string, string>} data - The data for the collection node.
+   * @param {CollectionPostData} data - The data containing updates for the collection.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
    * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
    */
-  public async updateCollection(uuid: string, data: Record<string, string>): Promise<ICollection> {
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<ICollection> {
+    const { collection } = data.data;
+    const texts: CollectionTextObject = this.processCollectionTextsBeforeSaving(data);
+
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    SET c = $data
+    
+    SET c = $collection.data
+
+    WITH c
+
+    // Delete Text nodes
+    CALL {
+      UNWIND $texts.deleted as textToDelete
+      MATCH (t:Text {uuid: textToDelete.data.uuid})
+      
+      OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+      OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)-[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
+      WITH t, collect(distinct a) as a, c
+
+      OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
+      WITH t, c, a, collect(ch) as baseChars
+      OPTIONAL MATCH (c)-[:NEXT_CHARACTER*]->(ch:Character)
+      WITH t, a, baseChars, collect(ch) as furtherChars
+      WITH t + a + baseChars + furtherChars as nodesToDelete
+
+      FOREACH (n in nodesToDelete | DETACH DELETE n)
+
+      RETURN collect(nodesToDelete) as nodesToDelete
+    }
+
+    // Create Text nodes
+    CALL {
+      WITH c
+
+      UNWIND $texts.created as textToCreate
+      MERGE (t:Text {uuid: textToCreate.data.uuid})-[:PART_OF]->(c)
+      WITH t, textToCreate
+      SET t = textToCreate.data
+
+      RETURN collect(t) as createdTexts
+    }
+
+    // Set new labels to ALL text nodes
+    CALL {
+      WITH c
+
+      UNWIND $texts.all as text
+      MATCH (c)<-[:PART_OF]-(t:Text {uuid: text.data.uuid})
+      WITH t, text, [l IN labels(t) WHERE l <> 'Text'] AS labelsToRemove
+      CALL apoc.create.removeLabels(t, labelsToRemove) YIELD node AS nodeBefore
+      CALL apoc.create.addLabels(t, text.nodeLabels) YIELD node AS nodeAfter
+
+      RETURN collect(t) as relabeledTexts
+    }
+    
+    // Remove NEXT relationships from all texts
+    CALL {
+      WITH c
+      MATCH (c)<-[:PART_OF]->(t:Text)-[r:NEXT]->(t2:Text)
+      DETACH DELETE r
+    }
+
+    // Create new chain of NEXT relationships between nodes
+    CALL {
+        WITH c
+
+        UNWIND range(0, size($texts.all) - 2) AS idx
+        
+        MATCH (t1:Text {uuid: $texts.all[idx].data.uuid})
+        MATCH (t2:Text {uuid: $texts.all[idx + 1].data.uuid})
+        MERGE (t1)-[:NEXT]->(t2)
+        
+        RETURN collect(t1) as updatedTexts
+    }
+
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, collection, texts });
     const updatedCollection: ICollection = result.records[0]?.get('collection');
 
     if (!updatedCollection) {

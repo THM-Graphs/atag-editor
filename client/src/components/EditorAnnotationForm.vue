@@ -614,7 +614,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           </div>
           <div class="flex align-items-center gap-2 overflow">
             <a
-              :href="`/texts/${additionalText.data.collection.uuid}`"
+              :href="`/texts/${additionalText.data.text.uuid}`"
               title="Open text in new editor tab"
               class="flex align-items-center gap-1"
               target="_blank"

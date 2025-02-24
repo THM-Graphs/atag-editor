@@ -5,14 +5,14 @@ import { Character } from '../models/types.js';
 
 export default class CharacterService {
   /**
-   * Retrieves chain of characters that belong to a collection's text node.
+   * Retrieves chain of characters that belong to a text node.
    *
-   * @param {string} collectionUuid - The UUID of the collection to retrieve characters for.
+   * @param {string} textUuid - The UUID of the text to retrieve characters for.
    * @return {Promise<Character[]>} A promise that resolves to an array of characters.
    */
-  public async getCharacters(collectionUuid: string): Promise<Character[]> {
+  public async getCharacters(textUuid: string): Promise<Character[]> {
     const query: string = `
-    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)-[:NEXT_CHARACTER*]->(char:Character)
+    MATCH (t:Text {uuid: $textUuid})-[:NEXT_CHARACTER*]->(char:Character)
     WITH char, [(char)-[:CHARACTER_HAS_ANNOTATION]->(a:Annotation) | 
       {
         uuid: a.uuid,
@@ -27,15 +27,15 @@ export default class CharacterService {
     }) AS characters
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collectionUuid });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid });
 
     return result.records[0]?.get('characters');
   }
 
   /**
-   * Updates the character chain that belongs to a collection's text node by splitting up the chain at the given start and end Character node.
+   * Updates the character chain that belongs to a text node by splitting up the chain at the given start and end Character node.
    *
-   * @param {string} collectionUuid - The UUID of the collection to update characters for.
+   * @param {string} textUuid - The UUID of the text to update characters for.
    * @param {string | null} uuidStart - The UUID of the starting character, or null if no starting character.
    * @param {string | null} uuidEnd - The UUID of the ending character, or null if no ending character.
    * @param {ICharacter[]} characters - The array of characters that will form the new chain snippet between given start and end Character node.
@@ -43,14 +43,14 @@ export default class CharacterService {
    * @return {Promise<ICharacter[]>} A promise that resolves to an array of the whole updated character chain.
    */
   public async saveCharacters(
-    collectionUuid: string,
+    textUuid: string,
     uuidStart: string | null,
     uuidEnd: string | null,
     characters: ICharacter[],
     text: string,
   ): Promise<ICharacter[]> {
     const query: string = `
-    MATCH (c:Collection {uuid: $collectionUuid})<-[:PART_OF]-(t:Text)
+    MATCH (t:Text {uuid: $textUuid})
     SET t.text = $text
     WITH t
     CALL atag.chains.update(t.uuid, $uuidStart, $uuidEnd, $characters, {
@@ -59,11 +59,11 @@ export default class CharacterService {
       relationshipType: "NEXT_CHARACTER"
     }) YIELD path
     UNWIND nodes(path) as n
-    RETURN COLLECT(n {.*}) as characters
+    RETURN collect(n {.*}) as characters
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      collectionUuid,
+      textUuid,
       uuidStart,
       uuidEnd,
       characters,

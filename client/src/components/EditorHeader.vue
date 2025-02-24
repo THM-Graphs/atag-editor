@@ -1,34 +1,15 @@
 <script setup lang="ts">
-import { WritableComputedRef, computed, ref } from 'vue';
-import { useCollectionStore } from '../store/collection';
+import { ref } from 'vue';
 import EditorImportButton from './EditorImportButton.vue';
+import { useTextStore } from '../store/text';
+import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
+import Tag from 'primevue/tag';
 
-defineExpose({
-  validate,
-});
+const { text, correspondingCollection } = useTextStore();
 
-const { collection } = useCollectionStore();
-
-// This allows using v-model for title input changes.
-// TODO: Replace with more generic async handling later
-const displayedLabel: WritableComputedRef<string> = computed({
-  get() {
-    return collection.value?.label || '';
-  },
-  set(value: string) {
-    if (collection.value) {
-      collection.value.label = value;
-    }
-  },
-});
-
-const formRef = ref<HTMLFormElement | null>(null);
-
-function validate(): boolean {
-  return formRef.value.reportValidity();
-}
+const breadcrumbRoot = ref({ role: 'Collection', label: correspondingCollection.value.data.label });
+const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
 </script>
 
 <template>
@@ -46,43 +27,26 @@ function validate(): boolean {
         <EditorImportButton />
       </div>
     </div>
-    <div class="label flex justify-content-center text-center">
-      <form ref="formRef" action="" class="w-full px-3">
-        <InputText
-          id="label"
-          v-model="displayedLabel"
-          required
-          spellcheck="false"
-          :invalid="displayedLabel.length === 0"
-          placeholder="No label provided"
-          class="input-label text-center w-full text-xl font-bold"
-        />
-      </form>
+
+    <div class="flex justify-content-center">
+      <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
+        <template #item="{ item }">
+          <div v-if="item.role === 'Collection'">
+            <Tag :value="item.label" severity="contrast" :title="`Collection: ${item.label}`" />
+          </div>
+          <div v-else>
+            <Tag
+              v-if="item.labels.length > 0"
+              :value="item.labels.join(' | ')"
+              severity="secondary"
+              :title="`Text labels: ${item.labels.join(', ')}`"
+            />
+            <Tag v-else="" :value="'\u00A0'" severity="secondary" title="No label yet" />
+          </div>
+        </template>
+      </Breadcrumb>
     </div>
   </div>
 </template>
 
-<style scoped>
-.input-label {
-  border: none;
-  outline: 0;
-  box-shadow: none;
-
-  &[aria-invalid='true'] {
-    outline: 1px solid var(--color-input-invalid);
-  }
-
-  &:hover:not(:focus-visible) {
-    background-color: rgba(var(--color-blue-base), 0.05);
-  }
-
-  &::placeholder {
-    color: rgb(255, 173, 173);
-    font-weight: normal;
-  }
-
-  &:focus-visible {
-    box-shadow: var(--box-shadow-focus);
-  }
-}
-</style>
+<style scoped></style>
