@@ -1,10 +1,6 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
-import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
-import ICollection from '../models/ICollection.js';
-import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection } from '../models/types.js';
 import IText from '../models/IText.js';
 import { TextAccessObject } from '../models/types.js';
 
@@ -12,7 +8,7 @@ export default class TextService {
   /**
    * Retrieves text nodes based on the additional label provided.
    *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "MainText" for text nodes that are
+   * @param {string} additionalLabel - The additional label to match in the query, for example "LetterText" for text nodes that are
    * the entry point for a letter text.
    * @return {Promise<IText[]>} A promise that resolves to an array of texts.
    */
@@ -35,7 +31,6 @@ export default class TextService {
    * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
    */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
-    // TODO: This query is not working with more than one additional node label. Considerate
     // TODO: "Letter" label should be made dynamic
     const query: string = `
     MATCH (t:Text {uuid: $uuid})

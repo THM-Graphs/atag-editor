@@ -166,32 +166,6 @@ export default class CollectionService {
     return result.records[0]?.get('collection');
   }
 
-  // TODO: Delete, since this will not be needed
-  // /**
-  //  * Updates the properties of a collection node with given UUID.
-  //  *
-  //  * @param {string} uuid - The UUID of the collection node to update.
-  //  * @param {Record<string, string>} data - The data for the collection node.
-  //  * @throws {NotFoundError} If the collection with the specified UUID is not found.
-  //  * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
-  //  */
-  // public async updateCollection(uuid: string, data: Record<string, string>): Promise<ICollection> {
-  //   const query: string = `
-  //   MATCH (c:Collection {uuid: $uuid})
-  //   SET c = $data
-  //   RETURN c {.*} AS collection
-  //   `;
-
-  //   const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, data });
-  //   const updatedCollection: ICollection = result.records[0]?.get('collection');
-
-  //   if (!updatedCollection) {
-  //     throw new NotFoundError(`Collection with UUID ${uuid} not found`);
-  //   }
-
-  //   return updatedCollection;
-  // }
-
   public processCollectionTextsBeforeSaving(data: CollectionPostData): CollectionTextObject {
     const newData: CollectionAccessObject = data.data;
     const initialData: CollectionAccessObject = data.initialData;
@@ -216,12 +190,12 @@ export default class CollectionService {
     return collectionTextObject;
   }
 
-  // TODO: Rewrite JSDoc
   /**
-   * Updates the properties of a collection node with given UUID.
+   * Updates the properties of a Collection node with given UUID as well as its Text node network
+   * (creating new nodes, deleting old nodes, changing order of existing nodes).
    *
    * @param {string} uuid - The UUID of the collection node to update.
-   * @param {Record<string, string>} data - The data for the collection node.
+   * @param {CollectionPostData} data - The data containing updates for the collection.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
    * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
    */

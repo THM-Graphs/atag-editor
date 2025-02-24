@@ -5,7 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { Collection, CollectionAccessObject, CollectionPostData } from '../models/types.js';
+import { CollectionAccessObject, CollectionPostData } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
