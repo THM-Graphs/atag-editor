@@ -159,7 +159,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
 
 <template>
   <Panel
-    class="annotations-container mb-3 overflow-y-auto"
+    class="annotations-container mb-3"
     toggleable
     :toggle-button-props="{
       severity: 'secondary',
