@@ -193,14 +193,18 @@ export default class AnnotationService {
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
         WITH a
-        // Match connected Collection, Text and Annotation nodes. Collection nodes need to be matched separately
-        // as entry point into subgraph, and from there can be matched safely in both directions 
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection)
-        -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
-        WITH a, x, c
-        // Find optional character chain for text nodes
-        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
-        DETACH DELETE a, c, x, ch
+
+        // Match subgraph
+        CALL apoc.path.subgraphNodes(a, {
+            relationshipFilter: 'REFERS_TO>,<PART_OF,HAS_ANNOTATION>',
+            labelFilter: 'Collection|Text|Annotation'
+        }) YIELD node
+
+        WITH node, a
+
+        OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
+
+        DETACH DELETE a, node, ch
     }
 
     WITH allAnnotations
@@ -244,14 +248,20 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        // Match connected Collection, Text and Annotation nodes. Collection node needs to be matched separately
-        // as entry point into subgraph, and from there can be matched safely in both directions 
+        // Match Collection node that is the entry point into subgraph
         OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})
-        -[:REFERS_TO | PART_OF | HAS_ANNOTATION*]-(x:Collection | Text | Annotation)
-        WITH c, x
-        // Find optional character chain for Text nodes
-        OPTIONAL MATCH (x)-[:NEXT_CHARACTER*]->(ch:Character)
-        DETACH DELETE c, x, ch
+        
+        // Match subgraph
+        CALL apoc.path.subgraphNodes(c, {
+            relationshipFilter: '<PART_OF,HAS_ANNOTATION>,REFERS_TO>',
+            labelFilter: 'Collection|Text|Annotation'
+        }) YIELD node
+
+        WITH c, node, a
+
+        OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
+        
+        DETACH DELETE c, node, ch
     }
 
     // Create additional text nodes
