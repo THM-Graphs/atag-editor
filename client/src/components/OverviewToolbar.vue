@@ -1,33 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
+import { MultiSelect } from 'primevue';
 import Skeleton from 'primevue/skeleton';
+import Tag from 'primevue/tag';
 import Toolbar from 'primevue/toolbar';
 import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
+import { Collection } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
+const { getAvailableCollectionLabels, getCollectionFields } = useGuidelinesStore();
+
 const searchInput = ref<string>('');
-const newCollectionData = ref<Record<string, string>>({});
+const newCollectionData = ref<Collection>(null);
 const guidelines = ref<IGuidelines>({} as IGuidelines);
 
 const dialogIsVisible = ref<boolean>(false);
 const guidelinesAreLoaded = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
-const { getCollectionFields } = useGuidelinesStore();
+const availableCollectionLabels = computed(getAvailableCollectionLabels);
+
+// TODO: replace this with general form handling in the future
+// Used for enabling/disabling buttons when form inputs don't satisfy requirements
+const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
+  if (dialogIsVisible.value && !guidelinesAreLoaded.value) {
+    return false;
+  }
+
+  const selectedLabelsValid: boolean =
+    availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
+
+  const requiredFieldsValid: boolean = getCollectionFields('text')
+    .filter(field => field.required)
+    .every(field => newCollectionData.value?.data[field.name]?.toString().trim() !== '');
+
+  return selectedLabelsValid && requiredFieldsValid;
+});
 
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
   console.log(cloneDeep(newCollectionData.value));
+
+  return;
 
   asyncOperationRunning.value = true;
 
@@ -51,7 +75,7 @@ async function createNewCollection(): Promise<void> {
 
     const createdCollection: ICollection = await response.json();
 
-    newCollectionData.value = {};
+    newCollectionData.value = {} as Collection;
     dialogIsVisible.value = false;
 
     emit('collectionCreated', createdCollection);
@@ -68,7 +92,7 @@ async function showDialog(): Promise<void> {
 }
 
 async function hideDialog(): Promise<void> {
-  newCollectionData.value = {};
+  newCollectionData.value = null;
   dialogIsVisible.value = false;
   guidelinesAreLoaded.value = false;
 }
@@ -87,9 +111,10 @@ async function getGuidelines(): Promise<void> {
 
     // TODO: Load guidelines only once? Should be enough...
     // Initialize newCollectionData with empty strings to include them in form data
-    getCollectionFields('text').forEach(property => {
-      newCollectionData.value[property.name] = '';
-    });
+    newCollectionData.value = {
+      data: Object.fromEntries(getCollectionFields('text').map(f => [f.name, ''])) as ICollection,
+      nodeLabels: [],
+    };
 
     guidelinesAreLoaded.value = true;
   } catch (error: unknown) {
@@ -139,27 +164,47 @@ function handleSearchInput(): void {
       <h2 class="w-full text-center m-0">Add new Collection</h2>
     </template>
     <form @submit.prevent="createNewCollection">
-      <div
-        v-if="guidelinesAreLoaded"
-        class="input-container"
-        v-for="(property, index) in getCollectionFields('text')"
-        v-show="property.required === true"
-      >
-        <div class="flex align-items-center gap-3 mb-3">
-          <label :for="property.name" class="font-semibold w-6rem"
-            >{{ capitalize(property.name) }}
-          </label>
-          <InputText
-            :id="property.name"
-            :required="property.required"
-            :autofocus="index === 0"
-            :key="property.name"
-            v-model="newCollectionData[property.name]"
-            class="flex-auto"
-            spellcheck="false"
-          />
+      <div v-if="guidelinesAreLoaded">
+        <div class="select-label-container flex flex-column align-items-center">
+          <h4 class="mt-0">Select labels</h4>
+          <MultiSelect
+            v-model="newCollectionData.nodeLabels"
+            :options="availableCollectionLabels"
+            display="chip"
+            :invalid="
+              availableCollectionLabels?.length > 0 && newCollectionData?.nodeLabels?.length === 0
+            "
+            placeholder="Select labels"
+            class="text-center"
+            :filter="false"
+          >
+            <template #chip="{ value }">
+              <Tag :value="value" severity="contrast" class="mr-1" />
+            </template>
+          </MultiSelect>
+        </div>
+        <div class="select-data-container">
+          <h4 class="text-center">Add data</h4>
+          <div
+            class="input-container flex align-items-center gap-3 mb-3"
+            v-for="(property, index) in getCollectionFields('text')"
+          >
+            <label :for="property.name" class="font-semibold w-6rem"
+              >{{ capitalize(property.name) }}
+            </label>
+            <InputText
+              :id="property.name"
+              :required="property.required"
+              :autofocus="index === 0"
+              :key="property.name"
+              v-model="newCollectionData.data[property.name] as string"
+              class="flex-auto"
+              spellcheck="false"
+            />
+          </div>
         </div>
       </div>
+
       <div v-else class="skeleton-container">
         <div v-for="_n in 4" class="flex flex-row gap-2">
           <Skeleton class="mb-3" height="2rem" width="10rem"></Skeleton>
@@ -180,6 +225,7 @@ function handleSearchInput(): void {
           label="Create"
           title="Create new text"
           :loading="asyncOperationRunning"
+          :disabled="!inputIsValid"
         ></Button>
       </div>
     </form>
