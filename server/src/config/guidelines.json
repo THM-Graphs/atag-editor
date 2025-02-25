@@ -2,8 +2,9 @@
   "texts": {
     "additionalLabels": ["CommentText", "LetterText"]
   },
-  "collections": {
-    "text": {
+  "collections": [
+    {
+      "type": "text",
       "additionalLabel": "Letter",
       "properties": [
         {
@@ -36,7 +37,8 @@
         }
       ]
     },
-    "comment": {
+    {
+      "type": "comment",
       "additionalLabel": "Comment",
       "properties": [
         {
@@ -48,7 +50,7 @@
         }
       ]
     }
-  },
+  ],
   "annotations": {
     "types": [
       {

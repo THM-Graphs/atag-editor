@@ -41,7 +41,8 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
-const { guidelines, getAvailableTextLabels, initializeGuidelines } = useGuidelinesStore();
+const { guidelines, getAvailableTextLabels, getCollectionFields, initializeGuidelines } =
+  useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
 
@@ -60,9 +61,9 @@ const availableTextLabels = computed(getAvailableTextLabels);
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
   if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
-    return guidelines.value ? guidelines.value.collections['text'].properties : [];
+    return guidelines.value ? getCollectionFields('text') : [];
   } else {
-    return guidelines.value ? guidelines.value.collections['comment'].properties : [];
+    return guidelines.value ? getCollectionFields('comment') : [];
   }
 });
 

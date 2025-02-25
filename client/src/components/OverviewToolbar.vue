@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
@@ -20,6 +21,8 @@ const guidelines = ref<IGuidelines>({} as IGuidelines);
 const dialogIsVisible = ref<boolean>(false);
 const guidelinesAreLoaded = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
+
+const { getCollectionFields } = useGuidelinesStore();
 
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
@@ -84,7 +87,7 @@ async function getGuidelines(): Promise<void> {
 
     // TODO: Load guidelines only once? Should be enough...
     // Initialize newCollectionData with empty strings to include them in form data
-    guidelines.value.collections['text'].properties.forEach(property => {
+    getCollectionFields('text').forEach(property => {
       newCollectionData.value[property.name] = '';
     });
 
@@ -139,7 +142,7 @@ function handleSearchInput(): void {
       <div
         v-if="guidelinesAreLoaded"
         class="input-container"
-        v-for="(property, index) in guidelines.collections['text'].properties"
+        v-for="(property, index) in getCollectionFields('text')"
         v-show="property.required === true"
       >
         <div class="flex align-items-center gap-3 mb-3">

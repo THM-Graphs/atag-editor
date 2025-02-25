@@ -15,7 +15,9 @@ const guidelineService: GuidelinesService = new GuidelinesService();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const additionalLabel = guidelines.collections['text'].additionalLabel;
+    // TODO: Catch when collection config is not found (empty string will throw errors)
+    const additionalLabel =
+      guidelines.collections.find(c => c.type === 'text')?.additionalLabel ?? '';
 
     const collections: CollectionAccessObject[] =
       await collectionService.getCollectionsWithTexts(additionalLabel);
@@ -31,7 +33,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const additionalLabel = guidelines.collections['text'].additionalLabel;
+    // TODO: Catch when collection config is not found (empty string will throw errors)
+    const additionalLabel =
+      guidelines.collections.find(c => c.type === 'text')?.additionalLabel ?? '';
 
     const newCollection: ICollection = await collectionService.createNewCollection(
       data,

@@ -70,7 +70,7 @@ export function useGuidelinesStore() {
    * @return {CollectionProperty[]} The field configurations for the collection type.
    */
   function getCollectionFields(type: string): CollectionProperty[] {
-    return guidelines.value.collections[type].properties;
+    return guidelines.value?.collections.find(c => c.type === type)?.properties ?? [];
   }
 
   /**

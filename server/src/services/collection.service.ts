@@ -4,7 +4,12 @@ import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionAccessObject, CollectionPostData, Text } from '../models/types.js';
+import {
+  CollectionAccessObject,
+  CollectionPostData,
+  CollectionProperty,
+  Text,
+} from '../models/types.js';
 
 type CollectionTextObject = {
   all: Text[];
@@ -145,10 +150,11 @@ export default class CollectionService {
     additionalLabel: string,
   ): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
+    const requiredFields: CollectionProperty[] = await guidelineService.getCollectionFields('text');
 
     // Add default properties if they are not sent in the request
-    guidelines.collections['text'].properties.forEach(property => {
+    requiredFields.forEach(property => {
       if (!data[property.name]) {
         data[property.name] = '';
       }
