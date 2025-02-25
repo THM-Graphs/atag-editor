@@ -53,12 +53,20 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the available labels that can be assigned to a Collection node.
+   *
+   * @return {string[]} The available labels.
+   */
+  function getAvailableCollectionLabels(): string[] {
+    return guidelines.value?.collections.map(collection => collection.additionalLabel) ?? [];
+  }
+
+  /**
    * Retrieves the available labels that can be assigned to a no Text node.
    *
    * @return {string[]} The available labels.
    */
   function getAvailableTextLabels(): string[] {
-    console.log(guidelines.value);
     return guidelines.value.texts.additionalLabels;
   }
 
@@ -100,6 +108,7 @@ export function useGuidelinesStore() {
     guidelines,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableCollectionLabels,
     getAvailableTextLabels,
     getCollectionFields,
     initializeGuidelines,

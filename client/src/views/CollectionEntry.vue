@@ -41,8 +41,13 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
-const { guidelines, getAvailableTextLabels, getCollectionFields, initializeGuidelines } =
-  useGuidelinesStore();
+const {
+  guidelines,
+  getAvailableCollectionLabels,
+  getAvailableTextLabels,
+  getCollectionFields,
+  initializeGuidelines,
+} = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
 
@@ -56,6 +61,7 @@ const isLoading = ref<boolean>(true);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
+const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
 // TODO: Still a workaround, should be mady dynamic.
@@ -378,6 +384,33 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     >
       <SplitterPanel :size="10" class="overflow-y-auto">
         <div class="properties-pane w-full">
+          <h2 class="text-center">Collection labels</h2>
+          <div v-if="mode === 'edit'" class="flex justify-content-center">
+            <MultiSelect
+              v-model="collectionAccessObject.collection.nodeLabels"
+              :options="availableCollectionLabels"
+              display="chip"
+              placeholder="Select labels"
+              :filter="false"
+            >
+              <template #chip="{ value }">
+                <Tag :value="value" severity="contrast" class="mr-1" />
+              </template>
+            </MultiSelect>
+          </div>
+          <div v-else class="flex gap-2 justify-content-center">
+            <template
+              v-if="collectionAccessObject.collection.nodeLabels.length > 0"
+              v-for="label in collectionAccessObject.collection.nodeLabels"
+              :key="label"
+            >
+              <Tag :value="label" severity="contrast" class="mr-1" />
+            </template>
+            <div v-else>
+              <i>This Collection has no labels yet.</i>
+            </div>
+          </div>
+
           <h2 class="text-center">Properties</h2>
           <form>
             <div class="flex align-items-center gap-3 mb-3">

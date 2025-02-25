@@ -214,6 +214,11 @@ export default class CollectionService {
     
     SET c = $collection.data
 
+    WITH c, [l IN labels(c) WHERE l <> 'Collection'] AS labelsToRemove
+
+    CALL apoc.create.removeLabels(c, labelsToRemove) YIELD node AS nodeBefore
+    CALL apoc.create.addLabels(c, $collection.nodeLabels) YIELD node AS nodeAfter
+
     WITH c
 
     // Delete Text nodes
