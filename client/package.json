@@ -13,7 +13,7 @@
     "@vueuse/core": "^10.10.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
-    "primevue": "^4.0.0-rc.2",
+    "primevue": "^4.3.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.2"
   },
