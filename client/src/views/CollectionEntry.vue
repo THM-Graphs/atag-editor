@@ -9,7 +9,13 @@ import {
 import { useGuidelinesStore } from '../store/guidelines';
 import CollectionError from '../components/CollectionError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { areObjectsEqual, buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
+import {
+  areObjectsEqual,
+  areSetsEqual,
+  buildFetchUrl,
+  capitalize,
+  cloneDeep,
+} from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   CollectionAccessObject,
@@ -208,7 +214,15 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 function hasUnsavedChanges(): boolean {
-  // TODO: When Collection labels should be editable, this needs to be catched here
+  // Compare collection node labels
+  if (
+    !areSetsEqual(
+      new Set(collectionAccessObject.value.collection.nodeLabels),
+      new Set(initialCollectionAccessObject.value.collection.nodeLabels),
+    )
+  ) {
+    return true;
+  }
 
   // Compare collection properties
   if (
