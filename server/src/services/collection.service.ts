@@ -145,12 +145,10 @@ export default class CollectionService {
    * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
    */
   // TODO: Make additional label(s) dynamic
-  public async createNewCollection(
-    data: Record<string, string>,
-    additionalLabel: string,
-  ): Promise<ICollection> {
+  public async createNewCollection(data: ICollection, labels: string[]): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
 
+    // TODO: Fields need to match the given Label or even a combination of them
     const requiredFields: CollectionProperty[] = await guidelineService.getCollectionFields('text');
 
     // Add default properties if they are not sent in the request
@@ -162,12 +160,14 @@ export default class CollectionService {
 
     data = { ...data, uuid: crypto.randomUUID() };
 
+    labels.push('Collection');
+
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} $data)
+    CALL apoc.create.node($labels, $data) YIELD node as c
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { data });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, labels });
 
     return result.records[0]?.get('collection');
   }

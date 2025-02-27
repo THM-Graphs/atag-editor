@@ -5,7 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionAccessObject, CollectionPostData } from '../models/types.js';
+import { Collection, CollectionAccessObject, CollectionPostData } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -29,17 +29,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const data: Record<string, string> = { ...req.body };
+  const { data, nodeLabels }: Collection = req.body;
 
   try {
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    // TODO: Catch when collection config is not found (empty string will throw errors)
-    const additionalLabel =
-      guidelines.collections.find(c => c.type === 'text')?.additionalLabel ?? '';
-
     const newCollection: ICollection = await collectionService.createNewCollection(
       data,
-      additionalLabel,
+      nodeLabels,
     );
 
     res.status(201).json(newCollection);
