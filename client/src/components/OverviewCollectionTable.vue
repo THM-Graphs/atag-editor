@@ -35,7 +35,11 @@ onMounted(async (): Promise<void> => {
   await getGuidelines();
 
   // TODO: This approach is bad since possible data keys are reserved...
-  columns.value = ['nodeLabels', ...getCollectionConfigFields('Letter').map(f => f.name), 'texts'];
+  columns.value = [
+    'nodeLabels',
+    ...getCollectionConfigFields(['Letter']).map(f => f.name),
+    'texts',
+  ];
 });
 
 function getColumnWidth(columnName: string): string {

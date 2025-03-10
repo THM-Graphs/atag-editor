@@ -351,7 +351,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 
 function addAdditionalText(): void {
   // TODO: This should be dynamic since the key is not always 'comment'
-  const defaultFields: CollectionProperty[] = getCollectionConfigFields('Comment');
+  const defaultFields: CollectionProperty[] = getCollectionConfigFields(['Comment']);
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: CollectionProperty) => {

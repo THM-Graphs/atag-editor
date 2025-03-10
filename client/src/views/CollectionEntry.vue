@@ -73,9 +73,9 @@ const availableTextLabels = computed(getAvailableTextLabels);
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
   if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
-    return guidelines.value ? getCollectionConfigFields('Letter') : [];
+    return guidelines.value ? getCollectionConfigFields(['Letter']) : [];
   } else {
-    return guidelines.value ? getCollectionConfigFields('Comment') : [];
+    return guidelines.value ? getCollectionConfigFields(['Comment']) : [];
   }
 });
 

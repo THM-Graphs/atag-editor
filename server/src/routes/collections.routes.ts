@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
     // TODO: Catch when collection config is not found (empty string will throw errors)
     const additionalLabel =
-      guidelines.collections.find(c => c.additionalLabel === 'Letter')?.additionalLabel ?? '';
+      guidelines.collections.types.find(c => c.additionalLabel === 'Letter')?.additionalLabel ?? '';
 
     const collections: CollectionAccessObject[] =
       await collectionService.getCollectionsWithTexts(additionalLabel);

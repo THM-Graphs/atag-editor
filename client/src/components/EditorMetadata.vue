@@ -25,8 +25,8 @@ const tableData: CollectionTableEntry[] = getCollectionTableData();
 function getCollectionTableData() {
   // TODO: Still a workaround, should be mady dynamic.
   const fields: CollectionProperty[] = correspondingCollection.value.nodeLabels.includes('Letter')
-    ? getCollectionConfigFields('Letter')
-    : getCollectionConfigFields('Comment');
+    ? getCollectionConfigFields(['Letter'])
+    : getCollectionConfigFields(['Comment']);
 
   console.log(fields);
 

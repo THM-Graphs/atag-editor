@@ -58,7 +58,7 @@ export function useGuidelinesStore() {
    * @return {string[]} The available labels.
    */
   function getAvailableCollectionLabels(): string[] {
-    return guidelines.value?.collections.map(collection => collection.additionalLabel) ?? [];
+    return guidelines.value?.collections.types.map(collection => collection.additionalLabel) ?? [];
   }
 
   /**
@@ -71,16 +71,26 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves field configuration of a collection with given additional node label. Contains information about rendering behaviour as well as validation rules.
+   * Retrieves field configuration of a collection with given additional node labels. Contains information about rendering behaviour as well as validation rules.
    * Used for rendering data tables or input fields in forms.
    *
-   * @param {string} nodeLabel - The additional label of the collection.
+   * @param {string[]} nodeLabels - The additional labels of the collection.
    * @return {CollectionProperty[]} The field configurations for the collection type.
    */
-  function getCollectionConfigFields(nodeLabel: string): CollectionProperty[] {
-    return (
-      guidelines.value?.collections.find(c => c.additionalLabel === nodeLabel)?.properties ?? []
+  function getCollectionConfigFields(nodeLabels: string[]): CollectionProperty[] {
+    const system: CollectionProperty[] = guidelines?.value.collections.properties.system;
+    const base: CollectionProperty[] = guidelines?.value.collections.properties.base;
+    const additional: CollectionProperty[] = guidelines?.value.collections.types.reduce(
+      (total: CollectionProperty[], curr) => {
+        if (nodeLabels.includes(curr.additionalLabel)) {
+          total.push(...curr.properties);
+        }
+        return total;
+      },
+      [],
     );
+
+    return [...system, ...base, ...additional];
   }
 
   /**
