@@ -149,7 +149,8 @@ export default class CollectionService {
     const guidelineService: GuidelinesService = new GuidelinesService();
 
     // TODO: Fields need to match the given Label or even a combination of them
-    const requiredFields: CollectionProperty[] = await guidelineService.getCollectionFields('text');
+    const requiredFields: CollectionProperty[] =
+      await guidelineService.getCollectionConfigFields('Letter');
 
     // Add default properties if they are not sent in the request
     requiredFields.forEach(property => {

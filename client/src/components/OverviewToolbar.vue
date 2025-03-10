@@ -17,7 +17,7 @@ import { Collection } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
-const { getAvailableCollectionLabels, getCollectionFields } = useGuidelinesStore();
+const { getAvailableCollectionLabels, getCollectionConfigFields } = useGuidelinesStore();
 
 const searchInput = ref<string>('');
 const newCollectionData = ref<Collection>(null);
@@ -39,7 +39,7 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsValid: boolean =
     availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
 
-  const requiredFieldsValid: boolean = getCollectionFields('text')
+  const requiredFieldsValid: boolean = getCollectionConfigFields('Letter')
     .filter(field => field.required)
     .every(field => newCollectionData.value?.data[field.name]?.toString().trim() !== '');
 
@@ -112,7 +112,9 @@ async function getGuidelines(): Promise<void> {
     // TODO: Load guidelines only once? Should be enough...
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
-      data: Object.fromEntries(getCollectionFields('text').map(f => [f.name, ''])) as ICollection,
+      data: Object.fromEntries(
+        getCollectionConfigFields('Letter').map(f => [f.name, '']),
+      ) as ICollection,
       nodeLabels: [],
     };
 
@@ -187,7 +189,7 @@ function handleSearchInput(): void {
           <h4 class="text-center">Add data</h4>
           <div
             class="input-container flex align-items-center gap-3 mb-3"
-            v-for="(property, index) in getCollectionFields('text')"
+            v-for="(property, index) in getCollectionConfigFields('Letter')"
           >
             <label :for="property.name" class="font-semibold w-6rem"
               >{{ capitalize(property.name) }}

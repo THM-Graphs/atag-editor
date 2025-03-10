@@ -51,7 +51,7 @@ const {
   guidelines,
   getAvailableCollectionLabels,
   getAvailableTextLabels,
-  getCollectionFields,
+  getCollectionConfigFields,
   initializeGuidelines,
 } = useGuidelinesStore();
 
@@ -73,9 +73,9 @@ const availableTextLabels = computed(getAvailableTextLabels);
 // TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
   if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
-    return guidelines.value ? getCollectionFields('text') : [];
+    return guidelines.value ? getCollectionConfigFields('Letter') : [];
   } else {
-    return guidelines.value ? getCollectionFields('comment') : [];
+    return guidelines.value ? getCollectionConfigFields('Comment') : [];
   }
 });
 

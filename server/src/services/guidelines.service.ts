@@ -6,16 +6,16 @@ import { CollectionProperty } from '../models/types.js';
 
 export default class GuidelinesService {
   /**
-   * Retrieves field configuration of a collection of given type. Contains information about validation rules (required/not required).
+   * Retrieves field configuration of a collection with given additional node label. Contains information about validation rules (required/not required).
    * Used for applying default data to to-be-created collections when they are missing
    *
-   * @param {string} type - The type of the collection.
+   * @param {string} nodeLabel - The additional label of the collection.
    * @return {Promise<CollectionProperty[]>} The field configurations for the collection type.
    */
-  public async getCollectionFields(type: string): Promise<CollectionProperty[]> {
+  public async getCollectionConfigFields(nodeLabel: string): Promise<CollectionProperty[]> {
     const guidelines: IGuidelines = await this.getGuidelines();
 
-    return guidelines.collections.find(c => c.type === type)?.properties ?? [];
+    return guidelines.collections.find(c => c.additionalLabel === nodeLabel)?.properties ?? [];
   }
 
   /**

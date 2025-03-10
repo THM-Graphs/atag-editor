@@ -77,7 +77,7 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionFields } =
+const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionConfigFields } =
   useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -351,7 +351,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 
 function addAdditionalText(): void {
   // TODO: This should be dynamic since the key is not always 'comment'
-  const defaultFields: CollectionProperty[] = getCollectionFields('comment');
+  const defaultFields: CollectionProperty[] = getCollectionConfigFields('Comment');
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: CollectionProperty) => {

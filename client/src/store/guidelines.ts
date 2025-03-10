@@ -71,14 +71,16 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves field configuration of a collection of given type. Contains information about rendering behaviour as well as validation rules.
+   * Retrieves field configuration of a collection with given additional node label. Contains information about rendering behaviour as well as validation rules.
    * Used for rendering data tables or input fields in forms.
    *
-   * @param {string} type - The type of the collection.
+   * @param {string} nodeLabel - The additional label of the collection.
    * @return {CollectionProperty[]} The field configurations for the collection type.
    */
-  function getCollectionFields(type: string): CollectionProperty[] {
-    return guidelines.value?.collections.find(c => c.type === type)?.properties ?? [];
+  function getCollectionConfigFields(nodeLabel: string): CollectionProperty[] {
+    return (
+      guidelines.value?.collections.find(c => c.additionalLabel === nodeLabel)?.properties ?? []
+    );
   }
 
   /**
@@ -110,7 +112,7 @@ export function useGuidelinesStore() {
     getAnnotationFields,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
-    getCollectionFields,
+    getCollectionConfigFields,
     initializeGuidelines,
   };
 }

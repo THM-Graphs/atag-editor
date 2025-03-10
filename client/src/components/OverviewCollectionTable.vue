@@ -18,7 +18,7 @@ const props = defineProps<{
   collections: CollectionAccessObject[] | null;
 }>();
 
-const { guidelines, getCollectionFields } = useGuidelinesStore();
+const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 const columns = ref<string[]>([]);
 
 const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
@@ -35,7 +35,7 @@ onMounted(async (): Promise<void> => {
   await getGuidelines();
 
   // TODO: This approach is bad since possible data keys are reserved...
-  columns.value = ['nodeLabels', ...getCollectionFields('text').map(f => f.name), 'texts'];
+  columns.value = ['nodeLabels', ...getCollectionConfigFields('Letter').map(f => f.name), 'texts'];
 });
 
 function getColumnWidth(columnName: string): string {
