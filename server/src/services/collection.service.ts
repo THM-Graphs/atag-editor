@@ -139,36 +139,38 @@ export default class CollectionService {
   }
 
   /**
-   * Creates a new collection node with given data as properties.
+   * Creates a new collection node with the given properties and labels.
    *
-   * @param {Record<string, string>} data - JSON data for the new collection node.
-   * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
+   * Adds default values for required properties if they are not provided.
+   *
+   * @param {ICollection} data - The data to set for the collection node.
+   * @param {string[]} nodeLabels - The additional labels to add to the collection node.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<ICollection>} A promise that resolves to the created collection node.
    */
-  // TODO: Make additional label(s) dynamic
-  public async createNewCollection(data: ICollection, labels: string[]): Promise<ICollection> {
+  public async createNewCollection(data: ICollection, nodeLabels: string[]): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
 
-    const requiredFields: CollectionProperty[] = await guidelineService.getCollectionConfigFields([
-      'Letter',
-    ]);
+    const requiredFields: CollectionProperty[] =
+      await guidelineService.getCollectionConfigFields(nodeLabels);
 
     // Add default properties if they are not sent in the request
     requiredFields.forEach(property => {
-      if (!data[property.name]) {
+      if (!(property.name in data)) {
         data[property.name] = '';
       }
     });
 
     data = { ...data, uuid: crypto.randomUUID() };
 
-    labels.push('Collection');
+    nodeLabels.push('Collection');
 
     const query: string = `
-    CALL apoc.create.node($labels, $data) YIELD node as c
+    CALL apoc.create.node($nodeLabels, $data) YIELD node as c
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, labels });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, nodeLabels });
 
     return result.records[0]?.get('collection');
   }

@@ -13,11 +13,12 @@ import Toolbar from 'primevue/toolbar';
 import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
-import { Collection } from '../models/types';
+import { Collection, CollectionProperty } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
-const { getAvailableCollectionLabels, getCollectionConfigFields } = useGuidelinesStore();
+const { getAllCollectionConfigFields, getAvailableCollectionLabels, getCollectionConfigFields } =
+  useGuidelinesStore();
 
 const searchInput = ref<string>('');
 const newCollectionData = ref<Collection>(null);
@@ -29,6 +30,10 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
+const dialogInputFields: ComputedRef<CollectionProperty[]> = computed(() =>
+  getCollectionConfigFields(newCollectionData.value.nodeLabels),
+);
+
 // TODO: replace this with general form handling in the future
 // Used for enabling/disabling buttons when form inputs don't satisfy requirements
 const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
@@ -39,19 +44,42 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsValid: boolean =
     availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
 
-  const requiredFieldsValid: boolean = getCollectionConfigFields(['Letter'])
+  const requiredFieldsValid: boolean = dialogInputFields.value
     .filter(field => field.required)
     .every(field => newCollectionData.value?.data[field.name]?.toString().trim() !== '');
 
   return selectedLabelsValid && requiredFieldsValid;
 });
 
+/**
+ * Called before saving the collection to remove any data entries that are not configured
+ * according to the current node labels of the collection.
+ *
+ * This is necessary since on dialog showing the data object was filled with empty data entries temporarily
+ * to form a data pool for the dynamically rendered input fields.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function removeUnnecessaryDataBeforeSave(): void {
+  // Get configured field names that are allowed to be saved
+  const configuredFieldNames: string[] = getCollectionConfigFields(
+    newCollectionData.value.nodeLabels,
+  ).map(f => f.name);
+
+  // Remove data entries that are not configured
+  Object.keys(newCollectionData.value.data).forEach(key => {
+    if (!configuredFieldNames.includes(key) && key !== 'uuid') {
+      delete newCollectionData.value.data[key];
+    }
+  });
+}
+
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
-  console.log(cloneDeep(newCollectionData.value));
+  removeUnnecessaryDataBeforeSave();
 
-  return;
+  console.log(cloneDeep(newCollectionData.value));
 
   asyncOperationRunning.value = true;
 
@@ -113,7 +141,7 @@ async function getGuidelines(): Promise<void> {
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
       data: Object.fromEntries(
-        getCollectionConfigFields(['Letter']).map(f => [f.name, '']),
+        getAllCollectionConfigFields().map(f => [f.name, '']),
       ) as ICollection,
       nodeLabels: [],
     };
@@ -189,7 +217,7 @@ function handleSearchInput(): void {
           <h4 class="text-center">Add data</h4>
           <div
             class="input-container flex align-items-center gap-3 mb-3"
-            v-for="(property, index) in getCollectionConfigFields(['Letter'])"
+            v-for="(property, index) in dialogInputFields"
           >
             <label :for="property.name" class="font-semibold w-6rem"
               >{{ capitalize(property.name) }}

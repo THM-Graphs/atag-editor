@@ -49,6 +49,7 @@ const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
 const {
   guidelines,
+  getAllCollectionConfigFields,
   getAvailableCollectionLabels,
   getAvailableTextLabels,
   getCollectionConfigFields,
@@ -70,13 +71,10 @@ const asyncOperationRunning = ref<boolean>(false);
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
-// TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
-  if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
-    return guidelines.value ? getCollectionConfigFields(['Letter']) : [];
-  } else {
-    return guidelines.value ? getCollectionConfigFields(['Comment']) : [];
-  }
+  return guidelines.value
+    ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
+    : [];
 });
 
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
@@ -102,6 +100,24 @@ onMounted(async (): Promise<void> => {
 
   isLoading.value = false;
 });
+
+/**
+ * Fills in any missing collection properties with an empty string.
+ *
+ * Called when entering edit mode to create a full data object from which the dynamically rendered fields
+ * can get their values from.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function enrichCollectionData(): void {
+  const allPossibleFields = getAllCollectionConfigFields();
+
+  allPossibleFields.forEach(field => {
+    if (!(field.name in collectionAccessObject.value.collection.data)) {
+      collectionAccessObject.value.collection.data[field.name] = '';
+    }
+  });
+}
 
 async function getGuidelines(): Promise<void> {
   try {
@@ -172,30 +188,6 @@ async function handleCancelChanges(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  // return;
-  // if (!hasUnsavedChanges()) {
-  //   console.log('no changes made, no request needed');
-  //   return;
-  // }
-
-  // const createdTexts = collectionAccessObject.value.texts.filter(
-  //   (text: Text) =>
-  //     !initialCollectionAccessObject.value.texts.some(
-  //       (initialText: Text) => initialText.data.uuid === text.data.uuid,
-  //     ),
-  // );
-
-  // const deletedTexts = initialCollectionAccessObject.value.texts.filter(
-  //   (initialText: Text) =>
-  //     !collectionAccessObject.value.texts.some(
-  //       (text: Text) => text.data.uuid === initialText.data.uuid,
-  //     ),
-  // );
-
-  // console.log('Created: ', createdTexts);
-  // console.log('Deleted: ', deletedTexts);
-  // console.log('Total: ', collectionAccessObject.value.texts);
-
   asyncOperationRunning.value = true;
 
   try {
@@ -281,6 +273,8 @@ function preventUserFromRouteLeaving(): boolean {
 }
 
 async function saveCollection(): Promise<void> {
+  removeUnnecessaryDataBeforeSave();
+
   const collectionPostData: CollectionPostData = {
     data: collectionAccessObject.value,
     initialData: initialCollectionAccessObject.value,
@@ -316,7 +310,34 @@ function showMessage(result: 'success' | 'error', error?: Error) {
 }
 
 function toggleEditMode(): void {
+  if (mode.value === 'view') {
+    enrichCollectionData();
+  }
+
   mode.value = mode.value === 'view' ? 'edit' : 'view';
+}
+
+/**
+ * Called before saving the collection to remove any data entries that are not configured
+ * according to the current node labels of the collection.
+ *
+ * This is necessary since on edit mode toggling the data object was filled with empty data entries temporarily
+ * to form a data pool for the dynamically rendered input fields (see `enrichCollectionData`).
+ *
+ * @returns {void} This function does not return any value.
+ */
+function removeUnnecessaryDataBeforeSave(): void {
+  // Get configured field names that are allowed to be saved
+  const configuredFieldNames: string[] = getCollectionConfigFields(
+    collectionAccessObject.value.collection.nodeLabels,
+  ).map(f => f.name);
+
+  // Remove data entries that are not configured
+  Object.keys(collectionAccessObject.value.collection.data).forEach(key => {
+    if (!configuredFieldNames.includes(key) && key !== 'uuid') {
+      delete collectionAccessObject.value.collection.data[key];
+    }
+  });
 }
 
 async function getCollection(): Promise<void> {

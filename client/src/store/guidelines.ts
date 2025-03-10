@@ -94,6 +94,20 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves all available field configurations for collection properties.
+   *
+   * This method gathers all available collection labels and fetches their corresponding
+   * field configurations, which are used for rendering data tables or input fields in forms.
+   *
+   * @return {CollectionProperty[]} The field configurations for all available collection types.
+   */
+  function getAllCollectionConfigFields(): CollectionProperty[] {
+    const availableCollectionLabels: string[] = getAvailableCollectionLabels();
+
+    return getCollectionConfigFields(availableCollectionLabels);
+  }
+
+  /**
    * Groups the annotation types by category.
    *
    * @return {Record<string, AnnotationType[]>} An object where the keys are the categories and the values are arrays of annotation types belonging to that category.
@@ -118,6 +132,7 @@ export function useGuidelinesStore() {
   return {
     groupedAnnotationTypes,
     guidelines,
+    getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,
     getAvailableCollectionLabels,
