@@ -18,6 +18,7 @@
     "types": [
       {
         "additionalLabel": "Letter",
+        "level": "primary",
         "properties": [
           {
             "name": "status",
@@ -44,6 +45,7 @@
       },
       {
         "additionalLabel": "Comment",
+        "level": "secondary",
         "properties": []
       }
     ]

@@ -13,6 +13,9 @@ export interface IGuidelines {
     };
     types: {
       additionalLabel: string;
+      level:
+        | 'primary'
+        | 'secondary' /* Quick fix to determine which collections should be loaded into the overview table */;
       properties: CollectionProperty[];
     }[];
   };

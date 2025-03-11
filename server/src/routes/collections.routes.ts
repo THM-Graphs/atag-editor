@@ -15,12 +15,16 @@ const guidelineService: GuidelinesService = new GuidelinesService();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    // TODO: Catch when collection config is not found (empty string will throw errors)
-    const additionalLabel =
-      guidelines.collections.types.find(c => c.additionalLabel === 'Letter')?.additionalLabel ?? '';
+
+    // Get Collection type that is shown in the table and does not only exist as anchor to additional text
+    // Needs to be overhauled anyway when whole hierarchies should be handled in the future
+    // Careful, a collection with level "primary" MUST exist in the guidelines with this solution
+    const primaryCollectionLabel = guidelines.collections.types.find(
+      t => t.level === 'primary',
+    )!.additionalLabel;
 
     const collections: CollectionAccessObject[] =
-      await collectionService.getCollectionsWithTexts(additionalLabel);
+      await collectionService.getCollectionsWithTexts(primaryCollectionLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {

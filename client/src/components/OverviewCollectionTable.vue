@@ -34,10 +34,16 @@ const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
 onMounted(async (): Promise<void> => {
   await getGuidelines();
 
+  // Get Collection type that is shown in the table and does not only exist as anchor to additional text
+  // Needs to be overhauled anyway when whole hierarchies should be handled in the future
+  const primaryCollectionLabel = guidelines.value.collections.types.find(
+    t => t.level === 'primary',
+  )?.additionalLabel;
+
   // TODO: This approach is bad since possible data keys are reserved...
   columns.value = [
     'nodeLabels',
-    ...getCollectionConfigFields(['Letter']).map(f => f.name),
+    ...getCollectionConfigFields([primaryCollectionLabel]).map(f => f.name),
     'texts',
   ];
 });
