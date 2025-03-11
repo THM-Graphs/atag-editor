@@ -31,7 +31,6 @@ export default class TextService {
    * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
    */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
-    // TODO: "Letter" label should be made dynamic
     const query: string = `
     MATCH (t:Text {uuid: $uuid})
     MATCH (t)-[:PART_OF]->(c:Collection)
