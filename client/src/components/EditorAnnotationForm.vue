@@ -120,16 +120,16 @@ watch(
   (newTexts, oldTexts) => {
     // Add new text if it doesn't already exist
     newTexts.forEach(text => {
-      if (!additionalTextStatusObject.value.has(text.data.collection.uuid)) {
-        additionalTextStatusObject.value.set(text.data.collection.uuid, 'collapsed');
+      if (!additionalTextStatusObject.value.has(text.collection.data.uuid)) {
+        additionalTextStatusObject.value.set(text.collection.data.uuid, 'collapsed');
       }
     });
 
     // Remove texts that no longer exist
     if (oldTexts) {
       oldTexts.forEach(text => {
-        if (!newTexts.some(newText => newText.data.collection.uuid === text.data.collection.uuid)) {
-          additionalTextStatusObject.value.delete(text.data.collection.uuid);
+        if (!newTexts.some(newText => newText.collection.data.uuid === text.collection.data.uuid)) {
+          additionalTextStatusObject.value.delete(text.collection.data.uuid);
         }
       });
     }
@@ -366,14 +366,17 @@ function addAdditionalText(): void {
   });
 
   annotation.data.additionalTexts.push({
-    nodeLabel: additionalTextInputObject.value.inputLabel,
-    data: {
-      collection: {
+    collection: {
+      nodeLabels: [additionalTextInputObject.value.inputLabel],
+      data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
         label: `${additionalTextInputObject.value.inputLabel} for annotation ${annotation.data.properties.uuid}`,
       } as ICollection,
-      text: {
+    },
+    text: {
+      nodeLabels: [],
+      data: {
         uuid: crypto.randomUUID(),
         text: additionalTextInputObject.value.inputText,
       } as IText,
@@ -395,7 +398,7 @@ function cancelAdditionalTextOperation() {
 
 function handleDeleteAdditionalText(collectionUuid: string): void {
   annotation.data.additionalTexts = annotation.data.additionalTexts.filter(
-    t => t.data.collection.uuid !== collectionUuid,
+    t => t.collection.data.uuid !== collectionUuid,
   );
 }
 </script>
@@ -597,40 +600,41 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       </template>
       <template
         v-for="additionalText in annotation.data.additionalTexts"
-        :key="additionalText.data.collection.uuid"
+        :key="additionalText.collection.data.uuid"
       >
         <div class="additional-text-entry">
-          <div
-            class="additional-text-header flex justify-content-between align-items-center font-semibold"
-          >
-            <span>
-              {{ camelCaseToTitleCase(additionalText.nodeLabel) }}
-            </span>
+          <div class="additional-text-header flex justify-content-between align-items-center">
+            <span v-if="additionalText.collection.nodeLabels.length > 0" class="font-semibold">{{
+              additionalText.collection.nodeLabels
+                .map((l: string) => camelCaseToTitleCase(l))
+                .join(' | ')
+            }}</span>
+            <span v-else class="font-italic"> No label provided yet... </span>
             <Button
               icon="pi pi-times"
               severity="danger"
               title="Remove this text from annotation"
-              @click="handleDeleteAdditionalText(additionalText.data.collection.uuid)"
+              @click="handleDeleteAdditionalText(additionalText.collection.data.uuid)"
             />
           </div>
           <div class="flex align-items-center gap-2 overflow">
             <a
-              :href="`/texts/${additionalText.data.text.uuid}`"
+              :href="`/texts/${additionalText.text.data.uuid}`"
               title="Open text in new editor tab"
               class="flex align-items-center gap-1"
               target="_blank"
             >
               <div
-                :class="`preview ${additionalTextStatusObject.get(additionalText.data.collection.uuid)}`"
+                :class="`preview ${additionalTextStatusObject.get(additionalText.collection.data.uuid)}`"
               >
-                {{ additionalText.data.text.text }}
+                {{ additionalText.text.data.text }}
               </div>
               <i class="pi pi-external-link"></i>
             </a>
           </div>
           <Button
             :icon="
-              additionalTextStatusObject.get(additionalText.data.collection.uuid) === 'collapsed'
+              additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
                 ? 'pi pi-angle-double-down'
                 : 'pi pi-angle-double-up'
             "
@@ -638,17 +642,17 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             size="small"
             class="w-full"
             :title="
-              additionalTextStatusObject.get(additionalText.data.collection.uuid) === 'collapsed'
+              additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
                 ? 'Show full text'
                 : 'Hide full text'
             "
-            @click="toggleAdditionalTextPreviewMode(additionalText.data.collection.uuid)"
+            @click="toggleAdditionalTextPreviewMode(additionalText.collection.data.uuid)"
           />
           <Message
             v-if="
               !annotation.initialData.additionalTexts
-                .map(t => t.data.collection.uuid)
-                .includes(additionalText.data.collection.uuid)
+                .map(t => t.collection.data.uuid)
+                .includes(additionalText.collection.data.uuid)
             "
             severity="warn"
           >

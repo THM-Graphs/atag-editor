@@ -116,11 +116,11 @@ export function useEditorStore() {
       );
 
       const initialAdditionalTextUuids: Set<string> = new Set(
-        a.initialData.additionalTexts.map(at => at.data.collection.uuid),
+        a.initialData.additionalTexts.map(at => at.collection.data.uuid),
       );
 
       const additionalTextUuids: Set<string> = new Set(
-        a.data.additionalTexts.map(at => at.data.collection.uuid),
+        a.data.additionalTexts.map(at => at.collection.data.uuid),
       );
 
       if (

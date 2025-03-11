@@ -2,7 +2,13 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import IAnnotation from '../models/IAnnotation.js';
-import { AdditionalText, Annotation, AnnotationData, AnnotationType } from '../models/types.js';
+import {
+  AdditionalText,
+  Annotation,
+  AnnotationData,
+  AnnotationType,
+  Text,
+} from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import ICharacter from '../models/ICharacter.js';
 
@@ -23,8 +29,8 @@ type ProcessedAnnotation = Omit<Annotation, 'data'> & {
   };
 };
 
-type CreatedAdditionalText = AdditionalText & {
-  data: {
+type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
+  text: Text & {
     characters: ICharacter[];
   };
 };
@@ -59,23 +65,26 @@ export default class AnnotationService {
 
     // Fetch additional text nodes
     UNWIND annotations AS a
-    UNWIND $guidelines.annotations.additionalTexts AS atLabel
 
     CALL {
-        WITH a, atLabel
+        WITH a
 
         MATCH (a)-[r:REFERS_TO]->(x:Collection)<-[:PART_OF]-(t2:Text)
-        WHERE atLabel IN labels(x)
+
         RETURN collect({
-            nodeLabel: atLabel,
-            data: {
-                collection: x {.*},
-                text: t2{.*}
+            collection: {
+                nodeLabels: [l IN labels(x) WHERE l <> 'Collection' | l],
+                data: x {.*}
+            }, 
+            text: {
+                nodeLabels: [l IN labels(t2) WHERE l <> 'Text' | l],
+                data: t2 {.*}
             }
-        }) AS atNodes
+        }) as additionalTexts
+
     }
 
-    WITH a, normdata, apoc.coll.flatten(collect(atNodes)) AS additionalTexts
+    WITH a, normdata, additionalTexts
 
     RETURN collect({
         properties: a {.*},
@@ -125,22 +134,23 @@ export default class AnnotationService {
       const deletedAdditionalTexts: AdditionalText[] = [];
 
       const oldTextUuids: string[] = annotation.initialData.additionalTexts.map(
-        t => t.data.collection.uuid,
+        t => t.collection.data.uuid,
       );
       const newTextUuids: string[] = annotation.data.additionalTexts.map(
-        t => t.data.collection.uuid,
+        t => t.collection.data.uuid,
       );
 
       // Characters need to be created to be saved in the query
       annotation.data.additionalTexts.forEach(additionalText => {
-        if (!oldTextUuids.includes(additionalText.data.collection.uuid)) {
+        if (!oldTextUuids.includes(additionalText.collection.data.uuid)) {
           createdAdditionalTexts.push({
             ...additionalText,
-            data: {
-              ...additionalText.data,
-              characters: additionalText.data.text.text.split('').map(c => {
+            text: {
+              nodeLabels: additionalText.text.nodeLabels,
+              data: additionalText.text.data,
+              characters: additionalText.text.data.text.split('').map(c => {
                 return {
-                  letterLabel: additionalText.data.collection.label,
+                  letterLabel: additionalText.collection.data.label,
                   text: c,
                   uuid: crypto.randomUUID(),
                 };
@@ -151,7 +161,7 @@ export default class AnnotationService {
       });
 
       annotation.initialData.additionalTexts.forEach(additionalText => {
-        if (!newTextUuids.includes(additionalText.data.collection.uuid)) {
+        if (!newTextUuids.includes(additionalText.collection.data.uuid)) {
           deletedAdditionalTexts.push(additionalText);
         }
       });
@@ -249,7 +259,7 @@ export default class AnnotationService {
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
         // Match Collection node that is the entry point into subgraph
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.data.collection.uuid})
+        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.collection.data.uuid})
         
         // Match subgraph
         CALL apoc.path.subgraphNodes(c, {
@@ -273,13 +283,13 @@ export default class AnnotationService {
 
         WITH textToCreate, a, c, t
 
-        CALL apoc.create.addLabels(c, [textToCreate.nodeLabel]) YIELD node
-        SET c += textToCreate.data.collection
-        SET t += textToCreate.data.text
+        CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node
+        SET c += textToCreate.collection.data
+        SET t += textToCreate.text.data
 
         WITH textToCreate, a, c, t
 
-        CALL atag.chains.update(t.uuid, null, null, textToCreate.data.characters, {
+        CALL atag.chains.update(t.uuid, null, null, textToCreate.text.characters, {
           textLabel: "Text",
           elementLabel: "Character",
           relationshipType: "NEXT_CHARACTER"

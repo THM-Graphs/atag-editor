@@ -5,11 +5,8 @@ import IEntity from './IEntity';
 import IText from './IText';
 
 export type AdditionalText = {
-  nodeLabel: string;
-  data: {
-    collection: ICollection;
-    text: IText;
-  };
+  collection: Collection;
+  text: Text;
 };
 
 export type Annotation = {
