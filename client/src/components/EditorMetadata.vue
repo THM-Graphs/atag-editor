@@ -162,7 +162,7 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
         </Column>
         <Column field="value" header="Value">
           <template #body="{ data }">
-            <span>{{ data['value'] }}</span>
+            <span style="white-space: normal">{{ data['value'] }}</span>
           </template>
         </Column>
       </DataTable>
