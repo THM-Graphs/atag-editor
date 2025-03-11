@@ -36,7 +36,9 @@ export default class TextService {
     MATCH (t:Text {uuid: $uuid})
     WITH t
     MATCH (t)-[:PART_OF]->(c:Collection)
-    MATCH p = (t)-[:HAS_TEXT | REFERS_TO | HAS_ANNOTATION | PART_OF*]-(:Collection:Letter)
+    MATCH p = (t)-[:HAS_TEXT | REFERS_TO | HAS_ANNOTATION | PART_OF*]-(cStart:Collection)
+    WHERE NOT ()-[:REFERS_TO]->(cStart)
+    AND NOT ()<-[:PART_OF]-(cStart)
 
     RETURN {
         text: {
