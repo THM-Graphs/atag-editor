@@ -77,7 +77,8 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionConfigFields } =
+  useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
@@ -350,10 +351,10 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 
 function addAdditionalText(): void {
   // TODO: This should be dynamic since the key is not always 'comment'
-  const fields = guidelines.value.collections['comment'].properties;
+  const defaultFields: CollectionProperty[] = getCollectionConfigFields(['Comment']);
   const newCollectionProperties: ICollection = {} as ICollection;
 
-  fields.forEach((field: CollectionProperty) => {
+  defaultFields.forEach((field: CollectionProperty) => {
     // TODO: Is this needed? Or should Collection Properties always be text?
     switch (field.type) {
       case 'text':

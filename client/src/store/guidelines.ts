@@ -53,24 +53,58 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the available labels that can be assigned to a Collection node.
+   *
+   * @return {string[]} The available labels.
+   */
+  function getAvailableCollectionLabels(): string[] {
+    return guidelines.value?.collections.types.map(collection => collection.additionalLabel) ?? [];
+  }
+
+  /**
    * Retrieves the available labels that can be assigned to a no Text node.
    *
    * @return {string[]} The available labels.
    */
   function getAvailableTextLabels(): string[] {
-    console.log(guidelines.value);
     return guidelines.value.texts.additionalLabels;
   }
 
   /**
-   * Retrieves field configuration of a collection of given type. Contains information about rendering behaviour as well as validation rules.
+   * Retrieves field configuration of a collection with given additional node labels. Contains information about rendering behaviour as well as validation rules.
    * Used for rendering data tables or input fields in forms.
    *
-   * @param {string} type - The type of the collection.
+   * @param {string[]} nodeLabels - The additional labels of the collection.
    * @return {CollectionProperty[]} The field configurations for the collection type.
    */
-  function getCollectionFields(type: string): CollectionProperty[] {
-    return guidelines.value.collections[type].properties;
+  function getCollectionConfigFields(nodeLabels: string[]): CollectionProperty[] {
+    const system: CollectionProperty[] = guidelines?.value.collections.properties.system;
+    const base: CollectionProperty[] = guidelines?.value.collections.properties.base;
+    const additional: CollectionProperty[] = guidelines?.value.collections.types.reduce(
+      (total: CollectionProperty[], curr) => {
+        if (nodeLabels.includes(curr.additionalLabel)) {
+          total.push(...curr.properties);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...system, ...base, ...additional];
+  }
+
+  /**
+   * Retrieves all available field configurations for collection properties.
+   *
+   * This method gathers all available collection labels and fetches their corresponding
+   * field configurations, which are used for rendering data tables or input fields in forms.
+   *
+   * @return {CollectionProperty[]} The field configurations for all available collection types.
+   */
+  function getAllCollectionConfigFields(): CollectionProperty[] {
+    const availableCollectionLabels: string[] = getAvailableCollectionLabels();
+
+    return getCollectionConfigFields(availableCollectionLabels);
   }
 
   /**
@@ -98,10 +132,12 @@ export function useGuidelinesStore() {
   return {
     groupedAnnotationTypes,
     guidelines,
+    getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableCollectionLabels,
     getAvailableTextLabels,
-    getCollectionFields,
+    getCollectionConfigFields,
     initializeGuidelines,
   };
 }

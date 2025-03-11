@@ -5,7 +5,7 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionAccessObject, CollectionPostData } from '../models/types.js';
+import { Collection, CollectionAccessObject, CollectionPostData } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -15,10 +15,16 @@ const guidelineService: GuidelinesService = new GuidelinesService();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const additionalLabel = guidelines.collections['text'].additionalLabel;
+
+    // Get Collection type that is shown in the table and does not only exist as anchor to additional text
+    // Needs to be overhauled anyway when whole hierarchies should be handled in the future
+    // Careful, a collection with level "primary" MUST exist in the guidelines with this solution
+    const primaryCollectionLabel = guidelines.collections.types.find(
+      t => t.level === 'primary',
+    )!.additionalLabel;
 
     const collections: CollectionAccessObject[] =
-      await collectionService.getCollectionsWithTexts(additionalLabel);
+      await collectionService.getCollectionsWithTexts(primaryCollectionLabel);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -27,15 +33,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const data: Record<string, string> = { ...req.body };
+  const { data, nodeLabels }: Collection = req.body;
 
   try {
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
-    const additionalLabel = guidelines.collections['text'].additionalLabel;
-
     const newCollection: ICollection = await collectionService.createNewCollection(
       data,
-      additionalLabel,
+      nodeLabels,
     );
 
     res.status(201).json(newCollection);

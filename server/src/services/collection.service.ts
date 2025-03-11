@@ -4,7 +4,12 @@ import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionAccessObject, CollectionPostData, Text } from '../models/types.js';
+import {
+  CollectionAccessObject,
+  CollectionPostData,
+  CollectionProperty,
+  Text,
+} from '../models/types.js';
 
 type CollectionTextObject = {
   all: Text[];
@@ -134,34 +139,38 @@ export default class CollectionService {
   }
 
   /**
-   * Creates a new collection node with given data as properties.
+   * Creates a new collection node with the given properties and labels.
    *
-   * @param {Record<string, string>} data - JSON data for the new collection node.
-   * @return {Promise<ICollection>} A promise that resolves to the newly created collection.
+   * Adds default values for required properties if they are not provided.
+   *
+   * @param {ICollection} data - The data to set for the collection node.
+   * @param {string[]} nodeLabels - The additional labels to add to the collection node.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<ICollection>} A promise that resolves to the created collection node.
    */
-  // TODO: Make additional label(s) dynamic
-  public async createNewCollection(
-    data: Record<string, string>,
-    additionalLabel: string,
-  ): Promise<ICollection> {
+  public async createNewCollection(data: ICollection, nodeLabels: string[]): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
+    const requiredFields: CollectionProperty[] =
+      await guidelineService.getCollectionConfigFields(nodeLabels);
 
     // Add default properties if they are not sent in the request
-    guidelines.collections['text'].properties.forEach(property => {
-      if (!data[property.name]) {
+    requiredFields.forEach(property => {
+      if (!(property.name in data)) {
         data[property.name] = '';
       }
     });
 
     data = { ...data, uuid: crypto.randomUUID() };
 
+    nodeLabels.push('Collection');
+
     const query: string = `
-    CREATE (c:Collection:${additionalLabel} $data)
+    CALL apoc.create.node($nodeLabels, $data) YIELD node as c
     RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { data });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { data, nodeLabels });
 
     return result.records[0]?.get('collection');
   }
@@ -207,6 +216,11 @@ export default class CollectionService {
     MATCH (c:Collection {uuid: $uuid})
     
     SET c = $collection.data
+
+    WITH c, [l IN labels(c) WHERE l <> 'Collection'] AS labelsToRemove
+
+    CALL apoc.create.removeLabels(c, labelsToRemove) YIELD node AS nodeBefore
+    CALL apoc.create.addLabels(c, $collection.nodeLabels) YIELD node AS nodeAfter
 
     WITH c
 

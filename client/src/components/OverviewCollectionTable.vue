@@ -6,6 +6,7 @@ import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
+import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
 import { CollectionAccessObject, CollectionProperty } from '../models/types';
 
@@ -17,7 +18,7 @@ const props = defineProps<{
   collections: CollectionAccessObject[] | null;
 }>();
 
-const { guidelines, getCollectionFields } = useGuidelinesStore();
+const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 const columns = ref<string[]>([]);
 
 const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
@@ -25,6 +26,7 @@ const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
     return {
       ...collection.collection.data,
       texts: collection.texts.length,
+      nodeLabels: collection.collection.nodeLabels,
     };
   });
 });
@@ -32,8 +34,30 @@ const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
 onMounted(async (): Promise<void> => {
   await getGuidelines();
 
-  columns.value = [...getCollectionFields('text').map(f => f.name), 'texts'];
+  // Get Collection type that is shown in the table and does not only exist as anchor to additional text
+  // Needs to be overhauled anyway when whole hierarchies should be handled in the future
+  const primaryCollectionLabel = guidelines.value.collections.types.find(
+    t => t.level === 'primary',
+  )?.additionalLabel;
+
+  // TODO: This approach is bad since possible data keys are reserved...
+  columns.value = [
+    'nodeLabels',
+    ...getCollectionConfigFields([primaryCollectionLabel]).map(f => f.name),
+    'texts',
+  ];
 });
+
+function getColumnWidth(columnName: string): string {
+  switch (columnName) {
+    case 'nodeLabels':
+      return '8rem';
+    case 'texts':
+      return '5rem';
+    default:
+      return 'auto';
+  }
+}
 
 // TODO: getGuidelines exists in multiple components now, should be moved to a shared location
 async function getGuidelines(): Promise<void> {
@@ -58,7 +82,6 @@ async function getGuidelines(): Promise<void> {
 <template>
   <div class="flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!tableData" />
-    <!-- TODO: Fix sorting... -->
     <DataTable
       v-else
       scrollable
@@ -81,7 +104,7 @@ async function getGuidelines(): Promise<void> {
         :field="col"
         :header="capitalize(col)"
         sortable
-        :headerStyle="col === 'texts' ? `width: 5rem` : ''"
+        :headerStyle="`width: ${getColumnWidth(col)}`"
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
@@ -93,13 +116,20 @@ async function getGuidelines(): Promise<void> {
             v-tooltip.hover.top="{ value: data[col], showDelay: 0 }"
             >{{ data[col] }}</RouterLink
           >
-          <span
-            v-else-if="col !== 'texts'"
-            class="cell-info"
-            v-tooltip.hover.top="{ value: data[col], showDelay: 0 }"
-            >{{ data[col] }}</span
-          >
-          <span v-else class="cell-info">{{ data[col] }}</span>
+          <span v-else-if="col === 'texts'" class="cell-info">{{ data[col] }}</span>
+          <span v-else-if="col === 'nodeLabels'" class="cell-info">
+            <div class="box flex" style="flex-wrap: wrap">
+              <Tag
+                v-for="label in data.nodeLabels"
+                :value="label"
+                severity="contrast"
+                class="mr-1 mb-1 mt-1 inline-block"
+              />
+            </div>
+          </span>
+          <span v-else class="cell-info" v-tooltip.hover.top="{ value: data[col], showDelay: 0 }">{{
+            data[col]
+          }}</span>
         </template>
       </Column>
     </DataTable>

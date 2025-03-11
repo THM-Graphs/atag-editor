@@ -7,10 +7,17 @@ import {
 
 export interface IGuidelines {
   collections: {
-    [index: string] /* letter, document etc. */ : {
-      additionalLabel: string /* "Letter" etc. */;
-      properties: CollectionProperty[];
+    properties: {
+      system: CollectionProperty[];
+      base: CollectionProperty[];
     };
+    types: {
+      additionalLabel: string;
+      level:
+        | 'primary'
+        | 'secondary' /* Quick fix to determine which collections should be loaded into the overview table */;
+      properties: CollectionProperty[];
+    }[];
   };
   annotations: {
     additionalTexts: string[];

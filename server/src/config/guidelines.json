@@ -3,51 +3,52 @@
     "additionalLabels": ["CommentText", "LetterText"]
   },
   "collections": {
-    "text": {
-      "additionalLabel": "Letter",
-      "properties": [
+    "properties": {
+      "system": [
         {
           "name": "label",
           "type": "text",
           "required": true,
           "editable": true,
           "visible": false
-        },
-        {
-          "name": "status",
-          "type": "text",
-          "required": false,
-          "editable": true,
-          "visible": true
-        },
-        {
-          "name": "sender",
-          "type": "text",
-          "required": false,
-          "editable": true,
-          "visible": true
-        },
-        {
-          "name": "receiver",
-          "type": "text",
-          "required": false,
-          "editable": true,
-          "visible": true
         }
-      ]
+      ],
+      "base": []
     },
-    "comment": {
-      "additionalLabel": "Comment",
-      "properties": [
-        {
-          "name": "label",
-          "type": "text",
-          "required": true,
-          "editable": false,
-          "visible": false
-        }
-      ]
-    }
+    "types": [
+      {
+        "additionalLabel": "Letter",
+        "level": "primary",
+        "properties": [
+          {
+            "name": "status",
+            "type": "text",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "sender",
+            "type": "text",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "receiver",
+            "type": "text",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "additionalLabel": "Comment",
+        "level": "secondary",
+        "properties": []
+      }
+    ]
   },
   "annotations": {
     "types": [

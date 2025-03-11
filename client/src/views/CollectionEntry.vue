@@ -9,7 +9,13 @@ import {
 import { useGuidelinesStore } from '../store/guidelines';
 import CollectionError from '../components/CollectionError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { areObjectsEqual, buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
+import {
+  areObjectsEqual,
+  areSetsEqual,
+  buildFetchUrl,
+  capitalize,
+  cloneDeep,
+} from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   CollectionAccessObject,
@@ -41,7 +47,14 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
-const { guidelines, getAvailableTextLabels, initializeGuidelines } = useGuidelinesStore();
+const {
+  guidelines,
+  getAllCollectionConfigFields,
+  getAvailableCollectionLabels,
+  getAvailableTextLabels,
+  getCollectionConfigFields,
+  initializeGuidelines,
+} = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
 
@@ -55,15 +68,13 @@ const isLoading = ref<boolean>(true);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
+const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
-// TODO: Still a workaround, should be mady dynamic.
 const fields: ComputedRef<CollectionProperty[]> = computed(() => {
-  if (collectionAccessObject.value.collection.nodeLabels.includes('Letter')) {
-    return guidelines.value ? guidelines.value.collections['text'].properties : [];
-  } else {
-    return guidelines.value ? guidelines.value.collections['comment'].properties : [];
-  }
+  return guidelines.value
+    ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
+    : [];
 });
 
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
@@ -89,6 +100,24 @@ onMounted(async (): Promise<void> => {
 
   isLoading.value = false;
 });
+
+/**
+ * Fills in any missing collection properties with an empty string.
+ *
+ * Called when entering edit mode to create a full data object from which the dynamically rendered fields
+ * can get their values from.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function enrichCollectionData(): void {
+  const allPossibleFields = getAllCollectionConfigFields();
+
+  allPossibleFields.forEach(field => {
+    if (!(field.name in collectionAccessObject.value.collection.data)) {
+      collectionAccessObject.value.collection.data[field.name] = '';
+    }
+  });
+}
 
 async function getGuidelines(): Promise<void> {
   try {
@@ -159,30 +188,6 @@ async function handleCancelChanges(): Promise<void> {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  // return;
-  // if (!hasUnsavedChanges()) {
-  //   console.log('no changes made, no request needed');
-  //   return;
-  // }
-
-  // const createdTexts = collectionAccessObject.value.texts.filter(
-  //   (text: Text) =>
-  //     !initialCollectionAccessObject.value.texts.some(
-  //       (initialText: Text) => initialText.data.uuid === text.data.uuid,
-  //     ),
-  // );
-
-  // const deletedTexts = initialCollectionAccessObject.value.texts.filter(
-  //   (initialText: Text) =>
-  //     !collectionAccessObject.value.texts.some(
-  //       (text: Text) => text.data.uuid === initialText.data.uuid,
-  //     ),
-  // );
-
-  // console.log('Created: ', createdTexts);
-  // console.log('Deleted: ', deletedTexts);
-  // console.log('Total: ', collectionAccessObject.value.texts);
-
   asyncOperationRunning.value = true;
 
   try {
@@ -201,7 +206,15 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 function hasUnsavedChanges(): boolean {
-  // TODO: When Collection labels should be editable, this needs to be catched here
+  // Compare collection node labels
+  if (
+    !areSetsEqual(
+      new Set(collectionAccessObject.value.collection.nodeLabels),
+      new Set(initialCollectionAccessObject.value.collection.nodeLabels),
+    )
+  ) {
+    return true;
+  }
 
   // Compare collection properties
   if (
@@ -260,6 +273,8 @@ function preventUserFromRouteLeaving(): boolean {
 }
 
 async function saveCollection(): Promise<void> {
+  removeUnnecessaryDataBeforeSave();
+
   const collectionPostData: CollectionPostData = {
     data: collectionAccessObject.value,
     initialData: initialCollectionAccessObject.value,
@@ -295,7 +310,34 @@ function showMessage(result: 'success' | 'error', error?: Error) {
 }
 
 function toggleEditMode(): void {
+  if (mode.value === 'view') {
+    enrichCollectionData();
+  }
+
   mode.value = mode.value === 'view' ? 'edit' : 'view';
+}
+
+/**
+ * Called before saving the collection to remove any data entries that are not configured
+ * according to the current node labels of the collection.
+ *
+ * This is necessary since on edit mode toggling the data object was filled with empty data entries temporarily
+ * to form a data pool for the dynamically rendered input fields (see `enrichCollectionData`).
+ *
+ * @returns {void} This function does not return any value.
+ */
+function removeUnnecessaryDataBeforeSave(): void {
+  // Get configured field names that are allowed to be saved
+  const configuredFieldNames: string[] = getCollectionConfigFields(
+    collectionAccessObject.value.collection.nodeLabels,
+  ).map(f => f.name);
+
+  // Remove data entries that are not configured
+  Object.keys(collectionAccessObject.value.collection.data).forEach(key => {
+    if (!configuredFieldNames.includes(key) && key !== 'uuid') {
+      delete collectionAccessObject.value.collection.data[key];
+    }
+  });
 }
 
 async function getCollection(): Promise<void> {
@@ -377,6 +419,33 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     >
       <SplitterPanel :size="10" class="overflow-y-auto">
         <div class="properties-pane w-full">
+          <h2 class="text-center">Collection labels</h2>
+          <div v-if="mode === 'edit'" class="flex justify-content-center">
+            <MultiSelect
+              v-model="collectionAccessObject.collection.nodeLabels"
+              :options="availableCollectionLabels"
+              display="chip"
+              placeholder="Select labels"
+              :filter="false"
+            >
+              <template #chip="{ value }">
+                <Tag :value="value" severity="contrast" class="mr-1" />
+              </template>
+            </MultiSelect>
+          </div>
+          <div v-else class="flex gap-2 justify-content-center">
+            <template
+              v-if="collectionAccessObject.collection.nodeLabels.length > 0"
+              v-for="label in collectionAccessObject.collection.nodeLabels"
+              :key="label"
+            >
+              <Tag :value="label" severity="contrast" class="mr-1" />
+            </template>
+            <div v-else>
+              <i>This Collection has no labels yet.</i>
+            </div>
+          </div>
+
           <h2 class="text-center">Properties</h2>
           <form>
             <div class="flex align-items-center gap-3 mb-3">
