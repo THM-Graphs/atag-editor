@@ -109,31 +109,32 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <ul>
-        <li v-for="(node, index) in path" class="mb-1" :style="`margin-left: ${index}rem`">
-          <span v-if="index !== 0">-></span>
-
-          <RouterLink
-            v-if="node.nodeLabels.includes('Collection')"
-            :to="`/collections/${node.data.uuid}`"
-            :title="`Go to Collection ${node.data.uuid}`"
-          >
-            <Tag
-              :value="node.nodeLabels.join(' | ')"
-              :severity="getNodeLabelTagColor(node.nodeLabels)"
-              class="mr-2"
-            />
-            <i class="pi pi-external-link"></i>
-          </RouterLink>
-          <span v-else>
-            <Tag
-              :value="node.nodeLabels.join(' | ')"
-              :severity="getNodeLabelTagColor(node.nodeLabels)"
-              class="mr-2"
-            />
-          </span>
-        </li>
-      </ul>
+      <div class="flex flex-column align-items-center">
+        <template v-for="(node, index) in path">
+          <i v-if="index !== 0" class="pi pi-arrow-down" style="font-size: 0.75rem"></i>
+          <div class="py-1">
+            <RouterLink
+              v-if="node.nodeLabels.includes('Collection')"
+              :to="`/collections/${node.data.uuid}`"
+              :title="`Go to Collection ${node.data.uuid}`"
+            >
+              <Tag
+                :value="node.nodeLabels.join(' | ')"
+                :severity="getNodeLabelTagColor(node.nodeLabels)"
+                class="mr-2"
+              />
+              <i class="pi pi-external-link"></i>
+            </RouterLink>
+            <span v-else>
+              <Tag
+                :value="node.nodeLabels.join(' | ')"
+                :severity="getNodeLabelTagColor(node.nodeLabels)"
+                class="mr-2"
+              />
+            </span>
+          </div>
+        </template>
+      </div>
     </Fieldset>
 
     <Fieldset legend="Collection" toggleable>
