@@ -143,7 +143,9 @@ async function getGuidelines(): Promise<void> {
       data: Object.fromEntries(
         getAllCollectionConfigFields().map(f => [f.name, '']),
       ) as ICollection,
-      nodeLabels: [],
+      nodeLabels: guidelines.value.collections.types
+        .filter(t => t.level === 'primary')
+        .map(t => t.additionalLabel),
     };
 
     guidelinesAreLoaded.value = true;
