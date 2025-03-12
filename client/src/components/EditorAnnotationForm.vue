@@ -54,7 +54,7 @@ interface NormdataSearchObject {
 interface AdditionalTextInputObject {
   availableLabels: string[];
   inputElm: Ref<any>;
-  inputLabel: string;
+  inputLabel: string | null;
   inputText: string;
   mode: 'edit' | 'view';
 }
@@ -107,7 +107,7 @@ const normdataSearchObject = ref<NormdataSearchObject>(
 const additionalTextInputObject = ref<AdditionalTextInputObject>({
   inputText: '',
   availableLabels: guidelines.value.annotations.additionalTexts,
-  inputLabel: guidelines.value.annotations.additionalTexts[0],
+  inputLabel: null,
   mode: 'view',
   inputElm: templateRef('additional-text-input'),
 });
@@ -294,6 +294,17 @@ function renderHTML(text: string, searchStr: string): string {
 }
 
 /**
+ * Resets the additional text input form (select input and text input). This prepares the form for new input.
+ * Called when the form is submitted or cancelled.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function resetAdditionalTextInputForm(): void {
+  additionalTextInputObject.value.inputLabel = null;
+  additionalTextInputObject.value.inputText = '';
+}
+
+/**
  * Fetches normdata items from the server whose's label matches the given search string and stores the results
  * in the corresponding normdataSearchObject entry.
  *
@@ -350,8 +361,11 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 }
 
 function addAdditionalText(): void {
-  // TODO: This should be dynamic since the key is not always 'comment'
-  const defaultFields: CollectionProperty[] = getCollectionConfigFields(['Comment']);
+  const nodeLabelsWithoutNull: string[] = additionalTextInputObject.value.inputLabel
+    ? [additionalTextInputObject.value.inputLabel]
+    : [];
+
+  const defaultFields: CollectionProperty[] = getCollectionConfigFields(nodeLabelsWithoutNull);
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: CollectionProperty) => {
@@ -367,7 +381,7 @@ function addAdditionalText(): void {
 
   annotation.data.additionalTexts.push({
     collection: {
-      nodeLabels: [additionalTextInputObject.value.inputLabel],
+      nodeLabels: nodeLabelsWithoutNull,
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
@@ -383,16 +397,12 @@ function addAdditionalText(): void {
     },
   });
 
-  additionalTextInputObject.value.inputLabel = additionalTextInputObject.value.availableLabels[0];
-  additionalTextInputObject.value.inputText = '';
-
+  resetAdditionalTextInputForm();
   changeAdditionalTextSelectionMode('view');
 }
 
 function cancelAdditionalTextOperation() {
-  additionalTextInputObject.value.inputLabel = additionalTextInputObject.value.availableLabels[0];
-  additionalTextInputObject.value.inputText = '';
-
+  resetAdditionalTextInputForm();
   changeAdditionalTextSelectionMode('view');
 }
 
