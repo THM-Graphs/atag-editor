@@ -17,6 +17,7 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
 import Message from 'primevue/message';
+import { MultiSelect } from 'primevue';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import Select from 'primevue/select';
@@ -54,7 +55,7 @@ interface NormdataSearchObject {
 interface AdditionalTextInputObject {
   availableLabels: string[];
   inputElm: Ref<any>;
-  inputLabel: string | null;
+  inputLabels: string[];
   inputText: string;
   mode: 'edit' | 'view';
 }
@@ -107,7 +108,7 @@ const normdataSearchObject = ref<NormdataSearchObject>(
 const additionalTextInputObject = ref<AdditionalTextInputObject>({
   inputText: '',
   availableLabels: guidelines.value.annotations.additionalTexts,
-  inputLabel: null,
+  inputLabels: [],
   mode: 'view',
   inputElm: templateRef('additional-text-input'),
 });
@@ -206,6 +207,17 @@ function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): v
   });
 }
 
+/**
+ * Finishes an additional text input operation one way or another (submit or cancel).
+ * This resets the form and changes the mode to 'view'.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function finishAdditionalTextInputOperation(): void {
+  resetAdditionalTextInputForm();
+  changeAdditionalTextSelectionMode('view');
+}
+
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   confirm.require({
     target: event.currentTarget as HTMLButtonElement,
@@ -300,7 +312,7 @@ function renderHTML(text: string, searchStr: string): string {
  * @returns {void} This function does not return any value.
  */
 function resetAdditionalTextInputForm(): void {
-  additionalTextInputObject.value.inputLabel = null;
+  additionalTextInputObject.value.inputLabels = [];
   additionalTextInputObject.value.inputText = '';
 }
 
@@ -361,11 +373,10 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 }
 
 function addAdditionalText(): void {
-  const nodeLabelsWithoutNull: string[] = additionalTextInputObject.value.inputLabel
-    ? [additionalTextInputObject.value.inputLabel]
-    : [];
+  const defaultFields: CollectionProperty[] = getCollectionConfigFields(
+    additionalTextInputObject.value.inputLabels,
+  );
 
-  const defaultFields: CollectionProperty[] = getCollectionConfigFields(nodeLabelsWithoutNull);
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: CollectionProperty) => {
@@ -381,11 +392,11 @@ function addAdditionalText(): void {
 
   annotation.data.additionalTexts.push({
     collection: {
-      nodeLabels: nodeLabelsWithoutNull,
+      nodeLabels: additionalTextInputObject.value.inputLabels,
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
-        label: `${additionalTextInputObject.value.inputLabel} for annotation ${annotation.data.properties.uuid}`,
+        label: `${additionalTextInputObject.value.inputLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
       } as ICollection,
     },
     text: {
@@ -397,13 +408,11 @@ function addAdditionalText(): void {
     },
   });
 
-  resetAdditionalTextInputForm();
-  changeAdditionalTextSelectionMode('view');
+  finishAdditionalTextInputOperation();
 }
 
-function cancelAdditionalTextOperation() {
-  resetAdditionalTextInputForm();
-  changeAdditionalTextSelectionMode('view');
+function cancelAdditionalTextOperation(): void {
+  finishAdditionalTextInputOperation();
 }
 
 function handleDeleteAdditionalText(collectionUuid: string): void {
@@ -689,12 +698,18 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           @submit.prevent="addAdditionalText"
         >
           <InputGroup>
-            <Select
-              v-model="additionalTextInputObject.inputLabel"
+            <MultiSelect
+              v-model="additionalTextInputObject.inputLabels"
               :options="additionalTextInputObject.availableLabels"
-              title="Select label of new text"
-              placeholder="Choose a label"
-            />
+              display="chip"
+              placeholder="Select collection labels"
+              class="text-center"
+              :filter="false"
+            >
+              <template #chip="{ value }">
+                <Tag :value="value" severity="contrast" class="mr-1" />
+              </template>
+            </MultiSelect>
             <InputText
               ref="additional-text-input"
               required
