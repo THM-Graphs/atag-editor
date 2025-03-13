@@ -400,7 +400,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
       </h2>
     </div>
     <Splitter
-      class="flex-grow-1 overflow-y-auto"
+      class="flex-grow-1 overflow-y-auto gap-2"
       :pt="{
         gutter: {
           style: {
@@ -592,7 +592,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               label="Add new text"
               title="Add new text to collection"
               icon="pi pi-plus"
-              style="display: block; margin: 0 auto"
+              style="display: block; margin: 1rem auto"
               @click="handleAddNewText"
             ></Button>
           </div>
