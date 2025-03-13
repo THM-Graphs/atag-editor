@@ -12,6 +12,7 @@ services:
   environment:
    - VITE_PROTOCOL=${PROTOCOL}
    - VITE_APP_HOST=${APP_HOST}
+   - VITE_GUIDELINES_URL=${GUIDELINES_URL}
   depends_on:
    - backend
   ports:
@@ -32,6 +33,7 @@ services:
   environment:
    - APP_HOST=${APP_HOST}
    - APP_PORT=${APP_PORT}
+   - GUIDELINES_URL=${GUIDELINES_URL}
    - NEO4J_URI=${NEO4J_URI}
    - NEO4J_USER=${NEO4J_USER}
    - NEO4J_PW=${NEO4J_PW}
