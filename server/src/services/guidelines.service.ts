@@ -1,8 +1,6 @@
-import { promises as fs } from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import { IGuidelines } from '../models/IGuidelines.js';
 import { CollectionProperty } from '../models/types.js';
+import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
   /**
@@ -31,18 +29,26 @@ export default class GuidelinesService {
   }
 
   /**
-   * Retrieves the Edition guidelines from a JSON file.
+   * Retrieves the guidelines from the URL defined in the GUIDELINES_URL environment variable.
    *
-   * @return {Promise<IGuidelines>} A promise that resolves to the guidelines object.
+   * @throws {NotFoundError} If the URL is not provided or if the guidelines could not be loaded.
+   * @return {Promise<IGuidelines>} The retrieved guidelines.
    */
   public async getGuidelines(): Promise<IGuidelines> {
-    // TODO: Fix file path creation
-    const __filename: string = fileURLToPath(import.meta.url);
-    const __dirname: string = dirname(__filename);
-    const filePath: string = resolve(__dirname, '../../src/config/guidelines.json');
+    // TODO: Improve error handling...
+    const url: string | undefined = process.env.GUIDELINES_URL;
 
-    const data: string = await fs.readFile(filePath, 'utf-8');
-    const guidelines: IGuidelines = JSON.parse(data);
+    if (!url) {
+      throw new NotFoundError(`URL to guidelines is not provided...`);
+    }
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new NotFoundError(`Guidelines could not be loaded`);
+    }
+
+    const guidelines: IGuidelines = await response.json();
 
     return guidelines;
   }
