@@ -12,7 +12,6 @@ services:
   environment:
    - VITE_PROTOCOL=${PROTOCOL}
    - VITE_APP_HOST=${APP_HOST}
-   - VITE_GUIDELINES_URL=${GUIDELINES_URL}
   depends_on:
    - backend
   ports:

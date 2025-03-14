@@ -15,11 +15,6 @@ const searchInput = ref<string>('');
 
 const toast: ToastServiceMethods = useToast();
 
-// TODO: This is not working on production, should be included in the bundle
-// Has to be stored here since env variables can not be accessed in the template directly
-const guidelinesUrl: string = import.meta.env.VITE_GUIDELINES_URL;
-console.log('env vars', import.meta.env);
-
 watch(collections, () => {
   filterCollections();
 });
@@ -90,10 +85,6 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     <Toast />
 
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
-
-    <div>
-      <a :href="guidelinesUrl" target="_blank">Open guidelines :)</a>
-    </div>
 
     <OverviewToolbar
       @collection-created="handleCollectionCreation"
