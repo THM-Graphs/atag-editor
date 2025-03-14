@@ -1,6 +1,3 @@
-import { promises as fs } from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import { IGuidelines } from '../models/IGuidelines.js';
 import { CollectionProperty } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
