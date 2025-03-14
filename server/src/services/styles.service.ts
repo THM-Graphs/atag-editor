@@ -5,7 +5,7 @@ export default class StylesService {
    * Retrieves the stylesheet from the URL defined in the STYLESHEET_URL environment variable.
    *
    * @throws {NotFoundError} If the URL is not provided or if the stylesheet could not be loaded.
-   * @return {Promise<string>} The retrieved stylesheet.
+   * @return {Promise<string>} The retrieved stylesheet as raw CSS.
    */
   public async getStyles(): Promise<string> {
     // TODO: Improve error handling...
