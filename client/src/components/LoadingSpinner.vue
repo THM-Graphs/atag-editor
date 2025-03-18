@@ -6,10 +6,18 @@ import ProgressSpinner from 'primevue/progressspinner';
   <ProgressSpinner
     class="loading-spinner"
     style="width: 80px; height: 80px"
-    strokeWidth="4"
+    strokeWidth="2"
     fill="transparent"
     animationDuration="1.5s"
     aria-label="Custom ProgressSpinner"
+    :dt="{
+      root: {
+        colorOne: '#F16667',
+        colorTwo: '#8DCC93',
+        colorThree: '#F79767',
+        colorFour: '#4C8EDA',
+      },
+    }"
   />
 </template>
 
