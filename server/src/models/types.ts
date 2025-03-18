@@ -30,6 +30,10 @@ export interface AnnotationData {
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
+  icon?: {
+    type: 'url' | 'svg';
+    value: string /* Contains the raw SVG or the URL to the .svg file */;
+  };
   isSeparator?: boolean;
   isZeroPoint?: boolean;
   hasAdditionalTexts?: boolean;
