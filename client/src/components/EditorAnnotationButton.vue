@@ -431,12 +431,15 @@ function findSpansWithinBoundaries(
 
   return spans;
 }
+
+function getIconHTML(): string {
+  return getAnnotationConfig(annotationType)?.icon?.value ?? annotationType;
+}
 </script>
 
 <template>
   <Button
     v-if="!subtypeField"
-    class="button-annotation"
     severity="secondary"
     outlined
     raised
@@ -446,13 +449,7 @@ function findSpansWithinBoundaries(
     @click="handleButtonClick"
   >
     <template #icon>
-      <!-- TODO: Should this come from annotation type config? -->
-      <img
-        :src="`${iconsMap[annotationType]}`"
-        :title="annotationType"
-        :alt="annotationType"
-        class="button-icon w-full h-full"
-      />
+      <div class="icon-wrapper" v-html="getIconHTML()"></div>
     </template>
   </Button>
   <SplitButton
@@ -466,24 +463,32 @@ function findSpansWithinBoundaries(
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
   >
-    <span class="flex dropdownOption-center font-bold">
-      <img
-        :src="`${iconsMap[annotationType]}`"
-        :title="annotationType"
-        :alt="annotationType"
-        :style="{ height: '1rem', marginRight: '0.5rem' }"
-      />
-    </span>
+    <template #icon>
+      <div class="icon-wrapper" v-html="getIconHTML()"></div>
+    </template>
   </SplitButton>
 </template>
 
 <style scoped>
-.button-annotation {
+/* .button-annotation {
   width: 35px;
   height: 35px;
+} */
+
+/* .button-icon {
+  object-fit: contain;
+} */
+
+.icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
 }
 
-.button-icon {
-  object-fit: contain;
+.icon-wrapper svg {
+  width: 100%;
+  height: 100%;
 }
 </style>
