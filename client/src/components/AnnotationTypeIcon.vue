@@ -3,13 +3,14 @@ defineProps<{ annotationType: string }>();
 </script>
 
 <template>
-  <div :class="`annotation-type-icon-${annotationType}`"></div>
+  <span :class="`annotation-type-icon-${annotationType}`"></span>
 </template>
 
 <style scoped>
 /* This styles the icon container which will be enriched with
 custom SVG background-image properties by the users */
-div[class^='annotation-type-icon'] {
+[class^='annotation-type-icon'] {
+  display: block;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
