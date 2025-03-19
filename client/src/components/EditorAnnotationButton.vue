@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import {
@@ -444,9 +445,7 @@ function findSpansWithinBoundaries(
     @click="handleButtonClick"
   >
     <template #icon>
-      <div
-        :class="`w-full h-full annotation-type-icon annotation-type-icon-${annotationType}`"
-      ></div>
+      <AnnotationTypeIcon :annotationType="annotationType" />
     </template>
   </Button>
   <SplitButton
@@ -461,9 +460,7 @@ function findSpansWithinBoundaries(
     @click="handleButtonClick"
   >
     <template #icon>
-      <div
-        :class="`w-full h-full annotation-type-icon annotation-type-icon-${annotationType}`"
-      ></div>
+      <AnnotationTypeIcon :annotationType="annotationType" />
     </template>
   </SplitButton>
 </template>

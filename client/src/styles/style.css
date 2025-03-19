@@ -40,12 +40,3 @@ button:focus-visible {
 #app {
   width: 100%;
 }
-
-/* This styles the icon container which will be enriched with
-custom SVG background-image properties by the users */
-
-.annotation-type-icon {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}

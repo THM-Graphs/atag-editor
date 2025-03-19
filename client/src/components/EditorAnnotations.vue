@@ -12,6 +12,7 @@ import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
+import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 
 export interface TreeNode {
   annotationCount?: number;
@@ -230,9 +231,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
             </div>
             <div v-else-if="slotProps.node.type === 'type'" class="flex align-items-center">
               <div class="icon-container">
-                <div
-                  :class="`w-full h-full annotation-type-icon annotation-type-icon-${slotProps.node.label}`"
-                ></div>
+                <AnnotationTypeIcon :annotation-type="slotProps.node.label" />
               </div>
               <div class="name-container ml-2">
                 {{ slotProps.node.label }} [{{ slotProps.node.children.length }}]

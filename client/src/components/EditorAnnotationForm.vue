@@ -32,6 +32,7 @@ import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
+import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -437,9 +438,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
-          <div
-            :class="` w-full h-full annotation-type-icon annotation-type-icon-${annotation.data.properties.type}`"
-          ></div>
+          <AnnotationTypeIcon :annotationType="annotation.data.properties.type" />
         </div>
         <div class="annotation-type-container">
           <span class="font-bold">{{ annotation.data.properties.type }}</span>
