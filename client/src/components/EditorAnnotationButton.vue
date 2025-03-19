@@ -7,7 +7,6 @@ import {
   getSelectionData,
   isEditorElement,
 } from '../utils/helper/helper';
-import iconsMap from '../utils/helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
@@ -431,10 +430,6 @@ function findSpansWithinBoundaries(
 
   return spans;
 }
-
-function getIconHTML(): string {
-  return getAnnotationConfig(annotationType)?.icon?.value ?? annotationType;
-}
 </script>
 
 <template>
@@ -449,7 +444,9 @@ function getIconHTML(): string {
     @click="handleButtonClick"
   >
     <template #icon>
-      <div class="icon-wrapper" v-html="getIconHTML()"></div>
+      <div
+        :class="`w-full h-full annotation-type-icon annotation-type-icon-${annotationType}`"
+      ></div>
     </template>
   </Button>
   <SplitButton
@@ -464,31 +461,11 @@ function getIconHTML(): string {
     @click="handleButtonClick"
   >
     <template #icon>
-      <div class="icon-wrapper" v-html="getIconHTML()"></div>
+      <div
+        :class="`w-full h-full annotation-type-icon annotation-type-icon-${annotationType}`"
+      ></div>
     </template>
   </SplitButton>
 </template>
 
-<style scoped>
-/* .button-annotation {
-  width: 35px;
-  height: 35px;
-} */
-
-/* .button-icon {
-  object-fit: contain;
-} */
-
-.icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1rem;
-  height: 1rem;
-}
-
-.icon-wrapper svg {
-  width: 100%;
-  height: 100%;
-}
-</style>
+<style scoped></style>
