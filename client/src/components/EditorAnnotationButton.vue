@@ -85,18 +85,30 @@ function setButtonStylingManually(): void {
   // SplitButton has its flaws: Dropdown button and annotation button can not be accessed (wait for Primevue update),
   // therefore the DOM element need to be queried and styled manually. this is done via the subtypeField variable
   if (subtypeField) {
-    buttonElm.value.$el.querySelector('.p-splitbutton-dropdown').style.width = '15px';
-    buttonElm.value.$el.querySelector('.p-splitbutton-button').style.width = '35px';
-  }
+    const dropdownButton: HTMLButtonElement | null =
+      buttonElm.value.$el.querySelector('.p-splitbutton-dropdown');
+    const mainButton: HTMLButtonElement | null =
+      buttonElm.value.$el.querySelector('.p-splitbutton-button');
 
-  // When there is no background image AND the annotation has a SplitButton component, the width is set to 'auto'
-  // with the primeflex utility class 'w-auto'.
-  if (!hasBackgroundImage && subtypeField) {
-    const splitButtonElm: HTMLButtonElement = buttonElm.value.$el.querySelector(
-      'button.p-splitbutton-button',
-    );
+    if (dropdownButton) {
+      dropdownButton.style.width = '15px';
+    }
 
-    splitButtonElm?.classList.add('w-auto');
+    if (mainButton) {
+      mainButton.style.width = '35px';
+      mainButton.style.paddingLeft = '5px';
+      mainButton.style.paddingRight = '5px';
+    }
+
+    // When there is no background image AND the annotation has a SplitButton component, the width is set to 'auto'
+    // with the primeflex utility class 'w-auto'.
+    if (!hasBackgroundImage) {
+      const splitButtonElm: HTMLButtonElement = buttonElm.value.$el.querySelector(
+        'button.p-splitbutton-button',
+      );
+
+      splitButtonElm?.classList.add('w-auto');
+    }
   }
 }
 
@@ -481,11 +493,11 @@ function findSpansWithinBoundaries(
   <Button
     v-if="!subtypeField"
     severity="secondary"
-    outlined
     ref="buttonElm"
+    outlined
     raised
     :style="{ height: '35px', width: '35px' }"
-    :class="hasIcon ? '' : 'w-auto'"
+    :class="hasIcon ? '' : 'button-empty'"
     :disabled="!selectedOptions.includes(annotationType)"
     :data-annotation-type="annotationType"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
@@ -520,4 +532,9 @@ function findSpansWithinBoundaries(
   </SplitButton>
 </template>
 
-<style scoped></style>
+<style scoped>
+.button-empty {
+  padding: 0 5px;
+  width: auto !important;
+}
+</style>
