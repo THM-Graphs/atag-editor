@@ -21,6 +21,8 @@
   --unclear-clr: hsl(328, 98%, 47%);
 }
 
+/* -------- TEXT ------------------------------------------------------------------------------------------------------------ */
+
 #text > span:has(span.emphasised) {
   &:has(.rubricated) {
     font-weight: var(--rubricated-font-weight);
@@ -118,7 +120,55 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-/* This is for the icons */
+#text > span:has(span.line.end)::after {
+  /* Disable stylings from span element... */
+  background-color: white;
+  color: black;
+  font-weight: normal;
+  opacity: 1;
+  /* Space, curved arrow, newline */
+  content: '\20 \2936 \A';
+  white-space: pre;
+  user-select: none;
+}
+
+#text > span:has(span.entity.person) {
+  text-decoration: underline;
+  text-decoration-color: hsl(358, 83%, 68%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.place) {
+  text-decoration: underline;
+  text-decoration-color: hsl(212, 93%, 54%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.concept) {
+  text-decoration: underline;
+  text-decoration-color: hsl(45, 90%, 60%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.event) {
+  text-decoration: underline;
+  text-decoration-color: hsl(134, 61%, 41%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.imagery) {
+  text-decoration: underline;
+  text-decoration-color: hsl(296, 72%, 66%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.entity.reference) {
+  text-decoration: underline;
+  text-decoration-color: hsl(17, 22%, 50%);
+  text-decoration-thickness: 2px;
+}
+
+/* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
 .annotation-type-icon-entity {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/entity.svg');
@@ -180,76 +230,7 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentInternal.svg');
 }
 
-/* #text > span:has(span.line.end)::after {
-  content: '\A';
-  white-space: pre;
-}
-
-#text > span:has(span.line.end)::before {
-  position: absolute;
-  top: 50%;
-  left: 150%;
-  transform: translateY(-50%);
-  height: 13px;
-  width: 13px;
-  display: inline-block;
-  background-image: url('../../public/other/linebreak.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  content: '';
-  user-select: none;
-  pointer-events: none;
-} */
-
-#text > span:has(span.line.end)::after {
-  /* Disable stylings from span element... */
-  background-color: white;
-  color: black;
-  font-weight: normal;
-  opacity: 1;
-  /* Space, curved arrow, newline */
-  content: '\20 \2936 \A';
-  white-space: pre;
-  user-select: none;
-}
-
-#text > span:has(span.entity.person) {
-  text-decoration: underline;
-  text-decoration-color: hsl(358, 83%, 68%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.place) {
-  text-decoration: underline;
-  text-decoration-color: hsl(212, 93%, 54%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.concept) {
-  text-decoration: underline;
-  text-decoration-color: hsl(45, 90%, 60%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.event) {
-  text-decoration: underline;
-  text-decoration-color: hsl(134, 61%, 41%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.imagery) {
-  text-decoration: underline;
-  text-decoration-color: hsl(296, 72%, 66%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.reference) {
-  text-decoration: underline;
-  text-decoration-color: hsl(17, 22%, 50%);
-  text-decoration-thickness: 2px;
-}
-
-/* -------------------------------------------------------------------------------------------------------------------------- */
+/* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
 
 #text > span:has(span.paragraph.end)::after {
   /* This disables inherited styling from span element, must be set at first! */
