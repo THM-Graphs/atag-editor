@@ -60,6 +60,46 @@ if (config.shortcut?.length > 0) {
   registerShortcut(shortcutCombo, handleClick);
 }
 
+// TODO: This is a temporary hack since PrimeVue makes problems with accessing the component's
+// DOM element with the pcButton/pcDropdown pt option...fix maybe later, but works for now
+onMounted(setButtonStylingManually);
+
+function setButtonStylingManually(): void {
+  // This function examines the DOM nodes of the annotation icon span. If the background image could not be loaded
+  // (since it wasn't provided, bad internet connection etc.), the buttons shows the annotation type as string
+  const iconElement: HTMLSpanElement = buttonElm.value.$el.querySelector(
+    `.annotation-type-icon-${annotationType}`,
+  );
+
+  // Return if element was not found
+  if (!iconElement) {
+    return;
+  }
+
+  // If no background image, set hasIcon to false. This will style normal annotation buttons correctly (see Button props)
+  const hasBackgroundImage: boolean =
+    window.getComputedStyle(iconElement).backgroundImage !== 'none';
+
+  hasIcon.value = hasBackgroundImage;
+
+  // SplitButton has its flaws: Dropdown button and annotation button can not be accessed (wait for Primevue update),
+  // therefore the DOM element need to be queried and styled manually. this is done via the subtypeField variable
+  if (subtypeField) {
+    buttonElm.value.$el.querySelector('.p-splitbutton-dropdown').style.width = '15px';
+    buttonElm.value.$el.querySelector('.p-splitbutton-button').style.width = '35px';
+  }
+
+  // When there is no background image AND the annotation has a SplitButton component, the width is set to 'auto'
+  // with the primeflex utility class 'w-auto'.
+  if (!hasBackgroundImage && subtypeField) {
+    const splitButtonElm: HTMLButtonElement = buttonElm.value.$el.querySelector(
+      'button.p-splitbutton-button',
+    );
+
+    splitButtonElm?.classList.add('w-auto');
+  }
+}
+
 function handleDropdownClick(subtype: string): void {
   handleClick(subtype);
 }
@@ -435,40 +475,6 @@ function findSpansWithinBoundaries(
 
   return spans;
 }
-
-// TODO: Overhaul this
-onMounted(() => {
-  // This function examines the DOM nodes of the annotation icon div. If the background image could not be loaded
-  // (since it wasn't provided, bad internet connection etc.), the buttons shows the annotation type as string
-  const iconElement: HTMLSpanElement = buttonElm.value.$el.querySelector(
-    `.annotation-type-icon-${annotationType}`,
-  );
-
-  if (!iconElement) {
-    hasIcon.value = false;
-    return;
-  }
-
-  const hasBackgroundImage: boolean =
-    window.getComputedStyle(iconElement).backgroundImage !== 'none';
-
-  hasIcon.value = hasBackgroundImage;
-
-  if (subtypeField) {
-    buttonElm.value.$el.querySelector('.p-splitbutton-dropdown').style.width = '15px';
-    buttonElm.value.$el.querySelector('.p-splitbutton-button').style.width = '35px';
-  }
-
-  // TODO: This is a temporary hack since PrimeVue makes problems with accessing the component's
-  // DOM element with the pcButton/pcDropdown pt option...fix maybe later, but works for now
-  if (!hasBackgroundImage && subtypeField) {
-    const splitButtonElm: HTMLButtonElement = buttonElm.value.$el.querySelector(
-      'button.p-splitbutton-button',
-    );
-
-    splitButtonElm?.classList.add('w-auto');
-  }
-});
 </script>
 
 <template>
