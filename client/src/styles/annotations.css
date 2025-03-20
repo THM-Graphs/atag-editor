@@ -180,10 +180,6 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentInternal.svg');
 }
 
-.annotation-type-icon-entity {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/entity.svg');
-}
-
 /* #text > span:has(span.line.end)::after {
   content: '\A';
   white-space: pre;
