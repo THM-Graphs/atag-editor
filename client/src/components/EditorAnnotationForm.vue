@@ -10,7 +10,6 @@ import {
   camelCaseToTitleCase,
   toggleTextHightlighting,
 } from '../utils/helper/helper';
-import iconsMap from '../utils/helper/icons';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
@@ -33,6 +32,7 @@ import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
+import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -438,10 +438,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
-          <img
-            :src="`${iconsMap[annotation.data.properties.type]}`"
-            class="button-icon w-full h-full"
-          />
+          <AnnotationTypeIcon :annotationType="annotation.data.properties.type" />
         </div>
         <div class="annotation-type-container">
           <span class="font-bold">{{ annotation.data.properties.type }}</span>
@@ -833,10 +830,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
 .icon-container {
   width: 20px;
   height: 20px;
-}
-
-.button-icon {
-  object-fit: contain;
 }
 
 .form-label {

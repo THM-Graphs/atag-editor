@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import {
@@ -7,7 +8,6 @@ import {
   getSelectionData,
   isEditorElement,
 } from '../utils/helper/helper';
-import iconsMap from '../utils/helper/icons';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
@@ -27,6 +27,7 @@ import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import ShortcutError from '../utils/errors/shortcut.error';
+import { onMounted, ref } from 'vue';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -38,6 +39,7 @@ const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesSt
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
 // const { pushHistoryEntry } = useHistoryStore();
+const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
@@ -49,11 +51,65 @@ const dropdownOptions = options.map((option: string) => {
     command: () => handleDropdownClick(option),
   };
 });
-const toast: ToastServiceMethods = useToast();
+
+const hasIcon = ref<boolean>(true);
+const buttonElm = ref(null);
 
 if (config.shortcut?.length > 0) {
   const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
   registerShortcut(shortcutCombo, handleClick);
+}
+
+// TODO: This is a temporary hack since PrimeVue makes problems with accessing the component's
+// DOM element with the pcButton/pcDropdown pt option...fix maybe later, but works for now
+onMounted(setButtonStylingManually);
+
+function setButtonStylingManually(): void {
+  // This function examines the DOM nodes of the annotation icon span. If the background image could not be loaded
+  // (since it wasn't provided, bad internet connection etc.), the buttons shows the annotation type as string
+  const iconElement: HTMLSpanElement = buttonElm.value.$el.querySelector(
+    `.annotation-type-icon-${annotationType}`,
+  );
+
+  // Return if element was not found
+  if (!iconElement) {
+    return;
+  }
+
+  // If no background image, set hasIcon to false. This will style normal annotation buttons correctly (see Button props)
+  const hasBackgroundImage: boolean =
+    window.getComputedStyle(iconElement).backgroundImage !== 'none';
+
+  hasIcon.value = hasBackgroundImage;
+
+  // SplitButton has its flaws: Dropdown button and annotation button can not be accessed (wait for Primevue update),
+  // therefore the DOM element need to be queried and styled manually. this is done via the subtypeField variable
+  if (subtypeField) {
+    const dropdownButton: HTMLButtonElement | null =
+      buttonElm.value.$el.querySelector('.p-splitbutton-dropdown');
+    const mainButton: HTMLButtonElement | null =
+      buttonElm.value.$el.querySelector('.p-splitbutton-button');
+
+    if (dropdownButton) {
+      dropdownButton.style.width = '15px';
+    }
+
+    if (mainButton) {
+      mainButton.style.width = '35px';
+      mainButton.style.paddingLeft = '5px';
+      mainButton.style.paddingRight = '5px';
+    }
+
+    // When there is no background image AND the annotation has a SplitButton component, the width is set to 'auto'
+    // with the primeflex utility class 'w-auto'.
+    if (!hasBackgroundImage) {
+      const splitButtonElm: HTMLButtonElement = buttonElm.value.$el.querySelector(
+        'button.p-splitbutton-button',
+      );
+
+      splitButtonElm?.classList.add('w-auto');
+    }
+  }
 }
 
 function handleDropdownClick(subtype: string): void {
@@ -436,23 +492,22 @@ function findSpansWithinBoundaries(
 <template>
   <Button
     v-if="!subtypeField"
-    class="button-annotation"
     severity="secondary"
+    ref="buttonElm"
     outlined
     raised
+    :style="{ height: '35px', width: '35px' }"
+    :class="hasIcon ? '' : 'button-empty'"
     :disabled="!selectedOptions.includes(annotationType)"
     :data-annotation-type="annotationType"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
   >
     <template #icon>
-      <!-- TODO: Should this come from annotation type config? -->
-      <img
-        :src="`${iconsMap[annotationType]}`"
-        :title="annotationType"
-        :alt="annotationType"
-        class="button-icon w-full h-full"
-      />
+      <AnnotationTypeIcon v-if="hasIcon" :annotationType="annotationType" />
+    </template>
+    <template #default>
+      <span v-if="!hasIcon"> {{ annotationType }} </span>
     </template>
   </Button>
   <SplitButton
@@ -460,30 +515,26 @@ function findSpansWithinBoundaries(
     severity="secondary"
     outlined
     raised
-    :style="{ width: '3.5rem' }"
+    ref="buttonElm"
+    :style="{ height: '35px' }"
+    :class="hasIcon ? '' : 'w-auto'"
     :model="dropdownOptions"
     :disabled="!selectedOptions.includes(annotationType)"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
   >
-    <span class="flex dropdownOption-center font-bold">
-      <img
-        :src="`${iconsMap[annotationType]}`"
-        :title="annotationType"
-        :alt="annotationType"
-        :style="{ height: '1rem', marginRight: '0.5rem' }"
-      />
-    </span>
+    <template #icon>
+      <AnnotationTypeIcon :annotationType="annotationType" />
+    </template>
+    <template #default>
+      <span v-if="!hasIcon"> {{ annotationType }} </span>
+    </template>
   </SplitButton>
 </template>
 
 <style scoped>
-.button-annotation {
-  width: 35px;
-  height: 35px;
-}
-
-.button-icon {
-  object-fit: contain;
+.button-empty {
+  padding: 0 5px;
+  width: auto !important;
 }
 </style>

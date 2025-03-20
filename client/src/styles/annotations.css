@@ -21,6 +21,8 @@
   --unclear-clr: hsl(328, 98%, 47%);
 }
 
+/* -------- TEXT ------------------------------------------------------------------------------------------------------------ */
+
 #text > span:has(span.emphasised) {
   &:has(.rubricated) {
     font-weight: var(--rubricated-font-weight);
@@ -118,27 +120,6 @@ Fix by changing classlists or annotation types? */
   opacity: var(--commentInternal-opacity);
 }
 
-/* #text > span:has(span.line.end)::after {
-  content: '\A';
-  white-space: pre;
-}
-
-#text > span:has(span.line.end)::before {
-  position: absolute;
-  top: 50%;
-  left: 150%;
-  transform: translateY(-50%);
-  height: 13px;
-  width: 13px;
-  display: inline-block;
-  background-image: url('../../public/other/linebreak.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  content: '';
-  user-select: none;
-  pointer-events: none;
-} */
-
 #text > span:has(span.line.end)::after {
   /* Disable stylings from span element... */
   background-color: white;
@@ -187,7 +168,69 @@ Fix by changing classlists or annotation types? */
   text-decoration-thickness: 2px;
 }
 
-/* -------------------------------------------------------------------------------------------------------------------------- */
+/* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
+
+.annotation-type-icon-entity {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/entity.svg');
+}
+
+.annotation-type-icon-emphasised {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/emphasised.svg');
+}
+
+.annotation-type-icon-expansion {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/expansion.svg');
+}
+
+.annotation-type-icon-nonLinear {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/nonLinear.svg');
+}
+
+.annotation-type-icon-intervention {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/intervention.svg');
+}
+
+.annotation-type-icon-correction {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/correction.svg');
+}
+
+.annotation-type-icon-deleted {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/deleted.svg');
+}
+
+.annotation-type-icon-unclear {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/unclear.svg');
+}
+
+.annotation-type-icon-repeated {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/repeated.svg');
+}
+
+.annotation-type-icon-gap {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/gap.svg');
+}
+
+.annotation-type-icon-addition {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/addition.svg');
+}
+
+.annotation-type-icon-head {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/head.svg');
+}
+
+.annotation-type-icon-line {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/line.svg');
+}
+
+.annotation-type-icon-transposition {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/transposition.svg');
+}
+
+.annotation-type-icon-commentInternal {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentInternal.svg');
+}
+
+/* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
 
 #text > span:has(span.paragraph.end)::after {
   /* This disables inherited styling from span element, must be set at first! */
