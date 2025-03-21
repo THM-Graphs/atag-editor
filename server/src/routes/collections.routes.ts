@@ -6,6 +6,7 @@ import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import { Collection, CollectionAccessObject, CollectionPostData } from '../models/types.js';
+import { getPagination } from '../utils/helper.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -23,8 +24,17 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       t => t.level === 'primary',
     )!.additionalLabel;
 
+    const { sort, order, limit, skip, search } = getPagination(req);
+
     const collections: CollectionAccessObject[] =
-      await collectionService.getCollectionsWithTexts(primaryCollectionLabel);
+      await collectionService.getCollectionsWithTextsAndParams(
+        primaryCollectionLabel,
+        sort,
+        order,
+        limit,
+        skip,
+        search,
+      );
 
     res.status(200).json(collections);
   } catch (error: unknown) {

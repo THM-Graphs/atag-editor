@@ -15,7 +15,6 @@ const baseFetchUrl: string = '/api/collections';
 const toast: ToastServiceMethods = useToast();
 
 const collections = ref<CollectionAccessObject[] | null>(null);
-const filteredCollections = ref<CollectionAccessObject[] | null>(null);
 
 // Refs for fetch url params to re-fetch collections on change
 const searchInput = ref<string>('');
@@ -23,27 +22,23 @@ const offset = ref<number>(0);
 // TODO: Make dynamically
 const rowCount = ref<number>(5);
 const sortField = ref<string>('');
+// TODO: Should this be set here or on the server?
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
-watch([sortField, sortDirection, rowCount, offset, searchInput], () => {
+const fetchUrl = ref<string>(baseFetchUrl);
+
+watch([sortField, sortDirection, rowCount, offset, searchInput], async () => {
   const searchParams: URLSearchParams = new URLSearchParams();
 
   searchParams.set('sort', sortField.value);
   searchParams.set('order', sortDirection.value);
   searchParams.set('limit', rowCount.value.toString());
   searchParams.set('skip', offset.value.toString());
-  searchParams.set('searchStr', searchInput.value);
+  searchParams.set('search', searchInput.value);
 
-  const fetchUrl: string = baseFetchUrl + '?' + searchParams.toString();
-  console.log(fetchUrl);
-});
+  fetchUrl.value = baseFetchUrl + '?' + searchParams.toString();
 
-watch(collections, () => {
-  filterCollections();
-});
-
-watch(searchInput, () => {
-  filterCollections();
+  await getCollections();
 });
 
 onMounted(async (): Promise<void> => {
@@ -52,7 +47,7 @@ onMounted(async (): Promise<void> => {
 
 async function getCollections(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(baseFetchUrl);
+    const url: string = buildFetchUrl(fetchUrl.value);
 
     const response: Response = await fetch(url);
 
@@ -76,12 +71,6 @@ async function getCollections(): Promise<void> {
   } catch (error: unknown) {
     console.error('Error fetching collections:', error);
   }
-}
-
-function filterCollections(): void {
-  filteredCollections.value = collections.value.filter((c: CollectionAccessObject) => {
-    return c.collection.data.label.toLowerCase().includes(searchInput.value);
-  });
 }
 
 function handleCollectionCreation(newCollection: ICollection): void {
@@ -139,7 +128,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     <OverviewCollectionTable
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
-      :collections="filteredCollections"
+      :collections="collections"
     />
   </div>
 </template>

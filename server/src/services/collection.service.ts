@@ -1,4 +1,4 @@
-import { QueryResult } from 'neo4j-driver';
+import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
@@ -67,6 +67,58 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query);
+
+    return result.records[0]?.get('collections');
+  }
+
+  public async getCollectionsWithTextsAndParams(
+    additionalLabel: string,
+    sort: string,
+    order: string,
+    limit: number,
+    skip: number,
+    search: string,
+  ): Promise<CollectionAccessObject[]> {
+    console.log(order);
+
+    const query: string = `
+    MATCH (c:Collection:${additionalLabel})
+    WHERE c.label CONTAINS $search
+
+    WITH c
+    ORDER BY c.${sort} ${order}
+    SKIP ${skip}
+    LIMIT ${limit}
+
+    // Match optional Text node chain
+    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+    WHERE NOT ()-[:NEXT]->(tStart)
+    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+
+    WITH c, tStart, collect(t) AS nextTexts
+    WITH c, coalesce(tStart, []) + nextTexts AS texts
+
+    RETURN collect({
+        collection: {
+            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+            data: c {.*}
+        }, 
+        texts: [
+            t IN texts | {
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                data: t {.*}
+            }
+        ]
+    }) AS collections
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      skip: int(skip),
+      limit: int(limit),
+      sort: int(sort),
+      order,
+      search,
+    });
 
     return result.records[0]?.get('collections');
   }
