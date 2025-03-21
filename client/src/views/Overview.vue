@@ -8,12 +8,35 @@ import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { CollectionAccessObject } from '../models/types';
+import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+
+const baseFetchUrl: string = '/api/collections';
+
+const toast: ToastServiceMethods = useToast();
 
 const collections = ref<CollectionAccessObject[] | null>(null);
 const filteredCollections = ref<CollectionAccessObject[] | null>(null);
-const searchInput = ref<string>('');
 
-const toast: ToastServiceMethods = useToast();
+// Refs for fetch url params to re-fetch collections on change
+const searchInput = ref<string>('');
+const offset = ref<number>(0);
+// TODO: Make dynamically
+const rowCount = ref<number>(5);
+const sortField = ref<string>('');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+
+watch([sortField, sortDirection, rowCount, offset, searchInput], () => {
+  const searchParams: URLSearchParams = new URLSearchParams();
+
+  searchParams.set('sort', sortField.value);
+  searchParams.set('order', sortDirection.value);
+  searchParams.set('limit', rowCount.value.toString());
+  searchParams.set('skip', offset.value.toString());
+  searchParams.set('searchStr', searchInput.value);
+
+  const fetchUrl: string = baseFetchUrl + '?' + searchParams.toString();
+  console.log(fetchUrl);
+});
 
 watch(collections, () => {
   filterCollections();
@@ -29,7 +52,7 @@ onMounted(async (): Promise<void> => {
 
 async function getCollections(): Promise<void> {
   try {
-    const url: string = buildFetchUrl('/api/collections');
+    const url: string = buildFetchUrl(baseFetchUrl);
 
     const response: Response = await fetch(url);
 
@@ -70,6 +93,22 @@ function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
 }
 
+function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
+  // TODO: Fix this, looks ugly
+  sortField.value = (event.sortField as string | null) || '';
+  sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
+  rowCount.value = event.rows || 5;
+  offset.value = event.first || 0;
+}
+
+function handleSortChange(event: DataTableSortEvent): void {
+  updateTableUrlParams(event);
+}
+
+function handlePaginationChange(event: DataTablePageEvent): void {
+  updateTableUrlParams(event);
+}
+
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   toast.add({
     severity: 'success',
@@ -97,7 +136,11 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       >
     </div>
 
-    <OverviewCollectionTable :collections="filteredCollections" />
+    <OverviewCollectionTable
+      @sort-changed="handleSortChange"
+      @pagination-changed="handlePaginationChange"
+      :collections="filteredCollections"
+    />
   </div>
 </template>
 

@@ -5,7 +5,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
+import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
 import { CollectionAccessObject, CollectionProperty } from '../models/types';
@@ -17,6 +17,8 @@ type CollectionTableEntry = {
 const props = defineProps<{
   collections: CollectionAccessObject[] | null;
 }>();
+
+const emit = defineEmits(['paginationChanged', 'sortChanged']);
 
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 const columns = ref<string[]>([]);
@@ -59,6 +61,14 @@ function getColumnWidth(columnName: string): string {
   }
 }
 
+function handleSort(event: DataTableSortEvent): void {
+  emit('sortChanged', event);
+}
+
+function handlePagination(event: DataTablePageEvent): void {
+  emit('paginationChanged', event);
+}
+
 // TODO: getGuidelines exists in multiple components now, should be moved to a shared location
 async function getGuidelines(): Promise<void> {
   try {
@@ -88,8 +98,8 @@ async function getGuidelines(): Promise<void> {
       scrollHeight="flex"
       :value="tableData"
       paginator
-      :rows="10"
-      :rowsPerPageOptions="[10, 20, 50, 100]"
+      :rows="5"
+      :rowsPerPageOptions="[5, 10, 20, 50, 100]"
       removableSort
       resizableColumns
       rowHover
@@ -97,6 +107,8 @@ async function getGuidelines(): Promise<void> {
       paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
       currentPageReportTemplate="{first} to {last} of {totalRecords}"
       size="small"
+      @sort="handleSort"
+      @page="handlePagination"
     >
       <Column
         v-for="col of columns"
