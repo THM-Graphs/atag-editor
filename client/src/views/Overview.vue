@@ -7,7 +7,7 @@ import OverviewToolbar from '../components/OverviewToolbar.vue';
 import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { CollectionAccessObject } from '../models/types';
+import { CollectionAccessObject, PaginationData, PaginationResult } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 
 const baseFetchUrl: string = '/api/collections';
@@ -15,6 +15,7 @@ const baseFetchUrl: string = '/api/collections';
 const toast: ToastServiceMethods = useToast();
 
 const collections = ref<CollectionAccessObject[] | null>(null);
+const pagination = ref<PaginationData | null>(null);
 
 // Refs for fetch url params to re-fetch collections on change
 const searchInput = ref<string>('');
@@ -42,6 +43,15 @@ watch([sortField, sortDirection, rowCount, offset, searchInput], async () => {
 });
 
 onMounted(async (): Promise<void> => {
+  const searchParams: URLSearchParams = new URLSearchParams();
+
+  searchParams.set('sort', sortField.value);
+  searchParams.set('order', sortDirection.value);
+  searchParams.set('limit', rowCount.value.toString());
+  searchParams.set('skip', offset.value.toString());
+  searchParams.set('search', searchInput.value);
+
+  fetchUrl.value = baseFetchUrl + '?' + searchParams.toString();
   await getCollections();
 });
 
@@ -55,19 +65,10 @@ async function getCollections(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollections: CollectionAccessObject[] = await response.json();
+    const paginationResult: PaginationResult<CollectionAccessObject[]> = await response.json();
 
-    fetchedCollections.sort((a: CollectionAccessObject, b: CollectionAccessObject) => {
-      if (a.collection.data.label.toLowerCase() < b.collection.data.label.toLowerCase()) {
-        return -1;
-      }
-      if (a.collection.data.label.toLowerCase() > b.collection.data.label.toLowerCase()) {
-        return 1;
-      }
-      return 0;
-    });
-
-    collections.value = fetchedCollections;
+    collections.value = paginationResult.data;
+    pagination.value = paginationResult.pagination;
   } catch (error: unknown) {
     console.error('Error fetching collections:', error);
   }
@@ -129,6 +130,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
       :collections="collections"
+      :pagination="pagination"
     />
   </div>
 </template>

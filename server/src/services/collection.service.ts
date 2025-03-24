@@ -6,6 +6,7 @@ import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import {
   CollectionAccessObject,
+  PaginationResult,
   CollectionPostData,
   CollectionProperty,
   Text,
@@ -78,10 +79,14 @@ export default class CollectionService {
     limit: number,
     skip: number,
     search: string,
-  ): Promise<CollectionAccessObject[]> {
-    console.log(order);
+  ): Promise<PaginationResult<CollectionAccessObject[]>> {
+    const countQuery: string = `
+    MATCH (c:Collection:${additionalLabel})
+    WHERE c.label CONTAINS $search
+    RETURN count(c) AS totalRecords
+    `;
 
-    const query: string = `
+    const dataQuery: string = `
     MATCH (c:Collection:${additionalLabel})
     WHERE c.label CONTAINS $search
 
@@ -112,15 +117,31 @@ export default class CollectionService {
     }) AS collections
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      skip: int(skip),
-      limit: int(limit),
-      sort: int(sort),
-      order,
-      search,
-    });
+    const [countResult, dataResult] = await Promise.all([
+      Neo4jDriver.runQuery(countQuery, { search }),
+      Neo4jDriver.runQuery(dataQuery, {
+        skip: int(skip),
+        limit: int(limit),
+        sort: int(sort),
+        order,
+        search,
+      }),
+    ]);
 
-    return result.records[0]?.get('collections');
+    const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
+    const data: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+
+    return {
+      data,
+      pagination: {
+        limit,
+        order,
+        search,
+        skip,
+        sort,
+        totalRecords,
+      },
+    };
   }
 
   /**

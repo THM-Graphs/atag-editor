@@ -28,6 +28,8 @@ const ORDERS: string[] = [ORDER_ASC, ORDER_DESC];
  * @returns {Record<string, any>}
  */
 export function getPagination(req: Request): Record<string, any> {
+  // TODO: Fix types
+  // TODO: Fix JSDoc
   let { search, limit, skip, sort, order } = req.query;
 
   // Only accept valid orderby fields

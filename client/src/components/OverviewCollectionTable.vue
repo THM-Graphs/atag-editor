@@ -8,7 +8,7 @@ import Column from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
-import { CollectionAccessObject, CollectionProperty } from '../models/types';
+import { CollectionAccessObject, CollectionProperty, PaginationData } from '../models/types';
 
 type CollectionTableEntry = {
   [key: string | keyof CollectionProperty]: unknown;
@@ -16,6 +16,7 @@ type CollectionTableEntry = {
 
 const props = defineProps<{
   collections: CollectionAccessObject[] | null;
+  pagination: PaginationData | null;
 }>();
 
 const emit = defineEmits(['paginationChanged', 'sortChanged']);
@@ -98,7 +99,9 @@ async function getGuidelines(): Promise<void> {
       scrollHeight="flex"
       :value="tableData"
       paginator
+      lazy
       :rows="5"
+      :totalRecords="props.pagination.totalRecords"
       :rowsPerPageOptions="[5, 10, 20, 50, 100]"
       removableSort
       resizableColumns
