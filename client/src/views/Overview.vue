@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -26,9 +26,7 @@ const sortField = ref<string>('');
 // TODO: Should this be set here or on the server?
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
-const fetchUrl = ref<string>(baseFetchUrl);
-
-watch([sortField, sortDirection, rowCount, offset, searchInput], async () => {
+const fetchUrl = computed<string>(() => {
   const searchParams: URLSearchParams = new URLSearchParams();
 
   searchParams.set('sort', sortField.value);
@@ -37,21 +35,12 @@ watch([sortField, sortDirection, rowCount, offset, searchInput], async () => {
   searchParams.set('skip', offset.value.toString());
   searchParams.set('search', searchInput.value);
 
-  fetchUrl.value = baseFetchUrl + '?' + searchParams.toString();
-
-  await getCollections();
+  return `${baseFetchUrl}?${searchParams.toString()}`;
 });
 
+watch(fetchUrl, async () => await getCollections());
+
 onMounted(async (): Promise<void> => {
-  const searchParams: URLSearchParams = new URLSearchParams();
-
-  searchParams.set('sort', sortField.value);
-  searchParams.set('order', sortDirection.value);
-  searchParams.set('limit', rowCount.value.toString());
-  searchParams.set('skip', offset.value.toString());
-  searchParams.set('search', searchInput.value);
-
-  fetchUrl.value = baseFetchUrl + '?' + searchParams.toString();
   await getCollections();
 });
 
@@ -122,7 +111,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 
     <div class="counter text-right pt-2 pb-3">
       <strong class="text-base"
-        >{{ collections ? collections.length : 0 }} Collections in total</strong
+        >{{ pagination ? pagination.totalRecords : 0 }} Collections in total</strong
       >
     </div>
 
