@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
-import Column from 'primevue/column';
+import Column, { ColumnPassThroughMethodOptions } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
@@ -137,6 +137,13 @@ async function getGuidelines(): Promise<void> {
         :header="capitalize(col.name)"
         :sortable="col.isSortable"
         :headerStyle="`width: ${getColumnWidth(col.name)}`"
+        :pt="{
+          headerCell: (options: ColumnPassThroughMethodOptions) => {
+            return {
+              title: options.props.sortable ? `Sort by ${options.props.header}` : undefined,
+            };
+          },
+        }"
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
