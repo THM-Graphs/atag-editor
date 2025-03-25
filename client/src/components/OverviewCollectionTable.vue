@@ -109,8 +109,8 @@ async function getGuidelines(): Promise<void> {
       :value="tableData"
       paginator
       lazy
-      :rows="5"
-      :totalRecords="props.pagination.totalRecords"
+      :rows="pagination?.limit || 0"
+      :totalRecords="pagination?.totalRecords || 0"
       :rowsPerPageOptions="[5, 10, 20, 50, 100]"
       removableSort
       resizableColumns

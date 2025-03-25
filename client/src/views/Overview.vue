@@ -21,7 +21,7 @@ const pagination = ref<PaginationData | null>(null);
 const searchInput = ref<string>('');
 const offset = ref<number>(0);
 // TODO: Make dynamically
-const rowCount = ref<number>(5);
+const rowCount = ref<number>(10);
 const sortField = ref<string>('');
 // TODO: Should this be set here or on the server?
 const sortDirection = ref<'asc' | 'desc'>('asc');
@@ -40,9 +40,7 @@ const fetchUrl = computed<string>(() => {
 
 watch(fetchUrl, async () => await getCollections());
 
-onMounted(async (): Promise<void> => {
-  await getCollections();
-});
+onMounted(async (): Promise<void> => await getCollections());
 
 async function getCollections(): Promise<void> {
   try {
