@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const { sort, order, limit, skip, search } = getPagination(req);
 
     const collections: PaginationResult<CollectionAccessObject[]> =
-      await collectionService.getCollectionsWithTextsAndParams(
+      await collectionService.getCollections(
         primaryCollectionLabel,
         sort,
         order,

@@ -20,59 +20,6 @@ type CollectionTextObject = {
 
 export default class CollectionService {
   /**
-   * Retrieves collection nodes based on the additional label provided.
-   *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
-   * @return {Promise<ICollection[]>} A promise that resolves to an array of collections.
-   */
-  public async getCollections(additionalLabel: string): Promise<ICollection[]> {
-    const query: string = `
-    MATCH (n:Collection:${additionalLabel}) RETURN collect(n {.*}) as collections
-    `;
-
-    const result: QueryResult = await Neo4jDriver.runQuery(query);
-
-    return result.records[0]?.get('collections');
-  }
-
-  /**
-   * Retrieves collection nodes together with connected text nodes based on the additional label provided.
-   *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
-   * @return {Promise<CollectionAccessObject[]>} A promise that resolves to an array of collection access objects.
-   */
-  public async getCollectionsWithTexts(additionalLabel: string): Promise<CollectionAccessObject[]> {
-    const query: string = `
-    MATCH (c:Collection:${additionalLabel})
-
-    // Match optional Text node chain
-    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-    WHERE NOT ()-[:NEXT]->(tStart)
-    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
-
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts
-
-    RETURN collect({
-        collection: {
-            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-            data: c {.*}
-        }, 
-        texts: [
-            t IN texts | {
-                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
-                data: t {.*}
-            }
-        ]
-    }) AS collections
-    `;
-
-    const result: QueryResult = await Neo4jDriver.runQuery(query);
-
-    return result.records[0]?.get('collections');
-  }
-
-  /**
    * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
    * as well as pagination parameters are provided.
    *
@@ -84,7 +31,7 @@ export default class CollectionService {
    * @param {string} search - The search string to filter collections by their label.
    * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
    */
-  public async getCollectionsWithTextsAndParams(
+  public async getCollections(
     additionalLabel: string,
     sort: string,
     order: string,
