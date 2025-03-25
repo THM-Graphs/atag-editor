@@ -111,6 +111,20 @@ export type MalformedAnnotation = {
   data: StandoffAnnotation;
 };
 
+export type PaginationData = {
+  limit: number;
+  order: string;
+  search: string;
+  skip: number;
+  sort: string;
+  totalRecords: number;
+};
+
+export type PaginationResult<T> = {
+  data: T;
+  pagination: PaginationData;
+};
+
 export type StandoffAnnotation = {
   [key: string]: string | number | boolean;
   start: number;

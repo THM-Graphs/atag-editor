@@ -1,4 +1,4 @@
-import { QueryResult } from 'neo4j-driver';
+import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import NotFoundError from '../errors/not-found.error.js';
@@ -6,6 +6,7 @@ import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import {
   CollectionAccessObject,
+  PaginationResult,
   CollectionPostData,
   CollectionProperty,
   Text,
@@ -19,30 +20,39 @@ type CollectionTextObject = {
 
 export default class CollectionService {
   /**
-   * Retrieves collection nodes based on the additional label provided.
+   * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
+   * as well as pagination parameters are provided.
    *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
-   * @return {Promise<ICollection[]>} A promise that resolves to an array of collections.
+   * @param {string} additionalLabel - The additional label to match in the query, e.g., "Letter".
+   * @param {string} sort - The field by which to sort the collections.
+   * @param {string} order - The order in which to sort the collections (ascending or descending).
+   * @param {number} limit - The maximum number of collections to return.
+   * @param {number} skip - The number of collections to skip before starting to collect the result set.
+   * @param {string} search - The search string to filter collections by their label.
+   * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
    */
-  public async getCollections(additionalLabel: string): Promise<ICollection[]> {
-    const query: string = `
-    MATCH (n:Collection:${additionalLabel}) RETURN collect(n {.*}) as collections
+  public async getCollections(
+    additionalLabel: string,
+    sort: string,
+    order: string,
+    limit: number,
+    skip: number,
+    search: string,
+  ): Promise<PaginationResult<CollectionAccessObject[]>> {
+    const countQuery: string = `
+    MATCH (c:Collection:${additionalLabel})
+    WHERE c.label CONTAINS $search
+    RETURN count(c) AS totalRecords
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query);
-
-    return result.records[0]?.get('collections');
-  }
-
-  /**
-   * Retrieves collection nodes together with connected text nodes based on the additional label provided.
-   *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "Letter" for collection nodes containing text metadata.
-   * @return {Promise<CollectionAccessObject[]>} A promise that resolves to an array of collection access objects.
-   */
-  public async getCollectionsWithTexts(additionalLabel: string): Promise<CollectionAccessObject[]> {
-    const query: string = `
+    const dataQuery: string = `
     MATCH (c:Collection:${additionalLabel})
+    WHERE c.label CONTAINS $search
+
+    WITH c
+    ORDER BY c.${sort} ${order}
+    SKIP ${skip}
+    LIMIT ${limit}
 
     // Match optional Text node chain
     OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
@@ -66,9 +76,31 @@ export default class CollectionService {
     }) AS collections
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query);
+    const [countResult, dataResult] = await Promise.all([
+      Neo4jDriver.runQuery(countQuery, { search }),
+      Neo4jDriver.runQuery(dataQuery, {
+        skip: int(skip),
+        limit: int(limit),
+        sort: int(sort),
+        order,
+        search,
+      }),
+    ]);
 
-    return result.records[0]?.get('collections');
+    const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
+    const data: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+
+    return {
+      data,
+      pagination: {
+        limit,
+        order,
+        search,
+        skip,
+        sort,
+        totalRecords,
+      },
+    };
   }
 
   /**

@@ -5,21 +5,31 @@ import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { buildFetchUrl, capitalize } from '../utils/helper/helper';
 import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
+import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
-import { CollectionAccessObject, CollectionProperty } from '../models/types';
+import { CollectionAccessObject, CollectionProperty, PaginationData } from '../models/types';
 
 type CollectionTableEntry = {
   [key: string | keyof CollectionProperty]: unknown;
 };
 
+type ColumnConfig = {
+  name: string;
+  isSortable: boolean;
+};
+
 const props = defineProps<{
   collections: CollectionAccessObject[] | null;
+  pagination: PaginationData | null;
+  asyncOperationRunning: boolean;
 }>();
 
+const emit = defineEmits(['paginationChanged', 'sortChanged']);
+
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
-const columns = ref<string[]>([]);
+
+const columns = ref<ColumnConfig[]>([]);
 
 const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
   return props?.collections?.map(collection => {
@@ -36,15 +46,18 @@ onMounted(async (): Promise<void> => {
 
   // Get Collection type that is shown in the table and does not only exist as anchor to additional text
   // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-  const primaryCollectionLabel = guidelines.value.collections.types.find(
+  const primaryCollectionLabel: string = guidelines.value.collections.types.find(
     t => t.level === 'primary',
   )?.additionalLabel;
 
   // TODO: This approach is bad since possible data keys are reserved...
   columns.value = [
-    'nodeLabels',
-    ...getCollectionConfigFields([primaryCollectionLabel]).map(f => f.name),
-    'texts',
+    { name: 'nodeLabels', isSortable: false },
+    ...getCollectionConfigFields([primaryCollectionLabel]).map(f => ({
+      name: f.name,
+      isSortable: true,
+    })),
+    { name: 'texts', isSortable: false },
   ];
 });
 
@@ -57,6 +70,14 @@ function getColumnWidth(columnName: string): string {
     default:
       return 'auto';
   }
+}
+
+function handleSort(event: DataTableSortEvent): void {
+  emit('sortChanged', event);
+}
+
+function handlePagination(event: DataTablePageEvent): void {
+  emit('paginationChanged', event);
 }
 
 // TODO: getGuidelines exists in multiple components now, should be moved to a shared location
@@ -88,8 +109,10 @@ async function getGuidelines(): Promise<void> {
       scrollHeight="flex"
       :value="tableData"
       paginator
-      :rows="10"
-      :rowsPerPageOptions="[10, 20, 50, 100]"
+      lazy
+      :rows="pagination?.limit || 0"
+      :totalRecords="pagination?.totalRecords || 0"
+      :rowsPerPageOptions="[5, 10, 20, 50, 100]"
       removableSort
       resizableColumns
       rowHover
@@ -97,27 +120,36 @@ async function getGuidelines(): Promise<void> {
       paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
       currentPageReportTemplate="{first} to {last} of {totalRecords}"
       size="small"
+      @sort="handleSort"
+      @page="handlePagination"
+      :pt="{
+        tbody: {
+          style: {
+            opacity: asyncOperationRunning ? 0.5 : 'unset',
+          },
+        },
+      }"
     >
       <Column
         v-for="col of columns"
-        :key="col"
-        :field="col"
-        :header="capitalize(col)"
-        sortable
-        :headerStyle="`width: ${getColumnWidth(col)}`"
+        :key="col.name"
+        :field="col.name"
+        :header="capitalize(col.name)"
+        :sortable="col.isSortable"
+        :headerStyle="`width: ${getColumnWidth(col.name)}`"
       >
         <template #body="{ data }">
           <!-- TODO: This should come from the configuration... -->
           <!-- TODO: Bit hacky. Beautify? -->
           <RouterLink
-            v-if="col === 'label'"
+            v-if="col.name === 'label'"
             class="cell-link"
             :to="`/collections/${data.uuid}`"
-            v-tooltip.hover.top="{ value: data[col], showDelay: 0 }"
-            >{{ data[col] }}</RouterLink
+            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
+            >{{ data[col.name] }}</RouterLink
           >
-          <span v-else-if="col === 'texts'" class="cell-info">{{ data[col] }}</span>
-          <span v-else-if="col === 'nodeLabels'" class="cell-info">
+          <span v-else-if="col.name === 'texts'" class="cell-info">{{ data[col.name] }}</span>
+          <span v-else-if="col.name === 'nodeLabels'" class="cell-info">
             <div class="box flex" style="flex-wrap: wrap">
               <Tag
                 v-for="label in data.nodeLabels"
@@ -127,9 +159,12 @@ async function getGuidelines(): Promise<void> {
               />
             </div>
           </span>
-          <span v-else class="cell-info" v-tooltip.hover.top="{ value: data[col], showDelay: 0 }">{{
-            data[col]
-          }}</span>
+          <span
+            v-else
+            class="cell-info"
+            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
+            >{{ data[col.name] }}</span
+          >
         </template>
       </Column>
     </DataTable>
