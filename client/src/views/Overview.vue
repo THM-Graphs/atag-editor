@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
+import { refDebounced } from '@vueuse/core';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -10,6 +11,7 @@ import { buildFetchUrl } from '../utils/helper/helper';
 import { CollectionAccessObject, PaginationData, PaginationResult } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 
+const INPUT_DELAY: number = 300;
 const baseFetchUrl: string = '/api/collections';
 
 const toast: ToastServiceMethods = useToast();
@@ -19,11 +21,12 @@ const pagination = ref<PaginationData | null>(null);
 
 // Refs for fetch url params to re-fetch collections on change
 const searchInput = ref<string>('');
+const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
+
 const offset = ref<number>(0);
 // TODO: Make dynamically
 const rowCount = ref<number>(10);
 const sortField = ref<string>('');
-// TODO: Should this be set here or on the server?
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
 const fetchUrl = computed<string>(() => {
@@ -33,7 +36,7 @@ const fetchUrl = computed<string>(() => {
   searchParams.set('order', sortDirection.value);
   searchParams.set('limit', rowCount.value.toString());
   searchParams.set('skip', offset.value.toString());
-  searchParams.set('search', searchInput.value);
+  searchParams.set('search', debouncedSearchInput.value);
 
   return `${baseFetchUrl}?${searchParams.toString()}`;
 });
