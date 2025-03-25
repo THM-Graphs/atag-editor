@@ -47,7 +47,7 @@ export default class CollectionService {
 
     const dataQuery: string = `
     MATCH (c:Collection:${additionalLabel})
-    WHERE c.label CONTAINS $search
+    WHERE toLower(c.label) CONTAINS $search
 
     WITH c
     ORDER BY c.${sort} ${order}
