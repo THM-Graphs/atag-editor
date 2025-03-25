@@ -72,6 +72,18 @@ export default class CollectionService {
     return result.records[0]?.get('collections');
   }
 
+  /**
+   * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
+   * as well as pagination parameters are provided.
+   *
+   * @param {string} additionalLabel - The additional label to match in the query, e.g., "Letter".
+   * @param {string} sort - The field by which to sort the collections.
+   * @param {string} order - The order in which to sort the collections (ascending or descending).
+   * @param {number} limit - The maximum number of collections to return.
+   * @param {number} skip - The number of collections to skip before starting to collect the result set.
+   * @param {string} search - The search string to filter collections by their label.
+   * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
+   */
   public async getCollectionsWithTextsAndParams(
     additionalLabel: string,
     sort: string,

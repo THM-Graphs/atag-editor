@@ -20,9 +20,10 @@ const collections = ref<CollectionAccessObject[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 
 // Refs for fetch url params to re-fetch collections on change
-const searchInput = ref<string>('');
-const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
 
+const searchInput = ref<string>('');
+// This ref is used to prevent too many fetches when rapid typing
+const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
 const offset = ref<number>(0);
 // TODO: Make dynamically
 const rowCount = ref<number>(10);
