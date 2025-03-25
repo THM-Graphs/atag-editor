@@ -42,8 +42,11 @@ watch(fetchUrl, async () => await getCollections());
 
 onMounted(async (): Promise<void> => await getCollections());
 
+const asyncOperationRunning = ref<boolean>(false);
+
 async function getCollections(): Promise<void> {
   try {
+    asyncOperationRunning.value = true;
     const url: string = buildFetchUrl(fetchUrl.value);
 
     const response: Response = await fetch(url);
@@ -58,6 +61,8 @@ async function getCollections(): Promise<void> {
     pagination.value = paginationResult.pagination;
   } catch (error: unknown) {
     console.error('Error fetching collections:', error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
 }
 
@@ -118,6 +123,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       @pagination-changed="handlePaginationChange"
       :collections="collections"
       :pagination="pagination"
+      :async-operation-running="asyncOperationRunning"
     />
   </div>
 </template>

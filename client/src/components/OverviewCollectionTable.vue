@@ -22,6 +22,7 @@ type ColumnConfig = {
 const props = defineProps<{
   collections: CollectionAccessObject[] | null;
   pagination: PaginationData | null;
+  asyncOperationRunning: boolean;
 }>();
 
 const emit = defineEmits(['paginationChanged', 'sortChanged']);
@@ -121,6 +122,13 @@ async function getGuidelines(): Promise<void> {
       size="small"
       @sort="handleSort"
       @page="handlePagination"
+      :pt="{
+        tbody: {
+          style: {
+            opacity: asyncOperationRunning ? 0.5 : 'unset',
+          },
+        },
+      }"
     >
       <Column
         v-for="col of columns"
