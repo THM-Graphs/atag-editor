@@ -487,7 +487,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             >{{ camelCaseToTitleCase(field.name) }}
           </label>
           <InputText
-            v-if="field.type === 'text'"
+            v-if="field.type === 'string' && (field.template === 'input' || !field.template)"
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
@@ -497,7 +497,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             spellcheck="false"
           />
           <Textarea
-            v-else-if="field.type === 'textarea'"
+            v-else-if="field.type === 'string' && field.template === 'textarea'"
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"

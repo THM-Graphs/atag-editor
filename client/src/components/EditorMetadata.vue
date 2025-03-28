@@ -14,7 +14,7 @@ import Tag from 'primevue/tag';
 
 type CollectionTableEntry = {
   property: string;
-  value: string | number;
+  value: string | number | boolean;
 };
 
 const { text, correspondingCollection, path } = useTextStore();
