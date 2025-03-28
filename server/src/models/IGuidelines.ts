@@ -1,28 +1,28 @@
 import {
   AnnotationConfigResource,
-  AnnotationProperty,
+  AnnotationPropertyConfig,
   AnnotationType,
-  CollectionProperty,
+  CollectionPropertyConfig,
 } from './types.js';
 
 export interface IGuidelines {
   collections: {
     properties: {
-      system: CollectionProperty[];
-      base: CollectionProperty[];
+      system: CollectionPropertyConfig[];
+      base: CollectionPropertyConfig[];
     };
     types: {
       additionalLabel: string;
       level:
         | 'primary'
         | 'secondary' /* Quick fix to determine which collections should be loaded into the overview table */;
-      properties: CollectionProperty[];
+      properties: CollectionPropertyConfig[];
     }[];
   };
   annotations: {
     additionalTexts: string[];
     types: AnnotationType[];
-    properties: AnnotationProperty[];
+    properties: AnnotationPropertyConfig[];
     resources: AnnotationConfigResource[];
   };
   texts: {

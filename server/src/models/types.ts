@@ -4,6 +4,10 @@ import ICollection from './ICollection.js';
 import IEntity from './IEntity.js';
 import IText from './IText.js';
 
+export type PropertyConfigDataType = 'array' | 'boolean' | 'integer' | 'number' | 'string';
+export type PropertyConfigStringFormat = 'date' | 'date-time' | 'duration' | 'time';
+export type PropertyConfigStringTemplate = 'input' | 'textarea';
+
 export type AdditionalText = {
   collection: Collection;
   text: Text;
@@ -42,11 +46,13 @@ export type AnnotationType = {
 
 export type AnnotationProperty = {
   name: string /* type, subtype, text, url */;
-  type: 'text' | 'textarea' | 'checkbox' | 'selection' /* raw string, dropdown, multiple options */;
+  format?: PropertyConfigStringFormat /* Specifies string format, e.g. date, date-time, duration, time */;
+  type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;
   options?: string[] /* Options for dropdown */;
+  template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
 
 export type AnnotationReference = {
@@ -87,11 +93,13 @@ export type CollectionAccessObject = {
 
 export type CollectionProperty = {
   name: string /* folioEnd, label, websiteUrl */;
-  type: string /* raw string, dropdown, multiple options */;
+  format?: PropertyConfigStringFormat /* Specifies string format, e.g. date, date-time, duration, time */;
+  type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;
-  // options?: string[] /* Options if type is dropdown */;
+  options?: string[] /* Options if type is dropdown */;
+  template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
 
 export type CollectionPostData = {

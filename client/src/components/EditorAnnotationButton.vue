@@ -352,21 +352,16 @@ function createNewAnnotation(
   // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
   fields.forEach((field: AnnotationProperty) => {
-    switch (field.type) {
-      case 'text':
-        newAnnotationData[field.name] = '';
-        break;
-      case 'textarea':
-        newAnnotationData[field.name] = '';
-        break;
-      case 'selection':
-        newAnnotationData[field.name] = field.options[0] ?? '';
-        break;
-      case 'checkbox':
-        newAnnotationData[field.name] = false;
-        break;
-      default:
-        newAnnotationData[field.name] = '';
+    if (field.type === 'string' && (field.template === 'input' || !field.template)) {
+      newAnnotationData[field.name] = '';
+    } else if (field.type === 'string' && field.template === 'textarea') {
+      newAnnotationData[field.name] = '';
+    } else if (field.type === 'string' || field.options) {
+      newAnnotationData[field.name] = field.options[0] ?? '';
+    } else if (field.type === 'boolean') {
+      newAnnotationData[field.name] = false;
+    } else {
+      newAnnotationData[field.name] = '';
     }
   });
 

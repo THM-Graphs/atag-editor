@@ -7,7 +7,7 @@
       "system": [
         {
           "name": "label",
-          "type": "text",
+          "type": "string",
           "required": true,
           "editable": true,
           "visible": false
@@ -22,21 +22,21 @@
         "properties": [
           {
             "name": "status",
-            "type": "text",
+            "type": "string",
             "required": false,
             "editable": true,
             "visible": true
           },
           {
             "name": "sender",
-            "type": "text",
+            "type": "string",
             "required": false,
             "editable": true,
             "visible": true
           },
           {
             "name": "receiver",
-            "type": "text",
+            "type": "string",
             "required": false,
             "editable": true,
             "visible": true
@@ -60,7 +60,7 @@
         "properties": [
           {
             "name": "subtype",
-            "type": "selection",
+            "type": "string",
             "options": ["rubricated", "initial", "underlined", "italic", "bold", "smallCaps"],
             "required": true,
             "editable": true,
@@ -83,7 +83,7 @@
         "properties": [
           {
             "name": "subtype",
-            "type": "selection",
+            "type": "string",
             "options": ["aboveLine", "marginNote"],
             "required": true,
             "editable": true,
@@ -99,7 +99,7 @@
         "properties": [
           {
             "name": "subtype",
-            "type": "selection",
+            "type": "string",
             "options": ["conjecture", "correction", "normalisation"],
             "required": true,
             "editable": true,
@@ -115,7 +115,7 @@
         "properties": [
           {
             "name": "subtype",
-            "type": "selection",
+            "type": "string",
             "options": ["inPlace", "inRasura"],
             "required": true,
             "editable": true,
@@ -168,42 +168,42 @@
         "properties": [
           {
             "name": "page",
-            "type": "text",
+            "type": "string",
             "required": false,
             "editable": true,
             "visible": true
           },
           {
             "name": "url",
-            "type": "text",
+            "type": "string",
             "required": false,
             "editable": true,
             "visible": true
           },
           {
             "name": "firstLineOfColumn",
-            "type": "checkbox",
+            "type": "boolean",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
             "name": "lastLineOfColumn",
-            "type": "checkbox",
+            "type": "boolean",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
             "name": "firstLineOfPage",
-            "type": "checkbox",
+            "type": "boolean",
             "required": true,
             "editable": true,
             "visible": true
           },
           {
             "name": "lastLineOfPage",
-            "type": "checkbox",
+            "type": "boolean",
             "required": true,
             "editable": true,
             "visible": true
@@ -232,7 +232,7 @@
         "properties": [
           {
             "name": "subtype",
-            "type": "selection",
+            "type": "string",
             "options": ["concept", "event", "imagery", "person", "place", "reference"],
             "required": true,
             "editable": true,
@@ -244,35 +244,37 @@
     "properties": [
       {
         "name": "type",
-        "type": "text",
+        "type": "string",
         "required": true,
         "editable": false,
         "visible": true
       },
       {
         "name": "text",
-        "type": "text",
+        "type": "string",
         "required": true,
         "editable": false,
         "visible": true
       },
       {
         "name": "originalText",
-        "type": "text",
+        "type": "string",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "comment",
-        "type": "textarea",
+        "type": "string",
+        "template": "textarea",
         "required": false,
         "editable": true,
         "visible": true
       },
       {
         "name": "commentInternal",
-        "type": "textarea",
+        "type": "string",
+        "template": "textarea",
         "required": false,
         "editable": true,
         "visible": true

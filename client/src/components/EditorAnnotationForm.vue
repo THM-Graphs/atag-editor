@@ -380,13 +380,16 @@ function addAdditionalText(): void {
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: CollectionProperty) => {
-    // TODO: Is this needed? Or should Collection Properties always be text?
-    switch (field.type) {
-      case 'text':
-        newCollectionProperties[field.name] = '';
-        break;
-      default:
-        newCollectionProperties[field.name] = '';
+    if (field.type === 'string' && (field.template === 'input' || !field.template)) {
+      newCollectionProperties[field.name] = '';
+    } else if (field.type === 'string' && field.template === 'textarea') {
+      newCollectionProperties[field.name] = '';
+    } else if (field.type === 'string' || field.options) {
+      newCollectionProperties[field.name] = field.options[0] ?? '';
+    } else if (field.type === 'boolean') {
+      newCollectionProperties[field.name] = false;
+    } else {
+      newCollectionProperties[field.name] = '';
     }
   });
 
@@ -505,7 +508,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
             class="flex-auto w-full"
           />
           <Select
-            v-else-if="field.type === 'selection'"
+            v-else-if="field.type === 'string' && field.options"
             :id="field.name"
             :disabled="!field.editable"
             :required="field.required"
@@ -524,7 +527,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           /> -->
           <!-- TODO: Primevue checkboxes work differently... -> create own component or match styling -->
           <input
-            v-else-if="field.type === 'checkbox'"
+            v-else-if="field.type === 'boolean'"
             v-model="annotation.data.properties[field.name]"
             type="checkbox"
             :id="field.name"
