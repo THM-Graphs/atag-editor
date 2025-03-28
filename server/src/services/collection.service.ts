@@ -8,7 +8,7 @@ import {
   CollectionAccessObject,
   PaginationResult,
   CollectionPostData,
-  CollectionProperty,
+  PropertyConfig,
   Text,
 } from '../models/types.js';
 
@@ -183,7 +183,7 @@ export default class CollectionService {
   public async createNewCollection(data: ICollection, nodeLabels: string[]): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
 
-    const requiredFields: CollectionProperty[] =
+    const requiredFields: PropertyConfig[] =
       await guidelineService.getCollectionConfigFields(nodeLabels);
 
     // Add default properties if they are not sent in the request

@@ -1,28 +1,23 @@
-import {
-  AnnotationConfigResource,
-  AnnotationProperty,
-  AnnotationType,
-  CollectionProperty,
-} from './types';
+import { AnnotationConfigResource, AnnotationType, PropertyConfig } from './types';
 
 export interface IGuidelines {
   collections: {
     properties: {
-      system: CollectionProperty[];
-      base: CollectionProperty[];
+      system: PropertyConfig[];
+      base: PropertyConfig[];
     };
     types: {
       additionalLabel: string;
       level:
         | 'primary'
         | 'secondary' /* Quick fix to determine which collections should be loaded into the overview table */;
-      properties: CollectionProperty[];
+      properties: PropertyConfig[];
     }[];
   };
   annotations: {
     additionalTexts: string[];
     types: AnnotationType[];
-    properties: AnnotationProperty[];
+    properties: PropertyConfig[];
     resources: AnnotationConfigResource[];
   };
   texts: {

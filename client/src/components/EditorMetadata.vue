@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useTextStore } from '../store/text';
 import { capitalize } from '../utils/helper/helper';
-import { CollectionProperty } from '../models/types';
+import { PropertyConfig } from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
@@ -23,7 +23,7 @@ const { getCollectionConfigFields } = useGuidelinesStore();
 const tableData: CollectionTableEntry[] = getCollectionTableData();
 
 function getCollectionTableData() {
-  const fields: CollectionProperty[] = getCollectionConfigFields(
+  const fields: PropertyConfig[] = getCollectionConfigFields(
     correspondingCollection.value.nodeLabels,
   );
 

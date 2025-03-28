@@ -17,12 +17,7 @@ import {
   cloneDeep,
 } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
-import {
-  CollectionAccessObject,
-  CollectionPostData,
-  CollectionProperty,
-  Text,
-} from '../models/types';
+import { CollectionAccessObject, CollectionPostData, PropertyConfig, Text } from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
@@ -71,7 +66,7 @@ const asyncOperationRunning = ref<boolean>(false);
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
-const fields: ComputedRef<CollectionProperty[]> = computed(() => {
+const fields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
     ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
     : [];

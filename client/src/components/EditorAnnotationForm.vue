@@ -22,12 +22,7 @@ import Tag from 'primevue/tag';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import {
-  Annotation,
-  AnnotationProperty,
-  AnnotationType,
-  CollectionProperty,
-} from '../models/types';
+import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
 import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
@@ -82,7 +77,7 @@ const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionConfi
   useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
-const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
+const fields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 
 const propertiesAreCollapsed = ref<boolean>(false);
 const normdataAreCollapsed = ref<boolean>(false);
@@ -373,13 +368,13 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 }
 
 function addAdditionalText(): void {
-  const defaultFields: CollectionProperty[] = getCollectionConfigFields(
+  const defaultFields: PropertyConfig[] = getCollectionConfigFields(
     additionalTextInputObject.value.inputLabels,
   );
 
   const newCollectionProperties: ICollection = {} as ICollection;
 
-  defaultFields.forEach((field: CollectionProperty) => {
+  defaultFields.forEach((field: PropertyConfig) => {
     if (field.type === 'string' && (field.template === 'input' || !field.template)) {
       newCollectionProperties[field.name] = '';
     } else if (field.type === 'string' && field.template === 'textarea') {

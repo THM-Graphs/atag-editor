@@ -18,7 +18,7 @@ import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import {
   AdditionalText,
   Annotation,
-  AnnotationProperty,
+  PropertyConfig,
   AnnotationType,
   Character,
 } from '../models/types';
@@ -42,8 +42,8 @@ const { normalizeKeys, registerShortcut } = useShortcutsStore();
 const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
-const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
-const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
+const fields: PropertyConfig[] = getAnnotationFields(annotationType);
+const subtypeField: PropertyConfig = fields.find(field => field.name === 'subtype');
 const options: string[] = subtypeField?.options ?? [];
 const dropdownOptions = options.map((option: string) => {
   return {
@@ -346,12 +346,12 @@ function createNewAnnotation(
   subtype: string | undefined,
   characters: Character[],
 ): Annotation {
-  const fields: AnnotationProperty[] = getAnnotationFields(type);
+  const fields: PropertyConfig[] = getAnnotationFields(type);
   const newAnnotationData: IAnnotation = {} as IAnnotation;
 
   // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
-  fields.forEach((field: AnnotationProperty) => {
+  fields.forEach((field: PropertyConfig) => {
     if (field.type === 'string' && (field.template === 'input' || !field.template)) {
       newAnnotationData[field.name] = '';
     } else if (field.type === 'string' && field.template === 'textarea') {

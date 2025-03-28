@@ -12,7 +12,7 @@ import {
   AdditionalText,
   Annotation,
   AnnotationData,
-  AnnotationProperty,
+  PropertyConfig,
   AnnotationType,
   Character,
   MalformedAnnotation,
@@ -352,12 +352,12 @@ function transformStandoffToAtag(): void {
         return;
       }
 
-      const fields: AnnotationProperty[] = getAnnotationFields(a.type);
+      const fields: PropertyConfig[] = getAnnotationFields(a.type);
       const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
       // TODO: Improve this function, too many empty strings and duplicate field settings
       // Base properties
-      fields.forEach((field: AnnotationProperty) => {
+      fields.forEach((field: PropertyConfig) => {
         if (field.type === 'string' && (field.template === 'input' || !field.template)) {
           newAnnotationProperties[field.name] = '';
         } else if (field.type === 'string' && field.template === 'textarea') {

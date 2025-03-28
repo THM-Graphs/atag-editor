@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationProperty, AnnotationType, CollectionProperty } from '../models/types';
+import { AnnotationType, PropertyConfig } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -43,9 +43,9 @@ export function useGuidelinesStore() {
    * and from the global annotation properties.
    *
    * @param {string} type - The type of the annotation.
-   * @return {AnnotationProperty[]} The fields for the annotation type.
+   * @return {PropertyConfig[]} The fields for the annotation type.
    */
-  function getAnnotationFields(type: string): AnnotationProperty[] {
+  function getAnnotationFields(type: string): PropertyConfig[] {
     return [
       ...(getAnnotationConfig(type)?.properties ?? []),
       ...guidelines.value.annotations.properties,
@@ -75,13 +75,13 @@ export function useGuidelinesStore() {
    * Used for rendering data tables or input fields in forms.
    *
    * @param {string[]} nodeLabels - The additional labels of the collection.
-   * @return {CollectionProperty[]} The field configurations for the collection type.
+   * @return {PropertyConfig[]} The field configurations for the collection type.
    */
-  function getCollectionConfigFields(nodeLabels: string[]): CollectionProperty[] {
-    const system: CollectionProperty[] = guidelines?.value.collections.properties.system;
-    const base: CollectionProperty[] = guidelines?.value.collections.properties.base;
-    const additional: CollectionProperty[] = guidelines?.value.collections.types.reduce(
-      (total: CollectionProperty[], curr) => {
+  function getCollectionConfigFields(nodeLabels: string[]): PropertyConfig[] {
+    const system: PropertyConfig[] = guidelines?.value.collections.properties.system;
+    const base: PropertyConfig[] = guidelines?.value.collections.properties.base;
+    const additional: PropertyConfig[] = guidelines?.value.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
         if (nodeLabels.includes(curr.additionalLabel)) {
           total.push(...curr.properties);
         }
@@ -99,9 +99,9 @@ export function useGuidelinesStore() {
    * This method gathers all available collection labels and fetches their corresponding
    * field configurations, which are used for rendering data tables or input fields in forms.
    *
-   * @return {CollectionProperty[]} The field configurations for all available collection types.
+   * @return {PropertyConfig[]} The field configurations for all available collection types.
    */
-  function getAllCollectionConfigFields(): CollectionProperty[] {
+  function getAllCollectionConfigFields(): PropertyConfig[] {
     const availableCollectionLabels: string[] = getAvailableCollectionLabels();
 
     return getCollectionConfigFields(availableCollectionLabels);

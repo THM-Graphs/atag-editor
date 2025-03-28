@@ -13,7 +13,7 @@ import Toolbar from 'primevue/toolbar';
 import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
-import { Collection, CollectionProperty } from '../models/types';
+import { Collection, PropertyConfig } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
@@ -30,7 +30,7 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
-const dialogInputFields: ComputedRef<CollectionProperty[]> = computed(() =>
+const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.nodeLabels),
 );
 

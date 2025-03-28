@@ -1,5 +1,5 @@
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionProperty } from '../models/types.js';
+import { PropertyConfig } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
@@ -8,15 +8,15 @@ export default class GuidelinesService {
    * Used for applying default data to to-be-created collections when they are missing
    *
    * @param {string[]} nodeLabels - The additional labels of the collection.
-   * @return {Promise<CollectionProperty[]>} The field configurations for the collection type.
+   * @return {Promise<PropertyConfig[]>} The field configurations for the collection type.
    */
-  public async getCollectionConfigFields(nodeLabels: string[]): Promise<CollectionProperty[]> {
+  public async getCollectionConfigFields(nodeLabels: string[]): Promise<PropertyConfig[]> {
     const guidelines: IGuidelines = await this.getGuidelines();
 
-    const system: CollectionProperty[] = guidelines.collections.properties.system;
-    const base: CollectionProperty[] = guidelines.collections.properties.base;
-    const additional: CollectionProperty[] = guidelines.collections.types.reduce(
-      (total: CollectionProperty[], curr) => {
+    const system: PropertyConfig[] = guidelines.collections.properties.system;
+    const base: PropertyConfig[] = guidelines.collections.properties.base;
+    const additional: PropertyConfig[] = guidelines.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
         if (nodeLabels.includes(curr.additionalLabel)) {
           total.push(...curr.properties);
         }
