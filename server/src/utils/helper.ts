@@ -1,4 +1,13 @@
 import { Request } from 'express';
+import {
+  isDate,
+  isDateTime,
+  isDuration,
+  isInt,
+  isLocalDateTime,
+  isLocalTime,
+  isTime,
+} from 'neo4j-driver';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -49,4 +58,53 @@ export function getPagination(req: Request): Record<string, any> {
     limit: parseInt(limit as string) || 100,
     skip: parseInt(skip as string) || 0,
   };
+}
+
+/**
+ * Convert Neo4j Properties back into JavaScript types.
+ *
+ * Copied from the official Neo4j Graphacademy repo: https://github.com/neo4j-graphacademy/app-nodejs/blob/main/src/utils.js
+ * and modiefied.
+ *
+ * @param {Record<string, any>} properties
+ * @return {Record<string, any>}
+ */
+export function toNativeTypes(properties: any) {
+  return Object.fromEntries(
+    Object.keys(properties).map(key => {
+      let value = valueToNativeType(properties[key]);
+
+      return [key, value];
+    }),
+  );
+}
+
+/**
+ * Convert an individual value to its JavaScript equivalent.
+ *
+ * Copied from the official Neo4j Graphacademy repo: https://github.com/neo4j-graphacademy/app-nodejs/blob/main/src/utils.js
+ * and modiefied.
+ *
+ * @param {any} value
+ * @returns {any}
+ */
+function valueToNativeType(value: any) {
+  if (Array.isArray(value)) {
+    value = value.map(innerValue => valueToNativeType(innerValue));
+  } else if (isInt(value)) {
+    value = value.toNumber();
+  } else if (
+    isDate(value) ||
+    isDateTime(value) ||
+    isTime(value) ||
+    isLocalDateTime(value) ||
+    isLocalTime(value) ||
+    isDuration(value)
+  ) {
+    value = value.toString();
+  } else if (typeof value === 'object' && value !== undefined && value !== null) {
+    value = toNativeTypes(value);
+  }
+
+  return value;
 }
