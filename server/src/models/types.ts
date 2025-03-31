@@ -113,7 +113,7 @@ export type PropertyConfig = {
 
 export type PropertyConfigDataType = 'array' | 'boolean' | 'integer' | 'number' | 'string';
 
-export type PropertyConfigStringFormat = 'date' | 'date-time' | 'duration' | 'time';
+export type PropertyConfigStringFormat = 'date' | 'date-time' | 'time';
 
 export type PropertyConfigStringTemplate = 'input' | 'textarea';
 
