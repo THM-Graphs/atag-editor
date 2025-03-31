@@ -4,6 +4,7 @@ import guideLinesRoutes from './guidelines.routes.js';
 import resourceRoutes from './resources.routes.js';
 import stylesRoutes from './styles.routes.js';
 import textRoutes from './text.routes.js';
+import testRoutes from './test.routes.js';
 
 const router: Router = express.Router();
 
@@ -12,5 +13,6 @@ router.use('/guidelines', guideLinesRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/styles', stylesRoutes);
 router.use('/texts', textRoutes);
+router.use('/test', testRoutes);
 
 export default router;
