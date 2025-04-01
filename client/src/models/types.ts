@@ -110,6 +110,10 @@ export type PaginationResult<T> = {
 export type PropertyConfig = {
   name: string /* folioEnd, label, websiteUrl */;
   type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
+  /* Only relevant if type is "array" */
+  items?: {
+    type: PropertyConfigDataType;
+  };
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;

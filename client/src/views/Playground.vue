@@ -52,6 +52,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'booleanList',
     type: 'array',
+    items: {
+      type: 'boolean',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -69,6 +72,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'stringList',
     type: 'array',
+    items: {
+      type: 'string',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -85,6 +91,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'integerList',
     type: 'array',
+    items: {
+      type: 'integer',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -101,6 +110,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'floatList',
     type: 'array',
+    items: {
+      type: 'number',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -118,6 +130,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'dateList',
     type: 'array',
+    items: {
+      type: 'date',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -135,6 +150,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'localDateTimeList',
     type: 'array',
+    items: {
+      type: 'date-time',
+    },
     required: false,
     editable: true,
     visible: true,
@@ -152,6 +170,9 @@ const fields: PropertyConfig[] = [
   {
     name: 'localTimeList',
     type: 'array',
+    items: {
+      type: 'time',
+    },
     required: false,
     editable: true,
     visible: true,
