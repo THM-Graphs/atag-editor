@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import {
+  int,
   isDate,
   isDateTime,
   isDuration,
@@ -7,7 +8,9 @@ import {
   isLocalDateTime,
   isLocalTime,
   isTime,
+  types,
 } from 'neo4j-driver';
+import { PropertyConfig } from '../models/types.js';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -117,4 +120,65 @@ function valueToNativeType(value: any) {
   }
 
   return value;
+}
+
+/**
+ * Convert JavaScript types back into Neo4j Properties, using the provided configuration.
+ *
+ * @param {Record<string, any>} properties
+ * @param {PropertyConfig[]} fields
+ * @return {Record<string, any>}
+ */
+export function toNeo4jTypes(properties: any, fields: PropertyConfig[]): Record<string, any> {
+  return Object.fromEntries(
+    Object.keys(properties).map(key => {
+      const config: PropertyConfig | undefined = fields.find(field => field.name === key);
+      const value: any = valueToNeo4jType(properties[key], config);
+
+      return [key, value];
+    }),
+  );
+}
+
+/**
+ * Convert an individual value to its Neo4j equivalent, using the provided configuration.
+ *
+ * @param {any} value
+ * @param {PropertyConfig | undefined} fieldConfig
+ * @returns {any}
+ */
+function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefined): any {
+  // TODO: This is the case for non-customizable properties (uuid, start/endIndex etc.). Keep or handle better?
+  if (!config) {
+    return value;
+  }
+
+  // Call function recursively if data type is array
+  if (Array.isArray(value) && config.type === 'array') {
+    return value.map(innerValue => valueToNeo4jType(innerValue, config));
+  }
+
+  if (config.type === 'integer') {
+    // if (typeof value === 'number' && Number.isInteger(value)) {
+    //   return int(value);
+    // }
+    return types.Integer.fromValue(value);
+  } else if (config.type === 'number') {
+    return value;
+  } else if (config.type === 'string') {
+    return value;
+  } else if (config.type === 'date') {
+    return types.Date.fromStandardDate(new Date(value));
+  } else if (config.type === 'date-time') {
+    return types.DateTime.fromStandardDate(new Date(value));
+  } else if (config.type === 'time') {
+    return types.LocalTime.fromStandardDate(new Date(value));
+  } else if (config.type === 'boolean') {
+    return value;
+  } else if (config.type === 'array') {
+    //Already handled in the beginning of the function
+    return value;
+  } else {
+    return value;
+  }
 }
