@@ -109,7 +109,6 @@ export type PaginationResult<T> = {
 
 export type PropertyConfig = {
   name: string /* folioEnd, label, websiteUrl */;
-  format?: PropertyConfigStringFormat /* Specifies string format, e.g. date, date-time, time */;
   type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
@@ -118,9 +117,15 @@ export type PropertyConfig = {
   template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
 
-export type PropertyConfigDataType = 'array' | 'boolean' | 'integer' | 'number' | 'string';
-
-export type PropertyConfigStringFormat = 'date' | 'date-time' | 'time';
+export type PropertyConfigDataType =
+  | 'array'
+  | 'boolean'
+  | 'date'
+  | 'date-time'
+  | 'integer'
+  | 'number'
+  | 'string'
+  | 'time';
 
 export type PropertyConfigStringTemplate = 'input' | 'textarea';
 

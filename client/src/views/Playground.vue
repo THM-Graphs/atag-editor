@@ -109,11 +109,10 @@ const fields: PropertyConfig[] = [
   // DATE property configurations
   {
     name: 'singleDate',
-    type: 'string',
+    type: 'date',
     required: false,
     editable: true,
     visible: true,
-    format: 'date',
     template: 'input',
   },
   {
@@ -127,11 +126,10 @@ const fields: PropertyConfig[] = [
   // LOCAL DATETIME property configurations
   {
     name: 'singleLocalDateTime',
-    type: 'string',
+    type: 'date-time',
     required: false,
     editable: true,
     visible: true,
-    format: 'date-time',
     template: 'input',
   },
   {
@@ -145,11 +143,10 @@ const fields: PropertyConfig[] = [
   // LOCAL TIME property configurations
   {
     name: 'singleLocalTime',
-    type: 'string',
+    type: 'time',
     required: false,
     editable: true,
     visible: true,
-    format: 'time',
     template: 'input',
   },
   {
@@ -161,9 +158,7 @@ const fields: PropertyConfig[] = [
   },
 ];
 
-const dateFields = fields.filter(
-  f => f.type === 'string' && ['date', 'date-time', 'time'].includes(f.format || ''),
-);
+const dateFields = fields.filter(f => ['date', 'date-time', 'time'].includes(f.type));
 
 const testNode = ref<DataTypeExample | null>(null);
 
@@ -187,7 +182,7 @@ async function getTestNode(): Promise<void> {
     const json = await response.json();
     const keys = Object.keys(json.normal);
     keys.forEach(k => {
-      if (['date', 'date-time', 'time'].includes(fields.find(f => f.name === k)?.format)) {
+      if (['date', 'date-time', 'time'].includes(fields.find(f => f.name === k)?.type)) {
         console.log(`%c-------- ${k} --------`, 'background-color: lightblue;');
         // console.log(json.normal[k]);
         console.log(json.native[k]);
@@ -241,11 +236,7 @@ async function handleSave() {
             </td>
             <td class="border p-2">
               <InputText
-                v-if="
-                  field.type === 'string' &&
-                  (field.template === 'input' || !field.template) &&
-                  !['date', 'date-time', 'time'].includes(field.format)
-                "
+                v-if="field.type === 'string' && (field.template === 'input' || !field.template)"
                 :id="field.name"
                 :disabled="!field.editable"
                 :required="field.required"
@@ -276,7 +267,7 @@ async function handleSave() {
                 :placeholder="`Select ${field.name}`"
                 class="w-full"
               />
-              <div v-else-if="field.type === 'string' && field?.format === 'date'">
+              <div v-else-if="field.type === 'date'">
                 <DatePicker
                   :id="field.name"
                   dateFormat="yy-mm-dd"
@@ -288,7 +279,7 @@ async function handleSave() {
                   {{ testNode[field.name] }}
                 </div>
               </div>
-              <div v-else-if="field.type === 'string' && field?.format === 'date-time'">
+              <div v-else-if="field.type === 'date-time'">
                 <DatePicker
                   :id="field.name"
                   dateFormat="yy-mm-dd"
@@ -302,7 +293,7 @@ async function handleSave() {
                 </div>
               </div>
 
-              <div v-else-if="field.type === 'string' && field?.format === 'time'">
+              <div v-else-if="field.type === 'time'">
                 <DatePicker
                   :id="field.name"
                   showTime
@@ -332,7 +323,7 @@ async function handleSave() {
             <td class="border p-2">
               {{ typeof testNode[field.name] }}
             </td>
-            <td class="border p-2">{{ field.type }} -> {{ field.format }}</td>
+            <td class="border p-2">{{ field.type }}</td>
           </tr>
         </tbody>
       </table>
