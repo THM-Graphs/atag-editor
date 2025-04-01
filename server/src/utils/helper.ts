@@ -93,14 +93,24 @@ function valueToNativeType(value: any) {
     value = value.map(innerValue => valueToNativeType(innerValue));
   } else if (isInt(value)) {
     value = value.toNumber();
-  } else if (
-    isDate(value) ||
-    isDateTime(value) ||
-    isTime(value) ||
-    isLocalDateTime(value) ||
-    isLocalTime(value) ||
-    isDuration(value)
-  ) {
+  } else if (isDate(value) || isDateTime(value) || isLocalDateTime(value)) {
+    value = value.toStandardDate();
+  } else if (isLocalTime(value) || isTime(value)) {
+    // Nanoseconds are omitted since JS Dates can not handled them and they are not really needed
+    const { hour, minute, second } = value;
+    const baseDate: Date = new Date(1970, 0, 1);
+
+    console.log(isInt(hour) ? 'integer' : 'something else');
+    console.log(isInt(minute) ? 'integer' : 'something else');
+    console.log(isInt(second) ? 'integer' : 'something else');
+
+    // Add the time components to the new Date object (Convert if necessary)
+    baseDate.setHours(isInt(hour) ? hour.toNumber() : hour);
+    baseDate.setMinutes(isInt(minute) ? minute.toNumber() : minute);
+    baseDate.setSeconds(isInt(second) ? second.toNumber() : second);
+
+    value = baseDate.toISOString();
+  } else if (isDuration(value)) {
     value = value.toString();
   } else if (typeof value === 'object' && value !== undefined && value !== null) {
     value = toNativeTypes(value);
