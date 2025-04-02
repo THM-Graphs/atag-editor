@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { PropertyConfig } from '../models/types';
 import { camelCaseToTitleCase } from '../utils/helper/helper';
 import Button from 'primevue/button';
+import InputGroup from 'primevue/inputgroup';
+import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 import Textarea from 'primevue/textarea';
+import DateInput from '../components/DateInput.vue';
 
 // Comprehensive interface for the Neo4j data types node
 interface DataTypeExample {
@@ -201,16 +204,15 @@ async function getTestNode(): Promise<void> {
     }
 
     const json = await response.json();
-    const keys = Object.keys(json.normal);
+    const keys = Object.keys(json);
     keys.forEach(k => {
       if (['date', 'date-time', 'time'].includes(fields.find(f => f.name === k)?.type)) {
         console.log(`%c-------- ${k} --------`, 'background-color: lightblue;');
         // console.log(json.normal[k]);
-        console.log(json.native[k]);
+        console.log(json[k]);
       }
     });
-    testNode.value = json.native;
-    // console.log(testNode.value);
+    testNode.value = json;
   } catch (error: unknown) {
     console.error('Error fetching collections:', error);
   } finally {
@@ -220,6 +222,8 @@ async function getTestNode(): Promise<void> {
 
 async function handleSave() {
   const url: string = buildFetchUrl(`/api/test`);
+
+  console.log(testNode.value);
 
   const response: Response = await fetch(url, {
     method: 'POST',
@@ -236,10 +240,74 @@ async function handleSave() {
     throw new Error('Playground data could not be saved');
   }
 }
+
+function handleDateChange(event: Date, fieldName: string) {
+  // const year = event.getUTCFullYear();
+  // const month = event.getUTCMonth();
+  // const day = event.getUTCDate();
+  // const newDate = new Date();
+  // const date2 = new Date(Date.UTC(year, month, day, 0, 0, 0));
+  // newDate.setFullYear(year);
+  // newDate.setMonth(month);
+  // newDate.setDate(day);
+  // newDate.setHours(0 + Math.abs(event.getTimezoneOffset() / 60));
+  // newDate.setMinutes(0);
+  // newDate.setSeconds(0);
+  // newDate.setMilliseconds(0);
+  // testNode[fieldName] = newDate.toISOString();
+  // // console.log(date2);
+  // console.log(testNode[fieldName]);
+}
+
+// function replacer(key, value) {
+//   if (this[key] instanceof Date) {
+//     return this[key].toUTCString();
+//   }
+
+//   return value;
+// }
+const beforeSave = (event: MouseEvent) => {
+  console.log(JSON.stringify(historicalDate.value));
+};
+
+function logDate() {
+  console.log('As Date object: ');
+  console.log(historicalDate.value);
+  console.log('As ISO String: ');
+  console.log(historicalDate.value.toISOString());
+  console.log('As UTC String: ');
+  console.log(historicalDate.value.toUTCString());
+  console.log('JSON Stringify: ');
+  console.log(JSON.stringify(historicalDate.value));
+}
+const dateString = ref('1066-10-14T00:00:00.000Z');
+const historicalDate = computed(() => new Date(dateString.value)); // month is zero-based
+// logDate();
 </script>
 
 <template>
   <div class="container m-auto p-4">
+    <!-- <h2>Historical Date Input</h2> -->
+    <!-- <HistoricalDateInput v-model="historicalDate" :minYear="0" :maxYear="2025" /> -->
+    <DateInput v-model="dateString" />
+    <div>{{ historicalDate.toISOString() }} <br /></div>
+    <Button
+      severity="secondary"
+      class="ml-3"
+      aria-label="Log out data"
+      title="Log data"
+      @click="logDate"
+      >Log Date</Button
+    >
+
+    <Button
+      severity="secondary"
+      class="ml-3"
+      aria-label="Log out data"
+      title="Log data"
+      @click="beforeSave"
+      >Stringify</Button
+    >
     <form action="">
       <table v-if="!isLoading" class="w-full border-collapse">
         <thead>
@@ -295,6 +363,7 @@ async function handleSave() {
                   :disabled="!field.editable"
                   :required="field.required"
                   v-model="testNode[field.name]"
+                  @value-change="handleDateChange($event as Date, field.name)"
                 />
                 <div>
                   {{ testNode[field.name] }}
@@ -349,6 +418,14 @@ async function handleSave() {
         </tbody>
       </table>
       <Button aria-label="Save changes" title="Save changes" @click="handleSave">Save</Button>
+      <Button
+        severity="secondary"
+        class="ml-3"
+        aria-label="Log out data"
+        title="Log data"
+        @click="console.log(testNode)"
+        >Log data</Button
+      >
     </form>
   </div>
 </template>
