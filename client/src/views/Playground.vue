@@ -180,8 +180,7 @@ const fields: PropertyConfig[] = [
   },
 ];
 
-const fieldsToDisplay = fields.filter(f => f.type !== 'array');
-
+const fieldsToDisplay = fields;
 const testNode = ref<DataTypeExample | null>(null);
 
 const isLoading = ref<boolean>(true);
@@ -295,15 +294,59 @@ async function handleSave() {
                 :placeholder="`Select ${field.name}`"
                 class="w-full"
               />
-              <InputNumber
-                v-else-if="field.type === 'integer'"
-                :id="field.name"
-                :disabled="!field.editable"
-                :required="field.required"
-                :invalid="field.required && !testNode[field.name]"
-                v-model="testNode[field.name]"
-                showButtons
-              />
+              <template
+                v-else-if="
+                  field.type === 'integer' ||
+                  (field.type === 'array' && field.items.type === 'integer')
+                "
+              >
+                <InputNumber
+                  v-if="field.type === 'integer'"
+                  :id="field.name"
+                  :disabled="!field.editable"
+                  :required="field.required"
+                  :invalid="field.required && !testNode[field.name]"
+                  v-model="testNode[field.name]"
+                  showButtons
+                />
+                <div v-else>
+                  <div
+                    v-for="(entry, index) in testNode[field.name]"
+                    class="flex gap-1 align-items-center"
+                  >
+                    <InputNumber
+                      :id="field.name + index"
+                      :disabled="!field.editable"
+                      :required="field.required"
+                      :invalid="field.required && !testNode[field.name]"
+                      v-model="testNode[field.name][index]"
+                      showButtons
+                    />
+                    <Button
+                      title="Delete text"
+                      :style="{ width: '1rem', height: '1rem', padding: '10px' }"
+                      severity="danger"
+                      outlined
+                      icon="pi pi-times"
+                      size="small"
+                      @click="
+                        testNode[field.name] = testNode[field.name].filter(
+                          (entry, index2) => index2 !== index,
+                        )
+                      "
+                    />
+                  </div>
+                  <div>Values: {{ testNode[field.name] }}</div>
+                  <Button
+                    class="mt-2 w-full h-2rem"
+                    icon="pi pi-plus"
+                    size="small"
+                    severity="secondary"
+                    label="Add item"
+                    @click="testNode[field.name].push(0)"
+                  />
+                </div>
+              </template>
               <InputNumber
                 v-else-if="field.type === 'number'"
                 :id="field.name"
