@@ -159,7 +159,13 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
   } else if (config.type === 'date-time') {
     return types.DateTime.fromStandardDate(new Date(value));
   } else if (config.type === 'time') {
-    return types.LocalTime.fromStandardDate(new Date(value));
+    // TODO: Error handling, what happens if this fails?
+    const items = (value as string).split(':').map(item => parseInt(item));
+    const hours: number = items[0];
+    const minutes: number = items[1];
+    const seconds: number = items[2];
+
+    return new types.LocalTime(hours, minutes, seconds, 0);
   } else if (config.type === 'boolean') {
     return value;
   } else if (config.type === 'array') {
