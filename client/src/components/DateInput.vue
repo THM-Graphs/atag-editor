@@ -1,69 +1,86 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import InputGroup from 'primevue/inputgroup';
 import InputNumber from 'primevue/inputnumber';
+import DatePicker from 'primevue/datepicker';
 
-interface Props {
-  modelValue: string; // ISO date string
-  minYear?: number;
-  maxYear?: number;
-}
+const dateModelValue = defineModel<string | null>();
+// TODO: Add config to props -> required, editable, min/max value etc
+const props = defineProps<{ dateType: 'date' | 'date-time' | 'time' }>();
 
-const dateModelValue = defineModel<string>();
+// // Parse the initial date if available
+// The .split function will extract the HH:mm:ss part of the string if nanoseconds should be present
+const initialDate =
+  props.dateType === 'time'
+    ? ref(dateModelValue.value.split('.')[0])
+    : ref(dateModelValue ? new Date(dateModelValue.value) : null);
 
-watch(dateModelValue, () => {
-  console.log(dateModelValue.value);
+// const year = computed(() => (initialDate.value ? initialDate.value.getFullYear() : null));
+// const month = computed(() => (initialDate.value ? initialDate.value.getMonth() + 1 : null)); // 1-12 for human readability
+// const day = computed(() => (initialDate.value ? initialDate.value.getDate() : null));
+// const hours = computed(() => (initialDate.value ? initialDate.value.getHours() : null));
+// const minutes = computed(() => (initialDate.value ? initialDate.value.getMinutes() : null));
+
+watch(initialDate, () => {
+  if (props.dateType === 'time') {
+    dateModelValue.value = initialDate.value ? (initialDate.value as string) : null;
+  } else {
+    dateModelValue.value = initialDate.value ? (initialDate.value as Date).toISOString() : null;
+  }
 });
 
-// Parse the initial date if available
-const initialDate = computed(() => (dateModelValue ? new Date(dateModelValue.value) : null));
+// // Compute year, month, and day from ISO string
+// const year = computed(() => (initialDate.value ? initialDate.value.getFullYear() : null));
+// const month = computed(() => (initialDate.value ? initialDate.value.getMonth() + 1 : null)); // 1-12 for human readability
+// const day = computed(() => (initialDate.value ? initialDate.value.getDate() : null));
+// const hours = computed(() => (initialDate.value ? initialDate.value.getHours() : null));
+// const minutes = computed(() => (initialDate.value ? initialDate.value.getMinutes() : null));
 
-// Individual date components
-const year = computed(() => (initialDate.value ? initialDate.value.getFullYear() : null));
-const month = computed(() => (initialDate.value ? initialDate.value.getMonth() + 1 : null)); // 1-12 for human readability
-const day = computed(() => (initialDate.value ? initialDate.value.getDate() : null));
+// function updateDate(field: 'year' | 'month' | 'day' | 'hours' | 'minutes', value: number) {
+//   // Get current values
+//   const currentYear = year.value || new Date().getFullYear();
+//   const currentMonth = month.value || 1;
+//   const currentDay = day.value || 1;
+//   const currentHours = hours.value || 0;
+//   const currentMinutes = minutes.value || 0;
 
-// // Handle input changes
-function yearChanged(newValue: number) {
-  // Format with zero-padding
-  const formattedMonth = String(month.value).padStart(2, '0');
-  const formattedDay = String(day.value).padStart(2, '0');
+//   // Update given field
+//   const newYear = field === 'year' ? value : currentYear;
+//   const newMonth = field === 'month' ? value : currentMonth;
+//   const newDay = field === 'day' ? value : currentDay;
+//   const newHours = field === 'hours' ? value : currentHours;
+//   const newMinutes = field === 'minutes' ? value : currentMinutes;
 
-  // Create ISO date string with time set to zeros
-  const dateString = `${newValue}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
-  dateModelValue.value = new Date(dateString).toISOString();
-  console.log(dateString);
-}
-function monthChanged(newValue: number) {
-  // Format with zero-padding
-  const formattedMonth = String(newValue).padStart(2, '0');
-  const formattedDay = String(day.value).padStart(2, '0');
+//   const newDate = new Date(newYear, newMonth - 1, newDay, newHours, newMinutes);
 
-  // Create ISO date string with time set to zeros
-  const dateString = `${year.value}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
-  dateModelValue.value = dateString;
-  console.log(dateString);
-}
-function dayChanged(newValue: number) {
-  // Format with zero-padding
-  const formattedMonth = String(month.value).padStart(2, '0');
-  const formattedDay = String(newValue).padStart(2, '0');
-
-  // Create ISO date string with time set to zeros
-  const dateString = `${year.value}-${formattedMonth}-${formattedDay}T00:00:00.000Z`;
-  dateModelValue.value = dateString;
-  console.log(dateString);
-}
+//   // Format string and update model value -> all date parts are updated
+//   const dateString = newDate.toISOString();
+//   console.log('update from:', field);
+//   dateModelValue.value = dateString;
+// }
 </script>
 
 <template>
-  <div class="historical-date-input" :style="{ width: '400px' }">
+  <template v-if="dateType === 'date' || dateType === 'date-time'">
+    <DatePicker dateFormat="yy-mm-dd" v-model="initialDate as Date" showTime />
+    <div>
+      {{ dateModelValue }}
+    </div>
+  </template>
+  <template v-else>
+    <input type="time" v-model="initialDate" />
+    <div>
+      {{ dateModelValue }}
+    </div>
+  </template>
+
+  <!-- <div class="historical-date-input" :style="{ width: '400px' }">
     <InputGroup>
       <InputNumber
         :modelValue="year"
         placeholder="Year"
         :class="{ 'p-invalid': year !== null /* && !isYearValid */ }"
-        @update:model-value="yearChanged"
+        @value-change="updateDate('year', $event)"
       />
       <InputNumber
         :modelValue="month"
@@ -71,7 +88,7 @@ function dayChanged(newValue: number) {
         :min="1"
         :max="12"
         :class="{ 'p-invalid': month !== null /* && !isMonthValid */ }"
-        @update:model-value="monthChanged"
+        @value-change="updateDate('month', $event)"
       />
       <InputNumber
         :modelValue="day"
@@ -79,8 +96,25 @@ function dayChanged(newValue: number) {
         :min="1"
         :max="31"
         :class="{ 'p-invalid': day !== null /* && !isDayValid */ }"
-        @update:model-value="dayChanged"
+        @value-change="updateDate('day', $event)"
       />
     </InputGroup>
-  </div>
+
+    <InputGroup>
+      <InputNumber
+        :modelValue="hours"
+        placeholder="Hours"
+        :class="{ 'p-invalid': hours !== null /* && !isYearValid */ }"
+        @value-change="updateDate('hours', $event)"
+      />
+      <InputNumber
+        :modelValue="minutes"
+        placeholder="Minutes"
+        :min="1"
+        :max="12"
+        :class="{ 'p-invalid': minutes !== null /* && !isMonthValid */ }"
+        @value-change="updateDate('minutes', $event)"
+      />
+    </InputGroup>
+  </div> -->
 </template>
