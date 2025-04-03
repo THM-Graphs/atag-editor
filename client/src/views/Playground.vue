@@ -4,6 +4,7 @@ import { buildFetchUrl } from '../utils/helper/helper';
 import { PropertyConfig } from '../models/types';
 import { camelCaseToTitleCase } from '../utils/helper/helper';
 import Button from 'primevue/button';
+import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
@@ -179,7 +180,7 @@ const fields: PropertyConfig[] = [
   },
 ];
 
-const dateFields = fields.filter(f => ['date', 'date-time', 'time'].includes(f.type));
+const fieldsToDisplay = fields.filter(f => f.type !== 'array');
 
 const testNode = ref<DataTypeExample | null>(null);
 
@@ -252,7 +253,12 @@ async function handleSave() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="field in dateFields" :key="field.name" v-show="field.visible" class="border-b">
+          <tr
+            v-for="field in fieldsToDisplay"
+            :key="field.name"
+            v-show="field.visible"
+            class="border-b"
+          >
             <td class="border p-2 font-semibold">
               {{ camelCaseToTitleCase(field.name) }}
             </td>
@@ -289,6 +295,26 @@ async function handleSave() {
                 :placeholder="`Select ${field.name}`"
                 class="w-full"
               />
+              <InputNumber
+                v-else-if="field.type === 'integer'"
+                :id="field.name"
+                :disabled="!field.editable"
+                :required="field.required"
+                :invalid="field.required && !testNode[field.name]"
+                v-model="testNode[field.name]"
+                showButtons
+              />
+              <InputNumber
+                v-else-if="field.type === 'number'"
+                :id="field.name"
+                :disabled="!field.editable"
+                :required="field.required"
+                :invalid="field.required && !testNode[field.name]"
+                :minFractionDigits="0"
+                :maxFractionDigits="20"
+                v-model="testNode[field.name]"
+                showButtons
+              />
               <div v-else-if="field.type === 'date'">
                 <DateInput date-type="date" v-model="testNode[field.name]" />
               </div>
@@ -307,9 +333,9 @@ async function handleSave() {
                 :disabled="!field.editable"
                 class="m-2"
               />
-              <span v-else>
-                {{ testNode[field.name] }}
-              </span>
+              <div v-else :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
+                {{ testNode[field.name] }} (Not configured :/)
+              </div>
             </td>
             <td class="border p-2">
               {{ typeof testNode[field.name] }}
@@ -319,13 +345,9 @@ async function handleSave() {
         </tbody>
       </table>
       <Button aria-label="Save changes" title="Save changes" @click="handleSave">Save</Button>
-      <Button
-        severity="secondary"
-        class="ml-3"
-        aria-label="Log out data"
-        title="Log data"
-        @click="console.log(testNode)"
-        >Log data</Button
+      <Button severity="secondary" class="ml-3" @click="console.log(testNode)">Log data</Button>
+      <Button severity="warn" class="ml-3" @click="console.log(JSON.stringify(testNode))"
+        >Stringify</Button
       >
     </form>
   </div>
