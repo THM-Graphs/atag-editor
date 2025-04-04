@@ -1,0 +1,38 @@
+<script setup lang="ts">
+import Button from 'primevue/button';
+import { PropertyConfig } from '../models/types';
+import DataInputComponent from './DataInputComponent.vue';
+
+const modelValue = defineModel<any[]>();
+const props = defineProps<{
+  config: Partial<PropertyConfig>;
+}>();
+</script>
+
+<template>
+  <div :style="{ outline: '1px solid red', padding: '5px' }">
+    <div v-for="(_, index) in modelValue" class="flex gap-1 align-items-center">
+      <DataInputComponent :config="props.config" v-model="modelValue[index]" />
+      <Button
+        title="Delete item"
+        :style="{ width: '1rem', height: '1rem', padding: '10px' }"
+        severity="danger"
+        outlined
+        icon="pi pi-times"
+        size="small"
+        @click="modelValue = modelValue.filter((_, index2) => index2 !== index)"
+      />
+    </div>
+    <div>Values: {{ modelValue }}</div>
+    <Button
+      class="mt-2 w-full h-2rem"
+      icon="pi pi-plus"
+      size="small"
+      severity="secondary"
+      label="Add item"
+      @click="modelValue.push(0)"
+    />
+  </div>
+</template>
+
+<style scoped></style>

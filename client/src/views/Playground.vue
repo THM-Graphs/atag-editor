@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { PropertyConfig } from '../models/types';
 import { camelCaseToTitleCase } from '../utils/helper/helper';
+import DataInputComponent from '../components/DataInputComponent.vue';
+import DataInputGroup from '../components/DataInputGroup.vue';
 import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
-import Textarea from 'primevue/textarea';
-import DateInput from '../components/DateInput.vue';
 
 // Comprehensive interface for the Neo4j data types node
 interface DataTypeExample {
@@ -55,6 +52,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'boolean',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -75,6 +75,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'string',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -94,6 +97,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'integer',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -113,6 +119,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'number',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -133,6 +142,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'date',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -153,6 +165,9 @@ const fields: PropertyConfig[] = [
     type: 'array',
     items: {
       type: 'date-time',
+      required: true,
+      editable: true,
+      visible: true,
     },
     required: false,
     editable: true,
@@ -262,123 +277,12 @@ async function handleSave() {
               {{ camelCaseToTitleCase(field.name) }}
             </td>
             <td class="border p-2">
-              <InputText
-                v-if="field.type === 'string' && (field.template === 'input' || !field.template)"
-                :id="field.name"
-                :disabled="!field.editable"
-                :required="field.required"
-                :invalid="field.required && !testNode[field.name]"
+              <DataInputGroup
+                v-if="field.type === 'array'"
                 v-model="testNode[field.name]"
-                class="w-full"
-                spellcheck="false"
+                :config="field.items"
               />
-              <Textarea
-                v-else-if="field.type === 'string' && field.template === 'textarea'"
-                :id="field.name"
-                :disabled="!field.editable"
-                :required="field.required"
-                :invalid="field.required && !testNode[field.name]"
-                v-model="testNode[field.name]"
-                cols="30"
-                rows="5"
-                class="w-full"
-              />
-              <Select
-                v-else-if="field.type === 'string' && field.options"
-                :id="field.name"
-                :disabled="!field.editable"
-                :required="field.required"
-                :invalid="field.required && !testNode[field.name]"
-                v-model="testNode[field.name]"
-                :options="field.options"
-                :placeholder="`Select ${field.name}`"
-                class="w-full"
-              />
-              <template
-                v-else-if="
-                  field.type === 'integer' ||
-                  (field.type === 'array' && field.items.type === 'integer')
-                "
-              >
-                <InputNumber
-                  v-if="field.type === 'integer'"
-                  :id="field.name"
-                  :disabled="!field.editable"
-                  :required="field.required"
-                  :invalid="field.required && !testNode[field.name]"
-                  v-model="testNode[field.name]"
-                  showButtons
-                />
-                <div v-else>
-                  <div
-                    v-for="(entry, index) in testNode[field.name]"
-                    class="flex gap-1 align-items-center"
-                  >
-                    <InputNumber
-                      :id="field.name + index"
-                      :disabled="!field.editable"
-                      :required="field.required"
-                      :invalid="field.required && !testNode[field.name]"
-                      v-model="testNode[field.name][index]"
-                      showButtons
-                    />
-                    <Button
-                      title="Delete text"
-                      :style="{ width: '1rem', height: '1rem', padding: '10px' }"
-                      severity="danger"
-                      outlined
-                      icon="pi pi-times"
-                      size="small"
-                      @click="
-                        testNode[field.name] = testNode[field.name].filter(
-                          (entry, index2) => index2 !== index,
-                        )
-                      "
-                    />
-                  </div>
-                  <div>Values: {{ testNode[field.name] }}</div>
-                  <Button
-                    class="mt-2 w-full h-2rem"
-                    icon="pi pi-plus"
-                    size="small"
-                    severity="secondary"
-                    label="Add item"
-                    @click="testNode[field.name].push(0)"
-                  />
-                </div>
-              </template>
-              <InputNumber
-                v-else-if="field.type === 'number'"
-                :id="field.name"
-                :disabled="!field.editable"
-                :required="field.required"
-                :invalid="field.required && !testNode[field.name]"
-                :minFractionDigits="0"
-                :maxFractionDigits="20"
-                v-model="testNode[field.name]"
-                showButtons
-              />
-              <div v-else-if="field.type === 'date'">
-                <DateInput date-type="date" v-model="testNode[field.name]" />
-              </div>
-              <div v-else-if="field.type === 'date-time'">
-                <DateInput date-type="date-time" v-model="testNode[field.name]" />
-              </div>
-              <div v-else-if="field.type === 'time'">
-                <DateInput date-type="time" v-model="testNode[field.name]" />
-              </div>
-              <input
-                v-else-if="field.type === 'boolean'"
-                v-model="testNode[field.name]"
-                type="checkbox"
-                :id="field.name"
-                :name="field.name"
-                :disabled="!field.editable"
-                class="m-2"
-              />
-              <div v-else :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
-                {{ testNode[field.name] }} (Not configured :/)
-              </div>
+              <DataInputComponent v-else :config="field" v-model="testNode[field.name]" />
             </td>
             <td class="border p-2">
               {{ typeof testNode[field.name] }}
