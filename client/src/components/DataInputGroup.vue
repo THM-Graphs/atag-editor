@@ -7,13 +7,14 @@ import Button from 'primevue/button';
 const modelValue = defineModel<any[]>();
 const props = defineProps<{
   config: Partial<PropertyConfig>;
+  mode?: 'edit' | 'view';
 }>();
 </script>
 
 <template>
   <div :style="{ outline: '1px solid red', padding: '5px' }">
     <div v-for="(_, index) in modelValue" class="flex gap-1 align-items-center">
-      <DataInputComponent :config="props.config" v-model="modelValue[index]" />
+      <DataInputComponent v-model="modelValue[index]" :config="props.config" :mode="props.mode" />
       <Button
         title="Delete item"
         :style="{ width: '1rem', height: '1rem', padding: '10px' }"
@@ -24,7 +25,6 @@ const props = defineProps<{
         @click="modelValue = modelValue.filter((_, index2) => index2 !== index)"
       />
     </div>
-    <div>Values: {{ modelValue }}</div>
     <Button
       class="mt-2 w-full h-2rem"
       icon="pi pi-plus"

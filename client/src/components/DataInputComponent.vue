@@ -9,13 +9,14 @@ import DateInput from '../components/DateInput.vue';
 const modelValue = defineModel<any>();
 const props = defineProps<{
   config: Partial<PropertyConfig>;
+  mode?: 'edit' | 'view';
 }>();
 </script>
 
 <template>
   <InputText
     v-if="config.type === 'string' && (config.template === 'input' || !config.template)"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
     v-model="modelValue"
@@ -24,7 +25,7 @@ const props = defineProps<{
   />
   <Textarea
     v-else-if="config.type === 'string' && config.template === 'textarea'"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
     v-model="modelValue"
@@ -34,7 +35,7 @@ const props = defineProps<{
   />
   <Select
     v-else-if="config.type === 'string' && config.options"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
     v-model="modelValue"
@@ -44,7 +45,7 @@ const props = defineProps<{
   />
   <InputNumber
     v-else-if="config.type === 'integer'"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
     v-model="modelValue"
@@ -52,7 +53,7 @@ const props = defineProps<{
   />
   <InputNumber
     v-else-if="config.type === 'number'"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
     :minFractionDigits="0"
@@ -74,7 +75,7 @@ const props = defineProps<{
     v-model="modelValue"
     type="checkbox"
     :name="config.name ?? 'Booelan value without name :/'"
-    :disabled="!config.editable"
+    :disabled="!config.editable || mode === 'view'"
     class="m-2"
   />
   <div v-else :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
