@@ -78,8 +78,8 @@ const props = defineProps<{
     :disabled="!config.editable || mode === 'view'"
     class="m-2"
   />
-  <div v-else :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
-    {{ modelValue }} (Not configured :/)
+  <div v-else class="default-field" :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
+    {{ modelValue }}
   </div>
 </template>
 

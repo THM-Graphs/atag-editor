@@ -8,6 +8,8 @@ import {
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import CollectionError from '../components/CollectionError.vue';
+import DataInputComponent from '../components/DataInputComponent.vue';
+import DataInputGroup from '../components/DataInputGroup.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areObjectsEqual,
@@ -466,15 +468,17 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 <label :for="field.name" class="w-10rem font-semibold"
                   >{{ capitalize(field.name) }}
                 </label>
-                <InputText
-                  :id="field.name"
-                  :disabled="mode === 'view' || !field.editable"
-                  :required="field.required"
-                  :invalid="field.required && !collectionAccessObject.collection.data[field.name]"
-                  :key="field.name"
-                  v-model="collectionAccessObject.collection.data[field.name] as string"
-                  class="flex-auto w-full"
-                  spellcheck="false"
+                <DataInputGroup
+                  v-if="field.type === 'array'"
+                  v-model="collectionAccessObject.collection.data[field.name]"
+                  :config="field.items"
+                  :mode="mode"
+                />
+                <DataInputComponent
+                  v-else
+                  v-model="collectionAccessObject.collection.data[field.name]"
+                  :config="field"
+                  :mode="mode"
                 />
               </div>
             </div>

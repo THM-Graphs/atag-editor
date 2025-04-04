@@ -19,8 +19,6 @@ import Message from 'primevue/message';
 import { MultiSelect } from 'primevue';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
-import Select from 'primevue/select';
-import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
 import IEntity from '../models/IEntity';
@@ -28,6 +26,8 @@ import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
+import DataInputComponent from '../components/DataInputComponent.vue';
+import DataInputGroup from '../components/DataInputGroup.vue';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -470,7 +470,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <!-- TODO: Make "id" attributes unique -->
       <form>
         <div
           v-for="field in fields"
@@ -481,57 +480,16 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           <label :for="field.name" class="form-label font-semibold"
             >{{ camelCaseToTitleCase(field.name) }}
           </label>
-          <InputText
-            v-if="field.type === 'string' && (field.template === 'input' || !field.template)"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
+          <DataInputGroup
+            v-if="field.type === 'array'"
             v-model="annotation.data.properties[field.name]"
-            class="flex-auto w-full"
-            spellcheck="false"
+            :config="field.items"
           />
-          <Textarea
-            v-else-if="field.type === 'string' && field.template === 'textarea'"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
+          <DataInputComponent
+            v-else
             v-model="annotation.data.properties[field.name]"
-            cols="30"
-            rows="5"
-            class="flex-auto w-full"
+            :config="field"
           />
-          <Select
-            v-else-if="field.type === 'string' && field.options"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
-            v-model="annotation.data.properties[field.name]"
-            :options="field.options"
-            :placeholder="`Select ${field.name}`"
-            class="flex-auto w-full"
-          />
-          <!-- <Checkbox
-          v-else-if="field.type === 'checkbox'"
-          v-model="annotation.data.properties[field.name]"
-          :inputId="field.name"
-          :name="field.name"
-          :value="annotation.data.properties[field.name]"
-          /> -->
-          <!-- TODO: Primevue checkboxes work differently... -> create own component or match styling -->
-          <input
-            v-else-if="field.type === 'boolean'"
-            v-model="annotation.data.properties[field.name]"
-            type="checkbox"
-            :id="field.name"
-            :name="field.name"
-            :style="{ width: '15px', height: '15px', cursor: 'pointer' }"
-          />
-          <div v-else class="default-field">
-            {{ annotation.data.properties[field.name] }}
-          </div>
         </div>
       </form>
     </Fieldset>
