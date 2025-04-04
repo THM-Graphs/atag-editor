@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import Button from 'primevue/button';
-import { PropertyConfig } from '../models/types';
 import DataInputComponent from './DataInputComponent.vue';
+import { getDefaultValueForProperty } from '../utils/helper/helper';
+import { PropertyConfig } from '../models/types';
+import Button from 'primevue/button';
 
 const modelValue = defineModel<any[]>();
 const props = defineProps<{
@@ -30,7 +31,7 @@ const props = defineProps<{
       size="small"
       severity="secondary"
       label="Add item"
-      @click="modelValue.push(0)"
+      @click="modelValue.push(getDefaultValueForProperty(props.config.type))"
     />
   </div>
 </template>
