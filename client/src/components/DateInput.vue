@@ -68,7 +68,7 @@ watch(initialDate, () => {
     </div>
   </template>
   <template v-else>
-    <input type="time" v-model="initialDate" />
+    <input type="time" v-model="initialDate" step="1" />
     <div>
       {{ dateModelValue }}
     </div>
