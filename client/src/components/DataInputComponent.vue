@@ -4,7 +4,7 @@ import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
-import DateInput from '../components/DateInput.vue';
+import InputDate from './InputDate.vue';
 
 const modelValue = defineModel<any>();
 const props = defineProps<{
@@ -62,13 +62,13 @@ const props = defineProps<{
     showButtons
   />
   <div v-else-if="config.type === 'date'">
-    <DateInput date-type="date" v-model="modelValue" />
+    <InputDate date-type="date" v-model="modelValue" />
   </div>
   <div v-else-if="config.type === 'date-time'">
-    <DateInput date-type="date-time" v-model="modelValue" />
+    <InputDate date-type="date-time" v-model="modelValue" />
   </div>
   <div v-else-if="config.type === 'time'">
-    <DateInput date-type="time" v-model="modelValue" />
+    <InputDate date-type="time" v-model="modelValue" />
   </div>
   <input
     v-else-if="config.type === 'boolean'"

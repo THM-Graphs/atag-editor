@@ -285,7 +285,11 @@ export function getDefaultValueForProperty(type: PropertyConfigDataType): any {
     case 'boolean':
       return false;
     case 'date':
-      return new Date().toISOString();
+      const today: Date = new Date();
+      const year: number = today.getUTCFullYear();
+      const month: number = today.getUTCMonth();
+      const day: number = today.getUTCDate();
+      return new Date(Date.UTC(year, month, day, 0, 0, 0)).toISOString();
     case 'date-time':
       return new Date().toISOString();
     case 'integer':
