@@ -9,6 +9,14 @@ const props = defineProps<{
   config: Partial<PropertyConfig>;
   mode?: 'edit' | 'view';
 }>();
+
+function addItem() {
+  if (!modelValue.value) {
+    modelValue.value = [getDefaultValueForProperty(props.config.type)];
+  } else {
+    modelValue.value.push(getDefaultValueForProperty(props.config.type));
+  }
+}
 </script>
 
 <template>
@@ -31,7 +39,7 @@ const props = defineProps<{
       size="small"
       severity="secondary"
       label="Add item"
-      @click="modelValue.push(getDefaultValueForProperty(props.config.type))"
+      @click="addItem"
     />
   </div>
 </template>
