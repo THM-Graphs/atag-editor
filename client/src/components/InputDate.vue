@@ -182,19 +182,17 @@ function setInternalDateFromModelValue(value: string | null): void {
 function updateModelValue(date: Date | null): void {
   let newModelValue: string | null = null;
 
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
-    newModelValue = null;
-    return;
-  }
-
-  try {
-    if (props.dateType === 'time') {
-      newModelValue = createTimeString(date);
-    } else {
-      newModelValue = createIsoDateTimeString(date);
+  // Only possible if provided date is a real date and not null
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    try {
+      if (props.dateType === 'time') {
+        newModelValue = createTimeString(date);
+      } else {
+        newModelValue = createIsoDateTimeString(date);
+      }
+    } catch (e) {
+      console.error('Error formatting date to model value:', date, e);
     }
-  } catch (e) {
-    console.error('Error formatting date to model value:', date, e);
   }
 
   const dateIsDifferent: boolean = dateModelValue.value !== newModelValue;
