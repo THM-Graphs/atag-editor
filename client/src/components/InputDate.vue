@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import DatePicker from 'primevue/datepicker';
 
@@ -226,6 +226,14 @@ watch(internalDate, (newLocalDate: Date | null) => updateModelValue(newLocalDate
     :showSeconds="true"
     :placeholder="inputPlaceholder"
     style="width: 100%"
+    :showOnFocus="false"
+    :pt="{
+      dropdown: ({ state }) => ({
+        title: timeOnly
+          ? `${state.overlayVisible ? 'Hide' : 'Show'} clock`
+          : `${state.overlayVisible ? 'Hide' : 'Show'} calendar`,
+      }),
+    }"
   />
 </template>
 

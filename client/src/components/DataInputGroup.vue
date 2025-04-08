@@ -39,6 +39,7 @@ function addItem() {
       size="small"
       severity="secondary"
       label="Add item"
+      :title="`Add new ${props.config.type} item`"
       @click="addItem"
     />
   </div>
