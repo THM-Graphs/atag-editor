@@ -147,9 +147,13 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
 
   const isRequired: boolean = config?.required ?? true;
 
-  // Call function recursively if data type is array
-  if (Array.isArray(value) && config.type === 'array') {
-    return value.map(innerValue => valueToNeo4jType(innerValue, config.items));
+  // Call function recursively when needed if data type is array
+  if (config.type === 'array' && Array.isArray(value)) {
+    if (value.length === 0 && !isRequired) {
+      return null;
+    } else {
+      return value.map(innerValue => valueToNeo4jType(innerValue, config.items));
+    }
   }
 
   if (config.type === 'integer') {
