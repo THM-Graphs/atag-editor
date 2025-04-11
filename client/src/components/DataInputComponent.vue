@@ -11,11 +11,16 @@ const props = defineProps<{
   config: Partial<PropertyConfig>;
   mode?: 'edit' | 'view';
 }>();
+
+const isPrimitive: boolean =
+  props.config.type === 'string' ||
+  props.config.type === 'integer' ||
+  props.config.type === 'number';
 </script>
 
 <template>
   <Select
-    v-if="config.type === 'string' && config.options"
+    v-if="config.options && isPrimitive"
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
