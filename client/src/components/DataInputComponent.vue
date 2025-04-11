@@ -30,7 +30,7 @@ const isPrimitive: boolean =
     class="w-full"
   />
   <InputText
-    v-if="config.type === 'string' && (config.template === 'input' || !config.template)"
+    v-else-if="config.type === 'string' && (config.template === 'input' || !config.template)"
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
@@ -86,7 +86,6 @@ const isPrimitive: boolean =
   <div v-else class="default-field" :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
     {{ modelValue }}
   </div>
-  {{ modelValue }}
 </template>
 
 <style scoped></style>
