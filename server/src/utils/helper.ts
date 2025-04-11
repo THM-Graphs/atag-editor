@@ -72,10 +72,10 @@ export function getPagination(req: Request): Record<string, any> {
  * @param {Record<string, any>} properties
  * @return {Record<string, any>}
  */
-export function toNativeTypes(properties: any) {
+export function toNativeTypes(properties: Record<string, any>): Record<string, any> {
   return Object.fromEntries(
     Object.keys(properties).map(key => {
-      let value = valueToNativeType(properties[key]);
+      const value: any = valueToNativeType(properties[key]);
 
       return [key, value];
     }),
@@ -91,7 +91,7 @@ export function toNativeTypes(properties: any) {
  * @param {any} value
  * @returns {any}
  */
-function valueToNativeType(value: any) {
+function valueToNativeType(value: any): any {
   if (Array.isArray(value)) {
     value = value.map(innerValue => valueToNativeType(innerValue));
   } else if (isInt(value)) {
@@ -110,7 +110,9 @@ function valueToNativeType(value: any) {
 }
 
 /**
- * Convert JavaScript types back into Neo4j Properties, using the provided configuration.
+ * Convert JavaScript types back into Neo4j Properties, using the provided configuration. This conversion direction
+ * uses the field configuration since the desired neo4j data type can not always be inferred from the JavaScript type
+ * (e.g. dates, date times and times are always strings in JavaScript).
  *
  * @param {Record<string, any>} properties
  * @param {PropertyConfig[]} fields
@@ -128,44 +130,62 @@ export function toNeo4jTypes(properties: any, fields: PropertyConfig[]): Record<
 }
 
 /**
- * Convert an individual value to its Neo4j equivalent, using the provided configuration.
+ * Convert an individual value to its Neo4j equivalent, using the provided configuration. This conversion direction
+ * uses the field configuration since the desired neo4j data type can not always be inferred from the JavaScript type
+ * (e.g. dates, date times and times are always strings in JavaScript).
  *
  * @param {any} value
- * @param {PropertyConfig | undefined} fieldConfig
+ * @param {PropertyConfig | undefined} config
  * @returns {any}
  */
 function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefined): any {
+  // TODO: How handle empty string?
   // TODO: This is the case for non-customizable properties (uuid, start/endIndex etc.). Keep or handle better?
   if (!config) {
     return value;
   }
 
+  const isRequired: boolean = config?.required ?? true;
+
   // Call function recursively if data type is array
   if (Array.isArray(value) && config.type === 'array') {
-    return value.map(innerValue => valueToNeo4jType(innerValue, config));
+    return value.map(innerValue => valueToNeo4jType(innerValue, config.items));
   }
 
   if (config.type === 'integer') {
-    // if (typeof value === 'number' && Number.isInteger(value)) {
-    //   return int(value);
-    // }
     return types.Integer.fromValue(value);
   } else if (config.type === 'number') {
     return value;
   } else if (config.type === 'string') {
     return value;
   } else if (config.type === 'date') {
-    return types.Date.fromStandardDate(new Date(value));
+    if (!value && !isRequired) {
+      return null;
+    } else {
+      return types.Date.fromStandardDate(new Date(value));
+    }
   } else if (config.type === 'date-time') {
-    return types.DateTime.fromStandardDate(new Date(value));
+    if (!value && !isRequired) {
+      return null;
+    } else {
+      return types.DateTime.fromStandardDate(new Date(value));
+    }
   } else if (config.type === 'time') {
-    // TODO: Error handling, what happens if this fails?
-    const items = (value as string).split(':').map(item => parseInt(item));
-    const hours: number = items[0];
-    const minutes: number = items[1];
-    const seconds: number = items[2];
+    if (!value) {
+      if (!isRequired) {
+        return null;
+      } else {
+        return new types.LocalTime(0, 0, 0, 0);
+      }
+    } else {
+      // TODO: Error handling, what happens if this fails?
+      const items = (value as string).split(':').map(item => parseInt(item));
+      const hours: number = items[0];
+      const minutes: number = items[1];
+      const seconds: number = items[2];
 
-    return new types.LocalTime(hours, minutes, seconds, 0);
+      return new types.LocalTime(hours, minutes, seconds, 0);
+    }
   } else if (config.type === 'boolean') {
     return value;
   } else if (config.type === 'array') {
