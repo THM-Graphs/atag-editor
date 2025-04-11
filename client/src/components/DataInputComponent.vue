@@ -14,6 +14,16 @@ const props = defineProps<{
 </script>
 
 <template>
+  <Select
+    v-if="config.type === 'string' && config.options"
+    :disabled="!config.editable || mode === 'view'"
+    :required="config.required"
+    :invalid="config.required && !modelValue"
+    v-model="modelValue"
+    :options="config.options"
+    :placeholder="`Select ${config.name}`"
+    class="w-full"
+  />
   <InputText
     v-if="config.type === 'string' && (config.template === 'input' || !config.template)"
     :disabled="!config.editable || mode === 'view'"
@@ -31,16 +41,6 @@ const props = defineProps<{
     v-model="modelValue"
     cols="30"
     rows="5"
-    class="w-full"
-  />
-  <Select
-    v-else-if="config.type === 'string' && config.options"
-    :disabled="!config.editable || mode === 'view'"
-    :required="config.required"
-    :invalid="config.required && !modelValue"
-    v-model="modelValue"
-    :options="config.options"
-    :placeholder="`Select ${config.name}`"
     class="w-full"
   />
   <InputNumber
@@ -81,6 +81,7 @@ const props = defineProps<{
   <div v-else class="default-field" :style="{ backgroundColor: '#ffb1c0', borderRadius: '5px' }">
     {{ modelValue }}
   </div>
+  {{ modelValue }}
 </template>
 
 <style scoped></style>
