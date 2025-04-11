@@ -62,13 +62,13 @@ const props = defineProps<{
     showButtons
   />
   <div v-else-if="config.type === 'date'">
-    <InputDate date-type="date" v-model="modelValue" />
+    <InputDate :config="config" :mode="mode" v-model="modelValue" />
   </div>
   <div v-else-if="config.type === 'date-time'">
-    <InputDate date-type="date-time" v-model="modelValue" />
+    <InputDate :config="config" :mode="mode" v-model="modelValue" />
   </div>
   <div v-else-if="config.type === 'time'">
-    <InputDate date-type="time" v-model="modelValue" />
+    <InputDate :config="config" :mode="mode" v-model="modelValue" />
   </div>
   <input
     v-else-if="config.type === 'boolean'"

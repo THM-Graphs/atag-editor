@@ -2,21 +2,24 @@
 import { ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import DatePicker from 'primevue/datepicker';
+import { PropertyConfig } from '../models/types';
 
 // Accepts ISO string for date/date-time, HH:mm:ss for time, or null
 const dateModelValue = defineModel<string | null>();
 
 const props = defineProps<{
-  dateType: 'date' | 'date-time' | 'time';
+  config: Partial<PropertyConfig>;
+  mode?: 'edit' | 'view';
 }>();
 
 // This Date object will represent the UTC time, independent from the user's timezone
 const internalDate: Ref<Date | null> = ref(null);
 
 // Variables (don't need to be reactive since they won't change)
-const showTime: boolean = props.dateType === 'date-time' || props.dateType === 'time';
-const timeOnly: boolean = props.dateType === 'time';
-const dateFormat: string | undefined = props.dateType !== 'time' ? 'yy-mm-dd' : undefined;
+const dateType: string = props.config.type;
+const showTime: boolean = dateType === 'date-time' || dateType === 'time';
+const timeOnly: boolean = dateType === 'time';
+const dateFormat: string | undefined = dateType !== 'time' ? 'yy-mm-dd' : undefined;
 const inputPlaceholder: string = getDefaultPlaceholder();
 const inputIconClass: string = timeOnly ? 'pi pi-clock' : 'pi pi-calendar';
 
@@ -77,7 +80,7 @@ function createTimeString(date: Date): string {
  * @returns {string} A placeholder string to be used in the input field.
  */
 function getDefaultPlaceholder(): string {
-  switch (props.dateType) {
+  switch (dateType) {
     case 'date':
       return 'YYYY-MM-DD';
     case 'date-time':
@@ -85,7 +88,7 @@ function getDefaultPlaceholder(): string {
     case 'time':
       return 'HH:mm:ss';
     default:
-      return `Select ${props.dateType}`;
+      return `Select ${dateType}`;
   }
 }
 
@@ -113,7 +116,7 @@ function setInternalDateFromModelValue(value: string | null): void {
   }
 
   try {
-    if (props.dateType === 'time') {
+    if (dateType === 'time') {
       // Time only: Parse HH:mm:ss
       const splitted: number[] = value.split(':').map(part => parseInt(part));
       const [hours, minutes, seconds] = splitted;
@@ -159,7 +162,7 @@ function setInternalDateFromModelValue(value: string | null): void {
       }
     }
   } catch (e: unknown) {
-    console.error(`Error parsing model value (${props.dateType}):`, value, e);
+    console.error(`Error parsing model value (${dateType}):`, value, e);
   }
 
   // Update internal state only if it actually changes
@@ -185,7 +188,7 @@ function updateModelValue(date: Date | null): void {
   // Only possible if provided date is a real date and not null
   if (date instanceof Date && !isNaN(date.getTime())) {
     try {
-      if (props.dateType === 'time') {
+      if (dateType === 'time') {
         newModelValue = createTimeString(date);
       } else {
         newModelValue = createIsoDateTimeString(date);
@@ -215,6 +218,9 @@ watch(internalDate, (newLocalDate: Date | null) => updateModelValue(newLocalDate
 <template>
   <DatePicker
     v-model="internalDate"
+    :disabled="!config.editable || mode === 'view'"
+    :required="config.required"
+    :invalid="config.required && !modelValue"
     :showTime="showTime"
     :timeOnly="timeOnly"
     :dateFormat="dateFormat"
