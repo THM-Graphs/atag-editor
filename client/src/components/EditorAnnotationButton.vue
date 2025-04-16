@@ -4,6 +4,7 @@ import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import {
   cloneDeep,
+  getDefaultValueForProperty,
   getParentCharacterSpan,
   getSelectionData,
   isEditorElement,
@@ -44,10 +45,10 @@ const toast: ToastServiceMethods = useToast();
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: PropertyConfig[] = getAnnotationFields(annotationType);
 const subtypeField: PropertyConfig = fields.find(field => field.name === 'subtype');
-const options: string[] = subtypeField?.options ?? [];
-const dropdownOptions = options.map((option: string) => {
+const options: string[] | number[] = subtypeField?.options ?? [];
+const dropdownOptions = options.map((option: string | number) => {
   return {
-    label: option,
+    label: option.toString(),
     command: () => handleDropdownClick(option),
   };
 });
@@ -112,7 +113,7 @@ function setButtonStylingManually(): void {
   }
 }
 
-function handleDropdownClick(subtype: string): void {
+function handleDropdownClick(subtype: string | number): void {
   handleClick(subtype);
 }
 
@@ -138,7 +139,7 @@ function findAnnotationToSplit(leftChar: Character, rightChar: Character): Annot
   return null;
 }
 
-function handleClick(dropdownOption?: string): void {
+function handleClick(dropdownOption?: string | number): void {
   try {
     isAnnotationTypeEnabled();
     isSelectionValid();
@@ -343,26 +344,16 @@ function isSelectionValid(): boolean {
 
 function createNewAnnotation(
   type: string,
-  subtype: string | undefined,
+  subtype: string | number | undefined,
   characters: Character[],
 ): Annotation {
   const fields: PropertyConfig[] = getAnnotationFields(type);
   const newAnnotationData: IAnnotation = {} as IAnnotation;
 
-  // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
   fields.forEach((field: PropertyConfig) => {
-    if (field.type === 'string' && (field.template === 'input' || !field.template)) {
-      newAnnotationData[field.name] = '';
-    } else if (field.type === 'string' && field.template === 'textarea') {
-      newAnnotationData[field.name] = '';
-    } else if (field.type === 'string' || field.options) {
-      newAnnotationData[field.name] = field.options[0] ?? '';
-    } else if (field.type === 'boolean') {
-      newAnnotationData[field.name] = false;
-    } else {
-      newAnnotationData[field.name] = '';
-    }
+    newAnnotationData[field.name] =
+      field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
