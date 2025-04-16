@@ -1,15 +1,16 @@
 import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
+import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
-import { IGuidelines } from '../models/IGuidelines.js';
 import {
   CollectionAccessObject,
   PaginationResult,
   CollectionPostData,
   PropertyConfig,
   Text,
+  Collection,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -88,7 +89,11 @@ export default class CollectionService {
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const data: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+
+    const data: CollectionAccessObject[] = rawData.map(cao =>
+      toNativeTypes(cao),
+    ) as CollectionAccessObject[];
 
     return {
       data,
@@ -161,11 +166,15 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const collection: CollectionAccessObject = result.records[0]?.get('collection');
+    const rawCollection: CollectionAccessObject = result.records[0]?.get('collection');
 
-    if (!collection) {
+    if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
+
+    const collection: CollectionAccessObject = toNativeTypes(
+      rawCollection,
+    ) as CollectionAccessObject;
 
     return collection;
   }
@@ -183,17 +192,9 @@ export default class CollectionService {
   public async createNewCollection(data: ICollection, nodeLabels: string[]): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
 
-    const requiredFields: PropertyConfig[] =
-      await guidelineService.getCollectionConfigFields(nodeLabels);
+    const fields: PropertyConfig[] = await guidelineService.getCollectionConfigFields(nodeLabels);
 
-    // Add default properties if they are not sent in the request
-    requiredFields.forEach(property => {
-      if (!(property.name in data)) {
-        data[property.name] = '';
-      }
-    });
-
-    data = { ...data, uuid: crypto.randomUUID() };
+    data = { ...toNeo4jTypes(data, fields), uuid: crypto.randomUUID() } as ICollection;
 
     nodeLabels.push('Collection');
 
@@ -241,8 +242,16 @@ export default class CollectionService {
    * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
    */
   public async updateCollection(uuid: string, data: CollectionPostData): Promise<ICollection> {
-    const { collection } = data.data;
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const fields: PropertyConfig[] = await guidelineService.getCollectionConfigFields(
+      data.data.collection.nodeLabels,
+    );
+
     const texts: CollectionTextObject = this.processCollectionTextsBeforeSaving(data);
+    const collection: Collection = {
+      nodeLabels: data.data.collection.nodeLabels,
+      data: toNeo4jTypes(data.data.collection.data, fields) as ICollection,
+    };
 
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
