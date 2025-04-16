@@ -115,7 +115,7 @@ export type PropertyConfig = {
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;
-  options?: string[] | number[] | boolean[] /* Options if type is dropdown */;
+  options?: string[] | number[] /* Options if type is dropdown */;
   template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
 
