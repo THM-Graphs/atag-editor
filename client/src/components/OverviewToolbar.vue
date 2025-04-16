@@ -148,7 +148,10 @@ async function getGuidelines(): Promise<void> {
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
       data: Object.fromEntries(
-        getAllCollectionConfigFields().map(f => [f.name, getDefaultValueForProperty(f.type)]),
+        getAllCollectionConfigFields().map(f => [
+          f.name,
+          f?.required === true ? getDefaultValueForProperty(f.type) : null,
+        ]),
       ) as ICollection,
       nodeLabels: guidelines.value.collections.types
         .filter(t => t.level === 'primary')

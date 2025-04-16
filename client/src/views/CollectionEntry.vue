@@ -17,6 +17,7 @@ import {
   buildFetchUrl,
   capitalize,
   cloneDeep,
+  getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
 import { CollectionAccessObject, CollectionPostData, PropertyConfig, Text } from '../models/types';
@@ -99,7 +100,7 @@ onMounted(async (): Promise<void> => {
 });
 
 /**
- * Fills in any missing collection properties with an empty string.
+ * Fills in any missing collection properties with the type-specific default value.
  *
  * Called when entering edit mode to create a full data object from which the dynamically rendered fields
  * can get their values from.
@@ -107,11 +108,12 @@ onMounted(async (): Promise<void> => {
  * @returns {void} This function does not return any value.
  */
 function enrichCollectionData(): void {
-  const allPossibleFields = getAllCollectionConfigFields();
+  const allPossibleFields: PropertyConfig[] = getAllCollectionConfigFields();
 
   allPossibleFields.forEach(field => {
     if (!(field.name in collectionAccessObject.value.collection.data)) {
-      collectionAccessObject.value.collection.data[field.name] = '';
+      collectionAccessObject.value.collection.data[field.name] =
+        field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
 }
