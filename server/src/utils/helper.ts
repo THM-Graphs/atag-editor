@@ -182,13 +182,33 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
         return new types.LocalTime(0, 0, 0, 0);
       }
     } else {
-      // TODO: Error handling, what happens if this fails?
-      const items = (value as string).split(':').map(item => parseInt(item));
-      const hours: number = items[0];
-      const minutes: number = items[1];
-      const seconds: number = items[2];
+      // Needs more work since parsing can fail easily (Dates/Datetimes handle wrong values better)
+      try {
+        const items: number[] = (value as string).split(':').map((item: string) => {
+          const parsed: number = parseInt(item);
 
-      return new types.LocalTime(hours, minutes, seconds, 0);
+          if (isNaN(parsed)) {
+            throw new Error(`Invalid time format: ${value}`);
+          }
+
+          return parsed;
+        });
+
+        const hours: number = items[0] ?? 0;
+        const minutes: number = items[1] ?? 0;
+        const seconds: number = items[2] ?? 0;
+
+        return new types.LocalTime(hours, minutes, seconds, 0);
+      } catch (e: unknown) {
+        console.error(`Failed to parse time from value "${value}":`, e);
+
+        // Same logic as above (no value/not required)
+        if (!isRequired) {
+          return null;
+        }
+
+        return new types.LocalTime(0, 0, 0, 0);
+      }
     }
   } else if (config.type === 'boolean') {
     return value;
