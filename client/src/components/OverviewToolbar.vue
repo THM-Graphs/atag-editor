@@ -51,9 +51,15 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsValid: boolean =
     availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
 
+  // TODO: This is not correct anymore, can be other values
   const requiredFieldsValid: boolean = dialogInputFields.value
     .filter(field => field.required)
-    .every(field => newCollectionData.value?.data[field.name]?.toString().trim() !== '');
+    .every(
+      field =>
+        newCollectionData.value?.data[field.name] !== null &&
+        newCollectionData.value?.data[field.name] !== undefined &&
+        newCollectionData.value?.data[field.name] !== '',
+    );
 
   return selectedLabelsValid && requiredFieldsValid;
 });
