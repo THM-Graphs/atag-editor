@@ -146,6 +146,12 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
   }
 
   const isRequired: boolean = config?.required ?? true;
+  const valueIsNull: boolean = value === null || value === undefined;
+
+  // This can be applied to all data types - if the value does not exist and is not needed, it doesnt need to be set
+  if (valueIsNull && !isRequired) {
+    return null;
+  }
 
   // Call function recursively when needed if data type is array
   if (config.type === 'array' && Array.isArray(value)) {
@@ -157,25 +163,33 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
   }
 
   if (config.type === 'integer') {
-    return types.Integer.fromValue(value);
+    if (valueIsNull) {
+      if (!isRequired) {
+        return null;
+      } else {
+        return 0;
+      }
+    } else {
+      return types.Integer.fromValue(value);
+    }
   } else if (config.type === 'number') {
     return value;
   } else if (config.type === 'string') {
     return value;
   } else if (config.type === 'date') {
-    if (!value && !isRequired) {
+    if (valueIsNull && !isRequired) {
       return null;
     } else {
       return types.Date.fromStandardDate(new Date(value));
     }
   } else if (config.type === 'date-time') {
-    if (!value && !isRequired) {
+    if (valueIsNull && !isRequired) {
       return null;
     } else {
       return types.DateTime.fromStandardDate(new Date(value));
     }
   } else if (config.type === 'time') {
-    if (!value) {
+    if (valueIsNull) {
       if (!isRequired) {
         return null;
       } else {
