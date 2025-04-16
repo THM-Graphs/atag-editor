@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
+import DataInputComponent from './DataInputComponent.vue';
+import DataInputGroup from './DataInputGroup.vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
@@ -10,7 +12,12 @@ import { MultiSelect } from 'primevue';
 import Skeleton from 'primevue/skeleton';
 import Tag from 'primevue/tag';
 import Toolbar from 'primevue/toolbar';
-import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
+import {
+  buildFetchUrl,
+  capitalize,
+  cloneDeep,
+  getDefaultValueForProperty,
+} from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import { Collection, PropertyConfig } from '../models/types';
@@ -141,7 +148,7 @@ async function getGuidelines(): Promise<void> {
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
       data: Object.fromEntries(
-        getAllCollectionConfigFields().map(f => [f.name, '']),
+        getAllCollectionConfigFields().map(f => [f.name, getDefaultValueForProperty(f.type)]),
       ) as ICollection,
       nodeLabels: guidelines.value.collections.types
         .filter(t => t.level === 'primary')
@@ -219,19 +226,29 @@ function handleSearchInput(): void {
           <h4 class="text-center">Add data</h4>
           <div
             class="input-container flex align-items-center gap-3 mb-3"
-            v-for="(property, index) in dialogInputFields"
+            v-for="(field, index) in dialogInputFields"
           >
-            <label :for="property.name" class="font-semibold w-6rem"
-              >{{ capitalize(property.name) }}
+            <label :for="field.name" class="font-semibold w-6rem"
+              >{{ capitalize(field.name) }}
             </label>
-            <InputText
-              :id="property.name"
-              :required="property.required"
+            <!-- <InputText
+              :id="field.name"
+              :required="field.required"
               :autofocus="index === 0"
-              :key="property.name"
-              v-model="newCollectionData.data[property.name] as string"
+              :key="field.name"
+              v-model="newCollectionData.data[field.name] as string"
               class="flex-auto"
               spellcheck="false"
+            /> -->
+            <DataInputGroup
+              v-if="field.type === 'array'"
+              v-model="newCollectionData.data[field.name]"
+              :config="field.items"
+            />
+            <DataInputComponent
+              v-else
+              v-model="newCollectionData.data[field.name]"
+              :config="field"
             />
           </div>
         </div>
