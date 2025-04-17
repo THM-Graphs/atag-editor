@@ -51,8 +51,7 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsValid: boolean =
     availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
 
-  // TODO: This is not correct anymore, can be other values
-  const requiredFieldsValid: boolean = dialogInputFields.value
+  const requiredFieldsAreValid: boolean = dialogInputFields.value
     .filter(field => field.required)
     .every(
       field =>
@@ -61,7 +60,7 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
         newCollectionData.value?.data[field.name] !== '',
     );
 
-  return selectedLabelsValid && requiredFieldsValid;
+  return selectedLabelsValid && requiredFieldsAreValid;
 });
 
 /**
@@ -235,20 +234,11 @@ function handleSearchInput(): void {
           <h4 class="text-center">Add data</h4>
           <div
             class="input-container flex align-items-center gap-3 mb-3"
-            v-for="(field, index) in dialogInputFields"
+            v-for="field in dialogInputFields"
           >
             <label :for="field.name" class="font-semibold w-6rem"
               >{{ capitalize(field.name) }}
             </label>
-            <!-- <InputText
-              :id="field.name"
-              :required="field.required"
-              :autofocus="index === 0"
-              :key="field.name"
-              v-model="newCollectionData.data[field.name] as string"
-              class="flex-auto"
-              spellcheck="false"
-            /> -->
             <DataInputGroup
               v-if="field.type === 'array'"
               v-model="newCollectionData.data[field.name]"
