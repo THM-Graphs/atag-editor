@@ -3,7 +3,7 @@ import { ref, computed, ComputedRef } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
-import { cloneDeep, formatFileSize } from '../utils/helper/helper';
+import { cloneDeep, formatFileSize, getDefaultValueForProperty } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
@@ -355,20 +355,10 @@ function transformStandoffToAtag(): void {
       const fields: PropertyConfig[] = getAnnotationFields(a.type);
       const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
-      // TODO: Improve this function, too many empty strings and duplicate field settings
       // Base properties
       fields.forEach((field: PropertyConfig) => {
-        if (field.type === 'string' && (field.template === 'input' || !field.template)) {
-          newAnnotationProperties[field.name] = '';
-        } else if (field.type === 'string' && field.template === 'textarea') {
-          newAnnotationProperties[field.name] = '';
-        } else if (field.type === 'string' || field.options) {
-          newAnnotationProperties[field.name] = field.options[0] ?? '';
-        } else if (field.type === 'boolean') {
-          newAnnotationProperties[field.name] = false;
-        } else {
-          newAnnotationProperties[field.name] = '';
-        }
+        newAnnotationProperties[field.name] =
+          field?.required === true ? getDefaultValueForProperty(field.type) : null;
       });
 
       // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
