@@ -242,7 +242,7 @@ function handleSearchInput(): void {
             <DataInputGroup
               v-if="field.type === 'array'"
               v-model="newCollectionData.data[field.name]"
-              :config="field.items"
+              :config="field"
             />
             <DataInputComponent
               v-else

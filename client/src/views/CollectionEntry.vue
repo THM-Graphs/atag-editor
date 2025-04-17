@@ -471,7 +471,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 <DataInputGroup
                   v-if="field.type === 'array'"
                   v-model="collectionAccessObject.collection.data[field.name]"
-                  :config="field.items"
+                  :config="field"
                   :mode="mode"
                 />
                 <DataInputComponent

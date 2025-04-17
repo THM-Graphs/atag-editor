@@ -474,7 +474,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           <DataInputGroup
             v-if="field.type === 'array'"
             v-model="annotation.data.properties[field.name]"
-            :config="field.items"
+            :config="field"
           />
           <DataInputComponent
             v-else

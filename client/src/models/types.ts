@@ -115,6 +115,8 @@ export type PropertyConfig = {
   visible: boolean /* Visible by user */;
   /* Only relevant if type is "array" */
   items?: Partial<PropertyConfig>;
+  minItems?: number;
+  maxItems?: number;
   /* Only relevant if type is "number"/"integer" */
   minimum?: number;
   maximum?: number;
