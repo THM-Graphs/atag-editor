@@ -347,7 +347,6 @@ function createNewAnnotation(
   subtype: string | number | undefined,
   characters: Character[],
 ): Annotation {
-  const fields: PropertyConfig[] = getAnnotationFields(type);
   const newAnnotationData: IAnnotation = {} as IAnnotation;
 
   // Base properties
@@ -363,10 +362,11 @@ function createNewAnnotation(
   newAnnotationData.text = characters.map((char: Character) => char.data.text).join('');
   newAnnotationData.uuid = crypto.randomUUID();
 
-  // Set subtype only when a subtype property is defined in guidelines
-  // If it is, set it to the given parameter subtype or use the default value if no parameter is passed
-  if (subtypeField) {
-    newAnnotationData.subtype = subtype ?? newAnnotationData.subtype;
+  // If a subtype field exists (filled with a default value just before), but not subtype was provided
+  // (= the user clicked the button directly instead of selecting an entry from the dropdown),
+  // AND there are options to select from, set the first option as default value
+  if (subtypeField && !subtype && subtypeField.options?.length > 0) {
+    newAnnotationData.subtype = subtypeField.options[0];
   }
 
   // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
