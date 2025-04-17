@@ -175,7 +175,7 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
   } else if (config.type === 'number') {
     return value;
   } else if (config.type === 'string') {
-    return value;
+    return (value as string).trim();
   } else if (config.type === 'date') {
     if (valueIsNull && !isRequired) {
       return null;
