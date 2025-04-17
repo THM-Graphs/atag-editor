@@ -16,6 +16,12 @@ const isPrimitive: boolean =
   props.config.type === 'string' ||
   props.config.type === 'integer' ||
   props.config.type === 'number';
+
+const minValue: number | null | undefined =
+  props.config.exclusiveMinimum != null ? props.config.exclusiveMinimum + 1 : props.config.minimum;
+
+const maxValue: number | null | undefined =
+  props.config.exclusiveMaximum != null ? props.config.exclusiveMaximum - 1 : props.config.maximum;
 </script>
 
 <template>
@@ -53,6 +59,8 @@ const isPrimitive: boolean =
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
+    :min="minValue"
+    :max="maxValue"
     v-model="modelValue"
     showButtons
   />
@@ -61,6 +69,8 @@ const isPrimitive: boolean =
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
     :invalid="config.required && !modelValue"
+    :min="minValue"
+    :max="maxValue"
     :minFractionDigits="0"
     :maxFractionDigits="20"
     v-model="modelValue"

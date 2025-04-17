@@ -103,11 +103,16 @@ export type PaginationResult<T> = {
 export type PropertyConfig = {
   name: string /* folioEnd, label, websiteUrl */;
   type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
-  /* Only relevant if type is "array" */
-  items?: Partial<PropertyConfig>;
   required: boolean /* required or optional */;
   editable: boolean /* Editable by user */;
   visible: boolean /* Visible by user */;
+  /* Only relevant if type is "array" */
+  items?: Partial<PropertyConfig>;
+  /* Only relevant if type is "number"/"integer" */
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
   options?: string[] | number[] /* Options if type is dropdown */;
   template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
