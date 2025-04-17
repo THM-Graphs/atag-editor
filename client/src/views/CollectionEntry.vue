@@ -217,10 +217,8 @@ function hasUnsavedChanges(): boolean {
 
   // Compare collection properties
   if (
-    !areObjectsEqual(
-      collectionAccessObject.value.collection.data,
-      initialCollectionAccessObject.value.collection.data,
-    )
+    JSON.stringify(collectionAccessObject.value.collection.data) !==
+    JSON.stringify(initialCollectionAccessObject.value.collection.data)
   ) {
     return true;
   }
