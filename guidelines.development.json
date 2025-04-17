@@ -540,45 +540,49 @@
         ]
       }
     ],
-    "properties": [
-      {
-        "name": "type",
-        "type": "string",
-        "required": true,
-        "editable": false,
-        "visible": true
-      },
-      {
-        "name": "text",
-        "type": "string",
-        "required": true,
-        "editable": false,
-        "visible": true
-      },
-      {
-        "name": "originalText",
-        "type": "string",
-        "required": false,
-        "editable": true,
-        "visible": true
-      },
-      {
-        "name": "comment",
-        "type": "string",
-        "template": "textarea",
-        "required": false,
-        "editable": true,
-        "visible": true
-      },
-      {
-        "name": "commentInternal",
-        "type": "string",
-        "template": "textarea",
-        "required": false,
-        "editable": true,
-        "visible": true
-      }
-    ],
+    "properties": {
+      "system": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        }
+      ],
+      "base": [
+        {
+          "name": "originalText",
+          "type": "string",
+          "required": false,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "name": "comment",
+          "type": "string",
+          "template": "textarea",
+          "required": false,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "name": "commentInternal",
+          "type": "string",
+          "template": "textarea",
+          "required": false,
+          "editable": true,
+          "visible": true
+        }
+      ]
+    },
     "resources": [
       {
         "category": "concepts",

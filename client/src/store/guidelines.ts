@@ -46,10 +46,11 @@ export function useGuidelinesStore() {
    * @return {PropertyConfig[]} The fields for the annotation type.
    */
   function getAnnotationFields(type: string): PropertyConfig[] {
-    return [
-      ...(getAnnotationConfig(type)?.properties ?? []),
-      ...guidelines.value.annotations.properties,
-    ];
+    const system: PropertyConfig[] = guidelines.value.annotations.properties.system;
+    const base: PropertyConfig[] = guidelines.value.annotations.properties.base;
+    const additional: PropertyConfig[] = getAnnotationConfig(type)?.properties ?? [];
+
+    return [...system, ...base, ...additional];
   }
 
   /**

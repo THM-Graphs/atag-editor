@@ -18,9 +18,8 @@ export default class GuidelinesService {
     guidelines: IGuidelines,
     type: string,
   ): PropertyConfig[] {
-    // TODO: This is preliminary, since annotations do not have the system/base/additional categories yet
-    const system: PropertyConfig[] = [];
-    const base: PropertyConfig[] = guidelines.annotations.properties;
+    const system: PropertyConfig[] = guidelines.annotations.properties.system;
+    const base: PropertyConfig[] = guidelines.annotations.properties.base;
     const additional: PropertyConfig[] =
       guidelines.annotations.types.find(annoConfig => annoConfig.type === type)?.properties ?? [];
 
