@@ -22,6 +22,9 @@ const minValue: number | null | undefined =
 
 const maxValue: number | null | undefined =
   props.config.exclusiveMaximum != null ? props.config.exclusiveMaximum - 1 : props.config.maximum;
+
+const minLength: number | null | undefined = props.config.minLength;
+const maxLength: number | null | undefined = props.config.maxLength;
 </script>
 
 <template>
@@ -43,6 +46,7 @@ const maxValue: number | null | undefined =
     v-model="modelValue"
     class="w-full"
     spellcheck="false"
+    :pt="{ root: { minLength: minLength, maxLength: maxLength } }"
   />
   <Textarea
     v-else-if="config.type === 'string' && config.template === 'textarea'"

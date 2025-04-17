@@ -122,6 +122,9 @@ export type PropertyConfig = {
   maximum?: number;
   exclusiveMinimum?: number;
   exclusiveMaximum?: number;
+  /* Only relevant if type is "string" */
+  minLength?: number;
+  maxLength?: number;
   options?: string[] | number[] /* Options if type is dropdown */;
   template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
 };
