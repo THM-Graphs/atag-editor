@@ -7,7 +7,6 @@ import {
   AdditionalText,
   Annotation,
   AnnotationData,
-  AnnotationType,
   PropertyConfig,
   Text,
 } from '../models/types.js';
@@ -107,13 +106,11 @@ export default class AnnotationService {
   }
 
   /**
-   * Process the given annotations before saving them in the database.
+   * Process the given annotations before saving them in the database. This simplifies the annotation structure and
+   * converts JS native types to neo4j types.
    *
-   * This function replaces the normdata of the annotation with an object with two entries: `deleted` and `created`.
-   * Each entry contains the uuids of the nodes should be (dis-)connected to the annotation node. Used to simplify the cypher queries.
-   *
-   * @param {Annotation[]} annotations - The annotations to process.
-   * @return {ProcessedAnnotation[]} The processed annotations.
+   * @param {Annotation[]} annotations - The annotations to be processed.
+   * @return {Promise<ProcessedAnnotation[]>} A promise that resolves to the processed annotations.
    */
   private async processAnnotationsBeforeSaving(
     annotations: Annotation[],

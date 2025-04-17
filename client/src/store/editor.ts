@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
-import { areObjectsEqual, areSetsEqual } from '../utils/helper/helper';
+import { areSetsEqual } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 import { useTextStore } from './text';
 
