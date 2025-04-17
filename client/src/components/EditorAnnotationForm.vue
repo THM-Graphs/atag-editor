@@ -8,6 +8,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import {
   buildFetchUrl,
   camelCaseToTitleCase,
+  getDefaultValueForProperty,
   toggleTextHightlighting,
 } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
@@ -368,36 +369,26 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 }
 
 function addAdditionalText(): void {
-  const defaultFields: PropertyConfig[] = getCollectionConfigFields(
-    additionalTextInputObject.value.inputLabels,
-  );
-
+  const nodeLabels: string[] = additionalTextInputObject.value.inputLabels;
+  const defaultFields: PropertyConfig[] = getCollectionConfigFields(nodeLabels);
   const newCollectionProperties: ICollection = {} as ICollection;
 
   defaultFields.forEach((field: PropertyConfig) => {
-    if (field.type === 'string' && (field.template === 'input' || !field.template)) {
-      newCollectionProperties[field.name] = '';
-    } else if (field.type === 'string' && field.template === 'textarea') {
-      newCollectionProperties[field.name] = '';
-    } else if (field.type === 'string' || field.options) {
-      newCollectionProperties[field.name] = field.options[0] ?? '';
-    } else if (field.type === 'boolean') {
-      newCollectionProperties[field.name] = false;
-    } else {
-      newCollectionProperties[field.name] = '';
-    }
+    newCollectionProperties[field.name] =
+      field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
   annotation.data.additionalTexts.push({
     collection: {
-      nodeLabels: additionalTextInputObject.value.inputLabels,
+      nodeLabels,
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
-        label: `${additionalTextInputObject.value.inputLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
+        label: `${nodeLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
       } as ICollection,
     },
     text: {
+      // TODO: Text node labels should be made selectable too in the future
       nodeLabels: [],
       data: {
         uuid: crypto.randomUUID(),
