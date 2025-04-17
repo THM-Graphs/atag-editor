@@ -126,7 +126,7 @@ export function useEditorStore() {
       if (
         a.status === 'deleted' ||
         a.status === 'created' ||
-        !areObjectsEqual(a.data.properties, a.initialData.properties) ||
+        JSON.stringify(a.data.properties) !== JSON.stringify(a.initialData.properties) ||
         !areSetsEqual(normdataUuids, initialNormdataUuids) ||
         !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
