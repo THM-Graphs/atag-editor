@@ -57,7 +57,7 @@ function handleDeleteItem(itemIndex: number): void {
 </script>
 
 <template>
-  <div :style="{ outline: '1px solid red', padding: '5px' }">
+  <div class="w-full">
     <div v-for="(_, index) in modelValue" class="flex gap-1 align-items-center">
       <DataInputComponent
         v-model="modelValue[index]"
