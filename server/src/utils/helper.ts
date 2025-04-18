@@ -154,11 +154,15 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
   }
 
   // Call function recursively when needed if data type is array
-  if (config.type === 'array' && Array.isArray(value)) {
-    if (value.length === 0 && !isRequired) {
-      return null;
+  if (config.type === 'array') {
+    if (value.length === 0) {
+      if (isRequired) {
+        return [];
+      } else {
+        return null;
+      }
     } else {
-      return value.map(innerValue => valueToNeo4jType(innerValue, config.items));
+      return value.map((innerValue: any) => valueToNeo4jType(innerValue, config.items));
     }
   }
 
@@ -225,9 +229,6 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
       }
     }
   } else if (config.type === 'boolean') {
-    return value;
-  } else if (config.type === 'array') {
-    //Already handled in the beginning of the function
     return value;
   } else {
     return value;
