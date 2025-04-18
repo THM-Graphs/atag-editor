@@ -1,16 +1,18 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
+import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
   Annotation,
   AnnotationData,
-  AnnotationType,
+  PropertyConfig,
   Text,
 } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import ICharacter from '../models/ICharacter.js';
+import ICollection from '../models/ICollection.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
@@ -94,23 +96,36 @@ export default class AnnotationService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid, guidelines });
+    const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 
-    return result.records[0]?.get('annotations');
+    const annotations: AnnotationData[] = rawAnnotations.map(annotation =>
+      toNativeTypes(annotation),
+    ) as AnnotationData[];
+
+    return annotations;
   }
 
   /**
-   * Process the given annotations before saving them in the database.
+   * Process the given annotations before saving them in the database. This simplifies the annotation structure and
+   * converts JS native types to neo4j types.
    *
-   * This function replaces the normdata of the annotation with an object with two entries: `deleted` and `created`.
-   * Each entry contains the uuids of the nodes should be (dis-)connected to the annotation node. Used to simplify the cypher queries.
-   *
-   * @param {Annotation[]} annotations - The annotations to process.
-   * @return {ProcessedAnnotation[]} The processed annotations.
+   * @param {Annotation[]} annotations - The annotations to be processed.
+   * @return {Promise<ProcessedAnnotation[]>} A promise that resolves to the processed annotations.
    */
-  public async processAnnotationsBeforeSaving(
+  private async processAnnotationsBeforeSaving(
     annotations: Annotation[],
   ): Promise<ProcessedAnnotation[]> {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
     return annotations.map(annotation => {
+      // Needed to convert the types of the annotation's node properties
+      const annotationConfigFields: PropertyConfig[] =
+        guidelineService.getAnnotationConfigFieldsFromGuidelines(
+          guidelines,
+          annotation.data.properties.type,
+        );
+
       const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
         .flat()
         .map(item => item.uuid);
@@ -143,8 +158,21 @@ export default class AnnotationService {
       // Characters need to be created to be saved in the query
       annotation.data.additionalTexts.forEach(additionalText => {
         if (!oldTextUuids.includes(additionalText.collection.data.uuid)) {
+          // Done here because collection field configuration may be different for each additional text
+          const collectionConfigFields: PropertyConfig[] =
+            guidelineService.getCollectionConfigFieldsFromGuidelines(
+              guidelines,
+              additionalText.collection.nodeLabels,
+            );
+
           createdAdditionalTexts.push({
-            ...additionalText,
+            collection: {
+              nodeLabels: additionalText.collection.nodeLabels,
+              data: toNeo4jTypes(
+                additionalText.collection.data,
+                collectionConfigFields,
+              ) as ICollection,
+            },
             text: {
               nodeLabels: additionalText.text.nodeLabels,
               data: additionalText.text.data,
@@ -169,7 +197,7 @@ export default class AnnotationService {
       return {
         ...annotation,
         data: {
-          ...annotation.data,
+          properties: toNeo4jTypes(annotation.data.properties, annotationConfigFields),
           normdata: {
             deleted: deletedNormdataUuids,
             created: createdNormdataUuids,
@@ -180,7 +208,7 @@ export default class AnnotationService {
           },
         },
       };
-    });
+    }) as ProcessedAnnotation[];
   }
 
   public async saveAnnotations(

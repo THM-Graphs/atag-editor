@@ -8,6 +8,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import {
   buildFetchUrl,
   camelCaseToTitleCase,
+  getDefaultValueForProperty,
   toggleTextHightlighting,
 } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
@@ -19,20 +20,15 @@ import Message from 'primevue/message';
 import { MultiSelect } from 'primevue';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
-import Select from 'primevue/select';
-import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import {
-  Annotation,
-  AnnotationProperty,
-  AnnotationType,
-  CollectionProperty,
-} from '../models/types';
+import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
 import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
+import DataInputComponent from '../components/DataInputComponent.vue';
+import DataInputGroup from '../components/DataInputGroup.vue';
 
 type NormdataEntry = IEntity & { html: string };
 
@@ -82,7 +78,7 @@ const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionConfi
   useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
-const fields: AnnotationProperty[] = getAnnotationFields(annotation.data.properties.type);
+const fields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 
 const propertiesAreCollapsed = ref<boolean>(false);
 const normdataAreCollapsed = ref<boolean>(false);
@@ -373,33 +369,26 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
 }
 
 function addAdditionalText(): void {
-  const defaultFields: CollectionProperty[] = getCollectionConfigFields(
-    additionalTextInputObject.value.inputLabels,
-  );
-
+  const nodeLabels: string[] = additionalTextInputObject.value.inputLabels;
+  const defaultFields: PropertyConfig[] = getCollectionConfigFields(nodeLabels);
   const newCollectionProperties: ICollection = {} as ICollection;
 
-  defaultFields.forEach((field: CollectionProperty) => {
-    // TODO: Is this needed? Or should Collection Properties always be text?
-    switch (field.type) {
-      case 'text':
-        newCollectionProperties[field.name] = '';
-        break;
-      default:
-        newCollectionProperties[field.name] = '';
-    }
+  defaultFields.forEach((field: PropertyConfig) => {
+    newCollectionProperties[field.name] =
+      field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
   annotation.data.additionalTexts.push({
     collection: {
-      nodeLabels: additionalTextInputObject.value.inputLabels,
+      nodeLabels,
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
-        label: `${additionalTextInputObject.value.inputLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
+        label: `${nodeLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
       } as ICollection,
     },
     text: {
+      // TODO: Text node labels should be made selectable too in the future
       nodeLabels: [],
       data: {
         uuid: crypto.randomUUID(),
@@ -472,7 +461,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <!-- TODO: Make "id" attributes unique -->
       <form>
         <div
           v-for="field in fields"
@@ -483,57 +471,16 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
           <label :for="field.name" class="form-label font-semibold"
             >{{ camelCaseToTitleCase(field.name) }}
           </label>
-          <InputText
-            v-if="field.type === 'text'"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
+          <DataInputGroup
+            v-if="field.type === 'array'"
             v-model="annotation.data.properties[field.name]"
-            class="flex-auto w-full"
-            spellcheck="false"
+            :config="field"
           />
-          <Textarea
-            v-else-if="field.type === 'textarea'"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
+          <DataInputComponent
+            v-else
             v-model="annotation.data.properties[field.name]"
-            cols="30"
-            rows="5"
-            class="flex-auto w-full"
+            :config="field"
           />
-          <Select
-            v-else-if="field.type === 'selection'"
-            :id="field.name"
-            :disabled="!field.editable"
-            :required="field.required"
-            :invalid="field.required && !annotation.data.properties[field.name]"
-            v-model="annotation.data.properties[field.name]"
-            :options="field.options"
-            :placeholder="`Select ${field.name}`"
-            class="flex-auto w-full"
-          />
-          <!-- <Checkbox
-          v-else-if="field.type === 'checkbox'"
-          v-model="annotation.data.properties[field.name]"
-          :inputId="field.name"
-          :name="field.name"
-          :value="annotation.data.properties[field.name]"
-          /> -->
-          <!-- TODO: Primevue checkboxes work differently... -> create own component or match styling -->
-          <input
-            v-else-if="field.type === 'checkbox'"
-            v-model="annotation.data.properties[field.name]"
-            type="checkbox"
-            :id="field.name"
-            :name="field.name"
-            :style="{ width: '15px', height: '15px', cursor: 'pointer' }"
-          />
-          <div v-else class="default-field">
-            {{ annotation.data.properties[field.name] }}
-          </div>
         </div>
       </form>
     </Fieldset>

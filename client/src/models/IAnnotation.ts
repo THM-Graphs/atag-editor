@@ -5,7 +5,7 @@ export default interface IAnnotation {
   endIndex: number;
   originalText: string;
   startIndex: number;
-  subtype: string;
+  subtype: string | number;
   text: string;
   type: string;
   url: string;

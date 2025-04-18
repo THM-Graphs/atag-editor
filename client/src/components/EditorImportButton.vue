@@ -3,7 +3,7 @@ import { ref, computed, ComputedRef } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
-import { cloneDeep, formatFileSize } from '../utils/helper/helper';
+import { cloneDeep, formatFileSize, getDefaultValueForProperty } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
@@ -12,7 +12,7 @@ import {
   AdditionalText,
   Annotation,
   AnnotationData,
-  AnnotationProperty,
+  PropertyConfig,
   AnnotationType,
   Character,
   MalformedAnnotation,
@@ -352,28 +352,13 @@ function transformStandoffToAtag(): void {
         return;
       }
 
-      const fields: AnnotationProperty[] = getAnnotationFields(a.type);
+      const fields: PropertyConfig[] = getAnnotationFields(a.type);
       const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
-      // TODO: Improve this function, too many empty strings and duplicate field settings
       // Base properties
-      fields.forEach((field: AnnotationProperty) => {
-        switch (field.type) {
-          case 'text':
-            newAnnotationProperties[field.name] = '';
-            break;
-          case 'textarea':
-            newAnnotationProperties[field.name] = '';
-            break;
-          case 'selection':
-            newAnnotationProperties[field.name] = field.options[0] ?? '';
-            break;
-          case 'checkbox':
-            newAnnotationProperties[field.name] = false;
-            break;
-          default:
-            newAnnotationProperties[field.name] = '';
-        }
+      fields.forEach((field: PropertyConfig) => {
+        newAnnotationProperties[field.name] =
+          field?.required === true ? getDefaultValueForProperty(field.type) : null;
       });
 
       // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)

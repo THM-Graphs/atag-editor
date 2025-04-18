@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Annotation, Character } from '../../models/types';
+import { Annotation, Character, PropertyConfigDataType } from '../../models/types';
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
@@ -270,4 +270,39 @@ export function buildFetchUrl(path: string): string {
   }
 
   return url;
+}
+
+/**
+ * Returns a default value based on the data type.
+ *
+ * Used during import, editing and saving of Collections or Annotations.
+ *
+ * @param {PropertyConfigDataType} type - The data type.
+ * @return {any} The appropriate default value for the data type.
+ */
+export function getDefaultValueForProperty(type: PropertyConfigDataType): any {
+  switch (type) {
+    case 'boolean':
+      return false;
+    case 'date':
+      const today: Date = new Date();
+      const year: number = today.getUTCFullYear();
+      const month: number = today.getUTCMonth();
+      const day: number = today.getUTCDate();
+      return new Date(Date.UTC(year, month, day, 0, 0, 0)).toISOString();
+    case 'date-time':
+      return new Date().toISOString();
+    case 'integer':
+      return 0;
+    case 'number':
+      return 0;
+    case 'string':
+      return '';
+    case 'time':
+      return '00:00:00';
+    case 'array':
+      return [];
+    default:
+      return null;
+  }
 }

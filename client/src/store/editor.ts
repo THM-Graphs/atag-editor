@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
-import { areObjectsEqual, areSetsEqual } from '../utils/helper/helper';
+import { areSetsEqual } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 import { useTextStore } from './text';
 
@@ -126,7 +126,7 @@ export function useEditorStore() {
       if (
         a.status === 'deleted' ||
         a.status === 'created' ||
-        !areObjectsEqual(a.data.properties, a.initialData.properties) ||
+        JSON.stringify(a.data.properties) !== JSON.stringify(a.initialData.properties) ||
         !areSetsEqual(normdataUuids, initialNormdataUuids) ||
         !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {

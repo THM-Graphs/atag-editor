@@ -1,5 +1,5 @@
 export default interface ICollection {
-  [keyof: string]: string | number;
+  [keyof: string]: any;
   label: string;
   receivedBy: string;
   sentBy: string;

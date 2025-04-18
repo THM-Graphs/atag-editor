@@ -3,6 +3,7 @@ import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/not-found.error.js';
 import IText from '../models/IText.js';
 import { TextAccessObject } from '../models/types.js';
+import { toNativeTypes } from '../utils/helper.js';
 
 export default class TextService {
   /**
@@ -52,11 +53,13 @@ export default class TextService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const text: TextAccessObject = result.records[0]?.get('text');
+    const rawText: TextAccessObject = result.records[0]?.get('text');
 
-    if (!text) {
+    if (!rawText) {
       throw new NotFoundError(`Text with UUID ${uuid} not found`);
     }
+
+    const text: TextAccessObject = toNativeTypes(rawText) as TextAccessObject;
 
     return text;
   }

@@ -1,22 +1,79 @@
 import { IGuidelines } from '../models/IGuidelines.js';
-import { CollectionProperty } from '../models/types.js';
+import { PropertyConfig } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
   /**
-   * Retrieves field configuration of a collection with given additional node labels. Contains information about validation rules (required/not required).
+   * Retrieves the field configuration of an annotation with the given type.
+   *
+   * The method operates on the given guidelines parameter instead of fetching from within. This is done
+   * to prevent multiple requests, since the method is used to preprocess a batch of annotations before
+   * saving them.
+   *
+   * @param {IGuidelines} guidelines - The guidelines to retrieve the field configuration from.
+   * @param {string} type - The type of the annotation.
+   * @return {PropertyConfig[]} The field configuration for the annotation type.
+   */
+  public getAnnotationConfigFieldsFromGuidelines(
+    guidelines: IGuidelines,
+    type: string,
+  ): PropertyConfig[] {
+    const system: PropertyConfig[] = guidelines.annotations.properties.system;
+    const base: PropertyConfig[] = guidelines.annotations.properties.base;
+    const additional: PropertyConfig[] =
+      guidelines.annotations.types.find(annoConfig => annoConfig.type === type)?.properties ?? [];
+
+    return [...system, ...base, ...additional];
+  }
+
+  /**
+   * Retrieves the field configuration of a collection with the given additional node labels.
+   *
+   * The method operates on the given guidelines parameter instead of fetching from within. This is done
+   * to prevent multiple requests, since the method is used to preprocess a batch of collections before
+   * saving them.
+   *
+   * @param {IGuidelines} guidelines - The guidelines to retrieve the field configuration from.
+   * @param {string[]} nodeLabels - The additional labels of the collection.
+   * @return {PropertyConfig[]} The field configuration for the collection type.
+   */
+  public getCollectionConfigFieldsFromGuidelines(
+    guidelines: IGuidelines,
+    nodeLabels: string[],
+  ): PropertyConfig[] {
+    const system: PropertyConfig[] = guidelines.collections.properties.system;
+    const base: PropertyConfig[] = guidelines.collections.properties.base;
+    const additional: PropertyConfig[] = guidelines.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
+        if (nodeLabels.includes(curr.additionalLabel)) {
+          total.push(...curr.properties);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...system, ...base, ...additional];
+  }
+
+  /**
+   * Retrieves field configuration of a collection with given additional node labels.
+   * Contains information about validation rules (required/not required).
    * Used for applying default data to to-be-created collections when they are missing
    *
+   * The method fetches the guidelines from the guidelines URL defined in the GUIDELINES_URL environment variable
+   * since it will not be called multiple times in the same context (like `getCollectionConfigFieldsFromGuidelines` or `getAnnotationConfigFieldsFromGuidelines`)
+   *
    * @param {string[]} nodeLabels - The additional labels of the collection.
-   * @return {Promise<CollectionProperty[]>} The field configurations for the collection type.
+   * @return {Promise<PropertyConfig[]>} The field configurations for the collection type.
    */
-  public async getCollectionConfigFields(nodeLabels: string[]): Promise<CollectionProperty[]> {
+  public async getCollectionConfigFields(nodeLabels: string[]): Promise<PropertyConfig[]> {
     const guidelines: IGuidelines = await this.getGuidelines();
 
-    const system: CollectionProperty[] = guidelines.collections.properties.system;
-    const base: CollectionProperty[] = guidelines.collections.properties.base;
-    const additional: CollectionProperty[] = guidelines.collections.types.reduce(
-      (total: CollectionProperty[], curr) => {
+    const system: PropertyConfig[] = guidelines.collections.properties.system;
+    const base: PropertyConfig[] = guidelines.collections.properties.base;
+    const additional: PropertyConfig[] = guidelines.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
         if (nodeLabels.includes(curr.additionalLabel)) {
           total.push(...curr.properties);
         }

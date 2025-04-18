@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
+import DataInputComponent from './DataInputComponent.vue';
+import DataInputGroup from './DataInputGroup.vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
@@ -10,10 +12,15 @@ import { MultiSelect } from 'primevue';
 import Skeleton from 'primevue/skeleton';
 import Tag from 'primevue/tag';
 import Toolbar from 'primevue/toolbar';
-import { buildFetchUrl, capitalize, cloneDeep } from '../utils/helper/helper';
+import {
+  buildFetchUrl,
+  capitalize,
+  cloneDeep,
+  getDefaultValueForProperty,
+} from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
-import { Collection, CollectionProperty } from '../models/types';
+import { Collection, PropertyConfig } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
@@ -30,7 +37,7 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
-const dialogInputFields: ComputedRef<CollectionProperty[]> = computed(() =>
+const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.nodeLabels),
 );
 
@@ -44,11 +51,16 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsValid: boolean =
     availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
 
-  const requiredFieldsValid: boolean = dialogInputFields.value
+  const requiredFieldsAreValid: boolean = dialogInputFields.value
     .filter(field => field.required)
-    .every(field => newCollectionData.value?.data[field.name]?.toString().trim() !== '');
+    .every(
+      field =>
+        newCollectionData.value?.data[field.name] !== null &&
+        newCollectionData.value?.data[field.name] !== undefined &&
+        newCollectionData.value?.data[field.name] !== '',
+    );
 
-  return selectedLabelsValid && requiredFieldsValid;
+  return selectedLabelsValid && requiredFieldsAreValid;
 });
 
 /**
@@ -141,7 +153,10 @@ async function getGuidelines(): Promise<void> {
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
       data: Object.fromEntries(
-        getAllCollectionConfigFields().map(f => [f.name, '']),
+        getAllCollectionConfigFields().map(f => [
+          f.name,
+          f?.required === true ? getDefaultValueForProperty(f.type) : null,
+        ]),
       ) as ICollection,
       nodeLabels: guidelines.value.collections.types
         .filter(t => t.level === 'primary')
@@ -219,19 +234,20 @@ function handleSearchInput(): void {
           <h4 class="text-center">Add data</h4>
           <div
             class="input-container flex align-items-center gap-3 mb-3"
-            v-for="(property, index) in dialogInputFields"
+            v-for="field in dialogInputFields"
           >
-            <label :for="property.name" class="font-semibold w-6rem"
-              >{{ capitalize(property.name) }}
+            <label :for="field.name" class="font-semibold w-6rem"
+              >{{ capitalize(field.name) }}
             </label>
-            <InputText
-              :id="property.name"
-              :required="property.required"
-              :autofocus="index === 0"
-              :key="property.name"
-              v-model="newCollectionData.data[property.name] as string"
-              class="flex-auto"
-              spellcheck="false"
+            <DataInputGroup
+              v-if="field.type === 'array'"
+              v-model="newCollectionData.data[field.name]"
+              :config="field"
+            />
+            <DataInputComponent
+              v-else
+              v-model="newCollectionData.data[field.name]"
+              :config="field"
             />
           </div>
         </div>

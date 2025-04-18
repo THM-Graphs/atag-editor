@@ -8,10 +8,10 @@ import Column, { ColumnPassThroughMethodOptions } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { IGuidelines } from '../models/IGuidelines';
-import { CollectionAccessObject, CollectionProperty, PaginationData } from '../models/types';
+import { CollectionAccessObject, PropertyConfig, PaginationData } from '../models/types';
 
 type CollectionTableEntry = {
-  [key: string | keyof CollectionProperty]: unknown;
+  [key: string | keyof PropertyConfig]: unknown;
 };
 
 type ColumnConfig = {

@@ -4,6 +4,7 @@ import { useCharactersStore } from '../store/characters';
 import { useAnnotationStore } from '../store/annotations';
 import {
   cloneDeep,
+  getDefaultValueForProperty,
   getParentCharacterSpan,
   getSelectionData,
   isEditorElement,
@@ -18,7 +19,7 @@ import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import {
   AdditionalText,
   Annotation,
-  AnnotationProperty,
+  PropertyConfig,
   AnnotationType,
   Character,
 } from '../models/types';
@@ -42,12 +43,12 @@ const { normalizeKeys, registerShortcut } = useShortcutsStore();
 const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
-const fields: AnnotationProperty[] = getAnnotationFields(annotationType);
-const subtypeField: AnnotationProperty = fields.find(field => field.name === 'subtype');
-const options: string[] = subtypeField?.options ?? [];
-const dropdownOptions = options.map((option: string) => {
+const fields: PropertyConfig[] = getAnnotationFields(annotationType);
+const subtypeField: PropertyConfig = fields.find(field => field.name === 'subtype');
+const options: string[] | number[] = subtypeField?.options ?? [];
+const dropdownOptions = options.map((option: string | number) => {
   return {
-    label: option,
+    label: option.toString(),
     command: () => handleDropdownClick(option),
   };
 });
@@ -112,7 +113,7 @@ function setButtonStylingManually(): void {
   }
 }
 
-function handleDropdownClick(subtype: string): void {
+function handleDropdownClick(subtype: string | number): void {
   handleClick(subtype);
 }
 
@@ -138,7 +139,7 @@ function findAnnotationToSplit(leftChar: Character, rightChar: Character): Annot
   return null;
 }
 
-function handleClick(dropdownOption?: string): void {
+function handleClick(dropdownOption?: string | number): void {
   try {
     isAnnotationTypeEnabled();
     isSelectionValid();
@@ -343,31 +344,15 @@ function isSelectionValid(): boolean {
 
 function createNewAnnotation(
   type: string,
-  subtype: string | undefined,
+  subtype: string | number | undefined,
   characters: Character[],
 ): Annotation {
-  const fields: AnnotationProperty[] = getAnnotationFields(type);
   const newAnnotationData: IAnnotation = {} as IAnnotation;
 
-  // TODO: Improve this function, too many empty strings and duplicate field settings
   // Base properties
-  fields.forEach((field: AnnotationProperty) => {
-    switch (field.type) {
-      case 'text':
-        newAnnotationData[field.name] = '';
-        break;
-      case 'textarea':
-        newAnnotationData[field.name] = '';
-        break;
-      case 'selection':
-        newAnnotationData[field.name] = field.options[0] ?? '';
-        break;
-      case 'checkbox':
-        newAnnotationData[field.name] = false;
-        break;
-      default:
-        newAnnotationData[field.name] = '';
-    }
+  fields.forEach((field: PropertyConfig) => {
+    newAnnotationData[field.name] =
+      field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
@@ -377,10 +362,11 @@ function createNewAnnotation(
   newAnnotationData.text = characters.map((char: Character) => char.data.text).join('');
   newAnnotationData.uuid = crypto.randomUUID();
 
-  // Set subtype only when a subtype property is defined in guidelines
-  // If it is, set it to the given parameter subtype or use the default value if no parameter is passed
-  if (subtypeField) {
-    newAnnotationData.subtype = subtype ?? newAnnotationData.subtype;
+  // If a subtype field exists (filled with a default value just before), but not subtype was provided
+  // (= the user clicked the button directly instead of selecting an entry from the dropdown),
+  // AND there are options to select from, set the first option as default value
+  if (subtypeField && !subtype && subtypeField.options?.length > 0) {
+    newAnnotationData.subtype = subtypeField.options[0];
   }
 
   // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays

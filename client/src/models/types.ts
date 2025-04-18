@@ -34,19 +34,10 @@ export type AnnotationType = {
   isZeroPoint?: boolean;
   hasAdditionalTexts?: boolean;
   hasNormdata?: boolean;
-  properties?: AnnotationProperty[];
+  properties?: PropertyConfig[];
   shortcut: string[];
   text: string;
   type: string;
-};
-
-export type AnnotationProperty = {
-  name: string /* type, subtype, text, url */;
-  type: 'text' | 'textarea' | 'checkbox' | 'selection' /* raw string, dropdown, multiple options */;
-  required: boolean /* required or optional */;
-  editable: boolean /* Editable by user */;
-  visible: boolean /* Visible by user */;
-  options?: string[] /* Options for dropdown */;
 };
 
 export type AnnotationReference = {
@@ -85,15 +76,6 @@ export type CollectionAccessObject = {
   texts: Text[];
 };
 
-export type CollectionProperty = {
-  name: string /* folioEnd, label, websiteUrl */;
-  type: string /* raw string, dropdown, multiple options */;
-  required: boolean /* required or optional */;
-  editable: boolean /* Editable by user */;
-  visible: boolean /* Visible by user */;
-  // options?: string[] /* Options if type is dropdown */;
-};
-
 export type CollectionPostData = {
   data: CollectionAccessObject;
   initialData: CollectionAccessObject;
@@ -124,6 +106,40 @@ export type PaginationResult<T> = {
   data: T;
   pagination: PaginationData;
 };
+
+export type PropertyConfig = {
+  name: string /* folioEnd, label, websiteUrl */;
+  type: PropertyConfigDataType /* raw string, dropdown, multiple options */;
+  required: boolean /* required or optional */;
+  editable: boolean /* Editable by user */;
+  visible: boolean /* Visible by user */;
+  /* Only relevant if type is "array" */
+  items?: Partial<PropertyConfig>;
+  minItems?: number;
+  maxItems?: number;
+  /* Only relevant if type is "number"/"integer" */
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  /* Only relevant if type is "string" */
+  minLength?: number;
+  maxLength?: number;
+  options?: string[] | number[] /* Options if type is dropdown */;
+  template?: PropertyConfigStringTemplate /* Render as normal input or textarea? */;
+};
+
+export type PropertyConfigDataType =
+  | 'array'
+  | 'boolean'
+  | 'date'
+  | 'date-time'
+  | 'integer'
+  | 'number'
+  | 'string'
+  | 'time';
+
+export type PropertyConfigStringTemplate = 'input' | 'textarea';
 
 export type StandoffAnnotation = {
   [key: string]: string | number | boolean;
