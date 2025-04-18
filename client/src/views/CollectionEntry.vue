@@ -12,7 +12,6 @@ import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
-  areObjectsEqual,
   areSetsEqual,
   buildFetchUrl,
   capitalize,
