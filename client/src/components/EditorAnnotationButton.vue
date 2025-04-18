@@ -364,9 +364,9 @@ function createNewAnnotation(
 
   // If a subtype field exists (filled with a default value just before), but not subtype was provided
   // (= the user clicked the button directly instead of selecting an entry from the dropdown),
-  // AND there are options to select from, set the first option as default value
-  if (subtypeField && !subtype && subtypeField.options?.length > 0) {
-    newAnnotationData.subtype = subtypeField.options[0];
+  // set the first option as default value
+  if (subtypeField) {
+    newAnnotationData.subtype = subtype ?? subtypeField.options[0];
   }
 
   // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays

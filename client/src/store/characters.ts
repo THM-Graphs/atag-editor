@@ -592,7 +592,7 @@ export function useCharactersStore() {
       c.annotations.push({
         uuid: annotation.data.properties.uuid,
         type: annotation.data.properties.type,
-        subtype: annotation.data.properties.subtype.toString() ?? null,
+        subtype: annotation.data.properties.subtype?.toString() ?? null,
         isFirstCharacter: index === 0 ? true : false,
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),
