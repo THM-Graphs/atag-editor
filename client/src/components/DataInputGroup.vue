@@ -17,11 +17,41 @@ const isEditable = computed(() => props.mode === 'edit' || !props.mode);
 const minItems: number | null | undefined = props.config.minItems;
 const maxItems: number | null | undefined = props.config.maxItems;
 
-function addItem() {
+/**
+ * Adds a new input item to the input group. If the input group's value is null (because the entry did not exist before),
+ * a new array is created at first.
+ *
+ * The added element will be the default value for the type of the property as specified in the property configuration.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function handleAddItem(): void {
   if (!modelValue.value) {
-    modelValue.value = [getDefaultValueForProperty(props.config.type)];
+    modelValue.value = [getDefaultValueForProperty(props.config.items.type)];
   } else {
-    modelValue.value.push(getDefaultValueForProperty(props.config.type));
+    modelValue.value.push(getDefaultValueForProperty(props.config.items.type));
+  }
+}
+
+/**
+ * Handles the deletion of a specific input item from input group.
+ *
+ * If the item to be deleted is the last one in the group and the property is required,
+ * the value will be set to null instead of deleting the item (and creating an empty array in the process).
+ * This is mainly to keep the data clean, a visual difference does not exist.
+ *
+ * @param {number} itemIndex - The index of the item to be deleted.
+ * @returns {void} This function does not return any value.
+ */
+function handleDeleteItem(itemIndex: number): void {
+  if (modelValue.value.length === 1) {
+    if (props.config?.required === true) {
+      modelValue.value = modelValue.value.filter((_, i) => i !== itemIndex);
+    } else {
+      modelValue.value = null;
+    }
+  } else {
+    modelValue.value = modelValue.value.filter((_, i) => i !== itemIndex);
   }
 }
 </script>
@@ -42,8 +72,8 @@ function addItem() {
         outlined
         icon="pi pi-times"
         size="small"
-        :disabled="modelValue.length <= (minItems || 0)"
-        @click="modelValue = modelValue.filter((_, index2) => index2 !== index)"
+        :disabled="modelValue?.length <= (minItems || 0)"
+        @click="handleDeleteItem(index)"
       />
     </div>
     <Button
@@ -53,9 +83,9 @@ function addItem() {
       size="small"
       severity="secondary"
       label="Add item"
-      :disabled="maxItems && modelValue.length >= maxItems"
+      :disabled="maxItems && modelValue?.length >= maxItems"
       :title="`Add new ${props.config.type} item`"
-      @click="addItem"
+      @click="handleAddItem"
     />
   </div>
 </template>
