@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
-import { refDebounced } from '@vueuse/core';
+import { refDebounced, useTitle } from '@vueuse/core';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -15,6 +15,8 @@ const INPUT_DELAY: number = 300;
 const baseFetchUrl: string = '/api/collections';
 
 const toast: ToastServiceMethods = useToast();
+
+useTitle('ATAG Editor');
 
 const collections = ref<CollectionAccessObject[] | null>(null);
 const pagination = ref<PaginationData | null>(null);

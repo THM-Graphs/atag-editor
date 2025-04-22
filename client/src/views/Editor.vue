@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
+import { useTitle } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
@@ -106,6 +107,8 @@ const {
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
+
+useTitle(computed(() => `Text | ${text.value?.nodeLabels.join(', ') ?? ''}`));
 
 // const { initializeHistory, resetHistory } = useHistoryStore();
 

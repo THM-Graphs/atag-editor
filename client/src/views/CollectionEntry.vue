@@ -33,6 +33,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
+import { useTitle } from '@vueuse/core';
 
 type TextTableEntry = {
   labels: string[];
@@ -67,6 +68,7 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
+useTitle(computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label}`));
 
 const fields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
