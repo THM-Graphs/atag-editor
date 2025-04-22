@@ -68,7 +68,9 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
-useTitle(computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label}`));
+useTitle(
+  computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label ?? ''}`),
+);
 
 const fields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
