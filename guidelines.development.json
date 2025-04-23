@@ -41,7 +41,67 @@
             "editable": true,
             "visible": true
           }
-        ]
+        ],
+        "annotations": {
+          "types": [
+            {
+              "type": "sentBy",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "properties": [
+                {
+                  "name": "senderNickname",
+                  "type": "string",
+                  "required": false,
+                  "editable": true,
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "type": "receivedBy",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "properties": [
+                {
+                  "name": "receiverNickname",
+                  "type": "string",
+                  "required": false,
+                  "editable": true,
+                  "visible": true
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "system": [
+              {
+                "name": "type",
+                "type": "string",
+                "required": true,
+                "editable": false,
+                "visible": true
+              },
+              {
+                "name": "text",
+                "type": "string",
+                "required": true,
+                "editable": false,
+                "visible": true
+              }
+            ],
+            "base": []
+          },
+          "resources": [
+            {
+              "category": "persons",
+              "nodeLabel": "Person"
+            }
+          ],
+          "additionalTexts": []
+        }
       },
       {
         "additionalLabel": "Comment",
@@ -195,7 +255,16 @@
           }
         ]
       }
-    ]
+    ],
+    "annotations": {
+      "types": [],
+      "properties": {
+        "system": [],
+        "base": []
+      },
+      "resources": [],
+      "additionalTexts": []
+    }
   },
   "annotations": {
     "types": [

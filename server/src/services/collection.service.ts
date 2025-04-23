@@ -143,13 +143,16 @@ export default class CollectionService {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
+    OPTIONAL MATCH (c)-[:HAS_ANNOTATION]->(a:Annotation)
+
     // Match optional Text node chain
     OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
     WHERE NOT ()-[:NEXT]->(tStart)
     OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
 
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts    
+    WITH c, collect(a) as annotations, tStart, collect(t) AS nextTexts
+    WITH c, annotations, coalesce(tStart, []) + nextTexts AS texts    
+    WITH c, texts, annotations
 
     RETURN {
         collection: {
@@ -161,7 +164,25 @@ export default class CollectionService {
                 nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
             }
-        ]
+        ],
+        annotations: [anno in annotations | {
+            properties: anno {.*},
+            normdata: {
+                events: [],
+                roles: [],
+                places: [],
+                persons: [
+                    {
+                      subType: "Person",
+                      label: "Hildegard von Rupertsberg",
+                      uuid: "fc9d709a-05a7-4a1d-9c62-a5e1960e5ef9",
+                      type: "Akteur"
+                    }
+                ],
+                concepts: []
+              },
+            additionalTexts: []
+        }]
     } AS collection
     `;
 
