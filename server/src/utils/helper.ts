@@ -162,7 +162,12 @@ function valueToNeo4jType(value: any, config: Partial<PropertyConfig> | undefine
         return null;
       }
     } else {
-      return value.map((innerValue: any) => valueToNeo4jType(innerValue, config.items));
+      return (
+        value
+          .map((innerValue: any) => valueToNeo4jType(innerValue, config.items))
+          // This is needed since arrays with null values (e.g. [1, 2, null, 4]) are not allowed as node properties)
+          .filter((v: any) => v !== null && v !== undefined)
+      );
     }
   }
 
