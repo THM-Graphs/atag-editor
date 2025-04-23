@@ -386,14 +386,16 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     </div>
     <Toast />
     <ConfirmPopup />
-    <RouterLink to="/" class="pl-2 pt-2">
-      <Button
-        icon="pi pi-home"
-        aria-label="Home"
-        class="w-2rem h-2rem"
-        title="Go to overview"
-      ></Button>
-    </RouterLink>
+    <div class="header-buttons flex justify-content-between mb-2 pl-2 pt-2">
+      <RouterLink to="/">
+        <Button
+          icon="pi pi-home"
+          aria-label="Home"
+          class="w-2rem h-2rem"
+          title="Go to overview"
+        ></Button>
+      </RouterLink>
+    </div>
     <div class="header flex align-items-center justify-content-center gap-3">
       <h2 class="info mt-0">
         {{ collectionAccessObject?.collection.data.label }}
