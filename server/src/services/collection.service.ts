@@ -132,27 +132,28 @@ export default class CollectionService {
   }
 
   /**
-   * Retrieves collection node with given UUID together with connected text nodes.
+   * Retrieves collection node with given UUID together with connected text nodes. Annotation nodes will be retrieved 
+   * by a separate query from the `AnnotationService`.
   
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<CollectionAccessObject>} A promise that resolves to the retrieved collection and text nodes.
+   * @return {Promise<Omit<CollectionAccessObject, 'annotations'>>} A promise that resolves to the retrieved collection and text nodes, but not the annotations nodes.
    */
-  public async getExtendedCollectionById(uuid: string): Promise<CollectionAccessObject> {
+  public async getExtendedCollectionById(
+    uuid: string,
+  ): Promise<Omit<CollectionAccessObject, 'annotations'>> {
     // TODO: This query is not working with more than one additional node label. Considerate
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-
-    OPTIONAL MATCH (c)-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Match optional Text node chain
     OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
     WHERE NOT ()-[:NEXT]->(tStart)
     OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
 
-    WITH c, collect(a) as annotations, tStart, collect(t) AS nextTexts
-    WITH c, annotations, coalesce(tStart, []) + nextTexts AS texts    
-    WITH c, texts, annotations
+    WITH c, tStart, collect(t) AS nextTexts
+    WITH c, coalesce(tStart, []) + nextTexts AS texts    
+    WITH c, texts
 
     RETURN {
         collection: {
@@ -164,38 +165,21 @@ export default class CollectionService {
                 nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
             }
-        ],
-        annotations: [anno in annotations | {
-            properties: anno {.*},
-            normdata: {
-                events: [],
-                roles: [],
-                places: [],
-                persons: [
-                    {
-                      subType: "Person",
-                      label: "Hildegard von Rupertsberg",
-                      uuid: "fc9d709a-05a7-4a1d-9c62-a5e1960e5ef9",
-                      type: "Akteur"
-                    }
-                ],
-                concepts: []
-              },
-            additionalTexts: []
-        }]
+        ]
     } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const rawCollection: CollectionAccessObject = result.records[0]?.get('collection');
+    const rawCollection: Omit<CollectionAccessObject, 'annotations'> =
+      result.records[0]?.get('collection');
 
     if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    const collection: CollectionAccessObject = toNativeTypes(
+    const collection: Omit<CollectionAccessObject, 'annotations'> = toNativeTypes(
       rawCollection,
-    ) as CollectionAccessObject;
+    ) as Omit<CollectionAccessObject, 'annotations'>;
 
     return collection;
   }

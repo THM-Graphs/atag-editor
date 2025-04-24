@@ -39,14 +39,14 @@ type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
 };
 
 export default class AnnotationService {
-  public async getAnnotations(textUuid: string): Promise<AnnotationData[]> {
+  public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const resources: AnnotationConfigResource[] =
       await guidelineService.getAvailableAnnotationResourceConfigs();
 
     const query: string = `
     // Match all annotations for given selection
-    MATCH (t:Text {uuid: $textUuid})-[:HAS_ANNOTATION]->(a:Annotation)
+    MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a
@@ -97,7 +97,10 @@ export default class AnnotationService {
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid, resources });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      nodeUuid,
+      resources,
+    });
     const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 
     const annotations: AnnotationData[] = rawAnnotations.map(annotation =>

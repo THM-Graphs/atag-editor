@@ -1,11 +1,13 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
+import AnnotationService from '../services/annotation.service.js';
 import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import {
+  AnnotationData,
   Collection,
   CollectionAccessObject,
   CollectionPostData,
@@ -16,6 +18,7 @@ import { getPagination } from '../utils/helper.js';
 const router: Router = express.Router({ mergeParams: true });
 
 const collectionService: CollectionService = new CollectionService();
+const annotationService: AnnotationService = new AnnotationService();
 const guidelineService: GuidelinesService = new GuidelinesService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
@@ -66,10 +69,16 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const collection: CollectionAccessObject =
-      await collectionService.getExtendedCollectionById(uuid);
+    const { collection, texts } = await collectionService.getExtendedCollectionById(uuid);
+    const annotations: AnnotationData[] = await annotationService.getAnnotations(uuid);
 
-    res.status(200).json(collection);
+    const collectionAccessObject: CollectionAccessObject = {
+      collection,
+      texts,
+      annotations,
+    };
+
+    res.status(200).json(collectionAccessObject);
   } catch (error: unknown) {
     next(error);
   }
