@@ -1,5 +1,5 @@
 import { IGuidelines } from '../models/IGuidelines.js';
-import { PropertyConfig } from '../models/types.js';
+import { AnnotationConfigResource, PropertyConfig } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
@@ -24,6 +24,45 @@ export default class GuidelinesService {
       guidelines.annotations.types.find(annoConfig => annoConfig.type === type)?.properties ?? [];
 
     return [...system, ...base, ...additional];
+  }
+
+  /**
+   * Retrieves all available resource configurations for annotations from the guidelines.
+   *
+   * This method combines the resources defined in the annotations and collections sections
+   * of the guidelines and removes any duplicates. It is currently a hack since the guidelines structure can change.
+   *
+   * @return {Promise<AnnotationConfigResource[]>} A promise that resolves to the combined and deduplicated resources.
+   */
+  public async getAvailableAnnotationResourceConfigs(): Promise<AnnotationConfigResource[]> {
+    const guidelines: IGuidelines = await this.getGuidelines();
+
+    const baseAnnotationResources: AnnotationConfigResource[] =
+      guidelines.annotations.resources ?? [];
+
+    const baseCollectionResources: AnnotationConfigResource[] =
+      guidelines.collections.annotations.resources ?? [];
+
+    const additionalCollectionResources: AnnotationConfigResource[] =
+      guidelines.collections.types.flatMap(c => c.annotations?.resources ?? []);
+
+    const combined: AnnotationConfigResource[] = [
+      ...baseAnnotationResources,
+      ...baseCollectionResources,
+      ...additionalCollectionResources,
+    ];
+
+    const unique: AnnotationConfigResource[] = combined.reduce<AnnotationConfigResource[]>(
+      (total, curr) => {
+        if (!total.some(r => r.category === curr.category && r.nodeLabel === curr.nodeLabel)) {
+          total.push(curr);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return unique;
   }
 
   /**

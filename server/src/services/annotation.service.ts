@@ -6,6 +6,7 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
   Annotation,
+  AnnotationConfigResource,
   AnnotationData,
   PropertyConfig,
   Text,
@@ -40,15 +41,16 @@ type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
 export default class AnnotationService {
   public async getAnnotations(textUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+    const resources: AnnotationConfigResource[] =
+      await guidelineService.getAvailableAnnotationResourceConfigs();
 
     const query: string = `
     // Match all annotations for given selection
     MATCH (t:Text {uuid: $textUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
-    WITH a, $guidelines.annotations.resources AS resources
-    UNWIND resources AS resource
+    WITH a
+    UNWIND $resources AS resource
 
     CALL {
         WITH a, resource
@@ -95,7 +97,7 @@ export default class AnnotationService {
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid, guidelines });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { textUuid, resources });
     const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 
     const annotations: AnnotationData[] = rawAnnotations.map(annotation =>
