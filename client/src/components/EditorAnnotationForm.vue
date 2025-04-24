@@ -6,12 +6,10 @@ import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import {
-  buildFetchUrl,
   camelCaseToTitleCase,
   getDefaultValueForProperty,
   toggleTextHightlighting,
 } from '../utils/helper/helper';
-import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import InputText from 'primevue/inputtext';
@@ -22,28 +20,13 @@ import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
-import IEntity from '../models/IEntity';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
+import AnnotationFormNormdataSection from './AnnotationFormNormdataSection.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
-
-type NormdataEntry = IEntity & { html: string };
-
-/**
- * Interface for relevant state information about each normdata category
- */
-interface NormdataSearchObject {
-  [key: string]: {
-    fetchedItems: NormdataEntry[] | string[];
-    nodeLabel: string;
-    currentItem: NormdataEntry | null;
-    mode: 'edit' | 'view';
-    elm: Ref<any>;
-  };
-}
 
 /**
  * Interface for relevant state information about additional texts of the annotation
@@ -81,25 +64,7 @@ const config: AnnotationType = getAnnotationConfig(annotation.data.properties.ty
 const fields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 
 const propertiesAreCollapsed = ref<boolean>(false);
-const normdataAreCollapsed = ref<boolean>(false);
 const additionalTextIsCollapsed = ref<boolean>(false);
-const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
-
-const normdataSearchObject = ref<NormdataSearchObject>(
-  normdataCategories.reduce((object: NormdataSearchObject, category) => {
-    object[category] = {
-      nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
-        .nodeLabel,
-      fetchedItems: [],
-      currentItem: null,
-      mode: 'view',
-      // TODO: Use useTemplateRef when upgraded to Vue 3.5
-      elm: templateRef(`input-${category}`),
-    };
-
-    return object;
-  }, {}),
-);
 
 const additionalTextInputObject = ref<AdditionalTextInputObject>({
   inputText: '',
@@ -134,17 +99,6 @@ watch(
   { deep: true, immediate: true },
 );
 
-/**
- * Adds a normdata item to the specified category in the annotation's data.
- *
- * @param {NormdataEntry} item - The normdata item to be added.
- */
-function addNormdataItem(item: NormdataEntry, category: string): void {
-  // Omit 'html' property from entry since it was only created for rendering purposes
-  const { html, ...rest } = item;
-  annotation.data.normdata[category].push(rest);
-}
-
 function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
   additionalTextInputObject.value.mode = mode;
 
@@ -163,43 +117,6 @@ function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
     }
 
     inputElm.focus();
-  });
-}
-
-/**
- * Changes the mode of the normdata search component for the given category. This triggers
- * re-renders in the template.
- *
- * - If set to `view`, the search bar will be hidden and its related state variables reset.
- * - If set to `edit`, the search bar will be shown and and focused.
- *
- * @param {string} category - The category for which the mode should be changed.
- * @param {'view' | 'edit'} mode - The new mode.
- */
-function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): void {
-  normdataSearchObject.value[category].mode = mode;
-
-  if (mode === 'view') {
-    normdataSearchObject.value[category].currentItem = null;
-
-    return;
-  }
-
-  // Wait for DOM to update before trying to focus the element
-  nextTick(() => {
-    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
-    // that holds the component. Is an array because since the refs are set in a loop in the template
-    const elm = normdataSearchObject.value[category].elm[0];
-
-    if (!elm) {
-      console.warn(`Focus failed: Element not found for category "${category}"`);
-      return;
-    }
-
-    const inputElement: HTMLInputElement = elm.$el?.querySelector('input');
-
-    inputElement?.focus();
   });
 }
 
@@ -238,18 +155,6 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
-/**
- * Handles the selection of a normdata item by adding it to the annotation and resetting the search component.
- *  Called on selection of an item from the autocomplete dropdown pane.
- *
- * @param {NormdataEntry} item - The normdata item to be added.
- * @param {string} category - The category to which the item should be added.
- */
-function handleNormdataItemSelect(item: NormdataEntry, category: string): void {
-  addNormdataItem(item, category);
-  changeNormdataSelectionMode(category, 'view');
-}
-
 function handleShiftLeft(): void {
   shiftAnnotationLeft(annotation);
   setRangeAnchorAtEnd();
@@ -271,37 +176,6 @@ function handleShrink(): void {
 }
 
 /**
- * Removes a normdata item from the given category in the annotation's data.
- *
- * @param {NormdataEntry} item - The normdata item to be removed.
- * @param {string} category - The category from which the item should be removed.
- */
-function removeNormdataItem(item: NormdataEntry, category: string): void {
-  annotation.data.normdata[category] = annotation.data.normdata[category].filter(
-    entry => entry.uuid !== item.uuid,
-  );
-}
-
-/**
- * Replaces all occurrences of a search string in a given text with a highlighted HTML
- * equivalent. If the search string is empty, the original text is returned.
- *
- * @param {string} text - The text in which the search string should be found.
- * @param {string} searchStr - The string to be searched for.
- *
- * @returns {string} The text with all occurrences of the search string highlighted.
- */
-function renderHTML(text: string, searchStr: string): string {
-  if (searchStr !== '') {
-    const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-
-    return text.replace(regex, '<span style="background-color: yellow">$1</span>');
-  }
-
-  return text;
-}
-
-/**
  * Resets the additional text input form (select input and text input). This prepares the form for new input.
  * Called when the form is submitted or cancelled.
  *
@@ -310,43 +184,6 @@ function renderHTML(text: string, searchStr: string): string {
 function resetAdditionalTextInputForm(): void {
   additionalTextInputObject.value.inputLabels = [];
   additionalTextInputObject.value.inputText = '';
-}
-
-/**
- * Fetches normdata items from the server whose's label matches the given search string and stores the results
- * in the corresponding normdataSearchObject entry.
- *
- * @param {string} searchString - The string to be searched for.
- * @param {string} category - The category for which the search should be performed.
- */
-async function searchNormdataOptions(searchString: string, category: string): Promise<void> {
-  const nodeLabel: string = normdataSearchObject.value[category].nodeLabel;
-  const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
-
-  const response: Response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
-  const fetchedNormdata: NormdataEntry[] = await response.json();
-
-  // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = annotation.data.normdata[category].map(
-    (entry: NormdataEntry) => entry.uuid,
-  );
-
-  const withoutDuplicates: NormdataEntry[] = fetchedNormdata.filter(
-    (entry: NormdataEntry) => !existingUuids.includes(entry.uuid),
-  );
-
-  // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = withoutDuplicates.map((entry: NormdataEntry) => ({
-    ...entry,
-    html: renderHTML(entry.label, searchString),
-  }));
-
-  normdataSearchObject.value[category].fetchedItems = withHtml;
 }
 
 function setRangeAnchorAtEnd(): void {
@@ -484,71 +321,10 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
         </div>
       </form>
     </Fieldset>
-    <Fieldset
+    <AnnotationFormNormdataSection
       v-if="config.hasNormdata === true"
-      legend="Normdata"
-      :toggleable="true"
-      :toggle-button-props="{
-        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} normdata`,
-      }"
-      @toggle="normdataAreCollapsed = !normdataAreCollapsed"
-    >
-      <template #toggleicon>
-        <span :class="`pi pi-chevron-${normdataAreCollapsed ? 'down' : 'up'}`"></span>
-      </template>
-      <div v-for="category in normdataCategories">
-        <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
-        <div
-          class="normdata-entry flex justify-content-between align-items-center"
-          v-for="entry in annotation.data.normdata[category]"
-        >
-          <span>
-            {{ entry.label }}
-          </span>
-          <Button
-            icon="pi pi-times"
-            size="small"
-            severity="danger"
-            @click="removeNormdataItem(entry as NormdataEntry, category)"
-          ></Button>
-        </div>
-        <Button
-          v-show="normdataSearchObject[category].mode === 'view'"
-          class="mt-2 w-full h-2rem"
-          icon="pi pi-plus"
-          size="small"
-          severity="secondary"
-          label="Add item"
-          :disabled="annotation.isTruncated"
-          @click="changeNormdataSelectionMode(category, 'edit')"
-        />
-        <AutoComplete
-          v-show="normdataSearchObject[category].mode === 'edit'"
-          v-model="normdataSearchObject[category].currentItem"
-          dropdown
-          dropdownMode="current"
-          :placeholder="`Type to see suggestions`"
-          :suggestions="normdataSearchObject[category].fetchedItems"
-          :overlayClass="normdataSearchObject[category].mode === 'view' ? 'hidden' : ''"
-          optionLabel="label"
-          class="mt-2 w-full h-2rem"
-          variant="filled"
-          :ref="`input-${category}`"
-          input-class="w-full"
-          @complete="searchNormdataOptions($event.query, category)"
-          @option-select="handleNormdataItemSelect($event.value, category)"
-        >
-          <template #header v-if="normdataSearchObject[category].fetchedItems.length > 0">
-            <div class="font-medium px-3 py-2">
-              {{ normdataSearchObject[category].fetchedItems.length }} Results
-            </div>
-          </template>
-          <template #option="slotProps">
-            <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
-          </template>
-        </AutoComplete>
-      </div>
-    </Fieldset>
+      v-model="annotation.data.normdata"
+    />
     <Fieldset
       v-if="config.hasAdditionalTexts === true"
       legend="Additional texts"
@@ -785,20 +561,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
 
 .additional-text-header {
   cursor: default;
-}
-
-.normdata-entry,
-.additional-text-entry {
-  border: 1px solid gray;
-  border-radius: 5px;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-
-  & button {
-    width: 1rem;
-    height: 1rem;
-    padding: 10px;
-  }
 }
 
 .highlight {

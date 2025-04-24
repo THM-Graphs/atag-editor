@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationType, PropertyConfig } from '../models/types';
+import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -51,6 +51,43 @@ export function useGuidelinesStore() {
     const additional: PropertyConfig[] = getAnnotationConfig(type)?.properties ?? [];
 
     return [...system, ...base, ...additional];
+  }
+
+  /**
+   * Retrieves all available resource configurations for annotations from the guidelines.
+   *
+   * This method combines the resources defined in the annotations and collections sections
+   * of the guidelines and removes any duplicates. It is currently a hack since the guidelines structure can change.
+   *
+   * @return {AnnotationConfigResource[]} The combined and deduplicated resources.
+   */
+  function getAvailableAnnotationResourceConfigs(): AnnotationConfigResource[] {
+    const baseAnnotationResources: AnnotationConfigResource[] =
+      guidelines.value.annotations.resources ?? [];
+
+    const baseCollectionResources: AnnotationConfigResource[] =
+      guidelines.value.collections.annotations.resources ?? [];
+
+    const additionalCollectionResources: AnnotationConfigResource[] =
+      guidelines.value.collections.types.flatMap(c => c.annotations?.resources ?? []);
+
+    const combined: AnnotationConfigResource[] = [
+      ...baseAnnotationResources,
+      ...baseCollectionResources,
+      ...additionalCollectionResources,
+    ];
+
+    const unique: AnnotationConfigResource[] = combined.reduce<AnnotationConfigResource[]>(
+      (total, curr) => {
+        if (!total.some(r => r.category === curr.category && r.nodeLabel === curr.nodeLabel)) {
+          total.push(curr);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return unique;
   }
 
   /**
@@ -136,6 +173,7 @@ export function useGuidelinesStore() {
     getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableAnnotationResourceConfigs,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
     getCollectionConfigFields,
