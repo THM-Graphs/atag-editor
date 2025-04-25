@@ -49,6 +49,17 @@
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
+              "hasNormdata": true,
+              "hasAdditionalTexts": true,
+              "annotations": {
+                "types": [],
+                "properties": {
+                  "system": [],
+                  "base": []
+                },
+                "resources": [],
+                "additionalTexts": []
+              },
               "properties": [
                 {
                   "name": "senderNickname",
@@ -64,6 +75,17 @@
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
+              "hasNormdata": true,
+              "hasAdditionalTexts": true,
+              "annotations": {
+                "types": [],
+                "properties": {
+                  "system": [],
+                  "base": []
+                },
+                "resources": [],
+                "additionalTexts": []
+              },
               "properties": [
                 {
                   "name": "receiverNickname",
