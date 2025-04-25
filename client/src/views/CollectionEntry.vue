@@ -35,6 +35,7 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
+import SplitButton from 'primevue/splitbutton';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
 import Tag from 'primevue/tag';
@@ -52,6 +53,15 @@ type TextTableEntry = {
   text: string;
   uuid: string;
 };
+
+const availabeAnnotationTypes: string[] = ['AnnotationType1', 'AnnotationType2', 'AnnotationType3'];
+const dropdownOptions = availabeAnnotationTypes.map((type: string | number) => {
+  return {
+    label: type.toString(),
+    command: () => console.log(`New ${type} was created`),
+  };
+});
+
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
@@ -569,6 +579,14 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
             />
           </Panel>
+          <SplitButton
+            severity="secondary"
+            outlined
+            raised
+            label="Add new annotation"
+            :style="{ height: '35px' }"
+            :model="dropdownOptions"
+          />
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">
