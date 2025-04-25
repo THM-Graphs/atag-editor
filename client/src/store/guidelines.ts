@@ -54,6 +54,56 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the properties an annotation of given node labels should should have. Used for rendering input fields in forms
+   * where properties of the annotation can be edited. Currently a hack.
+   *
+   * @param {string[]} nodeLabels - The node labels of the Collection.
+   * @return {PropertyConfig[]} The combined annotation fields for the collection type.
+   */
+  function getCollectionAnnotationFields(nodeLabels: string[]): PropertyConfig[] {
+    // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
+    const system: PropertyConfig[] =
+      guidelines.value.collections.annotations?.properties?.system ?? [];
+    const base: PropertyConfig[] =
+      guidelines.value.collections?.annotations?.properties?.base ?? [];
+    const additional: PropertyConfig[] = guidelines.value.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
+        if (nodeLabels.includes(curr.additionalLabel)) {
+          const nestedSystem: PropertyConfig[] = curr.annotations?.properties?.system ?? [];
+          const nestedBase: PropertyConfig[] = curr.annotations?.properties?.base ?? [];
+          const nestedAdditional: PropertyConfig[] =
+            curr.annotations?.types?.flatMap(t => t.properties) ?? [];
+          total.push(...nestedSystem, ...nestedBase, ...nestedAdditional);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...system, ...base, ...additional];
+  }
+
+  // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
+  function getCollectionAnnotationConfig(
+    collectionLabels: string[],
+    annotationType: string,
+  ): AnnotationType {
+    const base: AnnotationType[] = guidelines.value?.collections.annotations?.types ?? [];
+
+    const nested: AnnotationType[] = guidelines.value?.collections.types.flatMap(
+      t => t.annotations?.types ?? [],
+    );
+
+    // console.log(base);
+    // console.log(nested);
+    // debugger;
+
+    const desired: AnnotationType = [...base, ...nested].find(t => t.type === annotationType);
+
+    return desired;
+  }
+
+  /**
    * Retrieves all available resource configurations for annotations from the guidelines.
    *
    * This method combines the resources defined in the annotations and collections sections
@@ -176,6 +226,8 @@ export function useGuidelinesStore() {
     getAvailableAnnotationResourceConfigs,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
+    getCollectionAnnotationFields,
+    getCollectionAnnotationConfig,
     getCollectionConfigFields,
     initializeGuidelines,
   };
