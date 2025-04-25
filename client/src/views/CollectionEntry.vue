@@ -9,6 +9,7 @@ import {
 import { useGuidelinesStore } from '../store/guidelines';
 import AnnotationFormAdditionalTextSection from '../components/AnnotationFormAdditionalTextSection.vue';
 import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
+import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
@@ -24,6 +25,7 @@ import {
 import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
+  AnnotationType,
   CollectionAccessObject,
   CollectionPostData,
   PropertyConfig,
@@ -35,7 +37,6 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
-import SplitButton from 'primevue/splitbutton';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
 import Tag from 'primevue/tag';
@@ -54,14 +55,6 @@ type TextTableEntry = {
   uuid: string;
 };
 
-const availabeAnnotationTypes: string[] = ['AnnotationType1', 'AnnotationType2', 'AnnotationType3'];
-const dropdownOptions = availabeAnnotationTypes.map((type: string | number) => {
-  return {
-    label: type.toString(),
-    command: () => console.log(`New ${type} was created`),
-  };
-});
-
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
@@ -70,6 +63,7 @@ const {
   guidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
+  getAvailableCollectionAnnotationTypes,
   getAvailableTextLabels,
   getCollectionAnnotationConfig,
   getCollectionAnnotationFields,
@@ -102,6 +96,10 @@ const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
     ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
     : [];
 });
+
+const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
+  getAvailableCollectionAnnotationTypes(collectionAccessObject.value.collection.nodeLabels),
+);
 
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
   return collectionAccessObject.value.texts.map((text: Text) => {
@@ -162,6 +160,12 @@ async function getGuidelines(): Promise<void> {
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);
   }
+}
+
+function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
+  console.log(newAnnotation);
+
+  collectionAccessObject.value.annotations.push(newAnnotation);
 }
 
 function handleAddNewText(): void {
@@ -579,14 +583,14 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
             />
           </Panel>
-          <SplitButton
-            severity="secondary"
-            outlined
-            raised
-            label="Add new annotation"
-            :style="{ height: '35px' }"
-            :model="dropdownOptions"
-          />
+          <div class="annotation-button-pane flex flex-wrap gap-3 py-3">
+            <CollectionAnnotationButton
+              v-for="type in availabeAnnotationTypes"
+              :annotationType="type.type"
+              :collection-node-labels="collectionAccessObject.collection.nodeLabels"
+              @add-annotation="handleAddNewAnnotation"
+            />
+          </div>
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">

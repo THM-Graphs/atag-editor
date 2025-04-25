@@ -76,7 +76,7 @@ export function useGuidelinesStore() {
           const nestedSystem: PropertyConfig[] = curr.annotations?.properties?.system ?? [];
           const nestedBase: PropertyConfig[] = curr.annotations?.properties?.base ?? [];
           const nestedAdditional: PropertyConfig[] =
-            curr.annotations?.types?.find(t => t.type === annotationType).properties ?? [];
+            curr.annotations?.types?.find(t => t.type === annotationType)?.properties ?? [];
           total.push(...nestedSystem, ...nestedBase, ...nestedAdditional);
         }
         return total;
@@ -142,6 +142,22 @@ export function useGuidelinesStore() {
     );
 
     return unique;
+  }
+
+  function getAvailableCollectionAnnotationTypes(collectionNodeLabels: string[]): AnnotationType[] {
+    const base: AnnotationType[] = guidelines.value.collections.annotations.types;
+    const additional: AnnotationType[] = guidelines.value.collections.types.reduce(
+      (total: AnnotationType[], curr) => {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
+          const nested: AnnotationType[] = curr.annotations?.types ?? [];
+          total.push(...nested);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...base, ...additional];
   }
 
   /**
@@ -228,6 +244,7 @@ export function useGuidelinesStore() {
     getAnnotationConfig,
     getAnnotationFields,
     getAvailableAnnotationResourceConfigs,
+    getAvailableCollectionAnnotationTypes,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
     getCollectionAnnotationFields,
