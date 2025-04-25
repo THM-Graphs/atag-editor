@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
@@ -6,6 +7,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { toggleTextHightlighting } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
+import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
@@ -38,6 +40,7 @@ const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 // TODO: Maybe give whole config instead of only fields...?
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
+const propertiesAreCollapsed = ref<boolean>(false);
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   confirm.require({
@@ -128,7 +131,19 @@ function setRangeAnchorAtEnd(): void {
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
-    <FormPropertiesSection v-model="annotation.data.properties" :fields="propertyFields" />
+    <Fieldset
+      legend="Properties"
+      :toggle-button-props="{
+        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
+      }"
+      :toggleable="true"
+      @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
+    >
+      <template #toggleicon>
+        <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
+      </template>
+      <FormPropertiesSection v-model="annotation.data.properties" :fields="propertyFields" />
+    </Fieldset>
     <AnnotationFormNormdataSection
       v-if="config.hasNormdata === true"
       v-model="annotation.data.normdata"
