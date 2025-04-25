@@ -7,10 +7,13 @@ import {
   useRoute,
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import AnnotationFormAdditionalTextSection from '../components/AnnotationFormAdditionalTextSection.vue';
+import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import {
   areSetsEqual,
   buildFetchUrl,
@@ -42,7 +45,6 @@ import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
-import { camelCaseToTitleCase } from '../utils/helper/helper';
 
 type TextTableEntry = {
   labels: string[];
@@ -50,15 +52,17 @@ type TextTableEntry = {
   text: string;
   uuid: string;
 };
-
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
+
 const {
   guidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
   getAvailableTextLabels,
+  getCollectionAnnotationConfig,
+  getCollectionAnnotationFields,
   getCollectionConfigFields,
   initializeGuidelines,
 } = useGuidelinesStore();
@@ -69,6 +73,7 @@ const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
+const propertiesAreCollapsed = ref<boolean>(false);
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
@@ -77,11 +82,12 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
+
 useTitle(
   computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label ?? ''}`),
 );
 
-const fields: ComputedRef<PropertyConfig[]> = computed(() => {
+const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
     ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
     : [];
@@ -360,20 +366,7 @@ async function getCollection(): Promise<void> {
     }
 
     const fetchedCollectionAccessObject: any = await response.json();
-    fetchedCollectionAccessObject.annotations = fetchedCollectionAccessObject.annotations.map(
-      (annotation: AnnotationData) => {
-        return {
-          characterUuids: [],
-          data: cloneDeep(annotation),
-          endUuid: '',
-          initialData: cloneDeep(annotation),
-          isTruncated: false,
-          startUuid: '',
-          status: 'existing',
-        };
-      },
-    );
-    console.log('Fetched collection:', fetchedCollectionAccessObject);
+
     collectionAccessObject.value = fetchedCollectionAccessObject;
     initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
     isValidCollection.value = true;
@@ -491,7 +484,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 @click="handleCopy"
               />
             </div>
-            <div class="input-container" v-for="field in fields">
+            <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">
                 <label :for="field.name" class="w-10rem font-semibold"
                   >{{ capitalize(field.name) }}
@@ -515,7 +508,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           <Panel
             v-for="annotation in collectionAccessObject.annotations"
             class="annotation-form mb-3"
-            :data-annotation-uuid="annotation.data.properties.uuid"
+            :data-annotation-uuid="annotation.properties.uuid"
             toggleable
             :collapsed="true"
             :toggle-button-props="{
@@ -528,294 +521,50 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             <template #header>
               <div class="flex items-center gap-1 align-items-center">
                 <div class="annotation-type-container">
-                  <span class="font-bold">{{ annotation.data.properties.type }}</span>
+                  <span class="font-bold">{{ annotation.properties.type }}</span>
                 </div>
               </div>
             </template>
             <template #toggleicon="{ collapsed }">
               <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
             </template>
-            <Fieldset legend="Properties">
-              <form>
-                <div
-                  v-for="field in guidelines.collections.types
-                    .find(t => t.additionalLabel === 'Letter')
-                    .annotations.types.find(a => a.type === annotation.data.properties.type)
-                    .properties"
-                  :key="field.name"
-                  class="flex align-items-center gap-3 mb-3"
-                  v-show="field.visible"
-                >
-                  {{ field }}
-                  <label :for="field.name" class="form-label font-semibold"
-                    >{{ camelCaseToTitleCase(field.name) }}
-                  </label>
-                  <DataInputGroup
-                    v-if="field.type === 'array'"
-                    v-model="annotation.data.properties[field.name] as any"
-                    :config="field"
-                  />
-                  <DataInputComponent
-                    v-else
-                    v-model="annotation.data.properties[field.name]"
-                    :config="field"
-                  />
-                </div>
-              </form>
-            </Fieldset>
             <Fieldset
-              v-if="config.hasNormdata === true"
-              legend="Normdata"
-              :toggleable="true"
+              legend="Properties"
               :toggle-button-props="{
-                title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} normdata`,
-              }"
-              @toggle="normdataAreCollapsed = !normdataAreCollapsed"
-            >
-              <template #toggleicon>
-                <span :class="`pi pi-chevron-${normdataAreCollapsed ? 'down' : 'up'}`"></span>
-              </template>
-              <div v-for="category in normdataCategories">
-                <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
-                <div
-                  class="normdata-entry flex justify-content-between align-items-center"
-                  v-for="entry in annotation.data.normdata[category]"
-                >
-                  <span>
-                    {{ entry.label }}
-                  </span>
-                  <Button
-                    icon="pi pi-times"
-                    size="small"
-                    severity="danger"
-                    @click="removeNormdataItem(entry as NormdataEntry, category)"
-                  ></Button>
-                </div>
-                <Button
-                  v-show="normdataSearchObject[category].mode === 'view'"
-                  class="mt-2 w-full h-2rem"
-                  icon="pi pi-plus"
-                  size="small"
-                  severity="secondary"
-                  label="Add item"
-                  :disabled="annotation.isTruncated"
-                  @click="changeNormdataSelectionMode(category, 'edit')"
-                />
-                <AutoComplete
-                  v-show="normdataSearchObject[category].mode === 'edit'"
-                  v-model="normdataSearchObject[category].currentItem"
-                  dropdown
-                  dropdownMode="current"
-                  :placeholder="`Type to see suggestions`"
-                  :suggestions="normdataSearchObject[category].fetchedItems"
-                  :overlayClass="normdataSearchObject[category].mode === 'view' ? 'hidden' : ''"
-                  optionLabel="label"
-                  class="mt-2 w-full h-2rem"
-                  variant="filled"
-                  :ref="`input-${category}`"
-                  input-class="w-full"
-                  @complete="searchNormdataOptions($event.query, category)"
-                  @option-select="handleNormdataItemSelect($event.value, category)"
-                >
-                  <template #header v-if="normdataSearchObject[category].fetchedItems.length > 0">
-                    <div class="font-medium px-3 py-2">
-                      {{ normdataSearchObject[category].fetchedItems.length }} Results
-                    </div>
-                  </template>
-                  <template #option="slotProps">
-                    <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
-                  </template>
-                </AutoComplete>
-              </div>
-            </Fieldset>
-            <!-- <Fieldset
-              v-if="config.hasAdditionalTexts === true"
-              legend="Additional texts"
-              :toggle-button-props="{
-                title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} additional texts`,
+                title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
               }"
               :toggleable="true"
-              @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
+              @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
             >
               <template #toggleicon>
-                <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
+                <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
               </template>
-              <template
-                v-for="additionalText in annotation.data.additionalTexts"
-                :key="additionalText.collection.data.uuid"
-              >
-                <div class="additional-text-entry">
-                  <div
-                    class="additional-text-header flex justify-content-between align-items-center"
-                  >
-                    <span
-                      v-if="additionalText.collection.nodeLabels.length > 0"
-                      class="font-semibold"
-                      >{{
-                        additionalText.collection.nodeLabels
-                          .map((l: string) => camelCaseToTitleCase(l))
-                          .join(' | ')
-                      }}</span
-                    >
-                    <span v-else class="font-italic"> No label provided yet... </span>
-                    <Button
-                      icon="pi pi-times"
-                      severity="danger"
-                      title="Remove this text from annotation"
-                      @click="handleDeleteAdditionalText(additionalText.collection.data.uuid)"
-                    />
-                  </div>
-                  <div class="flex align-items-center gap-2 overflow">
-                    <a
-                      :href="`/texts/${additionalText.text.data.uuid}`"
-                      title="Open text in new editor tab"
-                      class="flex align-items-center gap-1"
-                      target="_blank"
-                    >
-                      <div
-                        :class="`preview ${additionalTextStatusObject.get(additionalText.collection.data.uuid)}`"
-                      >
-                        {{ additionalText.text.data.text }}
-                      </div>
-                      <i class="pi pi-external-link"></i>
-                    </a>
-                  </div>
-                  <Button
-                    :icon="
-                      additionalTextStatusObject.get(additionalText.collection.data.uuid) ===
-                      'collapsed'
-                        ? 'pi pi-angle-double-down'
-                        : 'pi pi-angle-double-up'
-                    "
-                    severity="secondary"
-                    size="small"
-                    class="w-full"
-                    :title="
-                      additionalTextStatusObject.get(additionalText.collection.data.uuid) ===
-                      'collapsed'
-                        ? 'Show full text'
-                        : 'Hide full text'
-                    "
-                    @click="toggleAdditionalTextPreviewMode(additionalText.collection.data.uuid)"
-                  />
-                  <Message
-                    v-if="
-                      !annotation.initialData.additionalTexts
-                        .map(t => t.collection.data.uuid)
-                        .includes(additionalText.collection.data.uuid)
-                    "
-                    severity="warn"
-                  >
-                    Save changes to edit new text...
-                  </Message>
-                </div>
-
-                <hr />
-              </template>
-              <div>
-                <Button
-                  v-show="additionalTextInputObject.mode === 'view'"
-                  class="mt-2 w-full h-2rem"
-                  icon="pi pi-plus"
-                  size="small"
-                  severity="secondary"
-                  label="Add text"
-                  title="Add new additional text entry"
-                  :disabled="annotation.isTruncated"
-                  @click="changeAdditionalTextSelectionMode('edit')"
-                />
-                <form
-                  v-show="additionalTextInputObject.mode === 'edit'"
-                  @submit.prevent="addAdditionalText"
-                >
-                  <InputGroup>
-                    <MultiSelect
-                      v-model="additionalTextInputObject.inputLabels"
-                      :options="additionalTextInputObject.availableLabels"
-                      display="chip"
-                      placeholder="Select collection labels"
-                      class="text-center"
-                      :filter="false"
-                    >
-                      <template #chip="{ value }">
-                        <Tag :value="value" severity="contrast" class="mr-1" />
-                      </template>
-                    </MultiSelect>
-                    <InputText
-                      ref="additional-text-input"
-                      required
-                      v-model="additionalTextInputObject.inputText"
-                      placeholder="Enter text"
-                      title="Enter text"
-                    />
-                    <Button
-                      type="submit"
-                      icon="pi pi-check"
-                      severity="secondary"
-                      size="small"
-                      title="Add new text"
-                    />
-                    <Button
-                      type="button"
-                      icon="pi pi-times"
-                      severity="secondary"
-                      size="small"
-                      title="Cancel"
-                      @click="cancelAdditionalTextOperation"
-                    />
-                  </InputGroup>
-                </form>
-              </div>
+              <FormPropertiesSection
+                v-model="annotation.properties"
+                :fields="
+                  getCollectionAnnotationFields(collectionAccessObject.collection.nodeLabels)
+                "
+              />
             </Fieldset>
-            <div class="edit-buttons flex justify-content-center">
-              <Button
-                icon="pi pi-angle-left"
-                size="small"
-                severity="secondary"
-                rounded
-                title="Move annotation left by one character"
-                :disabled="annotation.isTruncated"
-                @click="handleShiftLeft"
-              />
-              <Button
-                icon="pi pi-angle-right"
-                size="small"
-                severity="secondary"
-                rounded
-                title="Move annotation right by one character"
-                :disabled="annotation.isTruncated"
-                @click="handleShiftRight"
-              />
-              <Button
-                icon="pi pi-plus"
-                size="small"
-                severity="secondary"
-                rounded
-                title="Expand annotation right by one character"
-                :disabled="annotation.isTruncated || config.isZeroPoint"
-                @click="handleExpand"
-              />
-              <Button
-                icon="pi pi-minus"
-                size="small"
-                severity="secondary"
-                rounded
-                title="Shrink annotation from the right by one character"
-                :disabled="annotation.isTruncated || config.isZeroPoint"
-                @click="handleShrink"
-              />
-            </div>
-            <div class="action-buttons flex justify-content-center">
-              <Button
-                label="Delete"
-                title="Delete annotation"
-                severity="danger"
-                icon="pi pi-trash"
-                size="small"
-                @click="handleDeleteAnnotation($event, annotation.data.properties.uuid)"
-              />
-            </div>
-            <ConfirmPopup></ConfirmPopup> -->
+            <AnnotationFormNormdataSection
+              v-if="
+                getCollectionAnnotationConfig(
+                  collectionAccessObject.collection.nodeLabels,
+                  annotation.properties.type,
+                ).hasNormdata === true
+              "
+              v-model="annotation.normdata"
+            />
+            <AnnotationFormAdditionalTextSection
+              v-if="
+                getCollectionAnnotationConfig(
+                  collectionAccessObject.collection.nodeLabels,
+                  annotation.properties.type,
+                ).hasAdditionalTexts === true
+              "
+              v-model="annotation.additionalTexts"
+              :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
+            />
           </Panel>
         </div>
       </SplitterPanel>
