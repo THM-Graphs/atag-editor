@@ -542,7 +542,10 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               <FormPropertiesSection
                 v-model="annotation.properties"
                 :fields="
-                  getCollectionAnnotationFields(collectionAccessObject.collection.nodeLabels)
+                  getCollectionAnnotationFields(
+                    collectionAccessObject.collection.nodeLabels,
+                    annotation.properties.type,
+                  )
                 "
               />
             </Fieldset>

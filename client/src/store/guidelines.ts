@@ -54,13 +54,17 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves the properties an annotation of given node labels should should have. Used for rendering input fields in forms
-   * where properties of the annotation can be edited. Currently a hack.
+   * Retrieves the properties an annotation of given type should have in the context of a Collection with given node labels.
+   * Used for rendering input fields in forms where properties of the annotation can be edited. Currently a hack.
    *
-   * @param {string[]} nodeLabels - The node labels of the Collection.
-   * @return {PropertyConfig[]} The combined annotation fields for the collection type.
+   * @param {string[]} collectionNodeLabels - The node labels of the Collection.
+   * @param {string} annotationType - The type of the annotation.
+   * @return {PropertyConfig[]} The fields for the annotation type in the context of the Collection.
    */
-  function getCollectionAnnotationFields(nodeLabels: string[]): PropertyConfig[] {
+  function getCollectionAnnotationFields(
+    collectionNodeLabels: string[],
+    annotationType: string,
+  ): PropertyConfig[] {
     // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
     const system: PropertyConfig[] =
       guidelines.value.collections.annotations?.properties?.system ?? [];
@@ -68,11 +72,11 @@ export function useGuidelinesStore() {
       guidelines.value.collections?.annotations?.properties?.base ?? [];
     const additional: PropertyConfig[] = guidelines.value.collections.types.reduce(
       (total: PropertyConfig[], curr) => {
-        if (nodeLabels.includes(curr.additionalLabel)) {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
           const nestedSystem: PropertyConfig[] = curr.annotations?.properties?.system ?? [];
           const nestedBase: PropertyConfig[] = curr.annotations?.properties?.base ?? [];
           const nestedAdditional: PropertyConfig[] =
-            curr.annotations?.types?.flatMap(t => t.properties) ?? [];
+            curr.annotations?.types?.find(t => t.type === annotationType).properties ?? [];
           total.push(...nestedSystem, ...nestedBase, ...nestedAdditional);
         }
         return total;
