@@ -662,7 +662,11 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               "
               :mode="mode"
               v-model="annotation.additionalTexts"
-              :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
+              :initial-additional-texts="
+                initialCollectionAccessObject.annotations.find(
+                  a => a.properties.uuid === annotation.properties.uuid,
+                ).additionalTexts
+              "
             />
             <div class="action-buttons flex justify-content-center">
               <Button
