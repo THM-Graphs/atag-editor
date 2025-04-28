@@ -142,16 +142,22 @@ function setRangeAnchorAtEnd(): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <FormPropertiesSection v-model="annotation.data.properties" :fields="propertyFields" />
+      <FormPropertiesSection
+        v-model="annotation.data.properties"
+        :fields="propertyFields"
+        mode="edit"
+      />
     </Fieldset>
     <AnnotationFormNormdataSection
       v-if="config.hasNormdata === true"
       v-model="annotation.data.normdata"
+      mode="edit"
     />
     <AnnotationFormAdditionalTextSection
       v-if="config.hasAdditionalTexts === true"
       v-model="annotation.data.additionalTexts"
       :initial-additional-texts="annotation.initialData.additionalTexts"
+      mode="edit"
     />
 
     <div class="edit-buttons flex justify-content-center">

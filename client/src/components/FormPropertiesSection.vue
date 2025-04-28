@@ -8,6 +8,7 @@ const properties = defineModel<any>();
 
 const props = defineProps<{
   fields: PropertyConfig[];
+  mode?: 'edit' | 'view';
 }>();
 
 // const { getAnnotationFields } = useGuidelinesStore();
@@ -31,8 +32,14 @@ const props = defineProps<{
         v-if="field.type === 'array'"
         v-model="properties[field.name]"
         :config="field"
+        :mode="props.mode"
       />
-      <DataInputComponent v-else v-model="properties[field.name]" :config="field" />
+      <DataInputComponent
+        v-else
+        v-model="properties[field.name]"
+        :config="field"
+        :mode="props.mode"
+      />
     </div>
   </form>
 </template>

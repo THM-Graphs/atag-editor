@@ -640,6 +640,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                     annotation.properties.type,
                   )
                 "
+                :mode="mode"
               />
             </Fieldset>
             <AnnotationFormNormdataSection
@@ -649,6 +650,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   annotation.properties.type,
                 ).hasNormdata === true
               "
+              :mode="mode"
               v-model="annotation.normdata"
             />
             <AnnotationFormAdditionalTextSection
@@ -658,11 +660,13 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   annotation.properties.type,
                 ).hasAdditionalTexts === true
               "
+              :mode="mode"
               v-model="annotation.additionalTexts"
               :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
             />
             <div class="action-buttons flex justify-content-center">
               <Button
+                v-if="mode === 'edit'"
                 label="Delete"
                 title="Delete annotation"
                 severity="danger"

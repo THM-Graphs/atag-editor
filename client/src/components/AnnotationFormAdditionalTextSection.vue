@@ -29,6 +29,7 @@ const additionalTexts = defineModel<AdditionalText[]>();
 
 const props = defineProps<{
   initialAdditionalTexts: AdditionalText[];
+  mode?: 'edit' | 'view';
 }>();
 
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
@@ -214,6 +215,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
           }}</span>
           <span v-else class="font-italic"> No label provided yet... </span>
           <Button
+            v-if="props.mode === 'edit'"
             icon="pi pi-times"
             severity="danger"
             title="Remove this text from annotation"
@@ -267,7 +269,9 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
     </template>
     <div>
       <!-- TODO: the next button was disabled when annotation was truncated. Why? -> Find out... -->
+
       <Button
+        v-if="props.mode === 'edit'"
         v-show="additionalTextInputObject.mode === 'view'"
         class="mt-2 w-full h-2rem"
         icon="pi pi-plus"

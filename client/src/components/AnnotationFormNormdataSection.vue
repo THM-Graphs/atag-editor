@@ -30,6 +30,10 @@ const normdata = defineModel<{
   [index: string]: IEntity[];
 }>();
 
+const props = defineProps<{
+  mode?: 'edit' | 'view';
+}>();
+
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
 
 const normdataCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
@@ -201,6 +205,7 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
           {{ entry.label }}
         </span>
         <Button
+          v-if="props.mode === 'edit'"
           icon="pi pi-times"
           size="small"
           severity="danger"
@@ -209,6 +214,7 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
       </div>
       <!-- TODO: the next button was disabled when annotation was truncated. Why? -> Find out... -->
       <Button
+        v-if="props.mode === 'edit'"
         v-show="normdataSearchObject[category].mode === 'view'"
         class="mt-2 w-full h-2rem"
         icon="pi pi-plus"
