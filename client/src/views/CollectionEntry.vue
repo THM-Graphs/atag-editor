@@ -263,6 +263,58 @@ function hasUnsavedChanges(): boolean {
     return true;
   }
 
+  // Compare annotations
+
+  const currentAnnotations: AnnotationData[] = collectionAccessObject.value.annotations;
+  const initialAnnotations: AnnotationData[] = initialCollectionAccessObject.value.annotations;
+
+  // Compare annotations length
+  if (currentAnnotations.length !== initialAnnotations.length) {
+    return true;
+  }
+
+  // Compare annotation data
+  for (let i = 0; i < currentAnnotations.length; i++) {
+    const currentAnnotation: AnnotationData = currentAnnotations[i];
+    const initialAnnotation: AnnotationData = initialAnnotations.find(
+      a => a.properties.uuid === currentAnnotation.properties.uuid,
+    );
+
+    // Return true if initial annotation was not found
+    if (!initialAnnotation) {
+      return true;
+    }
+
+    const normdataUuids: Set<string> = new Set(
+      Object.values(currentAnnotation.normdata)
+        .flat()
+        .map(m => m.uuid),
+    );
+    const initialNormdataUuids: Set<string> = new Set(
+      Object.values(initialAnnotation.normdata)
+        .flat()
+        .map(m => m.uuid),
+    );
+
+    const additionalTextUuids: Set<string> = new Set(
+      currentAnnotation.additionalTexts.map(at => at.collection.data.uuid),
+    );
+
+    const initialAdditionalTextUuids: Set<string> = new Set(
+      initialAnnotation.additionalTexts.map(at => at.collection.data.uuid),
+    );
+
+    if (
+      JSON.stringify(currentAnnotation.properties) !==
+        JSON.stringify(currentAnnotation.properties) ||
+      !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+      !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
+    ) {
+      console.log(`Annotation at index ${i} has changed data.`);
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -379,7 +431,7 @@ async function getCollection(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollectionAccessObject: any = await response.json();
+    const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
 
     collectionAccessObject.value = fetchedCollectionAccessObject;
     initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
