@@ -665,7 +665,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :initial-additional-texts="
                 initialCollectionAccessObject.annotations.find(
                   a => a.properties.uuid === annotation.properties.uuid,
-                ).additionalTexts
+                )?.additionalTexts ?? []
               "
             />
             <div class="action-buttons flex justify-content-center">
@@ -686,6 +686,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               v-for="type in availabeAnnotationTypes"
               :annotationType="type.type"
               :collection-node-labels="collectionAccessObject.collection.nodeLabels"
+              :mode="mode"
               @add-annotation="handleAddNewAnnotation"
             />
           </div>

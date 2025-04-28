@@ -2,7 +2,6 @@
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
-import { useFilterStore } from '../store/filter';
 // import { useHistoryStore } from '../store/history';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
@@ -15,9 +14,10 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import ShortcutError from '../utils/errors/shortcut.error';
 import { onMounted, ref } from 'vue';
 
-const { annotationType, collectionNodeLabels } = defineProps<{
+const { annotationType, collectionNodeLabels, mode } = defineProps<{
   annotationType: string;
   collectionNodeLabels: string[];
+  mode: 'edit' | 'view';
 }>();
 
 const emit = defineEmits(['addAnnotation']);
@@ -189,6 +189,7 @@ function createNewAnnotation(type: string, subtype: string | number | undefined)
     :style="{ height: '35px', width: '35px' }"
     :class="hasIcon ? '' : 'button-empty'"
     :data-annotation-type="annotationType"
+    :disabled="mode === 'view'"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
   >
