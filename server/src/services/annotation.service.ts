@@ -8,6 +8,7 @@ import {
   Annotation,
   AnnotationConfigResource,
   AnnotationData,
+  CollectionPostData,
   PropertyConfig,
   Text,
 } from '../models/types.js';
@@ -39,6 +40,51 @@ type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
 };
 
 export default class AnnotationService {
+  public createAnnotationObjectsFromCollection(
+    collection: CollectionPostData,
+  ): Partial<Annotation>[] {
+    const annotations: AnnotationData[] = collection.data.annotations;
+    const initialAnnotations: AnnotationData[] = collection.initialData.annotations;
+
+    const annotationUuids: string[] = annotations.map(a => a.properties.uuid);
+    const initialAnnotationUuids: string[] = initialAnnotations.map(a => a.properties.uuid);
+
+    const annotationObjects: Partial<Annotation>[] = [];
+
+    // Create annotation objects for old annotations-> they will be deleted
+    initialAnnotations.forEach(annotation => {
+      // Get only annotations that were deleted in by the user
+      if (annotationUuids.includes(annotation.properties.uuid)) {
+        return;
+      }
+
+      annotationObjects.push({
+        characterUuids: [],
+        data: annotation,
+        initialData: annotation,
+        status: 'deleted',
+      });
+    });
+
+    // Create annotation objects for all else annotations
+    annotations.forEach(annotation => {
+      const initial: AnnotationData | undefined = initialAnnotations.find(
+        a => a.properties.uuid === annotation.properties.uuid,
+      );
+
+      annotationObjects.push({
+        characterUuids: [],
+        data: annotation,
+        // New annotations dont have initial data -> use the current data
+        initialData: initial ?? annotation,
+        // "existing" or "created" doesn't matter here since they are handled the same way
+        status: 'existing',
+      });
+    });
+
+    return annotationObjects;
+  }
+
   public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const resources: AnnotationConfigResource[] =
@@ -118,7 +164,7 @@ export default class AnnotationService {
    * @return {Promise<ProcessedAnnotation[]>} A promise that resolves to the processed annotations.
    */
   private async processAnnotationsBeforeSaving(
-    annotations: Annotation[],
+    annotations: Partial<Annotation>[],
   ): Promise<ProcessedAnnotation[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
@@ -128,14 +174,14 @@ export default class AnnotationService {
       const annotationConfigFields: PropertyConfig[] =
         guidelineService.getAnnotationConfigFieldsFromGuidelines(
           guidelines,
-          annotation.data.properties.type,
+          annotation.data!.properties.type,
         );
 
-      const initialNormdataUuids: string[] = Object.values(annotation.initialData.normdata)
+      const initialNormdataUuids: string[] = Object.values(annotation.initialData!.normdata)
         .flat()
         .map(item => item.uuid);
 
-      const newNormdataUuids: string[] = Object.values(annotation.data.normdata)
+      const newNormdataUuids: string[] = Object.values(annotation.data!.normdata)
         .flat()
         .map(item => item.uuid);
 
@@ -153,15 +199,15 @@ export default class AnnotationService {
       const createdAdditionalTexts: CreatedAdditionalText[] = [];
       const deletedAdditionalTexts: AdditionalText[] = [];
 
-      const oldTextUuids: string[] = annotation.initialData.additionalTexts.map(
+      const oldTextUuids: string[] = annotation.initialData!.additionalTexts.map(
         t => t.collection.data.uuid,
       );
-      const newTextUuids: string[] = annotation.data.additionalTexts.map(
+      const newTextUuids: string[] = annotation.data!.additionalTexts.map(
         t => t.collection.data.uuid,
       );
 
       // Characters need to be created to be saved in the query
-      annotation.data.additionalTexts.forEach(additionalText => {
+      annotation.data!.additionalTexts.forEach(additionalText => {
         if (!oldTextUuids.includes(additionalText.collection.data.uuid)) {
           // Done here because collection field configuration may be different for each additional text
           const collectionConfigFields: PropertyConfig[] =
@@ -193,7 +239,7 @@ export default class AnnotationService {
         }
       });
 
-      annotation.initialData.additionalTexts.forEach(additionalText => {
+      annotation.initialData!.additionalTexts.forEach(additionalText => {
         if (!newTextUuids.includes(additionalText.collection.data.uuid)) {
           deletedAdditionalTexts.push(additionalText);
         }
@@ -202,7 +248,7 @@ export default class AnnotationService {
       return {
         ...annotation,
         data: {
-          properties: toNeo4jTypes(annotation.data.properties, annotationConfigFields),
+          properties: toNeo4jTypes(annotation.data!.properties, annotationConfigFields),
           normdata: {
             deleted: deletedNormdataUuids,
             created: createdNormdataUuids,
@@ -217,8 +263,8 @@ export default class AnnotationService {
   }
 
   public async saveAnnotations(
-    textUuid: string,
-    annotations: Annotation[],
+    nodeUuid: string,
+    annotations: Partial<Annotation>[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
@@ -252,7 +298,7 @@ export default class AnnotationService {
 
     WITH allAnnotations
 
-    MATCH (t:Text {uuid: $textUuid})
+    MATCH (t:Text|Collection {uuid: $nodeUuid})
 
     // 2. Handle other annotations (merge)
     UNWIND allAnnotations AS ann
@@ -265,7 +311,7 @@ export default class AnnotationService {
     // Set data
     SET a = ann.data.properties
 
-    // Create edge to text node
+    // Create edge to text/collection node
     MERGE (t)-[:HAS_ANNOTATION]->(a)
 
     // Remove edges to nodes that are not longer part of the annotation data
@@ -357,7 +403,7 @@ export default class AnnotationService {
 
     // Set startIndex and andIndex properties of Annotation nodes
     
-    MATCH (t:Text {uuid: $textUuid})-[:NEXT_CHARACTER*]->(ch:Character)
+    MATCH (t:Text {uuid: $nodeUuid})-[:NEXT_CHARACTER*]->(ch:Character)
     WITH collect(ch) as characters, annotations
 
     UNWIND range(0, size(characters) - 1) AS idx
@@ -373,7 +419,7 @@ export default class AnnotationService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      textUuid,
+      nodeUuid,
       annotations: processedAnnotations,
     });
 

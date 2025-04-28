@@ -6,7 +6,9 @@ import CollectionService from '../services/collection.service.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
+import IAnnotation from '../models/IAnnotation.js';
 import {
+  Annotation,
   AnnotationData,
   Collection,
   CollectionAccessObject,
@@ -90,6 +92,12 @@ router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) =>
 
   try {
     const collection: ICollection = await collectionService.updateCollection(uuid, data);
+
+    const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
+    const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
+      uuid,
+      annotationObjects as Annotation[],
+    );
 
     res.status(200).json(collection);
   } catch (error: unknown) {
