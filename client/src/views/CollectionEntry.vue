@@ -125,6 +125,12 @@ onMounted(async (): Promise<void> => {
   isLoading.value = false;
 });
 
+function deleteAnnotation(uuid: string): void {
+  collectionAccessObject.value.annotations = collectionAccessObject.value.annotations.filter(
+    a => a.properties.uuid !== uuid,
+  );
+}
+
 /**
  * Fills in any missing collection properties with the type-specific default value.
  *
@@ -186,6 +192,27 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 
 async function handleCopy(): Promise<void> {
   await navigator.clipboard.writeText(collectionAccessObject.value.collection.data.uuid);
+}
+
+function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
+  confirm.require({
+    target: event.currentTarget as HTMLButtonElement,
+    message: 'Do you want to delete this annotation?',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+      title: 'Cancel',
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+      title: 'Delete annotation',
+    },
+    accept: () => deleteAnnotation(uuid),
+    reject: () => {},
+  });
 }
 
 async function handleDeleteText(uuid: string) {
@@ -634,6 +661,17 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               v-model="annotation.additionalTexts"
               :initial-additional-texts="cloneDeep(annotation.additionalTexts)"
             />
+            <div class="action-buttons flex justify-content-center">
+              <Button
+                label="Delete"
+                title="Delete annotation"
+                severity="danger"
+                icon="pi pi-trash"
+                size="small"
+                @click="handleDeleteAnnotation($event, annotation.properties.uuid)"
+              />
+            </div>
+            <ConfirmPopup></ConfirmPopup>
           </Panel>
           <div class="annotation-button-pane flex flex-wrap gap-3 py-3">
             <CollectionAnnotationButton
