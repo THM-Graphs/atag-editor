@@ -26,6 +26,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
       textUuid,
+      'Text',
       annotations as Annotation[],
     );
 

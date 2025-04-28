@@ -96,6 +96,7 @@ router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) =>
     const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
     const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
       uuid,
+      'Collection',
       annotationObjects as Annotation[],
     );
 

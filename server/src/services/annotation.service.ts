@@ -264,6 +264,7 @@ export default class AnnotationService {
 
   public async saveAnnotations(
     nodeUuid: string,
+    nodeLabel: 'Collection' | 'Text',
     annotations: Partial<Annotation>[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
@@ -272,7 +273,7 @@ export default class AnnotationService {
     // console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
-    const query: string = `
+    let query: string = `
     WITH $annotations as allAnnotations
 
     // 1. Delete deleted annotations
@@ -376,47 +377,57 @@ export default class AnnotationService {
 
         RETURN collect(textToCreate) as createdText
     }
+    `;
 
-    // Remove existing relationships between annotation and character nodes before creating new ones
-    CALL {
-        WITH a
-        MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(:Character)
-        DELETE r   
+    // Return if annotations are attached to Collection node
+    if (nodeLabel === 'Collection') {
+      query += `RETURN collect(distinct a {.*}) as annotations`;
     }
 
-    // Handle character relationships
-    WITH a, ann
-    UNWIND ann.characterUuids AS uuid
-    MATCH (c:Character {uuid: uuid})
-    MERGE (c)-[:CHARACTER_HAS_ANNOTATION]->(a)
+    // Character-specific operations that are only applied for Text annotations
+    if (nodeLabel === 'Text') {
+      query += `
+      // Remove existing relationships between annotation and character nodes before creating new ones
+      CALL {
+          WITH a
+          MATCH (a)-[r:CHARACTER_HAS_ANNOTATION|STANDOFF_START|STANDOFF_END]-(:Character)
+          DELETE r   
+      }
 
-    // Handle standoff relationships
-    WITH a, ann
-    MATCH (sc:Character {uuid: ann.startUuid})
-    MERGE (a)-[:STANDOFF_START]->(sc)
+      // Handle character relationships
+      WITH a, ann
+      UNWIND ann.characterUuids AS uuid
+      MATCH (c:Character {uuid: uuid})
+      MERGE (c)-[:CHARACTER_HAS_ANNOTATION]->(a)
 
-    WITH a, ann
-    MATCH (ec:Character {uuid: ann.endUuid})
-    MERGE (a)-[:STANDOFF_END]->(ec)
+      // Handle standoff relationships
+      WITH a, ann
+      MATCH (sc:Character {uuid: ann.startUuid})
+      MERGE (a)-[:STANDOFF_START]->(sc)
 
-    WITH collect(distinct a {.*}) as annotations
+      WITH a, ann
+      MATCH (ec:Character {uuid: ann.endUuid})
+      MERGE (a)-[:STANDOFF_END]->(ec)
 
-    // Set startIndex and andIndex properties of Annotation nodes
-    
-    MATCH (t:Text {uuid: $nodeUuid})-[:NEXT_CHARACTER*]->(ch:Character)
-    WITH collect(ch) as characters, annotations
+      WITH collect(distinct a {.*}) as annotations
 
-    UNWIND range(0, size(characters) - 1) AS idx
-    WITH characters[idx] AS ch, idx, annotations
+      // Set startIndex and andIndex properties of Annotation nodes
+      
+      MATCH (t:Text {uuid: $nodeUuid})-[:NEXT_CHARACTER*]->(ch:Character)
+      WITH collect(ch) as characters, annotations
 
-    OPTIONAL MATCH (ch)<-[:STANDOFF_START]-(aStart:Annotation)
-    OPTIONAL MATCH (ch)<-[:STANDOFF_END]-(aEnd:Annotation)
+      UNWIND range(0, size(characters) - 1) AS idx
+      WITH characters[idx] AS ch, idx, annotations
 
-    SET aStart.startIndex = idx
-    SET aEnd.endIndex = idx
+      OPTIONAL MATCH (ch)<-[:STANDOFF_START]-(aStart:Annotation)
+      OPTIONAL MATCH (ch)<-[:STANDOFF_END]-(aEnd:Annotation)
 
-    RETURN annotations
-    `;
+      SET aStart.startIndex = idx
+      SET aEnd.endIndex = idx
+
+      RETURN annotations
+      `;
+    }
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
       nodeUuid,
