@@ -15,10 +15,7 @@ export interface IGuidelines {
       annotations: {
         additionalTexts: string[];
         types: AnnotationType[];
-        properties: {
-          system: PropertyConfig[];
-          base: PropertyConfig[];
-        };
+        properties: PropertyConfig[];
         resources: AnnotationConfigResource[];
       };
     }[];

@@ -66,25 +66,34 @@ export function useGuidelinesStore() {
     annotationType: string,
   ): PropertyConfig[] {
     // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
-    const system: PropertyConfig[] =
-      guidelines.value.collections.annotations?.properties?.system ?? [];
-    const base: PropertyConfig[] =
-      guidelines.value.collections?.annotations?.properties?.base ?? [];
-    const additional: PropertyConfig[] = guidelines.value.collections.types.reduce(
+
+    // Default properties for annotations that are in ALL collections
+    const byDefault: PropertyConfig[] = [
+      ...(guidelines.value.collections.annotations?.properties.system ?? []),
+      ...(guidelines.value.collections.annotations?.properties.base ?? []),
+    ];
+
+    // Default properties for annotations that exists in the collections with given node labels
+    const byCollectionType: PropertyConfig[] = guidelines.value.collections.types.reduce(
       (total: PropertyConfig[], curr) => {
         if (collectionNodeLabels.includes(curr.additionalLabel)) {
-          const nestedSystem: PropertyConfig[] = curr.annotations?.properties?.system ?? [];
-          const nestedBase: PropertyConfig[] = curr.annotations?.properties?.base ?? [];
-          const nestedAdditional: PropertyConfig[] =
-            curr.annotations?.types?.find(t => t.type === annotationType)?.properties ?? [];
-          total.push(...nestedSystem, ...nestedBase, ...nestedAdditional);
+          const nested: PropertyConfig[] = curr.annotations?.properties ?? [];
+
+          total.push(...nested);
         }
+
         return total;
       },
       [],
     );
 
-    return [...system, ...base, ...additional];
+    // Properties for the given annotation type (no matter which level)
+    const byAnnotationType: PropertyConfig[] =
+      getAvailableCollectionAnnotationTypes(collectionNodeLabels).find(
+        t => t.type === annotationType,
+      )?.properties ?? [];
+
+    return [...byDefault, ...byCollectionType, ...byAnnotationType];
   }
 
   // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
