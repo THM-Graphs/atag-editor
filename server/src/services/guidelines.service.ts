@@ -1,5 +1,5 @@
 import { IGuidelines } from '../models/IGuidelines.js';
-import { AnnotationConfigResource, PropertyConfig } from '../models/types.js';
+import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
@@ -63,6 +63,83 @@ export default class GuidelinesService {
     );
 
     return unique;
+  }
+
+  /**
+   * Retrieves all available annotation types for a collection with given node labels from the guidelines.
+   *
+   * The method operates on the given guidelines parameter instead of fetching from within. This is done
+   * to prevent multiple requests when the method is called inside a loop.
+   *
+   * @param {IGuidelines} guidelines - The guidelines to retrieve the annotation types from.
+   * @param {string[]} collectionNodeLabels - The node labels of the collection.
+   * @return {AnnotationType[]} The combined and deduplicated annotation types.
+   */
+  public getAvailableCollectionAnnotationTypesFromGuidelines(
+    guidelines: IGuidelines,
+    collectionNodeLabels: string[],
+  ): AnnotationType[] {
+    const base: AnnotationType[] = guidelines.collections.annotations.types;
+    const additional: AnnotationType[] = guidelines.collections.types.reduce(
+      (total: AnnotationType[], curr) => {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
+          const nested: AnnotationType[] = curr.annotations?.types ?? [];
+          total.push(...nested);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...base, ...additional];
+  }
+
+  /**
+   * Retrieves the properties an annotation of given type should have in the context of a Collection with given node labels.
+   * Used for rendering input fields in forms where properties of the annotation can be edited. Currently a hack.
+   *
+   * The method operates on the given guidelines parameter instead of fetching from within. This is done
+   * to prevent multiple requests when the method is called inside a loop.
+   *
+   * @param {string[]} collectionNodeLabels - The node labels of the Collection.
+   * @param {string} annotationType - The type of the annotation.
+   * @return {PropertyConfig[]} The fields for the annotation type in the context of the Collection.
+   */
+  public getCollectionAnnotationFieldsFromGuidelines(
+    guidelines: IGuidelines,
+    collectionNodeLabels: string[],
+    annotationType: string,
+  ): PropertyConfig[] {
+    // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
+
+    // Default properties for annotations that are in ALL collections
+    const byDefault: PropertyConfig[] = [
+      ...(guidelines.collections.annotations?.properties.system ?? []),
+      ...(guidelines.collections.annotations?.properties.base ?? []),
+    ];
+
+    // Default properties for annotations that exists in the collections with given node labels
+    const byCollectionType: PropertyConfig[] = guidelines.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
+          const nested: PropertyConfig[] = curr.annotations?.properties ?? [];
+
+          total.push(...nested);
+        }
+
+        return total;
+      },
+      [],
+    );
+
+    // Properties for the given annotation type (no matter which level)
+    const byAnnotationType: PropertyConfig[] =
+      this.getAvailableCollectionAnnotationTypesFromGuidelines(
+        guidelines,
+        collectionNodeLabels,
+      ).find(t => t.type === annotationType)?.properties ?? [];
+
+    return [...byDefault, ...byCollectionType, ...byAnnotationType];
   }
 
   /**

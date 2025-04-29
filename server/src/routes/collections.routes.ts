@@ -53,13 +53,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const { data, nodeLabels }: Collection = req.body;
+  const data: CollectionAccessObject = req.body;
 
   try {
-    const newCollection: ICollection = await collectionService.createNewCollection(
-      data,
-      nodeLabels,
-    );
+    const newCollection: ICollection = await collectionService.createNewCollection(data);
 
     res.status(201).json(newCollection);
   } catch (error: unknown) {
