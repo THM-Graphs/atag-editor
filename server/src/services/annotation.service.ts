@@ -52,16 +52,16 @@ export default class AnnotationService {
     const annotationObjects: Partial<Annotation>[] = [];
 
     // Create annotation objects for old annotations-> they will be deleted
-    initialAnnotations.forEach(annotation => {
+    initialAnnotations.forEach(anno => {
       // Get only annotations that were deleted in by the user
-      if (annotationUuids.includes(annotation.properties.uuid)) {
+      if (annotationUuids.includes(anno.properties.uuid)) {
         return;
       }
 
       annotationObjects.push({
         characterUuids: [],
-        data: annotation,
-        initialData: annotation,
+        data: anno,
+        initialData: anno,
         status: 'deleted',
       });
     });
@@ -75,8 +75,14 @@ export default class AnnotationService {
       annotationObjects.push({
         characterUuids: [],
         data: annotation,
-        // New annotations dont have initial data -> use the current data
-        initialData: initial ?? annotation,
+        // No initial data -> annotation is new -> Use empty values for normdata and additional texts
+        initialData:
+          initial ??
+          ({
+            normdata: {},
+            additionalTexts: [],
+            properties: {} as IAnnotation,
+          } as AnnotationData),
         // "existing" or "created" doesn't matter here since they are handled the same way
         status: 'existing',
       });
