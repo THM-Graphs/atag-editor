@@ -389,7 +389,7 @@ export default class CollectionService {
       
       // Match subgraph
       CALL apoc.path.subgraphNodes(t, {
-          relationshipFilter: 'HAS_ANNOTATION>,REFERS_TO>,<PART_OF',
+          relationshipFilter: 'HAS_ANNOTATION>|REFERS_TO>|<PART_OF',
           labelFilter: 'Collection|Text|Annotation'
       }) YIELD node
 

@@ -286,7 +286,7 @@ export default class AnnotationService {
 
         // Match subgraph
         CALL apoc.path.subgraphNodes(a, {
-            relationshipFilter: 'REFERS_TO>,<PART_OF,HAS_ANNOTATION>',
+            relationshipFilter: 'REFERS_TO>|<PART_OF|HAS_ANNOTATION>',
             labelFilter: 'Collection|Text|Annotation'
         }) YIELD node
 
@@ -343,7 +343,7 @@ export default class AnnotationService {
         
         // Match subgraph
         CALL apoc.path.subgraphNodes(c, {
-            relationshipFilter: '<PART_OF,HAS_ANNOTATION>,REFERS_TO>',
+            relationshipFilter: '<PART_OF|HAS_ANNOTATION>|REFERS_TO>',
             labelFilter: 'Collection|Text|Annotation'
         }) YIELD node
 
