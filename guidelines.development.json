@@ -51,20 +51,11 @@
               "isZeroPoint": false,
               "hasNormdata": true,
               "hasAdditionalTexts": true,
-              "annotations": {
-                "types": [],
-                "properties": {
-                  "system": [],
-                  "base": []
-                },
-                "resources": [],
-                "additionalTexts": []
-              },
               "properties": [
                 {
                   "name": "senderNickname",
                   "type": "string",
-                  "required": false,
+                  "required": true,
                   "editable": true,
                   "visible": true
                 }
@@ -77,45 +68,26 @@
               "isZeroPoint": false,
               "hasNormdata": true,
               "hasAdditionalTexts": true,
-              "annotations": {
-                "types": [],
-                "properties": {
-                  "system": [],
-                  "base": []
-                },
-                "resources": [],
-                "additionalTexts": []
-              },
               "properties": [
                 {
                   "name": "receiverNickname",
                   "type": "string",
-                  "required": false,
+                  "required": true,
                   "editable": true,
                   "visible": true
                 }
               ]
             }
           ],
-          "properties": {
-            "system": [
-              {
-                "name": "type",
-                "type": "string",
-                "required": true,
-                "editable": false,
-                "visible": true
-              },
-              {
-                "name": "text",
-                "type": "string",
-                "required": true,
-                "editable": false,
-                "visible": true
-              }
-            ],
-            "base": []
-          },
+          "properties": [
+            {
+              "name": "type",
+              "type": "string",
+              "required": true,
+              "editable": false,
+              "visible": true
+            }
+          ],
           "resources": [
             {
               "category": "persons",
@@ -279,11 +251,45 @@
       }
     ],
     "annotations": {
-      "types": [],
       "properties": {
-        "system": [],
-        "base": []
+        "system": [
+          {
+            "name": "topLevelSystem",
+            "type": "string",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ],
+        "base": [
+          {
+            "name": "topLevelBase",
+            "type": "string",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
       },
+      "types": [
+        {
+          "type": "topLevelTyType",
+          "category": "none",
+          "defaultSelected": true,
+          "isZeroPoint": false,
+          "hasNormdata": true,
+          "hasAdditionalTexts": true,
+          "properties": [
+            {
+              "name": "baseWithTypeProp",
+              "type": "string",
+              "required": true,
+              "editable": true,
+              "visible": true
+            }
+          ]
+        }
+      ],
       "resources": [],
       "additionalTexts": []
     }
