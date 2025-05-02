@@ -30,6 +30,8 @@ export function useGuidelinesStore() {
    * Retrieves the configuration for an annotation of given type. The configuration is an object containing internal information
    * as well as information about rendering behaviour (input type in forms, selection status etc.).
    *
+   * This function is only used for Text annotations, not Collections annotations.
+   *
    * @param {string} type - The type of the annotation.
    * @return {AnnotationType} The configuration of the annotation type.
    */
@@ -42,6 +44,8 @@ export function useGuidelinesStore() {
    * where properties of the annotation can be edited. The fields are retrieved from the annotation type itself (if it has any)
    * and from the global annotation properties.
    *
+   * This function is only used for Text annotations, not Collections annotations.
+   *
    * @param {string} type - The type of the annotation.
    * @return {PropertyConfig[]} The fields for the annotation type.
    */
@@ -50,7 +54,7 @@ export function useGuidelinesStore() {
     const base: PropertyConfig[] = guidelines.value.annotations.properties.base;
     const additional: PropertyConfig[] = getAnnotationConfig(type)?.properties ?? [];
 
-    return [...system, ...base, ...additional];
+    return [...additional, ...system, ...base];
   }
 
   /**
@@ -77,9 +81,9 @@ export function useGuidelinesStore() {
     const byCollectionType: PropertyConfig[] = guidelines.value.collections.types.reduce(
       (total: PropertyConfig[], curr) => {
         if (collectionNodeLabels.includes(curr.additionalLabel)) {
-          const nested: PropertyConfig[] = curr.annotations?.properties ?? [];
+          const nestedFields: PropertyConfig[] = curr.annotations?.properties ?? [];
 
-          total.push(...nested);
+          total.push(...nestedFields);
         }
 
         return total;
@@ -89,7 +93,7 @@ export function useGuidelinesStore() {
 
     // Properties for the given annotation type (no matter which level)
     const byAnnotationType: PropertyConfig[] =
-      getAvailableCollectionAnnotationTypes(collectionNodeLabels).find(
+      getAvailableCollectionAnnotationConfigs(collectionNodeLabels).find(
         t => t.type === annotationType,
       )?.properties ?? [];
 
@@ -101,17 +105,10 @@ export function useGuidelinesStore() {
     collectionLabels: string[],
     annotationType: string,
   ): AnnotationType {
-    const base: AnnotationType[] = guidelines.value?.collections.annotations?.types ?? [];
+    const availableConfigs: AnnotationType[] =
+      getAvailableCollectionAnnotationConfigs(collectionLabels);
 
-    const nested: AnnotationType[] = guidelines.value?.collections.types.flatMap(
-      t => t.annotations?.types ?? [],
-    );
-
-    // console.log(base);
-    // console.log(nested);
-    // debugger;
-
-    const desired: AnnotationType = [...base, ...nested].find(t => t.type === annotationType);
+    const desired: AnnotationType = availableConfigs.find(t => t.type === annotationType);
 
     return desired;
   }
@@ -153,7 +150,9 @@ export function useGuidelinesStore() {
     return unique;
   }
 
-  function getAvailableCollectionAnnotationTypes(collectionNodeLabels: string[]): AnnotationType[] {
+  function getAvailableCollectionAnnotationConfigs(
+    collectionNodeLabels: string[],
+  ): AnnotationType[] {
     const base: AnnotationType[] = guidelines.value.collections.annotations.types;
     const additional: AnnotationType[] = guidelines.value.collections.types.reduce(
       (total: AnnotationType[], curr) => {
@@ -253,7 +252,7 @@ export function useGuidelinesStore() {
     getAnnotationConfig,
     getAnnotationFields,
     getAvailableAnnotationResourceConfigs,
-    getAvailableCollectionAnnotationTypes,
+    getAvailableCollectionAnnotationConfigs,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
     getCollectionAnnotationFields,

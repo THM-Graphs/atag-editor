@@ -63,7 +63,7 @@ const {
   guidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
-  getAvailableCollectionAnnotationTypes,
+  getAvailableCollectionAnnotationConfigs,
   getAvailableTextLabels,
   getCollectionAnnotationConfig,
   getCollectionAnnotationFields,
@@ -98,7 +98,7 @@ const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
 });
 
 const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
-  getAvailableCollectionAnnotationTypes(collectionAccessObject.value.collection.nodeLabels),
+  getAvailableCollectionAnnotationConfigs(collectionAccessObject.value.collection.nodeLabels),
 );
 
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {

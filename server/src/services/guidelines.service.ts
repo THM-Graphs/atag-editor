@@ -75,7 +75,7 @@ export default class GuidelinesService {
    * @param {string[]} collectionNodeLabels - The node labels of the collection.
    * @return {AnnotationType[]} The combined and deduplicated annotation types.
    */
-  public getAvailableCollectionAnnotationTypesFromGuidelines(
+  public getAvailableCollectionAnnotationConfigsFromGuidelines(
     guidelines: IGuidelines,
     collectionNodeLabels: string[],
   ): AnnotationType[] {
@@ -134,7 +134,7 @@ export default class GuidelinesService {
 
     // Properties for the given annotation type (no matter which level)
     const byAnnotationType: PropertyConfig[] =
-      this.getAvailableCollectionAnnotationTypesFromGuidelines(
+      this.getAvailableCollectionAnnotationConfigsFromGuidelines(
         guidelines,
         collectionNodeLabels,
       ).find(t => t.type === annotationType)?.properties ?? [];
