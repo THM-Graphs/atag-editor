@@ -35,7 +35,7 @@
             "visible": true
           },
           {
-            "name": "receiver",
+            "name": "receivedPerson",
             "type": "string",
             "required": false,
             "editable": true,
@@ -45,7 +45,7 @@
         "annotations": {
           "types": [
             {
-              "type": "sentBy",
+              "type": "sentPerson",
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
