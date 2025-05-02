@@ -224,6 +224,7 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
         @click="changeNormdataSelectionMode(category, 'edit')"
       />
       <AutoComplete
+        v-if="props.mode === 'edit'"
         v-show="normdataSearchObject[category].mode === 'edit'"
         v-model="normdataSearchObject[category].currentItem"
         dropdown
