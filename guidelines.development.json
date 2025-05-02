@@ -35,7 +35,7 @@
             "visible": true
           },
           {
-            "name": "receivedPerson",
+            "name": "receiver",
             "type": "string",
             "required": false,
             "editable": true,
@@ -62,7 +62,7 @@
               ]
             },
             {
-              "type": "receivedBy",
+              "type": "receivedPerson",
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
