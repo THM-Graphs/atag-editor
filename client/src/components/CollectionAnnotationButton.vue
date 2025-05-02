@@ -147,12 +147,14 @@ function createNewAnnotation(type: string, subtype: string | number | undefined)
       field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
+  // TODO: This should come from the guidelines. When annotations
+  // are generic, do this
   // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
   newAnnotationData.type = type;
-  newAnnotationData.startIndex = 0;
-  newAnnotationData.endIndex = 0;
+  // newAnnotationData.startIndex = 0;
+  // newAnnotationData.endIndex = 0;
   // TODO: the text property is different...
-  newAnnotationData.text = '';
+  // newAnnotationData.text = '';
   newAnnotationData.uuid = crypto.randomUUID();
 
   // If a subtype field exists (filled with a default value just before), but not subtype was provided
