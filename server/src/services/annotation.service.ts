@@ -40,6 +40,17 @@ type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
 };
 
 export default class AnnotationService {
+  /**
+   * Process the annotations of the given collection to create annotation objects for saving. These objects contain
+   * additional information or at least entries with empty arrays.
+   *
+   * The method is used to give collection anontations the same structure as text annotations, so that they
+   * can be further processed and saved the same way. When the day has come where there are generic type handling
+   * and data structures for annotations, this will be done in a more elegant way.
+   *
+   * @param {CollectionPostData} collection - The collection containing the annotations.
+   * @returns {Partial<Annotation>[]} An array of annotation objects.
+   */
   public createAnnotationObjectsFromCollection(
     collection: CollectionPostData,
   ): Partial<Annotation>[] {
@@ -47,7 +58,6 @@ export default class AnnotationService {
     const initialAnnotations: AnnotationData[] = collection.initialData.annotations;
 
     const annotationUuids: string[] = annotations.map(a => a.properties.uuid);
-    const initialAnnotationUuids: string[] = initialAnnotations.map(a => a.properties.uuid);
 
     const annotationObjects: Partial<Annotation>[] = [];
 
@@ -76,6 +86,7 @@ export default class AnnotationService {
         characterUuids: [],
         data: annotation,
         // No initial data -> annotation is new -> Use empty values for normdata and additional texts
+        // to create a minimal structure for further processing. Properties will not be used anyway.
         initialData:
           initial ??
           ({
