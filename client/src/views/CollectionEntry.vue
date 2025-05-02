@@ -7,14 +7,12 @@ import {
   useRoute,
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
-import AnnotationFormAdditionalTextSection from '../components/AnnotationFormAdditionalTextSection.vue';
 import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
 import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import {
   areSetsEqual,
   buildFetchUrl,
@@ -45,7 +43,6 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
-import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
 
 type TextTableEntry = {
@@ -66,7 +63,6 @@ const {
   getAvailableCollectionAnnotationConfigs,
   getAvailableTextLabels,
   getCollectionAnnotationConfig,
-  getCollectionAnnotationFields,
   getCollectionConfigFields,
   initializeGuidelines,
 } = useGuidelinesStore();
@@ -77,7 +73,6 @@ const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
-const propertiesAreCollapsed = ref<boolean>(false);
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
