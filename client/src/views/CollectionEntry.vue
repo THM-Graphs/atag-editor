@@ -598,6 +598,15 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             </div>
           </form>
           <h2 class="text-center">Annotations</h2>
+          <div v-if="mode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
+            <CollectionAnnotationButton
+              v-for="type in availabeAnnotationTypes"
+              :annotationType="type.type"
+              :collection-node-labels="collectionAccessObject.collection.nodeLabels"
+              :mode="mode"
+              @add-annotation="handleAddNewAnnotation"
+            />
+          </div>
           <Panel
             v-for="annotation in collectionAccessObject.annotations"
             class="annotation-form mb-3"
@@ -621,7 +630,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             <template #toggleicon="{ collapsed }">
               <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
             </template>
-            <Fieldset
+            <!-- <Fieldset
               legend="Properties"
               :toggle-button-props="{
                 title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
@@ -642,7 +651,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 "
                 :mode="mode"
               />
-            </Fieldset>
+            </Fieldset> -->
             <AnnotationFormNormdataSection
               v-if="
                 getCollectionAnnotationConfig(
@@ -653,7 +662,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :mode="mode"
               v-model="annotation.normdata"
             />
-            <AnnotationFormAdditionalTextSection
+            <!-- <AnnotationFormAdditionalTextSection
               v-if="
                 getCollectionAnnotationConfig(
                   collectionAccessObject.collection.nodeLabels,
@@ -667,7 +676,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   a => a.properties.uuid === annotation.properties.uuid,
                 )?.additionalTexts ?? []
               "
-            />
+            /> -->
             <div class="action-buttons flex justify-content-center">
               <Button
                 v-if="mode === 'edit'"
@@ -681,15 +690,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             </div>
             <ConfirmPopup></ConfirmPopup>
           </Panel>
-          <div class="annotation-button-pane flex flex-wrap gap-3 py-3">
-            <CollectionAnnotationButton
-              v-for="type in availabeAnnotationTypes"
-              :annotationType="type.type"
-              :collection-node-labels="collectionAccessObject.collection.nodeLabels"
-              :mode="mode"
-              @add-annotation="handleAddNewAnnotation"
-            />
-          </div>
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">
