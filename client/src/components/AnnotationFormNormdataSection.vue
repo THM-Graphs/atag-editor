@@ -212,7 +212,6 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
           @click="removeNormdataItem(entry as NormdataEntry, category)"
         ></Button>
       </div>
-      <!-- TODO: the next button was disabled when annotation was truncated. Why? -> Find out... -->
       <Button
         v-if="props.mode === 'edit'"
         v-show="normdataSearchObject[category].mode === 'view'"

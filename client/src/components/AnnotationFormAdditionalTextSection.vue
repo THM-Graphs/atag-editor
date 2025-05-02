@@ -268,8 +268,6 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
       <hr />
     </template>
     <div>
-      <!-- TODO: the next button was disabled when annotation was truncated. Why? -> Find out... -->
-
       <Button
         v-if="props.mode === 'edit'"
         v-show="additionalTextInputObject.mode === 'view'"
