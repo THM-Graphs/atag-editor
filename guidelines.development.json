@@ -41,7 +41,61 @@
             "editable": true,
             "visible": true
           }
-        ]
+        ],
+        "annotations": {
+          "types": [
+            {
+              "type": "sentPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasNormdata": true,
+              "hasAdditionalTexts": true,
+              "properties": [
+                {
+                  "name": "senderNickname",
+                  "type": "string",
+                  "required": true,
+                  "editable": true,
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "type": "receivedPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasNormdata": true,
+              "hasAdditionalTexts": true,
+              "properties": [
+                {
+                  "name": "receiverNickname",
+                  "type": "string",
+                  "required": true,
+                  "editable": true,
+                  "visible": true
+                }
+              ]
+            }
+          ],
+          "properties": [
+            {
+              "name": "type",
+              "type": "string",
+              "required": true,
+              "editable": false,
+              "visible": true
+            }
+          ],
+          "resources": [
+            {
+              "category": "persons",
+              "nodeLabel": "Person"
+            }
+          ],
+          "additionalTexts": []
+        }
       },
       {
         "additionalLabel": "Comment",
@@ -195,7 +249,50 @@
           }
         ]
       }
-    ]
+    ],
+    "annotations": {
+      "properties": {
+        "system": [
+          {
+            "name": "topLevelSystem",
+            "type": "string",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ],
+        "base": [
+          {
+            "name": "topLevelBase",
+            "type": "string",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      "types": [
+        {
+          "type": "topLevelTyType",
+          "category": "none",
+          "defaultSelected": true,
+          "isZeroPoint": false,
+          "hasNormdata": true,
+          "hasAdditionalTexts": true,
+          "properties": [
+            {
+              "name": "baseWithTypeProp",
+              "type": "string",
+              "required": true,
+              "editable": true,
+              "visible": true
+            }
+          ]
+        }
+      ],
+      "resources": [],
+      "additionalTexts": []
+    }
   },
   "annotations": {
     "types": [

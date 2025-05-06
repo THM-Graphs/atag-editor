@@ -1,60 +1,21 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref, watch } from 'vue';
-import { templateRef } from '@vueuse/core';
+import { ref } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
-import {
-  buildFetchUrl,
-  camelCaseToTitleCase,
-  getDefaultValueForProperty,
-  toggleTextHightlighting,
-} from '../utils/helper/helper';
-import AutoComplete from 'primevue/autocomplete';
+import { toggleTextHightlighting } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
-import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
-import Message from 'primevue/message';
-import { MultiSelect } from 'primevue';
 import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
-import IEntity from '../models/IEntity';
-import InputGroup from 'primevue/inputgroup';
-import ICollection from '../models/ICollection';
-import IText from '../models/IText';
+import AnnotationFormNormdataSection from './AnnotationFormNormdataSection.vue';
+import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
-import DataInputComponent from '../components/DataInputComponent.vue';
-import DataInputGroup from '../components/DataInputGroup.vue';
-
-type NormdataEntry = IEntity & { html: string };
-
-/**
- * Interface for relevant state information about each normdata category
- */
-interface NormdataSearchObject {
-  [key: string]: {
-    fetchedItems: NormdataEntry[] | string[];
-    nodeLabel: string;
-    currentItem: NormdataEntry | null;
-    mode: 'edit' | 'view';
-    elm: Ref<any>;
-  };
-}
-
-/**
- * Interface for relevant state information about additional texts of the annotation
- */
-interface AdditionalTextInputObject {
-  availableLabels: string[];
-  inputElm: Ref<any>;
-  inputLabels: string[];
-  inputText: string;
-  mode: 'edit' | 'view';
-}
+import FormPropertiesSection from './FormPropertiesSection.vue';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -74,145 +35,12 @@ const {
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
 const { newRangeAnchorUuid } = useEditorStore();
-const { guidelines, getAnnotationConfig, getAnnotationFields, getCollectionConfigFields } =
-  useGuidelinesStore();
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
-const fields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
-
+// TODO: Maybe give whole config instead of only fields...?
+const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 const propertiesAreCollapsed = ref<boolean>(false);
-const normdataAreCollapsed = ref<boolean>(false);
-const additionalTextIsCollapsed = ref<boolean>(false);
-const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
-
-const normdataSearchObject = ref<NormdataSearchObject>(
-  normdataCategories.reduce((object: NormdataSearchObject, category) => {
-    object[category] = {
-      nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
-        .nodeLabel,
-      fetchedItems: [],
-      currentItem: null,
-      mode: 'view',
-      // TODO: Use useTemplateRef when upgraded to Vue 3.5
-      elm: templateRef(`input-${category}`),
-    };
-
-    return object;
-  }, {}),
-);
-
-const additionalTextInputObject = ref<AdditionalTextInputObject>({
-  inputText: '',
-  availableLabels: guidelines.value.annotations.additionalTexts,
-  inputLabels: [],
-  mode: 'view',
-  inputElm: templateRef('additional-text-input'),
-});
-
-// Used for toggling additional text preview mode. Bit hacky for now, but works.
-const additionalTextStatusObject = ref<Map<string, 'collapsed' | 'expanded'>>(new Map());
-
-watch(
-  () => annotation.data.additionalTexts,
-  (newTexts, oldTexts) => {
-    // Add new text if it doesn't already exist
-    newTexts.forEach(text => {
-      if (!additionalTextStatusObject.value.has(text.collection.data.uuid)) {
-        additionalTextStatusObject.value.set(text.collection.data.uuid, 'collapsed');
-      }
-    });
-
-    // Remove texts that no longer exist
-    if (oldTexts) {
-      oldTexts.forEach(text => {
-        if (!newTexts.some(newText => newText.collection.data.uuid === text.collection.data.uuid)) {
-          additionalTextStatusObject.value.delete(text.collection.data.uuid);
-        }
-      });
-    }
-  },
-  { deep: true, immediate: true },
-);
-
-/**
- * Adds a normdata item to the specified category in the annotation's data.
- *
- * @param {NormdataEntry} item - The normdata item to be added.
- */
-function addNormdataItem(item: NormdataEntry, category: string): void {
-  // Omit 'html' property from entry since it was only created for rendering purposes
-  const { html, ...rest } = item;
-  annotation.data.normdata[category].push(rest);
-}
-
-function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
-  additionalTextInputObject.value.mode = mode;
-
-  if (mode === 'view') {
-    return;
-  }
-
-  // // Wait for DOM to update before trying to focus the element
-  nextTick(() => {
-    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    const inputElm: HTMLInputElement | null = additionalTextInputObject.value.inputElm.$el;
-
-    if (!inputElm) {
-      console.warn('Focus failed: Element not found');
-      return;
-    }
-
-    inputElm.focus();
-  });
-}
-
-/**
- * Changes the mode of the normdata search component for the given category. This triggers
- * re-renders in the template.
- *
- * - If set to `view`, the search bar will be hidden and its related state variables reset.
- * - If set to `edit`, the search bar will be shown and and focused.
- *
- * @param {string} category - The category for which the mode should be changed.
- * @param {'view' | 'edit'} mode - The new mode.
- */
-function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): void {
-  normdataSearchObject.value[category].mode = mode;
-
-  if (mode === 'view') {
-    normdataSearchObject.value[category].currentItem = null;
-
-    return;
-  }
-
-  // Wait for DOM to update before trying to focus the element
-  nextTick(() => {
-    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
-    // that holds the component. Is an array because since the refs are set in a loop in the template
-    const elm = normdataSearchObject.value[category].elm[0];
-
-    if (!elm) {
-      console.warn(`Focus failed: Element not found for category "${category}"`);
-      return;
-    }
-
-    const inputElement: HTMLInputElement = elm.$el?.querySelector('input');
-
-    inputElement?.focus();
-  });
-}
-
-/**
- * Finishes an additional text input operation one way or another (submit or cancel).
- * This resets the form and changes the mode to 'view'.
- *
- * @returns {void} This function does not return any value.
- */
-function finishAdditionalTextInputOperation(): void {
-  resetAdditionalTextInputForm();
-  changeAdditionalTextSelectionMode('view');
-}
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   confirm.require({
@@ -238,18 +66,6 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
-/**
- * Handles the selection of a normdata item by adding it to the annotation and resetting the search component.
- *  Called on selection of an item from the autocomplete dropdown pane.
- *
- * @param {NormdataEntry} item - The normdata item to be added.
- * @param {string} category - The category to which the item should be added.
- */
-function handleNormdataItemSelect(item: NormdataEntry, category: string): void {
-  addNormdataItem(item, category);
-  changeNormdataSelectionMode(category, 'view');
-}
-
 function handleShiftLeft(): void {
   shiftAnnotationLeft(annotation);
   setRangeAnchorAtEnd();
@@ -270,144 +86,9 @@ function handleShrink(): void {
   setRangeAnchorAtEnd();
 }
 
-/**
- * Removes a normdata item from the given category in the annotation's data.
- *
- * @param {NormdataEntry} item - The normdata item to be removed.
- * @param {string} category - The category from which the item should be removed.
- */
-function removeNormdataItem(item: NormdataEntry, category: string): void {
-  annotation.data.normdata[category] = annotation.data.normdata[category].filter(
-    entry => entry.uuid !== item.uuid,
-  );
-}
-
-/**
- * Replaces all occurrences of a search string in a given text with a highlighted HTML
- * equivalent. If the search string is empty, the original text is returned.
- *
- * @param {string} text - The text in which the search string should be found.
- * @param {string} searchStr - The string to be searched for.
- *
- * @returns {string} The text with all occurrences of the search string highlighted.
- */
-function renderHTML(text: string, searchStr: string): string {
-  if (searchStr !== '') {
-    const regex: RegExp = new RegExp(`(${searchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-
-    return text.replace(regex, '<span style="background-color: yellow">$1</span>');
-  }
-
-  return text;
-}
-
-/**
- * Resets the additional text input form (select input and text input). This prepares the form for new input.
- * Called when the form is submitted or cancelled.
- *
- * @returns {void} This function does not return any value.
- */
-function resetAdditionalTextInputForm(): void {
-  additionalTextInputObject.value.inputLabels = [];
-  additionalTextInputObject.value.inputText = '';
-}
-
-/**
- * Fetches normdata items from the server whose's label matches the given search string and stores the results
- * in the corresponding normdataSearchObject entry.
- *
- * @param {string} searchString - The string to be searched for.
- * @param {string} category - The category for which the search should be performed.
- */
-async function searchNormdataOptions(searchString: string, category: string): Promise<void> {
-  const nodeLabel: string = normdataSearchObject.value[category].nodeLabel;
-  const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
-
-  const response: Response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
-  const fetchedNormdata: NormdataEntry[] = await response.json();
-
-  // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = annotation.data.normdata[category].map(
-    (entry: NormdataEntry) => entry.uuid,
-  );
-
-  const withoutDuplicates: NormdataEntry[] = fetchedNormdata.filter(
-    (entry: NormdataEntry) => !existingUuids.includes(entry.uuid),
-  );
-
-  // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = withoutDuplicates.map((entry: NormdataEntry) => ({
-    ...entry,
-    html: renderHTML(entry.label, searchString),
-  }));
-
-  normdataSearchObject.value[category].fetchedItems = withHtml;
-}
-
 function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
   newRangeAnchorUuid.value = lastCharacter.data.uuid;
-}
-
-/**
- * Toggles the view modeof an additional text entry. By default, the whole text is shown as preview to keep
- * the form compact, but can be expanded on button click.
- *
- * @param {string} uuid - The UUID of the additional text for which the mode should be toggled.
- */
-function toggleAdditionalTextPreviewMode(uuid: string): void {
-  const currentViewMode: 'collapsed' | 'expanded' = additionalTextStatusObject.value.get(uuid);
-  additionalTextStatusObject.value.set(
-    uuid,
-    currentViewMode === 'collapsed' ? 'expanded' : 'collapsed',
-  );
-}
-
-function addAdditionalText(): void {
-  const nodeLabels: string[] = additionalTextInputObject.value.inputLabels;
-  const defaultFields: PropertyConfig[] = getCollectionConfigFields(nodeLabels);
-  const newCollectionProperties: ICollection = {} as ICollection;
-
-  defaultFields.forEach((field: PropertyConfig) => {
-    newCollectionProperties[field.name] =
-      field?.required === true ? getDefaultValueForProperty(field.type) : null;
-  });
-
-  annotation.data.additionalTexts.push({
-    collection: {
-      nodeLabels,
-      data: {
-        ...newCollectionProperties,
-        uuid: crypto.randomUUID(),
-        label: `${nodeLabels.join(' | ')} for annotation ${annotation.data.properties.uuid}`,
-      } as ICollection,
-    },
-    text: {
-      // TODO: Text node labels should be made selectable too in the future
-      nodeLabels: [],
-      data: {
-        uuid: crypto.randomUUID(),
-        text: additionalTextInputObject.value.inputText,
-      } as IText,
-    },
-  });
-
-  finishAdditionalTextInputOperation();
-}
-
-function cancelAdditionalTextOperation(): void {
-  finishAdditionalTextInputOperation();
-}
-
-function handleDeleteAdditionalText(collectionUuid: string): void {
-  annotation.data.additionalTexts = annotation.data.additionalTexts.filter(
-    t => t.collection.data.uuid !== collectionUuid,
-  );
 }
 </script>
 
@@ -461,225 +142,24 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <form>
-        <div
-          v-for="field in fields"
-          :key="field.name"
-          class="flex align-items-center gap-3 mb-3"
-          v-show="field.visible"
-        >
-          <label :for="field.name" class="form-label font-semibold"
-            >{{ camelCaseToTitleCase(field.name) }}
-          </label>
-          <DataInputGroup
-            v-if="field.type === 'array'"
-            v-model="annotation.data.properties[field.name]"
-            :config="field"
-          />
-          <DataInputComponent
-            v-else
-            v-model="annotation.data.properties[field.name]"
-            :config="field"
-          />
-        </div>
-      </form>
+      <FormPropertiesSection
+        v-model="annotation.data.properties"
+        :fields="propertyFields"
+        mode="edit"
+      />
     </Fieldset>
-    <Fieldset
+    <AnnotationFormNormdataSection
       v-if="config.hasNormdata === true"
-      legend="Normdata"
-      :toggleable="true"
-      :toggle-button-props="{
-        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} normdata`,
-      }"
-      @toggle="normdataAreCollapsed = !normdataAreCollapsed"
-    >
-      <template #toggleicon>
-        <span :class="`pi pi-chevron-${normdataAreCollapsed ? 'down' : 'up'}`"></span>
-      </template>
-      <div v-for="category in normdataCategories">
-        <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
-        <div
-          class="normdata-entry flex justify-content-between align-items-center"
-          v-for="entry in annotation.data.normdata[category]"
-        >
-          <span>
-            {{ entry.label }}
-          </span>
-          <Button
-            icon="pi pi-times"
-            size="small"
-            severity="danger"
-            @click="removeNormdataItem(entry as NormdataEntry, category)"
-          ></Button>
-        </div>
-        <Button
-          v-show="normdataSearchObject[category].mode === 'view'"
-          class="mt-2 w-full h-2rem"
-          icon="pi pi-plus"
-          size="small"
-          severity="secondary"
-          label="Add item"
-          :disabled="annotation.isTruncated"
-          @click="changeNormdataSelectionMode(category, 'edit')"
-        />
-        <AutoComplete
-          v-show="normdataSearchObject[category].mode === 'edit'"
-          v-model="normdataSearchObject[category].currentItem"
-          dropdown
-          dropdownMode="current"
-          :placeholder="`Type to see suggestions`"
-          :suggestions="normdataSearchObject[category].fetchedItems"
-          :overlayClass="normdataSearchObject[category].mode === 'view' ? 'hidden' : ''"
-          optionLabel="label"
-          class="mt-2 w-full h-2rem"
-          variant="filled"
-          :ref="`input-${category}`"
-          input-class="w-full"
-          @complete="searchNormdataOptions($event.query, category)"
-          @option-select="handleNormdataItemSelect($event.value, category)"
-        >
-          <template #header v-if="normdataSearchObject[category].fetchedItems.length > 0">
-            <div class="font-medium px-3 py-2">
-              {{ normdataSearchObject[category].fetchedItems.length }} Results
-            </div>
-          </template>
-          <template #option="slotProps">
-            <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
-          </template>
-        </AutoComplete>
-      </div>
-    </Fieldset>
-    <Fieldset
+      v-model="annotation.data.normdata"
+      mode="edit"
+    />
+    <AnnotationFormAdditionalTextSection
       v-if="config.hasAdditionalTexts === true"
-      legend="Additional texts"
-      :toggle-button-props="{
-        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} additional texts`,
-      }"
-      :toggleable="true"
-      @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
-    >
-      <template #toggleicon>
-        <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
-      </template>
-      <template
-        v-for="additionalText in annotation.data.additionalTexts"
-        :key="additionalText.collection.data.uuid"
-      >
-        <div class="additional-text-entry">
-          <div class="additional-text-header flex justify-content-between align-items-center">
-            <span v-if="additionalText.collection.nodeLabels.length > 0" class="font-semibold">{{
-              additionalText.collection.nodeLabels
-                .map((l: string) => camelCaseToTitleCase(l))
-                .join(' | ')
-            }}</span>
-            <span v-else class="font-italic"> No label provided yet... </span>
-            <Button
-              icon="pi pi-times"
-              severity="danger"
-              title="Remove this text from annotation"
-              @click="handleDeleteAdditionalText(additionalText.collection.data.uuid)"
-            />
-          </div>
-          <div class="flex align-items-center gap-2 overflow">
-            <a
-              :href="`/texts/${additionalText.text.data.uuid}`"
-              title="Open text in new editor tab"
-              class="flex align-items-center gap-1"
-              target="_blank"
-            >
-              <div
-                :class="`preview ${additionalTextStatusObject.get(additionalText.collection.data.uuid)}`"
-              >
-                {{ additionalText.text.data.text }}
-              </div>
-              <i class="pi pi-external-link"></i>
-            </a>
-          </div>
-          <Button
-            :icon="
-              additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
-                ? 'pi pi-angle-double-down'
-                : 'pi pi-angle-double-up'
-            "
-            severity="secondary"
-            size="small"
-            class="w-full"
-            :title="
-              additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
-                ? 'Show full text'
-                : 'Hide full text'
-            "
-            @click="toggleAdditionalTextPreviewMode(additionalText.collection.data.uuid)"
-          />
-          <Message
-            v-if="
-              !annotation.initialData.additionalTexts
-                .map(t => t.collection.data.uuid)
-                .includes(additionalText.collection.data.uuid)
-            "
-            severity="warn"
-          >
-            Save changes to edit new text...
-          </Message>
-        </div>
+      v-model="annotation.data.additionalTexts"
+      :initial-additional-texts="annotation.initialData.additionalTexts"
+      mode="edit"
+    />
 
-        <hr />
-      </template>
-      <div>
-        <Button
-          v-show="additionalTextInputObject.mode === 'view'"
-          class="mt-2 w-full h-2rem"
-          icon="pi pi-plus"
-          size="small"
-          severity="secondary"
-          label="Add text"
-          title="Add new additional text entry"
-          :disabled="annotation.isTruncated"
-          @click="changeAdditionalTextSelectionMode('edit')"
-        />
-        <form
-          v-show="additionalTextInputObject.mode === 'edit'"
-          @submit.prevent="addAdditionalText"
-        >
-          <InputGroup>
-            <MultiSelect
-              v-model="additionalTextInputObject.inputLabels"
-              :options="additionalTextInputObject.availableLabels"
-              display="chip"
-              placeholder="Select collection labels"
-              class="text-center"
-              :filter="false"
-            >
-              <template #chip="{ value }">
-                <Tag :value="value" severity="contrast" class="mr-1" />
-              </template>
-            </MultiSelect>
-            <InputText
-              ref="additional-text-input"
-              required
-              v-model="additionalTextInputObject.inputText"
-              placeholder="Enter text"
-              title="Enter text"
-            />
-            <Button
-              type="submit"
-              icon="pi pi-check"
-              severity="secondary"
-              size="small"
-              title="Add new text"
-            />
-            <Button
-              type="button"
-              icon="pi pi-times"
-              severity="secondary"
-              size="small"
-              title="Cancel"
-              @click="cancelAdditionalTextOperation"
-            />
-          </InputGroup>
-        </form>
-      </div>
-    </Fieldset>
     <div class="edit-buttons flex justify-content-center">
       <Button
         icon="pi pi-angle-left"
@@ -761,15 +241,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
   max-height: calc-size(auto);
 }
 
-.x {
-  background-color: white;
-  outline: 0;
-
-  &:not(:hover) {
-    border-color: transparent;
-  }
-}
-
 .created {
   background-color: lightgreen;
 }
@@ -781,24 +252,6 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
 
 .form-label {
   flex-basis: 10rem;
-}
-
-.additional-text-header {
-  cursor: default;
-}
-
-.normdata-entry,
-.additional-text-entry {
-  border: 1px solid gray;
-  border-radius: 5px;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-
-  & button {
-    width: 1rem;
-    height: 1rem;
-    padding: 10px;
-  }
 }
 
 .highlight {

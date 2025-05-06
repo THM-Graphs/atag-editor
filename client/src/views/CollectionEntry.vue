@@ -7,6 +7,8 @@ import {
   useRoute,
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
+import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
@@ -19,7 +21,14 @@ import {
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
-import { CollectionAccessObject, CollectionPostData, PropertyConfig, Text } from '../models/types';
+import {
+  AnnotationData,
+  AnnotationType,
+  CollectionAccessObject,
+  CollectionPostData,
+  PropertyConfig,
+  Text,
+} from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
@@ -34,6 +43,7 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
+import Panel from 'primevue/panel';
 
 type TextTableEntry = {
   labels: string[];
@@ -45,11 +55,14 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
+
 const {
   guidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
+  getAvailableCollectionAnnotationConfigs,
   getAvailableTextLabels,
+  getCollectionAnnotationConfig,
   getCollectionConfigFields,
   initializeGuidelines,
 } = useGuidelinesStore();
@@ -68,15 +81,20 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
+
 useTitle(
   computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label ?? ''}`),
 );
 
-const fields: ComputedRef<PropertyConfig[]> = computed(() => {
+const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
     ? getCollectionConfigFields(collectionAccessObject.value.collection.nodeLabels)
     : [];
 });
+
+const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
+  getAvailableCollectionAnnotationConfigs(collectionAccessObject.value.collection.nodeLabels),
+);
 
 const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
   return collectionAccessObject.value.texts.map((text: Text) => {
@@ -101,6 +119,12 @@ onMounted(async (): Promise<void> => {
 
   isLoading.value = false;
 });
+
+function deleteAnnotation(uuid: string): void {
+  collectionAccessObject.value.annotations = collectionAccessObject.value.annotations.filter(
+    a => a.properties.uuid !== uuid,
+  );
+}
 
 /**
  * Fills in any missing collection properties with the type-specific default value.
@@ -139,6 +163,12 @@ async function getGuidelines(): Promise<void> {
   }
 }
 
+function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
+  console.log(newAnnotation);
+
+  collectionAccessObject.value.annotations.push(newAnnotation);
+}
+
 function handleAddNewText(): void {
   const newText: Text = {
     nodeLabels: [],
@@ -157,6 +187,27 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 
 async function handleCopy(): Promise<void> {
   await navigator.clipboard.writeText(collectionAccessObject.value.collection.data.uuid);
+}
+
+function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
+  confirm.require({
+    target: event.currentTarget as HTMLButtonElement,
+    message: 'Do you want to delete this annotation?',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+      title: 'Cancel',
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+      title: 'Delete annotation',
+    },
+    accept: () => deleteAnnotation(uuid),
+    reject: () => {},
+  });
 }
 
 async function handleDeleteText(uuid: string) {
@@ -232,6 +283,58 @@ function hasUnsavedChanges(): boolean {
     JSON.stringify(initialCollectionAccessObject.value.texts)
   ) {
     return true;
+  }
+
+  // Compare annotations
+
+  const currentAnnotations: AnnotationData[] = collectionAccessObject.value.annotations;
+  const initialAnnotations: AnnotationData[] = initialCollectionAccessObject.value.annotations;
+
+  // Compare annotations length
+  if (currentAnnotations.length !== initialAnnotations.length) {
+    return true;
+  }
+
+  // Compare annotation data
+  for (let i = 0; i < currentAnnotations.length; i++) {
+    const currentAnnotation: AnnotationData = currentAnnotations[i];
+    const initialAnnotation: AnnotationData = initialAnnotations.find(
+      a => a.properties.uuid === currentAnnotation.properties.uuid,
+    );
+
+    // Return true if initial annotation was not found
+    if (!initialAnnotation) {
+      return true;
+    }
+
+    const normdataUuids: Set<string> = new Set(
+      Object.values(currentAnnotation.normdata)
+        .flat()
+        .map(m => m.uuid),
+    );
+    const initialNormdataUuids: Set<string> = new Set(
+      Object.values(initialAnnotation.normdata)
+        .flat()
+        .map(m => m.uuid),
+    );
+
+    const additionalTextUuids: Set<string> = new Set(
+      currentAnnotation.additionalTexts.map(at => at.collection.data.uuid),
+    );
+
+    const initialAdditionalTextUuids: Set<string> = new Set(
+      initialAnnotation.additionalTexts.map(at => at.collection.data.uuid),
+    );
+
+    if (
+      JSON.stringify(currentAnnotation.properties) !==
+        JSON.stringify(currentAnnotation.properties) ||
+      !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+      !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
+    ) {
+      console.log(`Annotation at index ${i} has changed data.`);
+      return true;
+    }
   }
 
   return false;
@@ -351,6 +454,7 @@ async function getCollection(): Promise<void> {
     }
 
     const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
+
     collectionAccessObject.value = fetchedCollectionAccessObject;
     initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
     isValidCollection.value = true;
@@ -468,7 +572,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 @click="handleCopy"
               />
             </div>
-            <div class="input-container" v-for="field in fields">
+            <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">
                 <label :for="field.name" class="w-10rem font-semibold"
                   >{{ capitalize(field.name) }}
@@ -488,6 +592,99 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               </div>
             </div>
           </form>
+          <h2 class="text-center">Annotations</h2>
+          <div v-if="mode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
+            <CollectionAnnotationButton
+              v-for="type in availabeAnnotationTypes"
+              :annotationType="type.type"
+              :collection-node-labels="collectionAccessObject.collection.nodeLabels"
+              :mode="mode"
+              @add-annotation="handleAddNewAnnotation"
+            />
+          </div>
+          <Panel
+            v-for="annotation in collectionAccessObject.annotations"
+            class="annotation-form mb-3"
+            :data-annotation-uuid="annotation.properties.uuid"
+            toggleable
+            :collapsed="true"
+            :toggle-button-props="{
+              severity: 'secondary',
+              title: 'Toggle full view',
+              rounded: true,
+              text: true,
+            }"
+          >
+            <template #header>
+              <div class="flex items-center gap-1 align-items-center">
+                <div class="annotation-type-container">
+                  <span class="font-bold">{{ annotation.properties.type }}</span>
+                </div>
+              </div>
+            </template>
+            <template #toggleicon="{ collapsed }">
+              <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
+            </template>
+            <!-- <Fieldset
+              legend="Properties"
+              :toggle-button-props="{
+                title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
+              }"
+              :toggleable="true"
+              @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
+            >
+              <template #toggleicon>
+                <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
+              </template>
+              <FormPropertiesSection
+                v-model="annotation.properties"
+                :fields="
+                  getCollectionAnnotationFields(
+                    collectionAccessObject.collection.nodeLabels,
+                    annotation.properties.type,
+                  )
+                "
+                :mode="mode"
+              />
+            </Fieldset> -->
+            <AnnotationFormNormdataSection
+              v-if="
+                getCollectionAnnotationConfig(
+                  collectionAccessObject.collection.nodeLabels,
+                  annotation.properties.type,
+                ).hasNormdata === true
+              "
+              :mode="mode"
+              v-model="annotation.normdata"
+            />
+            <!-- <AnnotationFormAdditionalTextSection
+              v-if="
+                getCollectionAnnotationConfig(
+                  collectionAccessObject.collection.nodeLabels,
+                  annotation.properties.type,
+                ).hasAdditionalTexts === true
+              "
+              :mode="mode"
+              v-model="annotation.additionalTexts"
+              :initial-additional-texts="
+                initialCollectionAccessObject.annotations.find(
+                  a => a.properties.uuid === annotation.properties.uuid,
+                )?.additionalTexts ?? []
+              "
+            /> -->
+            <div class="action-buttons flex justify-content-center">
+              <Button
+                v-if="mode === 'edit'"
+                label="Delete"
+                title="Delete annotation"
+                severity="danger"
+                icon="pi pi-trash"
+                size="small"
+                @click="handleDeleteAnnotation($event, annotation.properties.uuid)"
+              />
+            </div>
+            <ConfirmPopup></ConfirmPopup>
+          </Panel>
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">

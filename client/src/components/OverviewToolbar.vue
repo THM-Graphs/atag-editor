@@ -20,7 +20,7 @@ import {
 } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
-import { Collection, PropertyConfig } from '../models/types';
+import { CollectionAccessObject, PropertyConfig } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
@@ -28,7 +28,7 @@ const { getAllCollectionConfigFields, getAvailableCollectionLabels, getCollectio
   useGuidelinesStore();
 
 const searchInput = ref<string>('');
-const newCollectionData = ref<Collection>(null);
+const newCollectionData = ref<CollectionAccessObject>(null);
 const guidelines = ref<IGuidelines>({} as IGuidelines);
 
 const dialogIsVisible = ref<boolean>(false);
@@ -38,7 +38,7 @@ const asyncOperationRunning = ref<boolean>(false);
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
-  getCollectionConfigFields(newCollectionData.value.nodeLabels),
+  getCollectionConfigFields(newCollectionData.value.collection.nodeLabels),
 );
 
 // TODO: replace this with general form handling in the future
@@ -49,15 +49,16 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   }
 
   const selectedLabelsValid: boolean =
-    availableCollectionLabels.value.length === 0 || newCollectionData.value.nodeLabels.length > 0;
+    availableCollectionLabels.value.length === 0 ||
+    newCollectionData.value.collection.nodeLabels.length > 0;
 
   const requiredFieldsAreValid: boolean = dialogInputFields.value
     .filter(field => field.required)
     .every(
       field =>
-        newCollectionData.value?.data[field.name] !== null &&
-        newCollectionData.value?.data[field.name] !== undefined &&
-        newCollectionData.value?.data[field.name] !== '',
+        newCollectionData.value?.collection.data[field.name] !== null &&
+        newCollectionData.value?.collection.data[field.name] !== undefined &&
+        newCollectionData.value?.collection.data[field.name] !== '',
     );
 
   return selectedLabelsValid && requiredFieldsAreValid;
@@ -75,13 +76,13 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
 function removeUnnecessaryDataBeforeSave(): void {
   // Get configured field names that are allowed to be saved
   const configuredFieldNames: string[] = getCollectionConfigFields(
-    newCollectionData.value.nodeLabels,
+    newCollectionData.value.collection.nodeLabels,
   ).map(f => f.name);
 
   // Remove data entries that are not configured
-  Object.keys(newCollectionData.value.data).forEach(key => {
+  Object.keys(newCollectionData.value.collection.data).forEach(key => {
     if (!configuredFieldNames.includes(key) && key !== 'uuid') {
-      delete newCollectionData.value.data[key];
+      delete newCollectionData.value.collection.data[key];
     }
   });
 }
@@ -115,7 +116,7 @@ async function createNewCollection(): Promise<void> {
 
     const createdCollection: ICollection = await response.json();
 
-    newCollectionData.value = {} as Collection;
+    newCollectionData.value = {} as CollectionAccessObject;
     dialogIsVisible.value = false;
 
     emit('collectionCreated', createdCollection);
@@ -152,15 +153,19 @@ async function getGuidelines(): Promise<void> {
     // TODO: Load guidelines only once? Should be enough...
     // Initialize newCollectionData with empty strings to include them in form data
     newCollectionData.value = {
-      data: Object.fromEntries(
-        getAllCollectionConfigFields().map(f => [
-          f.name,
-          f?.required === true ? getDefaultValueForProperty(f.type) : null,
-        ]),
-      ) as ICollection,
-      nodeLabels: guidelines.value.collections.types
-        .filter(t => t.level === 'primary')
-        .map(t => t.additionalLabel),
+      collection: {
+        data: Object.fromEntries(
+          getAllCollectionConfigFields().map(f => [
+            f.name,
+            f?.required === true ? getDefaultValueForProperty(f.type) : null,
+          ]),
+        ) as ICollection,
+        nodeLabels: guidelines.value.collections.types
+          .filter(t => t.level === 'primary')
+          .map(t => t.additionalLabel),
+      },
+      texts: [],
+      annotations: [],
     };
 
     guidelinesAreLoaded.value = true;
@@ -215,11 +220,12 @@ function handleSearchInput(): void {
         <div class="select-label-container flex flex-column align-items-center">
           <h4 class="mt-0">Select labels</h4>
           <MultiSelect
-            v-model="newCollectionData.nodeLabels"
+            v-model="newCollectionData.collection.nodeLabels"
             :options="availableCollectionLabels"
             display="chip"
             :invalid="
-              availableCollectionLabels?.length > 0 && newCollectionData?.nodeLabels?.length === 0
+              availableCollectionLabels?.length > 0 &&
+              newCollectionData?.collection?.nodeLabels?.length === 0
             "
             placeholder="Select labels"
             class="text-center"
@@ -241,12 +247,12 @@ function handleSearchInput(): void {
             </label>
             <DataInputGroup
               v-if="field.type === 'array'"
-              v-model="newCollectionData.data[field.name]"
+              v-model="newCollectionData.collection.data[field.name]"
               :config="field"
             />
             <DataInputComponent
               v-else
-              v-model="newCollectionData.data[field.name]"
+              v-model="newCollectionData.collection.data[field.name]"
               :config="field"
             />
           </div>

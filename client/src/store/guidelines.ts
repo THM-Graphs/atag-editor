@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationType, PropertyConfig } from '../models/types';
+import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -30,6 +30,8 @@ export function useGuidelinesStore() {
    * Retrieves the configuration for an annotation of given type. The configuration is an object containing internal information
    * as well as information about rendering behaviour (input type in forms, selection status etc.).
    *
+   * This function is only used for Text annotations, not Collections annotations.
+   *
    * @param {string} type - The type of the annotation.
    * @return {AnnotationType} The configuration of the annotation type.
    */
@@ -42,6 +44,8 @@ export function useGuidelinesStore() {
    * where properties of the annotation can be edited. The fields are retrieved from the annotation type itself (if it has any)
    * and from the global annotation properties.
    *
+   * This function is only used for Text annotations, not Collections annotations.
+   *
    * @param {string} type - The type of the annotation.
    * @return {PropertyConfig[]} The fields for the annotation type.
    */
@@ -50,7 +54,118 @@ export function useGuidelinesStore() {
     const base: PropertyConfig[] = guidelines.value.annotations.properties.base;
     const additional: PropertyConfig[] = getAnnotationConfig(type)?.properties ?? [];
 
-    return [...system, ...base, ...additional];
+    return [...additional, ...system, ...base];
+  }
+
+  /**
+   * Retrieves the properties an annotation of given type should have in the context of a Collection with given node labels.
+   * Used for rendering input fields in forms where properties of the annotation can be edited. Currently a hack.
+   *
+   * @param {string[]} collectionNodeLabels - The node labels of the Collection.
+   * @param {string} annotationType - The type of the annotation.
+   * @return {PropertyConfig[]} The fields for the annotation type in the context of the Collection.
+   */
+  function getCollectionAnnotationFields(
+    collectionNodeLabels: string[],
+    annotationType: string,
+  ): PropertyConfig[] {
+    // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
+
+    // Default properties for annotations that are in ALL collections
+    const byDefault: PropertyConfig[] = [
+      ...(guidelines.value.collections.annotations?.properties.system ?? []),
+      ...(guidelines.value.collections.annotations?.properties.base ?? []),
+    ];
+
+    // Default properties for annotations that exists in the collections with given node labels
+    const byCollectionType: PropertyConfig[] = guidelines.value.collections.types.reduce(
+      (total: PropertyConfig[], curr) => {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
+          const nestedFields: PropertyConfig[] = curr.annotations?.properties ?? [];
+
+          total.push(...nestedFields);
+        }
+
+        return total;
+      },
+      [],
+    );
+
+    // Properties for the given annotation type (no matter which level)
+    const byAnnotationType: PropertyConfig[] =
+      getAvailableCollectionAnnotationConfigs(collectionNodeLabels).find(
+        t => t.type === annotationType,
+      )?.properties ?? [];
+
+    return [...byDefault, ...byCollectionType, ...byAnnotationType];
+  }
+
+  // TODO: This is a hack since the guidelines structure can change. It should be refactored to use the same structure as the annotations.
+  function getCollectionAnnotationConfig(
+    collectionLabels: string[],
+    annotationType: string,
+  ): AnnotationType {
+    const availableConfigs: AnnotationType[] =
+      getAvailableCollectionAnnotationConfigs(collectionLabels);
+
+    const desired: AnnotationType = availableConfigs.find(t => t.type === annotationType);
+
+    return desired;
+  }
+
+  /**
+   * Retrieves all available resource configurations for annotations from the guidelines.
+   *
+   * This method combines the resources defined in the annotations and collections sections
+   * of the guidelines and removes any duplicates. It is currently a hack since the guidelines structure can change.
+   *
+   * @return {AnnotationConfigResource[]} The combined and deduplicated resources.
+   */
+  function getAvailableAnnotationResourceConfigs(): AnnotationConfigResource[] {
+    const baseAnnotationResources: AnnotationConfigResource[] =
+      guidelines.value.annotations.resources ?? [];
+
+    const baseCollectionResources: AnnotationConfigResource[] =
+      guidelines.value.collections.annotations.resources ?? [];
+
+    const additionalCollectionResources: AnnotationConfigResource[] =
+      guidelines.value.collections.types.flatMap(c => c.annotations?.resources ?? []);
+
+    const combined: AnnotationConfigResource[] = [
+      ...baseAnnotationResources,
+      ...baseCollectionResources,
+      ...additionalCollectionResources,
+    ];
+
+    const unique: AnnotationConfigResource[] = combined.reduce<AnnotationConfigResource[]>(
+      (total, curr) => {
+        if (!total.some(r => r.category === curr.category && r.nodeLabel === curr.nodeLabel)) {
+          total.push(curr);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return unique;
+  }
+
+  function getAvailableCollectionAnnotationConfigs(
+    collectionNodeLabels: string[],
+  ): AnnotationType[] {
+    const base: AnnotationType[] = guidelines.value.collections.annotations.types;
+    const additional: AnnotationType[] = guidelines.value.collections.types.reduce(
+      (total: AnnotationType[], curr) => {
+        if (collectionNodeLabels.includes(curr.additionalLabel)) {
+          const nested: AnnotationType[] = curr.annotations?.types ?? [];
+          total.push(...nested);
+        }
+        return total;
+      },
+      [],
+    );
+
+    return [...base, ...additional];
   }
 
   /**
@@ -136,8 +251,12 @@ export function useGuidelinesStore() {
     getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,
+    getAvailableAnnotationResourceConfigs,
+    getAvailableCollectionAnnotationConfigs,
     getAvailableCollectionLabels,
     getAvailableTextLabels,
+    getCollectionAnnotationFields,
+    getCollectionAnnotationConfig,
     getCollectionConfigFields,
     initializeGuidelines,
   };
