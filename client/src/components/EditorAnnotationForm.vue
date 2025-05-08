@@ -43,6 +43,10 @@ const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.pro
 const propertiesAreCollapsed = ref<boolean>(false);
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
+  if (annotation.isTruncated) {
+    return;
+  }
+
   confirm.require({
     target: event.currentTarget as HTMLButtonElement,
     message: 'Do you want to delete this annotation?',
@@ -205,6 +209,7 @@ function setRangeAnchorAtEnd(): void {
         severity="danger"
         icon="pi pi-trash"
         size="small"
+        :disabled="annotation.isTruncated"
         @click="handleDeleteAnnotation($event, annotation.data.properties.uuid)"
       />
     </div>
