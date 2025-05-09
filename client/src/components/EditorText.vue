@@ -149,6 +149,7 @@ function handleInsertText(event: InputEvent): void {
     }
 
     newRangeAnchorUuid.value = newCharacter.data.uuid;
+    const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
     insertCharactersAtIndex(index, [newCharacter]);
   } else {
     let startIndex: number;
@@ -172,6 +173,9 @@ function handleInsertText(event: InputEvent): void {
 
       endIndex = getCharacterIndex(endSpan);
     }
+
+    const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+    const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacter.data.uuid;
     replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
@@ -220,6 +224,8 @@ async function handleInsertFromPaste(): Promise<void> {
       }
     }
 
+    const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
+
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     insertCharactersAtIndex(index, newCharacters);
   } else {
@@ -244,6 +250,9 @@ async function handleInsertFromPaste(): Promise<void> {
 
       endIndex = getCharacterIndex(endSpan);
     }
+
+    const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+    const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
@@ -283,6 +292,8 @@ function handleInsertFromDrop(event: InputEvent): void {
       }
     }
 
+    const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
+
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     insertCharactersAtIndex(index, newCharacters);
   } else {
@@ -308,6 +319,9 @@ function handleInsertFromDrop(event: InputEvent): void {
 
       endIndex = getCharacterIndex(endSpan);
     }
+
+    const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+    const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
     replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
@@ -343,6 +357,8 @@ function handleDeleteWordBackward(): void {
 
     const charIndex: number = getCharacterIndex(spanToDelete);
     const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
+    const charUUID: string | null = snippetCharacters.value[charIndex]?.data.uuid ?? null;
+    const startWordUUID: string | null = snippetCharacters.value[startWordIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
 
@@ -386,6 +402,7 @@ function handleDeleteWordForward(): void {
     }
 
     const endWordIndex: number = findEndOfWord(index, snippetCharacters.value);
+    const endWortUUID: string | null = snippetCharacters.value[endWordIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[index]?.data.uuid ?? null;
 
@@ -426,6 +443,7 @@ function handleDeleteContentBackward(): void {
     }
 
     const charIndex: number = getCharacterIndex(spanToDelete);
+    const charUUID: string | null = snippetCharacters.value[charIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
 
@@ -453,6 +471,9 @@ function handleDeleteContentBackward(): void {
       startIndex = getCharacterIndex(startSpan);
       endIndex = getCharacterIndex(endSpan);
     }
+
+    const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+    const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
@@ -501,6 +522,8 @@ function handleDeleteContentForward(): void {
       index = getCharacterIndex(spanToDelete);
     }
 
+    const startUUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
+
     newRangeAnchorUuid.value = snippetCharacters.value[index - 1]?.data.uuid ?? null;
 
     try {
@@ -527,6 +550,9 @@ function handleDeleteContentForward(): void {
       startIndex = getCharacterIndex(startSpan);
       endIndex = getCharacterIndex(endSpan);
     }
+
+    const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+    const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
@@ -559,6 +585,9 @@ function handleDeleteByCut(): void {
     startIndex = getCharacterIndex(startSpan);
     endIndex = getCharacterIndex(endSpan);
   }
+
+  const startUUID: string | null = snippetCharacters.value[startIndex]?.data.uuid ?? null;
+  const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
   newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
   try {
