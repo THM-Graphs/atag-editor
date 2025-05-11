@@ -38,9 +38,9 @@ const {
   beforeStartIndex,
   snippetCharacters,
   totalCharacters,
-  deleteCharactersBetweenIndexes,
-  insertCharactersAtIndex,
-  replaceCharactersBetweenIndizes,
+  insertCharactersAfterUuid,
+  deleteCharactersBetweenUuids,
+  replaceCharactersBetweenUuids,
 } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry, redo, undo } = useHistoryStore();
@@ -143,14 +143,15 @@ function handleInsertText(event: InputEvent): void {
         if (range.startOffset === 0) {
           index = getCharacterIndex(referenceSpanElement);
         } else {
-          index = getCharacterIndex(referenceSpanElement) + 1;
+          index = getCharacterIndex(referenceSpanElement);
         }
       }
     }
 
     newRangeAnchorUuid.value = newCharacter.data.uuid;
     const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
-    insertCharactersAtIndex(index, [newCharacter]);
+    // insertCharactersAtIndex(index, [newCharacter]);
+    insertCharactersAfterUuid(UUID, [newCharacter]);
   } else {
     let startIndex: number;
     let endIndex: number;
@@ -178,7 +179,8 @@ function handleInsertText(event: InputEvent): void {
     const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacter.data.uuid;
-    replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
+    // replaceCharactersBetweenIndizes(startIndex, endIndex, [newCharacter]);
+    replaceCharactersBetweenUuids(startUUID, endUUID, [newCharacter]);
   }
 }
 
@@ -227,7 +229,8 @@ async function handleInsertFromPaste(): Promise<void> {
     const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    insertCharactersAtIndex(index, newCharacters);
+    // insertCharactersAtIndex(index, newCharacters);
+    insertCharactersAfterUuid(UUID, newCharacters);
   } else {
     let startIndex: number;
     let endIndex: number;
@@ -255,7 +258,8 @@ async function handleInsertFromPaste(): Promise<void> {
     const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+    // replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+    replaceCharactersBetweenUuids(startUUID, endUUID, newCharacters);
   }
 }
 
@@ -295,7 +299,8 @@ function handleInsertFromDrop(event: InputEvent): void {
     const UUID: string | null = snippetCharacters.value[index]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    insertCharactersAtIndex(index, newCharacters);
+    // insertCharactersAtIndex(index, newCharacters);
+    insertCharactersAfterUuid(UUID, newCharacters);
   } else {
     let startIndex: number;
     let endIndex: number;
@@ -324,7 +329,8 @@ function handleInsertFromDrop(event: InputEvent): void {
     const endUUID: string | null = snippetCharacters.value[endIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
-    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+    // replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+    replaceCharactersBetweenUuids(startUUID, endUUID, newCharacters);
   }
 }
 
@@ -363,7 +369,8 @@ function handleDeleteWordBackward(): void {
     newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+      // deleteCharactersBetweenIndexes(startWordIndex, charIndex);
+      deleteCharactersBetweenUuids(startWordUUID, charUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -403,11 +410,14 @@ function handleDeleteWordForward(): void {
 
     const endWordIndex: number = findEndOfWord(index, snippetCharacters.value);
     const endWortUUID: string | null = snippetCharacters.value[endWordIndex]?.data.uuid ?? null;
+    const deletionStartUUID: string | null =
+      snippetCharacters.value[deletionStartIndex]?.data.uuid ?? null;
 
     newRangeAnchorUuid.value = snippetCharacters.value[index]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+      // deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
+      deleteCharactersBetweenUuids(deletionStartUUID, endWortUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -448,7 +458,8 @@ function handleDeleteContentBackward(): void {
     newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(charIndex, charIndex);
+      // deleteCharactersBetweenIndexes(charIndex, charIndex);
+      deleteCharactersBetweenUuids(charUUID, charUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -478,7 +489,8 @@ function handleDeleteContentBackward(): void {
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(startIndex, endIndex);
+      // deleteCharactersBetweenIndexes(startIndex, endIndex);
+      deleteCharactersBetweenUuids(startUUID, endUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -527,7 +539,8 @@ function handleDeleteContentForward(): void {
     newRangeAnchorUuid.value = snippetCharacters.value[index - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(index, index);
+      // deleteCharactersBetweenIndexes(index, index);
+      deleteCharactersBetweenUuids(startUUID, startUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -557,7 +570,8 @@ function handleDeleteContentForward(): void {
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
 
     try {
-      deleteCharactersBetweenIndexes(startIndex, endIndex);
+      // deleteCharactersBetweenIndexes(startIndex, endIndex);
+      deleteCharactersBetweenUuids(startUUID, endUUID);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -591,7 +605,8 @@ function handleDeleteByCut(): void {
 
   newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
   try {
-    deleteCharactersBetweenIndexes(startIndex, endIndex);
+    // deleteCharactersBetweenIndexes(startIndex, endIndex);
+    deleteCharactersBetweenUuids(startUUID, endUUID);
   } catch (e: unknown) {
     if (e instanceof TextOperationError) {
       toast.add({
