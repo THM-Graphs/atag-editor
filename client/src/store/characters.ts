@@ -314,6 +314,31 @@ export function useCharactersStore() {
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
   }
 
+  function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
+    const index: number = uuid ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) : 0;
+    console.log(index);
+
+    insertCharactersAtIndex(index + 1, newCharacters);
+  }
+
+  function deleteCharactersBetweenUuids(startUuid: string, endUuid: string): void {
+    const startIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === startUuid);
+    const endIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === endUuid);
+
+    deleteCharactersBetweenIndexes(startIndex, endIndex);
+  }
+
+  function replaceCharactersBetweenUuids(
+    startUuid: string,
+    endUuid: string,
+    newCharacters: Character[],
+  ): void {
+    const startIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === startUuid);
+    const endIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === endUuid);
+
+    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
+  }
+
   /**
    * Replaces characters between the specified start and end indexes with the given array of new characters.
    * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
@@ -645,15 +670,15 @@ export function useCharactersStore() {
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
-    deleteCharactersBetweenIndexes,
+    deleteCharactersBetweenUuids,
     lastCharacters,
     initializeCharacters,
-    insertCharactersAtIndex,
+    insertCharactersAfterUuid,
     insertSnippetIntoChain,
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
-    replaceCharactersBetweenIndizes,
+    replaceCharactersBetweenUuids,
     resetCharacters,
     firstCharacters,
   };
