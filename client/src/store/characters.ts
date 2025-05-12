@@ -3,7 +3,7 @@ import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character } from '../models/types';
-import { cloneDeep } from '../utils/helper/helper';
+import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
 
 type CharacterInfo = {
   char: Character | null;
@@ -192,6 +192,88 @@ export function useCharactersStore() {
     sliceCharactersSnippet();
   }
 
+  /**
+   * Finds the UUID of the character at the position that is the end of the word containing the character with the given UUID.
+   * The search starts forward from the character at `charUuidAtIndex`.
+   *
+   * Used for word deleting with "Ctrl + Delete".
+   *
+   * @param {string | null} charUuid - The UUID of the character at the starting point of the forward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
+   * @return {string | null} The UUID of the character *at the position immediately after* the end of the word. Returns null if the word extends to the very end of the document.
+   */
+  function findEndOfWordFromUuid(charUuid: string | null): string | null {
+    const characters: Character[] = snippetCharacters.value;
+
+    if (characters.length === 0) {
+      return null;
+    }
+
+    const charIndex: number = charUuid ? getCharacterIndexFromUuid(charUuid) : 0;
+
+    if (charIndex === -1) {
+      console.error(`findEndOfWordFromUuid: UUID ${charUuid} not found in store data.`);
+      return null;
+    }
+
+    let endIndex: number = charIndex;
+
+    // Iterate forward while the character at the current position is NOT a boundary
+    // The loop stops when endIndex reaches the end of the array OR the character at endIndex IS a boundary
+    while (endIndex < characters.length && !isWordBoundary(characters[endIndex].data.text)) {
+      endIndex++;
+    }
+
+    // endIndex is now the index of the position AFTER the end of the word
+    // If endIndex is characters.length, the word goes to the very end.
+    return endIndex < characters.length ? characters[endIndex].data.uuid : null;
+  }
+
+  /**
+   * Finds the UUID of the character that is the start of the word containing the character with the given UUID.
+   * The search starts backward from the character at `charUuidAtIndex`.
+   *
+   * Used for word deleting with "Ctrl + Backspace".
+   *
+   * @param {string | null} charUuid - The UUID of the character at the starting point of the backward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
+   * @return {string | null} The UUID of the first character of the word, or null if the starting UUID is null or the word starts at the very beginning (index 0).
+   */
+  function findStartOfWordFromUuid(charUuid: string | null): string | null {
+    const characters: Character[] = snippetCharacters.value;
+
+    if (charUuid === null || characters.length === 0) {
+      return null;
+    }
+
+    const charIndex: number = getCharacterIndexFromUuid(charUuid);
+
+    if (charIndex === -1) {
+      console.error(`findStartOfWordFromUuid: UUID ${charUuid} not found in store data.`);
+      return null;
+    }
+
+    let startIndex: number = charIndex;
+
+    // Iterate backward while the character before the current position is NOT a boundary
+    // The loop stops when startIndex is 0 OR the character at startIndex - 1 IS a boundary
+    while (startIndex > 0 && !isWordBoundary(characters[startIndex - 1].data.text)) {
+      startIndex--;
+    }
+
+    // startIndex is now the index of the first character of the word
+    // If startIndex is 0, the word starts at the beginning.
+    return characters[startIndex].data.uuid;
+  }
+
+  /**
+   * Returns the index of the character with the given UUID in the snippet characters array.
+   *
+   * @param {string} uuid - The UUID of the character to find.
+   * @return {number} The index of the character in the store's internal array, or -1 if not found.
+   */
+  function getCharacterIndexFromUuid(uuid: string): number {
+    return snippetCharacters.value.findIndex(c => c.data.uuid === uuid);
+  }
+
   function getCharAtIndex(index: number): Character | null {
     let char: Character;
 
@@ -323,8 +405,12 @@ export function useCharactersStore() {
   }
 
   function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
-    const startIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === startUuid);
-    const endIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === endUuid);
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
 
     deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
@@ -677,6 +763,8 @@ export function useCharactersStore() {
     annotateCharacters,
     deleteCharactersWithinUuidRange,
     lastCharacters,
+    findEndOfWordFromUuid,
+    findStartOfWordFromUuid,
     initializeCharacters,
     insertCharactersAfterUuid,
     insertSnippetIntoChain,
