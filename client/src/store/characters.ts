@@ -315,26 +315,31 @@ export function useCharactersStore() {
   }
 
   function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
-    const index: number = uuid ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) : 0;
-    console.log(index);
+    const index: number = uuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) + 1
+      : 0;
 
-    insertCharactersAtIndex(index + 1, newCharacters);
+    insertCharactersAtIndex(index, newCharacters);
   }
 
-  function deleteCharactersBetweenUuids(startUuid: string, endUuid: string): void {
+  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
     const startIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === startUuid);
     const endIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === endUuid);
 
     deleteCharactersBetweenIndexes(startIndex, endIndex);
   }
 
-  function replaceCharactersBetweenUuids(
-    startUuid: string,
-    endUuid: string,
+  function replaceCharactersWithinUuidRange(
+    startUuid: string | null,
+    endUuid: string | null,
     newCharacters: Character[],
   ): void {
-    const startIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === startUuid);
-    const endIndex: number = snippetCharacters.value.findIndex(c => c.data.uuid === endUuid);
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
 
     replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
   }
@@ -349,8 +354,8 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function replaceCharactersBetweenIndizes(
-    startIndex: number,
-    endIndex: number,
+    startIndex: number | null,
+    endIndex: number | null,
     newCharacters: Character[],
   ): void {
     const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
@@ -670,7 +675,7 @@ export function useCharactersStore() {
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
-    deleteCharactersBetweenUuids,
+    deleteCharactersWithinUuidRange,
     lastCharacters,
     initializeCharacters,
     insertCharactersAfterUuid,
@@ -678,7 +683,7 @@ export function useCharactersStore() {
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
-    replaceCharactersBetweenUuids,
+    replaceCharactersWithinUuidRange,
     resetCharacters,
     firstCharacters,
   };
