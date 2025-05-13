@@ -211,6 +211,22 @@ export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Re
 }
 
 /**
+ * Determines if the caret is after the last character in the editor.
+ * Used for determining where to execute the insert/delete operation.
+ *
+ * @param {HTMLSpanElement} characterSpan - The HTMLSpanElement representing the character span.
+ * @param {Ref<HTMLDivElement>} editorElm - The ref to the editor element.
+ * @return {boolean} True if the caret is after the last character, false otherwise.
+ */
+export function isCaretAtEnd(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
+  const { range } = getSelectionData();
+  const lastChild = editorElm.value.lastElementChild;
+
+  // Check if the current span is the last element and caret is at its end
+  return characterSpan === lastChild && range.startOffset === 1;
+}
+
+/**
  * Toggles the text highlighting for the given annotation by adding CSS classes to annotated span elements.
  *
  * @param {Annotation} annotation - The annotation for which to toggle highlighting.
