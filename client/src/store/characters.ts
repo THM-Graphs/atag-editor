@@ -259,8 +259,6 @@ export function useCharactersStore() {
       startIndex--;
     }
 
-    // startIndex is now the index of the first character of the word
-    // If startIndex is 0, the word starts at the beginning.
     return characters[startIndex].data.uuid;
   }
 
@@ -765,6 +763,7 @@ export function useCharactersStore() {
     lastCharacters,
     findEndOfWordFromUuid,
     findStartOfWordFromUuid,
+    getCharacterIndexFromUuid,
     initializeCharacters,
     insertCharactersAfterUuid,
     insertSnippetIntoChain,

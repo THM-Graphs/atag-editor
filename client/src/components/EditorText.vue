@@ -4,7 +4,6 @@ import { useCharactersStore } from '../store/characters';
 import { useTextStore } from '../store/text';
 import EditorTextNavigation from './EditorTextNavigation.vue';
 import {
-  findStartOfWord,
   getParentCharacterSpan,
   getSelectionData,
   isCaretAtBeginning,
@@ -40,6 +39,7 @@ const {
   totalCharacters,
   findEndOfWordFromUuid,
   findStartOfWordFromUuid,
+  getCharacterIndexFromUuid,
   insertCharactersAfterUuid,
   deleteCharactersWithinUuidRange,
   replaceCharactersWithinUuidRange,
@@ -408,11 +408,12 @@ function handleDeleteWordBackward(): void {
       return;
     }
 
-    const charIndex: number = getCharacterIndex(spanToDelete);
-    const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
+    // const charIndex: number = getCharacterIndex(spanToDelete);
+    // const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
 
     const charUuid: string = spanToDelete.id;
     const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
+    const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
 
     newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
 
