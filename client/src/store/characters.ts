@@ -394,132 +394,18 @@ export function useCharactersStore() {
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
   }
 
+  /**
+   * Inserts new characters after the character with the given UUID. If the UUID is `null`, the new characters are inserted at the beginning of the snippet.
+   *
+   * @param {string | null} uuid - The UUID of the character after which to insert the new characters.
+   * @param {Character[]} newCharacters - The new characters to insert.
+   * @return {void} This function does not return anything.
+   */
   function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
     const index: number = uuid
       ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) + 1
       : 0;
 
-    insertCharactersAtIndex(index, newCharacters);
-  }
-
-  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
-
-    deleteCharactersBetweenIndexes(startIndex, endIndex);
-  }
-
-  function replaceCharactersWithinUuidRange(
-    startUuid: string | null,
-    endUuid: string | null,
-    newCharacters: Character[],
-  ): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
-
-    replaceCharactersBetweenIndizes(startIndex, endIndex, newCharacters);
-  }
-
-  /**
-   * Replaces characters between the specified start and end indexes with the given array of new characters.
-   * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
-   *
-   * @param {number} startIndex - The index of the first character to replace.
-   * @param {number} endIndex - The index of the last character to replace.
-   * @param {Character[]} newCharacters - The array of new characters to insert.
-   * @return {void} This function does not return anything.
-   */
-  function replaceCharactersBetweenIndizes(
-    startIndex: number | null,
-    endIndex: number | null,
-    newCharacters: Character[],
-  ): void {
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
-
-    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
-    let annotationEndsUuids: string[] = prevChar.char?.annotations
-      .filter(a => !getAnnotationConfig(a.type).isZeroPoint && a.isLastCharacter)
-      .map(a => a.uuid);
-
-    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
-    prevChar.char?.annotations.forEach(a => {
-      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-      if (!isZeroPoint) {
-        a.isLastCharacter = false;
-      }
-    });
-
-    newCharacters.forEach((c: Character, index: number) => {
-      // Annotate new character with annotations of previous character
-      prevChar.char?.annotations.forEach(a => {
-        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-        if (!isZeroPoint) {
-          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
-        } else {
-          if (a.isFirstCharacter && index === 0) {
-            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
-          }
-        }
-      });
-
-      if (index === newCharacters.length - 1) {
-        // If next character after insertion is the last character of a zero-point-annotation, new character will be the new start char.
-        nextChar.annotations.forEach(a => {
-          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-          if (isZeroPoint && a.isLastCharacter) {
-            c.annotations.push({ ...a, isFirstCharacter: true, isLastCharacter: false });
-          }
-        });
-
-        c.annotations.forEach(a => {
-          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-          if (!isZeroPoint) {
-            if (annotationEndsUuids.includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-
-            if (!nextChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-          }
-        });
-      }
-    });
-
-    // The next character can be the new first character of an annotation
-    nextChar.char?.annotations.forEach(a => {
-      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-      if (!isZeroPoint && !prevChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
-        a.isFirstCharacter = true;
-      }
-    });
-
-    const charsToDeleteCount: number = endIndex - startIndex + 1;
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
-  }
-
-  /**
-   * Inserts new characters at the specified index in the characters array. Indexes are calculated during input event handling.
-   *
-   * @param {number} index - The index at which to insert the new characters.
-   * @param {Character[]} newCharacters - The array of new characters to insert.
-   * @return {void} This function does not return anything.
-   */
-  function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
     const prevChar: CharacterInfo = getPrevCharInfo(index);
     const nextChar: CharacterInfo = getCharInfo(index);
 
@@ -576,16 +462,21 @@ export function useCharactersStore() {
   }
 
   /**
-   * Deletes characters between the specified start and end indexes.
-   * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
+   * Deletes characters between the specified start and end UUIDs.
    *
-   * @param {number} startIndex - The index of the first character to delete.
-   * @param {number} endIndex - The index of the last character to delete.
+   * @param {string} startUuid - The UUID of the first character to delete.
+   * @param {string} endUuid - The UUID of the last character to delete.
    * @return {void} This function does not return anything.
-   *
    * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
    */
-  function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number): void {
+  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
+
     const charsToDeleteCount: number = endIndex - startIndex;
     const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
     const nextChar: CharacterInfo = getNextCharInfo(endIndex);
@@ -664,6 +555,96 @@ export function useCharactersStore() {
     });
 
     snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
+  }
+
+  /**
+   * Replaces characters between the specified start and end UUIDs with new characters.
+   *
+   * @param {string | null} startUuid - The UUID of the first character to replace.
+   * @param {string | null} endUuid - The UUID of the last character to replace.
+   * @param {Character[]} newCharacters - The array of new characters to replace the deleted characters.
+   * @return {void} This function does not return anything.
+   */
+  function replaceCharactersWithinUuidRange(
+    startUuid: string | null,
+    endUuid: string | null,
+    newCharacters: Character[],
+  ): void {
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
+
+    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
+    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+
+    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
+    let annotationEndsUuids: string[] = prevChar.char?.annotations
+      .filter(a => !getAnnotationConfig(a.type).isZeroPoint && a.isLastCharacter)
+      .map(a => a.uuid);
+
+    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+    prevChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+      if (!isZeroPoint) {
+        a.isLastCharacter = false;
+      }
+    });
+
+    newCharacters.forEach((c: Character, index: number) => {
+      // Annotate new character with annotations of previous character
+      prevChar.char?.annotations.forEach(a => {
+        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+        if (!isZeroPoint) {
+          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+        } else {
+          if (a.isFirstCharacter && index === 0) {
+            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
+          }
+        }
+      });
+
+      if (index === newCharacters.length - 1) {
+        // If next character after insertion is the last character of a zero-point-annotation, new character will be the new start char.
+        nextChar.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (isZeroPoint && a.isLastCharacter) {
+            c.annotations.push({ ...a, isFirstCharacter: true, isLastCharacter: false });
+          }
+        });
+
+        c.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (!isZeroPoint) {
+            if (annotationEndsUuids.includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+
+            if (!nextChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+          }
+        });
+      }
+    });
+
+    // The next character can be the new first character of an annotation
+    nextChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+      if (!isZeroPoint && !prevChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
+        a.isFirstCharacter = true;
+      }
+    });
+
+    const charsToDeleteCount: number = endIndex - startIndex + 1;
+    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
   }
 
   /**
