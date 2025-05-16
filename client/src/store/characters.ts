@@ -18,6 +18,8 @@ const afterEndIndex = ref<number | null>(null);
 const totalCharacters = ref<Character[]>([]);
 const snippetCharacters = ref<Character[]>([]);
 const initialSnippetCharacters = ref<Character[]>([]);
+const initialBeforeStartCharacter = ref<Character | null>(null);
+const initialAfterEndCharacter = ref<Character | null>(null);
 
 const { getAnnotationConfig } = useGuidelinesStore();
 
@@ -71,6 +73,8 @@ export function useCharactersStore() {
     }
 
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+
+    resetInitialBoundaryCharacters();
   }
 
   /**
@@ -83,6 +87,8 @@ export function useCharactersStore() {
   function initializeCharactersFromImport(): void {
     snippetCharacters.value = cloneDeep(totalCharacters.value);
     initialSnippetCharacters.value = [];
+
+    resetInitialBoundaryCharacters();
   }
 
   /**
@@ -112,6 +118,8 @@ export function useCharactersStore() {
     } else {
       beforeStartIndex.value -= PAGINATION_SIZE;
     }
+
+    resetInitialBoundaryCharacters();
 
     sliceCharactersSnippet();
   }
@@ -145,6 +153,8 @@ export function useCharactersStore() {
       afterEndIndex.value += PAGINATION_SIZE;
     }
 
+    resetInitialBoundaryCharacters();
+
     sliceCharactersSnippet();
   }
 
@@ -167,6 +177,8 @@ export function useCharactersStore() {
       afterEndIndex.value = PAGINATION_SIZE;
     }
 
+    resetInitialBoundaryCharacters();
+
     sliceCharactersSnippet();
   }
 
@@ -188,6 +200,8 @@ export function useCharactersStore() {
     } else {
       beforeStartIndex.value = totalCharacters.value.length - PAGINATION_SIZE - 1;
     }
+
+    resetInitialBoundaryCharacters();
 
     sliceCharactersSnippet();
   }
@@ -759,12 +773,37 @@ export function useCharactersStore() {
     initialSnippetCharacters.value = [];
     beforeStartIndex.value = null;
     afterEndIndex.value = null;
+
+    resetInitialBoundaryCharacters();
+  }
+
+  /**
+   * Sets the initial boundary characters based on the current values of beforeStartIndex and afterEndIndex.
+   *
+   * Called on initial load, on pagination events and on saving or canceling changes.
+   *
+   * This function is needed since text operations that occur at the start/end of a loaded snippet can modify the annotations
+   * of the previous/next character (which are outside the snippet). In most cases, this means their `isFirstCharacter` or `isLastCharacter`
+   * properties are updated. When the user cancels changes in the snippet, these boundary characters need to get their initial state, too.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function resetInitialBoundaryCharacters(): void {
+    initialBeforeStartCharacter.value = beforeStartIndex.value
+      ? cloneDeep(totalCharacters.value[beforeStartIndex.value])
+      : null;
+
+    initialAfterEndCharacter.value = afterEndIndex.value
+      ? cloneDeep(totalCharacters.value[afterEndIndex.value])
+      : null;
   }
 
   return {
     afterEndIndex,
     beforeStartIndex,
+    initialAfterEndCharacter,
     initialSnippetCharacters,
+    initialBeforeStartCharacter,
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
@@ -784,5 +823,6 @@ export function useCharactersStore() {
     replaceCharactersWithinUuidRange,
     resetCharacters,
     firstCharacters,
+    resetInitialBoundaryCharacters,
   };
 }
