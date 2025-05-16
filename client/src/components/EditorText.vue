@@ -148,9 +148,9 @@ function handleInsertText(event: InputEvent): void {
         uuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = referenceSpanElement.previousElementSibling?.id ?? null;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling);
         } else {
-          uuid = referenceSpanElement.id;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
@@ -172,13 +172,13 @@ function handleInsertText(event: InputEvent): void {
         startUuid = null;
       } else {
         if (range.startOffset === 0) {
-          startUuid = startSpan.id;
+          startUuid = getCharacterUuidFromSpan(startSpan);
         } else {
-          startUuid = startSpan.id;
+          startUuid = getCharacterUuidFromSpan(startSpan);
         }
       }
 
-      endUuid = endSpan.id;
+      endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
     newRangeAnchorUuid.value = newCharacter.data.uuid;
@@ -224,9 +224,9 @@ async function handleInsertFromPaste(): Promise<void> {
         uuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = referenceSpanElement.previousElementSibling?.id ?? null;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
         } else {
-          uuid = referenceSpanElement.id;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
@@ -248,13 +248,13 @@ async function handleInsertFromPaste(): Promise<void> {
         startUuid = null;
       } else {
         if (range.startOffset === 0) {
-          startUuid = startSpan.id;
+          startUuid = getCharacterUuidFromSpan(startSpan);
         } else {
-          startUuid = startSpan.nextElementSibling?.id ?? null;
+          startUuid = getCharacterUuidFromSpan(startSpan.nextElementSibling);
         }
       }
 
-      endUuid = endSpan.id;
+      endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
@@ -288,9 +288,9 @@ function handleInsertFromDrop(event: InputEvent): void {
         uuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = referenceSpanElement.previousElementSibling?.id ?? null;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
         } else {
-          uuid = referenceSpanElement.id;
+          uuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
@@ -312,13 +312,13 @@ function handleInsertFromDrop(event: InputEvent): void {
         startUuid = null;
       } else {
         if (range.startOffset === 0) {
-          startUuid = startSpan.id;
+          startUuid = getCharacterUuidFromSpan(startSpan);
         } else {
-          startUuid = startSpan.nextElementSibling?.id ?? null;
+          startUuid = getCharacterUuidFromSpan(startSpan.nextElementSibling);
         }
       }
 
-      endUuid = endSpan.id;
+      endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
     newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
@@ -354,7 +354,7 @@ function handleDeleteWordBackward(): void {
       return;
     }
 
-    const charUuid: string = spanToDelete.id;
+    const charUuid: string = getCharacterUuidFromSpan(spanToDelete);
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
     const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
@@ -399,8 +399,8 @@ function handleDeleteWordForward(): void {
       }
 
       deletionStartUuid = isCaretAtBeginning(referenceSpanElement, editorRef)
-        ? referenceSpanElement.id
-        : referenceSpanElement.nextElementSibling?.id ?? null;
+        ? getCharacterUuidFromSpan(referenceSpanElement)
+        : getCharacterUuidFromSpan(referenceSpanElement.nextElementSibling);
     }
 
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
@@ -448,7 +448,7 @@ function handleDeleteContentBackward(): void {
     }
 
     const charIndex: number = getCharacterIndex(spanToDelete);
-    const charUuid: string = spanToDelete.id;
+    const charUuid: string = getCharacterUuidFromSpan(spanToDelete);
 
     newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
 
@@ -476,8 +476,8 @@ function handleDeleteContentBackward(): void {
     } else {
       const { startSpan, endSpan } = getRangeBoundaries(range);
       startIndex = getCharacterIndex(startSpan);
-      startUuid = startSpan.id;
-      endUuid = endSpan.id;
+      startUuid = getCharacterUuidFromSpan(startSpan);
+      endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
@@ -524,7 +524,7 @@ function handleDeleteContentForward(): void {
         }
       }
 
-      charUuid = spanToDelete.id;
+      charUuid = getCharacterUuidFromSpan(spanToDelete);
     }
 
     newRangeAnchorUuid.value = charUuid;
@@ -553,8 +553,8 @@ function handleDeleteContentForward(): void {
     } else {
       const { startSpan, endSpan } = getRangeBoundaries(range);
       startIndex = getCharacterIndex(startSpan);
-      startUuid = startSpan.id;
-      endUuid = endSpan.id;
+      startUuid = getCharacterUuidFromSpan(startSpan);
+      endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
     newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
@@ -588,8 +588,8 @@ function handleDeleteByCut(): void {
   } else {
     const { startSpan, endSpan } = getRangeBoundaries(range);
     startIndex = getCharacterIndex(startSpan);
-    startUuid = startSpan.id;
-    endUuid = endSpan.id;
+    startUuid = getCharacterUuidFromSpan(startSpan);
+    endUuid = getCharacterUuidFromSpan(endSpan);
   }
 
   newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
@@ -695,8 +695,8 @@ function getCharacterIndex(span: HTMLSpanElement): number {
   return snippetCharacters.value.findIndex(c => c.data.uuid === span.id);
 }
 
-function getCharacterUuid(span: HTMLSpanElement): string {
-  return span.id;
+function getCharacterUuidFromSpan(span: HTMLSpanElement | Element | null): string | null {
+  return span?.id ?? null;
 }
 </script>
 
