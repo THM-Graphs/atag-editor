@@ -206,8 +206,6 @@ async function handleInsertFromPaste(): Promise<void> {
 
   const { range, type } = getSelectionData();
 
-  // console.log(range.startContainer.parentElement, range.endContainer.parentElement);
-
   if (type === 'Caret') {
     let uuid: string | null;
 

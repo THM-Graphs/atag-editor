@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Annotation, Character, PropertyConfigDataType } from '../../models/types';
+import { Annotation, PropertyConfigDataType } from '../../models/types';
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
@@ -126,42 +126,6 @@ export function getParentCharacterSpan(node: Node): HTMLSpanElement {
   }
 
   throw new Error('The provided node is neither a text node nor a span element.');
-}
-
-/**
- * Finds the index of the start of the word that contains the given character index.
- * Used for word deleting with "Ctrl + Backspace".
- *
- * @param {number} charIndex - The index of the character.
- * @param {Character[]} characters - The array of characters.
- * @return {number} The index of the character that is the start of a word.
- */
-export function findStartOfWord(charIndex: number, characters: Character[]): number {
-  let start: number = charIndex;
-
-  while (start > 0 && !isWordBoundary(characters[start - 1].data.text)) {
-    start--;
-  }
-
-  return start;
-}
-
-/**
- * Finds the index of the end of the word that contains the given character index.
- * Used for word deleting with "Ctrl + Delete".
- *
- * @param {number} charIndex - The index of the character.
- * @param {Character[]} characters - The array of characters.
- * @return {number} The index of the character that is the end of a word.
- */
-export function findEndOfWord(charIndex: number, characters: Character[]): number {
-  let end: number = charIndex + 1;
-
-  while (end < characters.length && !isWordBoundary(characters[end].data.text)) {
-    end++;
-  }
-
-  return end;
 }
 
 /**
