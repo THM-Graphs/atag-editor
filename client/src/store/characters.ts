@@ -196,7 +196,7 @@ export function useCharactersStore() {
    * Finds the UUID of the character at the position that is the end of the word containing the character with the given UUID.
    * The search starts forward from the character at `charUuidAtIndex`.
    *
-   * Used for word deleting with "Ctrl + Delete".
+   * Used for performing word deleting with "Ctrl + Delete".
    *
    * @param {string | null} charUuid - The UUID of the character at the starting point of the forward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
    * @return {string | null} The UUID of the character *at the position immediately after* the end of the word. Returns null if the word extends to the very end of the document.
@@ -232,7 +232,7 @@ export function useCharactersStore() {
    * Finds the UUID of the character that is the start of the word containing the character with the given UUID.
    * The search starts backward from the character at `charUuidAtIndex`.
    *
-   * Used for word deleting with "Ctrl + Backspace".
+   * Used for performing word deleting with "Ctrl + Backspace".
    *
    * @param {string | null} charUuid - The UUID of the character at the starting point of the backward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
    * @return {string | null} The UUID of the first character of the word, or null if the starting UUID is null or the word starts at the very beginning (index 0).
@@ -459,6 +459,34 @@ export function useCharactersStore() {
     });
 
     snippetCharacters.value.splice(index, 0, ...newCharacters);
+  }
+
+  /**
+   * Finds all characters belonging to a word after the character with the given UUID and deletes them.
+   *
+   * Called by the word deleting operations with "Ctrl + Delete".
+   *
+   * @param {string} uuid - The UUID of the character after which to delete the word.
+   * @return {void} This function does not return anything.
+   */
+  function deleteWordAfterUuid(uuid: string): void {
+    const endWordUuid: string | null = findEndOfWordFromUuid(uuid);
+
+    deleteCharactersWithinUuidRange(uuid, endWordUuid);
+  }
+
+  /**
+   * Finds all characters belonging to a word before the character with the given UUID and deletes them.
+   *
+   * Called by the word deleting operations with "Ctrl + Backspace".
+   *
+   * @param {string} uuid - The UUID of the character before which to delete the word.
+   * @return {void} This function does not return anything.
+   */
+  function deleteWordBeforeUuid(uuid: string): void {
+    const startWordUuid: string | null = findStartOfWordFromUuid(uuid);
+
+    deleteCharactersWithinUuidRange(startWordUuid, uuid);
   }
 
   /**
@@ -741,6 +769,8 @@ export function useCharactersStore() {
     totalCharacters,
     annotateCharacters,
     deleteCharactersWithinUuidRange,
+    deleteWordAfterUuid,
+    deleteWordBeforeUuid,
     lastCharacters,
     findEndOfWordFromUuid,
     findStartOfWordFromUuid,

@@ -37,6 +37,8 @@ const {
   beforeStartIndex,
   snippetCharacters,
   totalCharacters,
+  deleteWordAfterUuid,
+  deleteWordBeforeUuid,
   findEndOfWordFromUuid,
   findStartOfWordFromUuid,
   getCharacterIndexFromUuid,
@@ -412,6 +414,7 @@ function handleDeleteWordBackward(): void {
     // const startWordIndex: number = findStartOfWord(charIndex, snippetCharacters.value);
 
     const charUuid: string = spanToDelete.id;
+    // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
     const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
 
@@ -419,7 +422,7 @@ function handleDeleteWordBackward(): void {
 
     try {
       // deleteCharactersBetweenIndexes(startWordIndex, charIndex);
-      deleteCharactersWithinUuidRange(startWordUuid, charUuid);
+      deleteWordBeforeUuid(charUuid);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -445,12 +448,12 @@ function handleDeleteWordForward(): void {
   if (type === 'Caret') {
     // let index: number;
     // let deletionStartIndex: number;
-    let charUuid: string | null;
+    // let charUuid: string | null;
     let deletionStartUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
       // index = 0;
-      charUuid = null;
+      // charUuid = null;
       // deletionStartIndex = 0;
       deletionStartUuid = null;
     } else {
@@ -462,21 +465,21 @@ function handleDeleteWordForward(): void {
       }
 
       // index = getCharacterIndex(referenceSpanElement);
-      charUuid = referenceSpanElement.id;
+      // charUuid = referenceSpanElement.id;
       // deletionStartIndex = isCaretAtBeginning(referenceSpanElement, editorRef) ? index : index + 1;
       deletionStartUuid = isCaretAtBeginning(referenceSpanElement, editorRef)
-        ? charUuid
+        ? referenceSpanElement.id
         : referenceSpanElement.nextElementSibling?.id ?? null;
     }
 
     // const endWordIndex: number = findEndOfWord(index, snippetCharacters.value);
-    const endWordUuid: string | null = findEndOfWordFromUuid(charUuid);
+    const endWordUuid: string | null = findEndOfWordFromUuid(deletionStartUuid);
 
     newRangeAnchorUuid.value = endWordUuid;
 
     try {
       // deleteCharactersBetweenIndexes(deletionStartIndex, endWordIndex);
-      deleteCharactersWithinUuidRange(deletionStartUuid, endWordUuid);
+      deleteWordAfterUuid(deletionStartUuid);
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
