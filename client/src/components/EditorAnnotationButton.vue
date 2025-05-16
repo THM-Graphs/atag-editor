@@ -35,7 +35,7 @@ const { annotationType } = defineProps<{ annotationType: string }>();
 const { snippetCharacters, annotateCharacters, removeAnnotationFromCharacters } =
   useCharactersStore();
 const { annotations, addAnnotation, deleteAnnotation } = useAnnotationStore();
-const { newRangeAnchorUuid } = useEditorStore();
+const { setNewRangeAnchorUuid } = useEditorStore();
 const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
@@ -225,7 +225,7 @@ function handleClick(dropdownOption?: string | number): void {
       addAnnotation(newAnnotation);
       annotateCharacters(nextCharacters, newAnnotation);
 
-      newRangeAnchorUuid.value = previousCharacters[previousCharacters.length - 1].data.uuid;
+      setNewRangeAnchorUuid(previousCharacters[previousCharacters.length - 1].data.uuid);
     } else {
       const selectedCharacters: Character[] = getCharactersToAnnotate();
       const newAnnotation: Annotation = createNewAnnotation(
@@ -237,7 +237,7 @@ function handleClick(dropdownOption?: string | number): void {
       addAnnotation(newAnnotation);
       annotateCharacters(selectedCharacters, newAnnotation);
       // pushHistoryEntry();
-      newRangeAnchorUuid.value = selectedCharacters[selectedCharacters.length - 1].data.uuid;
+      setNewRangeAnchorUuid(selectedCharacters[selectedCharacters.length - 1].data.uuid);
     }
   } catch (error) {
     if (error instanceof AnnotationRangeError) {
