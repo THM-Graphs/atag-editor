@@ -30,7 +30,7 @@ onUpdated(() => {
   placeCaret();
 });
 
-const { keepTextOnPagination, newRangeAnchorUuid, placeCaret } = useEditorStore();
+const { keepTextOnPagination, placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { correspondingCollection } = useTextStore();
 const {
   afterEndIndex,
@@ -63,8 +63,7 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
 });
 
-newRangeAnchorUuid.value =
-  snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid ?? null;
+setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
 
 const toast: ToastServiceMethods = useToast();
 
@@ -133,9 +132,6 @@ function handleInsertText(event: InputEvent): void {
 
   const { range, type } = getSelectionData();
 
-  console.log(range.startContainer.parentElement, range.endContainer.parentElement);
-  // return;
-
   if (type === 'Caret') {
     let uuid: string | null;
 
@@ -155,7 +151,7 @@ function handleInsertText(event: InputEvent): void {
       }
     }
 
-    newRangeAnchorUuid.value = newCharacter.data.uuid;
+    setNewRangeAnchorUuid(newCharacter.data.uuid);
 
     insertCharactersAfterUuid(uuid, [newCharacter]);
   } else {
@@ -181,7 +177,7 @@ function handleInsertText(event: InputEvent): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    newRangeAnchorUuid.value = newCharacter.data.uuid;
+    setNewRangeAnchorUuid(newCharacter.data.uuid);
 
     replaceCharactersWithinUuidRange(startUuid, endUuid, [newCharacter]);
   }
@@ -231,7 +227,7 @@ async function handleInsertFromPaste(): Promise<void> {
       }
     }
 
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
 
     insertCharactersAfterUuid(uuid, newCharacters);
   } else {
@@ -257,7 +253,7 @@ async function handleInsertFromPaste(): Promise<void> {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
 
     replaceCharactersWithinUuidRange(startUuid, endUuid, newCharacters);
   }
@@ -295,7 +291,7 @@ function handleInsertFromDrop(event: InputEvent): void {
       }
     }
 
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
 
     insertCharactersAfterUuid(uuid, newCharacters);
   } else {
@@ -321,7 +317,7 @@ function handleInsertFromDrop(event: InputEvent): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    newRangeAnchorUuid.value = newCharacters[newCharacters.length - 1].data.uuid;
+    setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
 
     replaceCharactersWithinUuidRange(startUuid, endUuid, newCharacters);
   }
@@ -359,7 +355,7 @@ function handleDeleteWordBackward(): void {
     const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
     const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
 
-    newRangeAnchorUuid.value = snippetCharacters.value[startWordIndex - 1]?.data.uuid ?? null;
+    setNewRangeAnchorUuid(snippetCharacters.value[startWordIndex - 1]?.data.uuid);
 
     try {
       deleteWordBeforeUuid(charUuid);
@@ -406,7 +402,7 @@ function handleDeleteWordForward(): void {
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const endWordUuid: string | null = findEndOfWordFromUuid(deletionStartUuid);
 
-    newRangeAnchorUuid.value = endWordUuid;
+    setNewRangeAnchorUuid(endWordUuid);
 
     try {
       deleteWordAfterUuid(deletionStartUuid);
@@ -450,7 +446,7 @@ function handleDeleteContentBackward(): void {
     const charIndex: number = getCharacterIndex(spanToDelete);
     const charUuid: string = getCharacterUuidFromSpan(spanToDelete);
 
-    newRangeAnchorUuid.value = snippetCharacters.value[charIndex - 1]?.data.uuid ?? null;
+    setNewRangeAnchorUuid(snippetCharacters.value[charIndex - 1]?.data.uuid);
 
     try {
       deleteCharactersWithinUuidRange(charUuid, charUuid);
@@ -480,7 +476,7 @@ function handleDeleteContentBackward(): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
+    setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
 
     try {
       deleteCharactersWithinUuidRange(startUuid, endUuid);
@@ -527,7 +523,7 @@ function handleDeleteContentForward(): void {
       charUuid = getCharacterUuidFromSpan(spanToDelete);
     }
 
-    newRangeAnchorUuid.value = charUuid;
+    setNewRangeAnchorUuid(charUuid);
 
     try {
       deleteCharactersWithinUuidRange(charUuid, charUuid);
@@ -557,7 +553,7 @@ function handleDeleteContentForward(): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
+    setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
 
     try {
       deleteCharactersWithinUuidRange(startUuid, endUuid);
@@ -592,7 +588,8 @@ function handleDeleteByCut(): void {
     endUuid = getCharacterUuidFromSpan(endSpan);
   }
 
-  newRangeAnchorUuid.value = snippetCharacters.value[startIndex - 1]?.data.uuid ?? null;
+  setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
+
   try {
     deleteCharactersWithinUuidRange(startUuid, endUuid);
   } catch (e: unknown) {
