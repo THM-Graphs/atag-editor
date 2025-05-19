@@ -2,11 +2,19 @@ import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual } from '../utils/helper/helper';
-import { Annotation } from '../models/types';
+import { Annotation, CommandData, CommandType } from '../models/types';
 import { useTextStore } from './text';
 
 const { text, initialText } = useTextStore();
-const { snippetCharacters, initialSnippetCharacters } = useCharactersStore();
+const {
+  snippetCharacters,
+  initialSnippetCharacters,
+  deleteCharactersWithinUuidRange,
+  deleteWordAfterUuid,
+  deleteWordBeforeUuid,
+  insertCharactersAfterUuid,
+  replaceCharactersWithinUuidRange,
+} = useCharactersStore();
 const { annotations, initialAnnotations } = useAnnotationStore();
 
 const keepTextOnPagination = ref<boolean>(false);
@@ -17,6 +25,21 @@ const newRangeAnchorUuid = ref<string | null>(null);
  * the store is reset.
  */
 export function useEditorStore() {
+  function execCommand(command: CommandType, data: CommandData): void {
+    const { uuid, startUuid, endUuid, characters } = data;
+
+    if (command === 'insertText') {
+      insertCharactersAfterUuid(uuid, characters);
+    } else if (command === 'replaceText') {
+      replaceCharactersWithinUuidRange(startUuid, endUuid, characters);
+    } else if (command === 'deleteWordBefore') {
+      deleteWordBeforeUuid(uuid);
+    } else if (command === 'deleteWordAfter') {
+      deleteWordAfterUuid(uuid);
+    } else if (command === 'deleteText') {
+      deleteCharactersWithinUuidRange(startUuid, endUuid);
+    }
+  }
   /**
    * Places the caret at the specified position within the editor.
    *
@@ -27,7 +50,6 @@ export function useEditorStore() {
    *
    * @return {void}
    */
-
   function placeCaret(): void {
     const range: Range = document.createRange();
     let element: HTMLDivElement | HTMLSpanElement | null;
@@ -158,6 +180,7 @@ export function useEditorStore() {
 
   return {
     keepTextOnPagination,
+    execCommand,
     hasUnsavedChanges,
     placeCaret,
     resetEditor,

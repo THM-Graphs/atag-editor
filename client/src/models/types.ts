@@ -82,6 +82,25 @@ export type CollectionPostData = {
   initialData: CollectionAccessObject;
 };
 
+export type Command = {
+  command: CommandType;
+  data: CommandData;
+};
+
+export type CommandData = {
+  characters?: Character[];
+  endUuid?: string;
+  startUuid?: string;
+  uuid?: string;
+};
+
+export type CommandType =
+  | 'insertText'
+  | 'replaceText'
+  | 'deleteWordAfter'
+  | 'deleteWordBefore'
+  | 'deleteText';
+
 export type HistoryStack = HistoryRecord[];
 
 export type HistoryRecord = {
