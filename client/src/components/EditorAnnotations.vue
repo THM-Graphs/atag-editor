@@ -23,7 +23,7 @@ export interface TreeNode {
   type: 'category' | 'type' | 'annotation';
 }
 
-const { newRangeAnchorUuid, placeCaret } = useEditorStore();
+const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
 const { annotations } = useAnnotationStore();
 const { groupedAnnotationTypes } = useGuidelinesStore();
@@ -148,7 +148,7 @@ function handleAnnotationClick(event: MouseEvent): void {
     return;
   }
 
-  newRangeAnchorUuid.value = lastAnnotatedChar.data.uuid;
+  setNewRangeAnchorUuid(lastAnnotatedChar.data.uuid);
   placeCaret();
 }
 

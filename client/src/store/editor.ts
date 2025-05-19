@@ -23,6 +23,8 @@ export function useEditorStore() {
    * If a new range anchor UUID is provided, the caret is placed at the corresponding element.
    * Otherwise, the caret is placed at the first span element within the #text container, or at the #text container itself if no span element is found.
    *
+   * Called by an `onUpdated` hook in the `EditorText` component.
+   *
    * @return {void}
    */
 
@@ -139,14 +141,26 @@ export function useEditorStore() {
   }
 
   function resetEditor(): void {
-    newRangeAnchorUuid.value = null;
+    setNewRangeAnchorUuid(null);
+  }
+
+  /**
+   * Sets the UUID of the character whose span will be the range start after the next selection change.
+   *
+   * Called after each text operation. The `placeCaret` function will use this variable to set the caret to the specified element.
+   *
+   * @param {string | null | undefined} uuid - The UUID of the character or `null`/`undefined`.
+   * @returns {void} No return value.
+   */
+  function setNewRangeAnchorUuid(uuid: string | null | undefined): void {
+    newRangeAnchorUuid.value = uuid ?? null;
   }
 
   return {
     keepTextOnPagination,
-    newRangeAnchorUuid,
     hasUnsavedChanges,
     placeCaret,
     resetEditor,
+    setNewRangeAnchorUuid,
   };
 }

@@ -89,12 +89,15 @@ const { text, initialText, initializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
+  initialAfterEndCharacter,
+  initialBeforeStartCharacter,
   initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
   initializeCharacters,
   insertSnippetIntoChain,
   resetCharacters,
+  resetInitialBoundaryCharacters,
 } = useCharactersStore();
 const {
   annotations,
@@ -184,6 +187,9 @@ async function handleSaveChanges(): Promise<void> {
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
     initialAnnotations.value = cloneDeep(annotations.value);
 
+    // Store function is used, combines boundaries resettings
+    resetInitialBoundaryCharacters();
+
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);
@@ -198,6 +204,8 @@ async function handleCancelChanges(): Promise<void> {
   text.value = cloneDeep(initialText.value);
   snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
   annotations.value = cloneDeep(initialAnnotations.value);
+  totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
+  totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
 }
 
 async function saveCharacters(): Promise<void> {

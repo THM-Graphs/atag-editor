@@ -3,7 +3,7 @@ import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character } from '../models/types';
-import { cloneDeep } from '../utils/helper/helper';
+import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
 
 type CharacterInfo = {
   char: Character | null;
@@ -18,6 +18,8 @@ const afterEndIndex = ref<number | null>(null);
 const totalCharacters = ref<Character[]>([]);
 const snippetCharacters = ref<Character[]>([]);
 const initialSnippetCharacters = ref<Character[]>([]);
+const initialBeforeStartCharacter = ref<Character | null>(null);
+const initialAfterEndCharacter = ref<Character | null>(null);
 
 const { getAnnotationConfig } = useGuidelinesStore();
 
@@ -71,6 +73,8 @@ export function useCharactersStore() {
     }
 
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+
+    resetInitialBoundaryCharacters();
   }
 
   /**
@@ -83,6 +87,8 @@ export function useCharactersStore() {
   function initializeCharactersFromImport(): void {
     snippetCharacters.value = cloneDeep(totalCharacters.value);
     initialSnippetCharacters.value = [];
+
+    resetInitialBoundaryCharacters();
   }
 
   /**
@@ -112,6 +118,8 @@ export function useCharactersStore() {
     } else {
       beforeStartIndex.value -= PAGINATION_SIZE;
     }
+
+    resetInitialBoundaryCharacters();
 
     sliceCharactersSnippet();
   }
@@ -145,6 +153,8 @@ export function useCharactersStore() {
       afterEndIndex.value += PAGINATION_SIZE;
     }
 
+    resetInitialBoundaryCharacters();
+
     sliceCharactersSnippet();
   }
 
@@ -166,6 +176,8 @@ export function useCharactersStore() {
     } else {
       afterEndIndex.value = PAGINATION_SIZE;
     }
+
+    resetInitialBoundaryCharacters();
 
     sliceCharactersSnippet();
   }
@@ -189,7 +201,89 @@ export function useCharactersStore() {
       beforeStartIndex.value = totalCharacters.value.length - PAGINATION_SIZE - 1;
     }
 
+    resetInitialBoundaryCharacters();
+
     sliceCharactersSnippet();
+  }
+
+  /**
+   * Finds the UUID of the character at the position that is the end of the word containing the character with the given UUID.
+   * The search starts forward from the character at `charUuidAtIndex`.
+   *
+   * Used for performing word deleting with "Ctrl + Delete".
+   *
+   * @param {string | null} charUuid - The UUID of the character at the starting point of the forward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
+   * @return {string | null} The UUID of the character *at the position immediately after* the end of the word. Returns null if the word extends to the very end of the document.
+   */
+  function findEndOfWordFromUuid(charUuid: string | null): string | null {
+    const characters: Character[] = snippetCharacters.value;
+
+    if (characters.length === 0) {
+      return null;
+    }
+
+    const charIndex: number = charUuid ? getCharacterIndexFromUuid(charUuid) : 0;
+
+    if (charIndex === -1) {
+      console.error(`findEndOfWordFromUuid: UUID ${charUuid} not found in store data.`);
+      return null;
+    }
+
+    let endIndex: number = charIndex;
+
+    // Iterate forward while the character at the current position is NOT a boundary
+    // The loop stops when endIndex reaches the end of the array OR the character at endIndex IS a boundary
+    while (endIndex < characters.length && !isWordBoundary(characters[endIndex].data.text)) {
+      endIndex++;
+    }
+
+    // endIndex is now the index of the position AFTER the end of the word
+    // If endIndex is characters.length, the word goes to the very end.
+    return endIndex < characters.length ? characters[endIndex].data.uuid : null;
+  }
+
+  /**
+   * Finds the UUID of the character that is the start of the word containing the character with the given UUID.
+   * The search starts backward from the character at `charUuidAtIndex`.
+   *
+   * Used for performing word deleting with "Ctrl + Backspace".
+   *
+   * @param {string | null} charUuid - The UUID of the character at the starting point of the backward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
+   * @return {string | null} The UUID of the first character of the word, or null if the starting UUID is null or the word starts at the very beginning (index 0).
+   */
+  function findStartOfWordFromUuid(charUuid: string | null): string | null {
+    const characters: Character[] = snippetCharacters.value;
+
+    if (charUuid === null || characters.length === 0) {
+      return null;
+    }
+
+    const charIndex: number = getCharacterIndexFromUuid(charUuid);
+
+    if (charIndex === -1) {
+      console.error(`findStartOfWordFromUuid: UUID ${charUuid} not found in store data.`);
+      return null;
+    }
+
+    let startIndex: number = charIndex;
+
+    // Iterate backward while the character before the current position is NOT a boundary
+    // The loop stops when startIndex is 0 OR the character at startIndex - 1 IS a boundary
+    while (startIndex > 0 && !isWordBoundary(characters[startIndex - 1].data.text)) {
+      startIndex--;
+    }
+
+    return characters[startIndex].data.uuid;
+  }
+
+  /**
+   * Returns the index of the character with the given UUID in the snippet characters array.
+   *
+   * @param {string} uuid - The UUID of the character to find.
+   * @return {number} The index of the character in the store's internal array, or -1 if not found.
+   */
+  function getCharacterIndexFromUuid(uuid: string): number {
+    return snippetCharacters.value.findIndex(c => c.data.uuid === uuid);
   }
 
   function getCharAtIndex(index: number): Character | null {
@@ -315,97 +409,17 @@ export function useCharactersStore() {
   }
 
   /**
-   * Replaces characters between the specified start and end indexes with the given array of new characters.
-   * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
+   * Inserts new characters after the character with the given UUID. If the UUID is `null`, the new characters are inserted at the beginning of the snippet.
    *
-   * @param {number} startIndex - The index of the first character to replace.
-   * @param {number} endIndex - The index of the last character to replace.
-   * @param {Character[]} newCharacters - The array of new characters to insert.
+   * @param {string | null} uuid - The UUID of the character after which to insert the new characters.
+   * @param {Character[]} newCharacters - The new characters to insert.
    * @return {void} This function does not return anything.
    */
-  function replaceCharactersBetweenIndizes(
-    startIndex: number,
-    endIndex: number,
-    newCharacters: Character[],
-  ): void {
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+  function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
+    const index: number = uuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) + 1
+      : 0;
 
-    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
-    let annotationEndsUuids: string[] = prevChar.char?.annotations
-      .filter(a => !getAnnotationConfig(a.type).isZeroPoint && a.isLastCharacter)
-      .map(a => a.uuid);
-
-    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
-    prevChar.char?.annotations.forEach(a => {
-      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-      if (!isZeroPoint) {
-        a.isLastCharacter = false;
-      }
-    });
-
-    newCharacters.forEach((c: Character, index: number) => {
-      // Annotate new character with annotations of previous character
-      prevChar.char?.annotations.forEach(a => {
-        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-        if (!isZeroPoint) {
-          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
-        } else {
-          if (a.isFirstCharacter && index === 0) {
-            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
-          }
-        }
-      });
-
-      if (index === newCharacters.length - 1) {
-        // If next character after insertion is the last character of a zero-point-annotation, new character will be the new start char.
-        nextChar.annotations.forEach(a => {
-          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-          if (isZeroPoint && a.isLastCharacter) {
-            c.annotations.push({ ...a, isFirstCharacter: true, isLastCharacter: false });
-          }
-        });
-
-        c.annotations.forEach(a => {
-          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-          if (!isZeroPoint) {
-            if (annotationEndsUuids.includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-
-            if (!nextChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
-              a.isLastCharacter = true;
-            }
-          }
-        });
-      }
-    });
-
-    // The next character can be the new first character of an annotation
-    nextChar.char?.annotations.forEach(a => {
-      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
-
-      if (!isZeroPoint && !prevChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
-        a.isFirstCharacter = true;
-      }
-    });
-
-    const charsToDeleteCount: number = endIndex - startIndex + 1;
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
-  }
-
-  /**
-   * Inserts new characters at the specified index in the characters array. Indexes are calculated during input event handling.
-   *
-   * @param {number} index - The index at which to insert the new characters.
-   * @param {Character[]} newCharacters - The array of new characters to insert.
-   * @return {void} This function does not return anything.
-   */
-  function insertCharactersAtIndex(index: number, newCharacters: Character[]): void {
     const prevChar: CharacterInfo = getPrevCharInfo(index);
     const nextChar: CharacterInfo = getCharInfo(index);
 
@@ -462,16 +476,49 @@ export function useCharactersStore() {
   }
 
   /**
-   * Deletes characters between the specified start and end indexes.
-   * Indexes are calculated during input event handling. Start and end index are inclusive and therefore deleted as well.
+   * Finds all characters belonging to a word after the character with the given UUID and deletes them.
    *
-   * @param {number} startIndex - The index of the first character to delete.
-   * @param {number} endIndex - The index of the last character to delete.
+   * Called by the word deleting operations with "Ctrl + Delete".
+   *
+   * @param {string} uuid - The UUID of the character after which to delete the word.
    * @return {void} This function does not return anything.
+   */
+  function deleteWordAfterUuid(uuid: string): void {
+    const endWordUuid: string | null = findEndOfWordFromUuid(uuid);
+
+    deleteCharactersWithinUuidRange(uuid, endWordUuid);
+  }
+
+  /**
+   * Finds all characters belonging to a word before the character with the given UUID and deletes them.
    *
+   * Called by the word deleting operations with "Ctrl + Backspace".
+   *
+   * @param {string} uuid - The UUID of the character before which to delete the word.
+   * @return {void} This function does not return anything.
+   */
+  function deleteWordBeforeUuid(uuid: string): void {
+    const startWordUuid: string | null = findStartOfWordFromUuid(uuid);
+
+    deleteCharactersWithinUuidRange(startWordUuid, uuid);
+  }
+
+  /**
+   * Deletes characters between the specified start and end UUIDs.
+   *
+   * @param {string} startUuid - The UUID of the first character to delete.
+   * @param {string} endUuid - The UUID of the last character to delete.
+   * @return {void} This function does not return anything.
    * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
    */
-  function deleteCharactersBetweenIndexes(startIndex: number, endIndex: number): void {
+  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
+
     const charsToDeleteCount: number = endIndex - startIndex;
     const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
     const nextChar: CharacterInfo = getNextCharInfo(endIndex);
@@ -550,6 +597,96 @@ export function useCharactersStore() {
     });
 
     snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
+  }
+
+  /**
+   * Replaces characters between the specified start and end UUIDs with new characters.
+   *
+   * @param {string | null} startUuid - The UUID of the first character to replace.
+   * @param {string | null} endUuid - The UUID of the last character to replace.
+   * @param {Character[]} newCharacters - The array of new characters to replace the deleted characters.
+   * @return {void} This function does not return anything.
+   */
+  function replaceCharactersWithinUuidRange(
+    startUuid: string | null,
+    endUuid: string | null,
+    newCharacters: Character[],
+  ): void {
+    const startIndex: number | null = startUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
+      : 0;
+    const endIndex: number | null = endUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
+      : snippetCharacters.value.length - 1;
+
+    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
+    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+
+    // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
+    let annotationEndsUuids: string[] = prevChar.char?.annotations
+      .filter(a => !getAnnotationConfig(a.type).isZeroPoint && a.isLastCharacter)
+      .map(a => a.uuid);
+
+    // Since a new character is inserted, the previous one can not be the last character of ANY annotation anymore
+    prevChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+      if (!isZeroPoint) {
+        a.isLastCharacter = false;
+      }
+    });
+
+    newCharacters.forEach((c: Character, index: number) => {
+      // Annotate new character with annotations of previous character
+      prevChar.char?.annotations.forEach(a => {
+        const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+        if (!isZeroPoint) {
+          c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: false });
+        } else {
+          if (a.isFirstCharacter && index === 0) {
+            c.annotations.push({ ...a, isFirstCharacter: false, isLastCharacter: true });
+          }
+        }
+      });
+
+      if (index === newCharacters.length - 1) {
+        // If next character after insertion is the last character of a zero-point-annotation, new character will be the new start char.
+        nextChar.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (isZeroPoint && a.isLastCharacter) {
+            c.annotations.push({ ...a, isFirstCharacter: true, isLastCharacter: false });
+          }
+        });
+
+        c.annotations.forEach(a => {
+          const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+          if (!isZeroPoint) {
+            if (annotationEndsUuids.includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+
+            if (!nextChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
+              a.isLastCharacter = true;
+            }
+          }
+        });
+      }
+    });
+
+    // The next character can be the new first character of an annotation
+    nextChar.char?.annotations.forEach(a => {
+      const isZeroPoint: boolean = getAnnotationConfig(a.type)?.isZeroPoint;
+
+      if (!isZeroPoint && !prevChar.char?.annotations.map(ax => ax.uuid).includes(a.uuid)) {
+        a.isFirstCharacter = true;
+      }
+    });
+
+    const charsToDeleteCount: number = endIndex - startIndex + 1;
+    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
   }
 
   /**
@@ -636,25 +773,56 @@ export function useCharactersStore() {
     initialSnippetCharacters.value = [];
     beforeStartIndex.value = null;
     afterEndIndex.value = null;
+
+    resetInitialBoundaryCharacters();
+  }
+
+  /**
+   * Sets the initial boundary characters based on the current values of beforeStartIndex and afterEndIndex.
+   *
+   * Called on initial load, on pagination events and on saving or canceling changes.
+   *
+   * This function is needed since text operations that occur at the start/end of a loaded snippet can modify the annotations
+   * of the previous/next character (which are outside the snippet). In most cases, this means their `isFirstCharacter` or `isLastCharacter`
+   * properties are updated. When the user cancels changes in the snippet, these boundary characters need to get their initial state, too.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function resetInitialBoundaryCharacters(): void {
+    initialBeforeStartCharacter.value = beforeStartIndex.value
+      ? cloneDeep(totalCharacters.value[beforeStartIndex.value])
+      : null;
+
+    initialAfterEndCharacter.value = afterEndIndex.value
+      ? cloneDeep(totalCharacters.value[afterEndIndex.value])
+      : null;
   }
 
   return {
     afterEndIndex,
     beforeStartIndex,
+    initialAfterEndCharacter,
     initialSnippetCharacters,
+    initialBeforeStartCharacter,
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
-    deleteCharactersBetweenIndexes,
+    deleteCharactersWithinUuidRange,
+    deleteWordAfterUuid,
+    deleteWordBeforeUuid,
     lastCharacters,
+    findEndOfWordFromUuid,
+    findStartOfWordFromUuid,
+    getCharacterIndexFromUuid,
     initializeCharacters,
-    insertCharactersAtIndex,
+    insertCharactersAfterUuid,
     insertSnippetIntoChain,
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
-    replaceCharactersBetweenIndizes,
+    replaceCharactersWithinUuidRange,
     resetCharacters,
     firstCharacters,
+    resetInitialBoundaryCharacters,
   };
 }

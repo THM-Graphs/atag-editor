@@ -34,7 +34,7 @@ const {
   shrinkAnnotation,
 } = useAnnotationStore();
 const { removeAnnotationFromCharacters } = useCharactersStore();
-const { newRangeAnchorUuid } = useEditorStore();
+const { setNewRangeAnchorUuid } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -92,7 +92,8 @@ function handleShrink(): void {
 
 function setRangeAnchorAtEnd(): void {
   const { lastCharacter } = getAnnotationInfo(annotation);
-  newRangeAnchorUuid.value = lastCharacter.data.uuid;
+
+  setNewRangeAnchorUuid(lastCharacter.data.uuid);
 }
 </script>
 

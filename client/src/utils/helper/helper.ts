@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Annotation, Character, PropertyConfigDataType } from '../../models/types';
+import { Annotation, PropertyConfigDataType } from '../../models/types';
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
@@ -129,42 +129,6 @@ export function getParentCharacterSpan(node: Node): HTMLSpanElement {
 }
 
 /**
- * Finds the index of the start of the word that contains the given character index.
- * Used for word deleting with "Ctrl + Backspace".
- *
- * @param {number} charIndex - The index of the character.
- * @param {Character[]} characters - The array of characters.
- * @return {number} The index of the character that is the start of a word.
- */
-export function findStartOfWord(charIndex: number, characters: Character[]): number {
-  let start: number = charIndex;
-
-  while (start > 0 && !isWordBoundary(characters[start - 1].data.text)) {
-    start--;
-  }
-
-  return start;
-}
-
-/**
- * Finds the index of the end of the word that contains the given character index.
- * Used for word deleting with "Ctrl + Delete".
- *
- * @param {number} charIndex - The index of the character.
- * @param {Character[]} characters - The array of characters.
- * @return {number} The index of the character that is the end of a word.
- */
-export function findEndOfWord(charIndex: number, characters: Character[]): number {
-  let end: number = charIndex + 1;
-
-  while (end < characters.length && !isWordBoundary(characters[end].data.text)) {
-    end++;
-  }
-
-  return end;
-}
-
-/**
  * Determines if the given character is a word boundary, for example whitespace or punctuation.
  *
  * @param {string} char - The character to check.
@@ -208,6 +172,22 @@ export function getSelectionData(): { selection: Selection; range: Range; type: 
 export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
   const { range } = getSelectionData();
   return characterSpan === editorElm.value.firstElementChild && range.startOffset === 0;
+}
+
+/**
+ * Determines if the caret is after the last character in the editor.
+ * Used for determining where to execute the insert/delete operation.
+ *
+ * @param {HTMLSpanElement} characterSpan - The HTMLSpanElement representing the character span.
+ * @param {Ref<HTMLDivElement>} editorElm - The ref to the editor element.
+ * @return {boolean} True if the caret is after the last character, false otherwise.
+ */
+export function isCaretAtEnd(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
+  const { range } = getSelectionData();
+  const lastChild = editorElm.value.lastElementChild;
+
+  // Check if the current span is the last element and caret is at its end
+  return characterSpan === lastChild && range.startOffset === 1;
 }
 
 /**
