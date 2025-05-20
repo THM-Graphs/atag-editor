@@ -9,13 +9,24 @@ const { text, initialText } = useTextStore();
 const {
   snippetCharacters,
   initialSnippetCharacters,
+  annotateCharacters,
   deleteCharactersWithinUuidRange,
   deleteWordAfterUuid,
   deleteWordBeforeUuid,
   insertCharactersAfterUuid,
+  removeAnnotationFromCharacters,
   replaceCharactersWithinUuidRange,
 } = useCharactersStore();
-const { annotations, initialAnnotations } = useAnnotationStore();
+const {
+  annotations,
+  initialAnnotations,
+  addAnnotation,
+  deleteAnnotation,
+  expandAnnotation,
+  shiftAnnotationLeft,
+  shiftAnnotationRight,
+  shrinkAnnotation,
+} = useAnnotationStore();
 
 const keepTextOnPagination = ref<boolean>(false);
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -26,7 +37,7 @@ const newRangeAnchorUuid = ref<string | null>(null);
  */
 export function useEditorStore() {
   function execCommand(command: CommandType, data: CommandData): void {
-    const { uuid, startUuid, endUuid, characters } = data;
+    const { annotation, uuid, startUuid, endUuid, characters } = data;
 
     if (command === 'insertText') {
       insertCharactersAfterUuid(uuid, characters);
@@ -38,8 +49,23 @@ export function useEditorStore() {
       deleteWordAfterUuid(uuid);
     } else if (command === 'deleteText') {
       deleteCharactersWithinUuidRange(startUuid, endUuid);
+    } else if (command === 'createAnnotation') {
+      addAnnotation(annotation);
+      annotateCharacters(characters, annotation);
+    } else if (command === 'deleteAnnotation') {
+      deleteAnnotation(annotation.data.properties.uuid);
+      removeAnnotationFromCharacters(annotation.data.properties.uuid);
+    } else if (command === 'shiftAnnotationLeft') {
+      shiftAnnotationLeft(annotation);
+    } else if (command === 'shiftAnnotationRight') {
+      shiftAnnotationRight(annotation);
+    } else if (command === 'expandAnnotation') {
+      expandAnnotation(annotation);
+    } else if (command === 'shrinkAnnotation') {
+      shrinkAnnotation(annotation);
     }
   }
+
   /**
    * Places the caret at the specified position within the editor.
    *

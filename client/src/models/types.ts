@@ -88,6 +88,7 @@ export type Command = {
 };
 
 export type CommandData = {
+  annotation?: Annotation;
   characters?: Character[];
   endUuid?: string;
   startUuid?: string;
@@ -95,11 +96,17 @@ export type CommandData = {
 };
 
 export type CommandType =
-  | 'insertText'
-  | 'replaceText'
+  | 'createAnnotation'
+  | 'deleteAnnotation'
+  | 'deleteText'
   | 'deleteWordAfter'
   | 'deleteWordBefore'
-  | 'deleteText';
+  | 'expandAnnotation'
+  | 'insertText'
+  | 'replaceText'
+  | 'shiftAnnotationLeft'
+  | 'shiftAnnotationRight'
+  | 'shrinkAnnotation';
 
 export type HistoryStack = HistoryRecord[];
 
