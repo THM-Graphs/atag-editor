@@ -367,8 +367,10 @@ export function useCharactersStore() {
     return char;
   }
 
-  function getPrevCharInfo(index: number): CharacterInfo {
-    const char: Character | null = getPreviousChar(index);
+  function getPrevCharInfo(index: number | null): CharacterInfo {
+    // TODO: Fix this somehow better, ugly
+    const indexToSearch: number = index ?? 0;
+    const char: Character | null = getPreviousChar(indexToSearch);
     const annotations: AnnotationReference[] = char?.annotations ?? [];
     const anchorStartUuids: string[] = annotations
       .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter)
@@ -379,8 +381,10 @@ export function useCharactersStore() {
     return prevChar;
   }
 
-  function getNextCharInfo(index: number): CharacterInfo {
-    const char: Character | null = getNextChar(index);
+  function getNextCharInfo(index: number | null): CharacterInfo {
+    // TODO: Fix this somehow better, ugly
+    const indexToSearch: number = index ?? snippetCharacters.value.length - 1;
+    const char: Character | null = getNextChar(indexToSearch);
     const annotations: AnnotationReference[] = char?.annotations ?? [];
     const anchorEndUuids: string[] = annotations
       .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isLastCharacter)
@@ -504,24 +508,28 @@ export function useCharactersStore() {
   }
 
   /**
-   * Deletes characters between the specified start and end UUIDs.
+   * Deletes the characters between two given UUIDs.
+   * If a UUID is `null`, it is treated as if the boundary is at the start/end of the snippet.
    *
-   * @param {string} startUuid - The UUID of the first character to delete.
-   * @param {string} endUuid - The UUID of the last character to delete.
+   * @throws Error if the boundaries are the same character.
+   * @throws Error if there are no characters in between.
+   * @param {string} leftUuid - The UUID of the character to the left of the range to delete.
+   * @param {string} rightUuid - The UUID of the character to the right of the range to delete.
    * @return {void} This function does not return anything.
-   * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
    */
-  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
+  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): void {
+    // Boundaries are the same character -> not valid
+    if (leftUuid && rightUuid && leftUuid === rightUuid) {
+      throw Error('Boundaries are the same character.');
+    }
 
-    const charsToDeleteCount: number = endIndex - startIndex;
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+    const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
+    const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
+
+    const prevChar: CharacterInfo = leftIndex ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightIndex
+      ? getCharInfo(rightIndex)
+      : getNextCharInfo(rightIndex);
 
     // Selection ends between two anchor spans and there is no previous character in the chain to be the new left anchor
     const hasNoPreviousAnchor: boolean =
@@ -596,31 +604,60 @@ export function useCharactersStore() {
       }
     });
 
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
+    let deletionStartIndex: number;
+    let deletionEndIndex: number;
+
+    if (leftIndex !== null) {
+      deletionStartIndex = leftIndex + 1;
+    } else {
+      deletionStartIndex = 0;
+    }
+
+    if (rightIndex !== null) {
+      deletionEndIndex = rightIndex - 1;
+    } else {
+      deletionEndIndex = snippetCharacters.value.length - 1;
+    }
+
+    const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
+
+    snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
   }
 
   /**
-   * Replaces characters between the specified start and end UUIDs with new characters.
+   * Deletes characters between the specified start and end UUIDs.
    *
-   * @param {string | null} startUuid - The UUID of the first character to replace.
-   * @param {string | null} endUuid - The UUID of the last character to replace.
-   * @param {Character[]} newCharacters - The array of new characters to replace the deleted characters.
+   * @param {string} startUuid - The UUID of the first character to delete.
+   * @param {string} endUuid - The UUID of the last character to delete.
+   * @return {void} This function does not return anything.
+   * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
+   */
+  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {}
+
+  /**
+   * Replaces the characters between two given UUIDs with a new set of characters.
+   * If a UUID is `null`, it is treated as if the boundary is at the start/end of the snippet.
+   *
+   * Updates annotations for the characters being replaced and ensures the continuity of
+   * annotations across the newly inserted characters.
+   *
+   * @param {string | null} leftUuid - The UUID of the character to the left of the range to replace.
+   * @param {string | null} rightUuid - The UUID of the character to the right of the range to replace.
+   * @param {Character[]} newCharacters - The new characters to insert in place of the existing range.
    * @return {void} This function does not return anything.
    */
-  function replaceCharactersWithinUuidRange(
-    startUuid: string | null,
-    endUuid: string | null,
+  function replaceCharactersBetweenUuids(
+    leftUuid: string | null,
+    rightUuid: string | null,
     newCharacters: Character[],
   ): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
+    const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
+    const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+    const prevChar: CharacterInfo = leftIndex ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightIndex
+      ? getCharInfo(rightIndex)
+      : getNextCharInfo(rightIndex);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.char?.annotations
@@ -685,8 +722,24 @@ export function useCharactersStore() {
       }
     });
 
-    const charsToDeleteCount: number = endIndex - startIndex + 1;
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
+    let replaceStartIndex: number;
+    let replaceEndIndex: number;
+
+    if (leftIndex !== null) {
+      replaceStartIndex = leftIndex + 1;
+    } else {
+      replaceStartIndex = 0;
+    }
+
+    if (rightIndex !== null) {
+      replaceEndIndex = rightIndex - 1;
+    } else {
+      replaceEndIndex = snippetCharacters.value.length - 1;
+    }
+
+    const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
+
+    snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
   }
 
   /**
@@ -807,6 +860,7 @@ export function useCharactersStore() {
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
+    deleteCharactersBetweenUuids,
     deleteCharactersWithinUuidRange,
     deleteWordAfterUuid,
     deleteWordBeforeUuid,
@@ -820,7 +874,7 @@ export function useCharactersStore() {
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
-    replaceCharactersWithinUuidRange,
+    replaceCharactersBetweenUuids,
     resetCharacters,
     firstCharacters,
     resetInitialBoundaryCharacters,

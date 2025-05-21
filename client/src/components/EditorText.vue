@@ -30,7 +30,16 @@ onUpdated(() => {
   placeCaret();
 });
 
-const { keepTextOnPagination, execCommand, placeCaret, setNewRangeAnchorUuid } = useEditorStore();
+const {
+  history,
+  keepTextOnPagination,
+  redoStack,
+  execCommand,
+  placeCaret,
+  redo,
+  setNewRangeAnchorUuid,
+  undo,
+} = useEditorStore();
 const { correspondingCollection } = useTextStore();
 const {
   afterEndIndex,
@@ -146,6 +155,10 @@ function handleInsertText(event: InputEvent): void {
       }
     }
 
+    // const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    // highlightBoundarySpans(leftSpan, rightSpan);
+    // return;
+
     setNewRangeAnchorUuid(newCharacter.data.uuid);
     execCommand('insertText', { uuid, characters: [newCharacter] });
   } else {
@@ -171,8 +184,16 @@ function handleInsertText(event: InputEvent): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
     setNewRangeAnchorUuid(newCharacter.data.uuid);
-    execCommand('replaceText', { startUuid, endUuid, characters: [newCharacter] });
+    execCommand('replaceText', {
+      startUuid: leftUuid,
+      endUuid: rightUuid,
+      characters: [newCharacter],
+    });
   }
 }
 
@@ -218,6 +239,10 @@ async function handleInsertFromPaste(): Promise<void> {
       }
     }
 
+    // const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    // highlightBoundarySpans(leftSpan, rightSpan);
+    // return;
+
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { uuid, characters: newCharacters });
   } else {
@@ -243,8 +268,16 @@ async function handleInsertFromPaste(): Promise<void> {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('replaceText', { startUuid, endUuid, characters: newCharacters });
+    execCommand('replaceText', {
+      startUuid: leftUuid,
+      endUuid: rightUuid,
+      characters: newCharacters,
+    });
   }
 }
 
@@ -280,6 +313,10 @@ function handleInsertFromDrop(event: InputEvent): void {
       }
     }
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    highlightBoundarySpans(leftSpan, rightSpan);
+    return;
+
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { uuid, characters: newCharacters });
   } else {
@@ -305,8 +342,16 @@ function handleInsertFromDrop(event: InputEvent): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('replaceText', { startUuid, endUuid, characters: newCharacters });
+    execCommand('replaceText', {
+      startUuid: leftUuid,
+      endUuid: rightUuid,
+      characters: newCharacters,
+    });
   }
 }
 
@@ -341,6 +386,10 @@ function handleDeleteWordBackward(): void {
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
     const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
+
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    highlightBoundarySpans(leftSpan, rightSpan);
+    return;
 
     setNewRangeAnchorUuid(snippetCharacters.value[startWordIndex - 1]?.data.uuid);
 
@@ -390,6 +439,10 @@ function handleDeleteWordForward(): void {
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const endWordUuid: string | null = findEndOfWordFromUuid(deletionStartUuid);
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    highlightBoundarySpans(leftSpan, rightSpan);
+    return;
+
     setNewRangeAnchorUuid(endWordUuid);
 
     try {
@@ -432,13 +485,16 @@ function handleDeleteContentBackward(): void {
     }
 
     const charIndex: number = getCharacterIndex(spanToDelete);
-    const charUuid: string = getCharacterUuidFromSpan(spanToDelete);
+
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
 
     setNewRangeAnchorUuid(snippetCharacters.value[charIndex - 1]?.data.uuid);
 
     try {
       // deleteCharactersWithinUuidRange(charUuid, charUuid);
-      execCommand('deleteText', { startUuid: charUuid, endUuid: charUuid });
+      execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -465,11 +521,15 @@ function handleDeleteContentBackward(): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
     setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
 
     try {
       // deleteCharactersWithinUuidRange(startUuid, endUuid);
-      execCommand('deleteText', { startUuid, endUuid });
+      execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -492,10 +552,12 @@ function handleDeleteContentForward(): void {
   const { range, type } = getSelectionData();
 
   if (type === 'Caret') {
-    let charUuid: string | null;
+    let leftUuid: string | null;
+    let rightUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
-      charUuid = editorRef.value.firstElementChild?.id ?? null;
+      leftUuid = getCharacterUuidFromSpan(editorRef.value.firstElementChild);
+      rightUuid = getCharacterUuidFromSpan(editorRef.value.lastElementChild);
     } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
       let spanToDelete: HTMLSpanElement;
@@ -510,14 +572,15 @@ function handleDeleteContentForward(): void {
         }
       }
 
-      charUuid = getCharacterUuidFromSpan(spanToDelete);
+      leftUuid = getCharacterUuidFromSpan(spanToDelete.previousElementSibling);
+      rightUuid = getCharacterUuidFromSpan(spanToDelete.nextElementSibling);
     }
 
-    setNewRangeAnchorUuid(charUuid);
+    setNewRangeAnchorUuid(leftUuid);
 
     try {
       // deleteCharactersWithinUuidRange(charUuid, charUuid);
-      execCommand('deleteText', { startUuid: charUuid, endUuid: charUuid });
+      execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -544,11 +607,14 @@ function handleDeleteContentForward(): void {
       endUuid = getCharacterUuidFromSpan(endSpan);
     }
 
-    setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
+    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
+    setNewRangeAnchorUuid(leftUuid);
 
     try {
-      // deleteCharactersWithinUuidRange(startUuid, endUuid);
-      execCommand('deleteText', { startUuid, endUuid });
+      execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -580,11 +646,14 @@ function handleDeleteByCut(): void {
     endUuid = getCharacterUuidFromSpan(endSpan);
   }
 
-  setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
+  const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
+  const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
+  const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+
+  setNewRangeAnchorUuid(leftUuid);
 
   try {
-    // deleteCharactersWithinUuidRange(startUuid, endUuid);
-    execCommand('deleteText', { startUuid, endUuid });
+    execCommand('deleteText', { leftUuid, rightUuid });
   } catch (e: unknown) {
     if (e instanceof TextOperationError) {
       toast.add({
@@ -630,10 +699,10 @@ function handleKeydown(event: KeyboardEvent) {
   }
 
   if (event.shiftKey) {
-    // redo();
+    redo();
     return;
   } else {
-    // undo();
+    undo();
     return;
   }
 }
@@ -653,6 +722,21 @@ async function handleCopy(): Promise<void> {
   }
 }
 
+function highlightBoundarySpans(leftSpan: HTMLSpanElement, rightSpan: HTMLSpanElement) {
+  const allSpans = document.querySelectorAll('#text > span');
+  allSpans.forEach((span: HTMLSpanElement) => {
+    span.style.backgroundColor = 'transparent';
+  });
+  if (leftSpan) {
+    leftSpan.style.backgroundColor = 'green';
+  }
+  if (rightSpan) {
+    rightSpan.style.backgroundColor = 'red';
+  }
+
+  console.log(leftSpan, rightSpan);
+}
+
 function createNewCharacter(char: string): Character {
   return {
     data: {
@@ -661,6 +745,19 @@ function createNewCharacter(char: string): Character {
       uuid: crypto.randomUUID(),
     },
     annotations: [],
+  };
+}
+
+// This returns the spans before and after the given range, not the first/last span inside the range
+function getOuterRangeBoundaries(range: Range): {
+  leftSpan: HTMLSpanElement | null;
+  rightSpan: HTMLSpanElement | null;
+} {
+  const { startSpan, endSpan } = getRangeBoundaries(range);
+
+  return {
+    leftSpan: (startSpan.previousElementSibling as HTMLSpanElement) ?? null,
+    rightSpan: (endSpan.nextElementSibling as HTMLSpanElement) ?? null,
   };
 }
 
@@ -698,6 +795,9 @@ function getCharacterUuidFromSpan(span: HTMLSpanElement | Element | null): strin
   <div class="counter text-right mb-1">
     <small>{{ charCounterMessage }}</small>
   </div>
+
+  <div>Undo stack: {{ history.length }}</div>
+  <div>Redo stack: {{ redoStack.length }}</div>
   <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
     <div class="text-container h-full p-2 flex gap-1 overflow-hidden">
