@@ -619,16 +619,6 @@ export function useCharactersStore() {
   }
 
   /**
-   * Deletes characters between the specified start and end UUIDs.
-   *
-   * @param {string} startUuid - The UUID of the first character to delete.
-   * @param {string} endUuid - The UUID of the last character to delete.
-   * @return {void} This function does not return anything.
-   * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
-   */
-  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {}
-
-  /**
    * Replaces the characters between two given UUIDs with a new set of characters.
    * If a UUID is `null`, it is treated as if the boundary is at the start/end of the snippet.
    *
@@ -855,7 +845,6 @@ export function useCharactersStore() {
     totalCharacters,
     annotateCharacters,
     deleteCharactersBetweenUuids,
-    deleteCharactersWithinUuidRange,
     deleteWordAfterUuid,
     deleteWordBeforeUuid,
     lastCharacters,

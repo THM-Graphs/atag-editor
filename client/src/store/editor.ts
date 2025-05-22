@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual } from '../utils/helper/helper';
-import { Annotation, CommandData, CommandType } from '../models/types';
+import { Annotation, CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
 import { useTextStore } from './text';
 
 const { text, initialText } = useTextStore();
@@ -10,12 +10,12 @@ const {
   snippetCharacters,
   initialSnippetCharacters,
   annotateCharacters,
-  deleteCharactersWithinUuidRange,
+  deleteCharactersBetweenUuids,
   deleteWordAfterUuid,
   deleteWordBeforeUuid,
   insertCharactersAfterUuid,
   removeAnnotationFromCharacters,
-  replaceCharactersWithinUuidRange,
+  replaceCharactersBetweenUuids,
 } = useCharactersStore();
 const {
   annotations,
@@ -37,18 +37,18 @@ const newRangeAnchorUuid = ref<string | null>(null);
  */
 export function useEditorStore() {
   function execCommand(command: CommandType, data: CommandData): void {
-    const { annotation, uuid, startUuid, endUuid, characters } = data;
+    const { annotation, characters, leftUuid, rightUuid } = data;
 
     if (command === 'insertText') {
-      insertCharactersAfterUuid(uuid, characters);
+      insertCharactersAfterUuid(leftUuid, characters);
     } else if (command === 'replaceText') {
-      replaceCharactersWithinUuidRange(startUuid, endUuid, characters);
+      replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
     } else if (command === 'deleteWordBefore') {
-      deleteWordBeforeUuid(uuid);
+      deleteWordBeforeUuid(rightUuid);
     } else if (command === 'deleteWordAfter') {
-      deleteWordAfterUuid(uuid);
+      deleteWordAfterUuid(leftUuid);
     } else if (command === 'deleteText') {
-      deleteCharactersWithinUuidRange(startUuid, endUuid);
+      deleteCharactersBetweenUuids(leftUuid, rightUuid);
     } else if (command === 'createAnnotation') {
       addAnnotation(annotation);
       annotateCharacters(characters, annotation);

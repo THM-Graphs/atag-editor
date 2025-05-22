@@ -135,26 +135,26 @@ function handleInsertText(event: InputEvent): void {
   const { range, type } = getSelectionData();
 
   if (type === 'Caret') {
-    let uuid: string | null;
+    let leftUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
-      uuid = null;
+      leftUuid = null;
     } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
-        uuid = null;
+        leftUuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling);
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling);
         } else {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement);
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
 
     setNewRangeAnchorUuid(newCharacter.data.uuid);
-    execCommand('insertText', { uuid, characters: [newCharacter] });
+    execCommand('insertText', { leftUuid, characters: [newCharacter] });
   } else {
     let startUuid: string | null;
     let endUuid: string | null;
@@ -211,26 +211,26 @@ async function handleInsertFromPaste(): Promise<void> {
   const { range, type } = getSelectionData();
 
   if (type === 'Caret') {
-    let uuid: string | null;
+    let leftUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
-      uuid = null;
+      leftUuid = null;
     } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
-        uuid = null;
+        leftUuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
         } else {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement);
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('insertText', { uuid, characters: newCharacters });
+    execCommand('insertText', { leftUuid, characters: newCharacters });
   } else {
     let startUuid: string | null;
     let endUuid: string | null;
@@ -259,11 +259,7 @@ async function handleInsertFromPaste(): Promise<void> {
     const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('replaceText', {
-      startUuid: leftUuid,
-      endUuid: rightUuid,
-      characters: newCharacters,
-    });
+    execCommand('replaceText', { leftUuid, rightUuid, characters: newCharacters });
   }
 }
 
@@ -282,25 +278,25 @@ function handleInsertFromDrop(event: InputEvent): void {
   const { range, type } = getSelectionData();
 
   if (type === 'Caret') {
-    let uuid: string | null;
+    let leftUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
     } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
       if (isCaretAtBeginning(referenceSpanElement, editorRef)) {
-        uuid = null;
+        leftUuid = null;
       } else {
         if (range.startOffset === 0) {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement.previousElementSibling) ?? null;
         } else {
-          uuid = getCharacterUuidFromSpan(referenceSpanElement);
+          leftUuid = getCharacterUuidFromSpan(referenceSpanElement);
         }
       }
     }
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('insertText', { uuid, characters: newCharacters });
+    execCommand('insertText', { leftUuid, characters: newCharacters });
   } else {
     let startUuid: string | null;
     let endUuid: string | null;
@@ -329,11 +325,7 @@ function handleInsertFromDrop(event: InputEvent): void {
     const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
-    execCommand('replaceText', {
-      startUuid: leftUuid,
-      endUuid: rightUuid,
-      characters: newCharacters,
-    });
+    execCommand('replaceText', { leftUuid, rightUuid, characters: newCharacters });
   }
 }
 
@@ -374,7 +366,7 @@ function handleDeleteWordBackward(): void {
     setNewRangeAnchorUuid(uuidBeforeWordStart);
 
     try {
-      execCommand('deleteWordBefore', { uuid: rightUuid });
+      execCommand('deleteWordBefore', { rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -418,7 +410,7 @@ function handleDeleteWordForward(): void {
     setNewRangeAnchorUuid(leftUuid);
 
     try {
-      execCommand('deleteWordAfter', { uuid: leftUuid });
+      execCommand('deleteWordAfter', { leftUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
