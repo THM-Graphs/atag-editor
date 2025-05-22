@@ -91,6 +91,8 @@ export type CommandData = {
   annotation?: Annotation;
   characters?: Character[];
   endUuid?: string;
+  leftUuid?: string | null;
+  rightUuid?: string | null;
   startUuid?: string;
   uuid?: string;
 };

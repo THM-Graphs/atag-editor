@@ -46,9 +46,7 @@ const {
   beforeStartIndex,
   snippetCharacters,
   totalCharacters,
-  findEndOfWordFromUuid,
-  findStartOfWordFromUuid,
-  getCharacterIndexFromUuid,
+  findUuidBeforeWordStart,
 } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 // const { pushHistoryEntry, redo, undo } = useHistoryStore();
@@ -155,10 +153,6 @@ function handleInsertText(event: InputEvent): void {
       }
     }
 
-    // const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    // highlightBoundarySpans(leftSpan, rightSpan);
-    // return;
-
     setNewRangeAnchorUuid(newCharacter.data.uuid);
     execCommand('insertText', { uuid, characters: [newCharacter] });
   } else {
@@ -189,11 +183,7 @@ function handleInsertText(event: InputEvent): void {
     const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
 
     setNewRangeAnchorUuid(newCharacter.data.uuid);
-    execCommand('replaceText', {
-      startUuid: leftUuid,
-      endUuid: rightUuid,
-      characters: [newCharacter],
-    });
+    execCommand('replaceText', { leftUuid, rightUuid, characters: [newCharacter] });
   }
 }
 
@@ -238,10 +228,6 @@ async function handleInsertFromPaste(): Promise<void> {
         }
       }
     }
-
-    // const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    // highlightBoundarySpans(leftSpan, rightSpan);
-    // return;
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { uuid, characters: newCharacters });
@@ -313,10 +299,6 @@ function handleInsertFromDrop(event: InputEvent): void {
       }
     }
 
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    highlightBoundarySpans(leftSpan, rightSpan);
-    return;
-
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { uuid, characters: newCharacters });
   } else {
@@ -382,20 +364,17 @@ function handleDeleteWordBackward(): void {
       return;
     }
 
-    const charUuid: string = getCharacterUuidFromSpan(spanToDelete);
+    // Right span is right boundary of to-be-calculated deletion change set
+    const { rightSpan } = getOuterRangeBoundaries(range);
+    const rightUuid: string = getCharacterUuidFromSpan(rightSpan);
+
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
-    const startWordUuid: string | null = findStartOfWordFromUuid(charUuid);
-    const startWordIndex = getCharacterIndexFromUuid(startWordUuid);
+    const uuidBeforeWordStart: string | null = findUuidBeforeWordStart(rightUuid);
 
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    highlightBoundarySpans(leftSpan, rightSpan);
-    return;
-
-    setNewRangeAnchorUuid(snippetCharacters.value[startWordIndex - 1]?.data.uuid);
+    setNewRangeAnchorUuid(uuidBeforeWordStart);
 
     try {
-      // deleteWordBeforeUuid(charUuid);
-      execCommand('deleteWordBefore', { uuid: charUuid });
+      execCommand('deleteWordBefore', { uuid: rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
@@ -419,10 +398,10 @@ function handleDeleteWordForward(): void {
   const { range, type } = getSelectionData();
 
   if (type === 'Caret') {
-    let deletionStartUuid: string | null;
+    let leftUuid: string | null;
 
     if (isEditorElement(range.startContainer)) {
-      deletionStartUuid = null;
+      leftUuid = null;
     } else {
       const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
 
@@ -431,22 +410,15 @@ function handleDeleteWordForward(): void {
         return;
       }
 
-      deletionStartUuid = isCaretAtBeginning(referenceSpanElement, editorRef)
-        ? getCharacterUuidFromSpan(referenceSpanElement)
-        : getCharacterUuidFromSpan(referenceSpanElement.nextElementSibling);
+      leftUuid = isCaretAtBeginning(referenceSpanElement, editorRef)
+        ? null
+        : getCharacterUuidFromSpan(referenceSpanElement);
     }
 
-    // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
-    const endWordUuid: string | null = findEndOfWordFromUuid(deletionStartUuid);
-
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    highlightBoundarySpans(leftSpan, rightSpan);
-    return;
-
-    setNewRangeAnchorUuid(endWordUuid);
+    setNewRangeAnchorUuid(leftUuid);
 
     try {
-      execCommand('deleteWordAfter', { uuid: deletionStartUuid });
+      execCommand('deleteWordAfter', { uuid: leftUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
         toast.add({
