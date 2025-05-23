@@ -90,10 +90,8 @@ export type Command = {
 export type CommandData = {
   annotation?: Annotation;
   characters?: Character[];
-  endUuid?: string;
   leftUuid?: string | null;
   rightUuid?: string | null;
-  startUuid?: string;
   uuid?: string;
 };
 
@@ -113,8 +111,17 @@ export type CommandType =
 export type HistoryStack = HistoryRecord[];
 
 export type HistoryRecord = {
-  annotations: Annotation[];
-  characters: Character[];
+  timestamp: Date;
+  data: {
+    command: CommandType;
+    data: {
+      annotation?: Annotation;
+      leftUuid?: string | null;
+      newCharacterData?: Character[];
+      oldCharacterData?: Character[];
+      rightUuid?: string | null;
+    };
+  };
 };
 
 export type MalformedAnnotation = {

@@ -407,19 +407,26 @@ export function useCharactersStore() {
   }
 
   /**
-   * Inserts new characters after the character with the given UUID. If the UUID is `null`, the new characters are inserted at the beginning of the snippet.
+   * Inserts new characters between the given UUIDs. If one of the UUIDs is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
    *
-   * @param {string | null} uuid - The UUID of the character after which to insert the new characters.
+   * Technically, `rightUuid` is not needed for the insert operation, but kept for consistency with other functions and to simplify creating the history record.
+   *
+   * @param {string | null} leftUuid - The UUID of the character to the left of the range to insert into.
+   * @param {string | null} rightUuid - The UUID of the character to the right of the range to insert into.
    * @param {Character[]} newCharacters - The new characters to insert.
-   * @return {void} This function does not return anything.
+   * @return {HistoryRecord} A history record of the insertion.
    */
-  function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
-    const index: number = uuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) + 1
+  function insertCharactersBetweenUuids(
+    leftUuid: string | null,
+    rightUuid: string | null,
+    newCharacters: Character[],
+  ): HistoryRecord {
+    const indexToInsert: number = leftUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === leftUuid) + 1
       : 0;
 
-    const prevChar: CharacterInfo = getPrevCharInfo(index);
-    const nextChar: CharacterInfo = getCharInfo(index);
+    const prevChar: CharacterInfo = getPrevCharInfo(indexToInsert);
+    const nextChar: CharacterInfo = getCharInfo(indexToInsert);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.annotations
@@ -470,7 +477,21 @@ export function useCharactersStore() {
       }
     });
 
-    snippetCharacters.value.splice(index, 0, ...newCharacters);
+    snippetCharacters.value.splice(indexToInsert, 0, ...newCharacters);
+
+    const historyRecord: HistoryRecord = {
+      timestamp: new Date(),
+      data: {
+        command: 'insertText',
+        data: {
+          leftUuid,
+          rightUuid,
+          newCharacterData: newCharacters,
+        },
+      },
+    };
+
+    return historyRecord;
   }
 
   /**
@@ -479,12 +500,12 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Delete".
    *
    * @param {string} uuid - The UUID of the character after which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {HistoryRecord} A history record of the deletion.
    */
-  function deleteWordAfterUuid(uuid: string): void {
+  function deleteWordAfterUuid(uuid: string): HistoryRecord {
     const endWordUuid: string | null = findUuidAfterWordEnd(uuid);
 
-    deleteCharactersBetweenUuids(uuid, endWordUuid);
+    return deleteCharactersBetweenUuids(uuid, endWordUuid);
   }
 
   /**
@@ -493,12 +514,12 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Backspace".
    *
    * @param {string} uuid - The UUID of the character before which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {HistoryRecord} A history record of the deletion.
    */
-  function deleteWordBeforeUuid(uuid: string): void {
+  function deleteWordBeforeUuid(uuid: string): HistoryRecord {
     const startWordUuid: string | null = findUuidBeforeWordStart(uuid);
 
-    deleteCharactersBetweenUuids(startWordUuid, uuid);
+    return deleteCharactersBetweenUuids(startWordUuid, uuid);
   }
 
   /**
@@ -509,9 +530,9 @@ export function useCharactersStore() {
    * @throws Error if there are no characters in between.
    * @param {string} leftUuid - The UUID of the character to the left of the range to delete.
    * @param {string} rightUuid - The UUID of the character to the right of the range to delete.
-   * @return {void} This function does not return anything.
+   * @return {HistoryRecord} A history record of the deletion.
    */
-  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): void {
+  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): HistoryRecord {
     // Boundaries are the same character -> not valid
     if (leftUuid && rightUuid && leftUuid === rightUuid) {
       throw Error('Boundaries are the same character.');
@@ -615,7 +636,24 @@ export function useCharactersStore() {
 
     const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
 
-    snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
+    const deletedCharacters: Character[] = snippetCharacters.value.splice(
+      deletionStartIndex,
+      charsToDeleteCount,
+    );
+
+    const historyRecord: HistoryRecord = {
+      timestamp: new Date(),
+      data: {
+        command: 'deleteText',
+        data: {
+          leftUuid,
+          rightUuid,
+          oldCharacterData: deletedCharacters,
+        },
+      },
+    };
+
+    return historyRecord;
   }
 
   /**
@@ -628,13 +666,13 @@ export function useCharactersStore() {
    * @param {string | null} leftUuid - The UUID of the character to the left of the range to replace.
    * @param {string | null} rightUuid - The UUID of the character to the right of the range to replace.
    * @param {Character[]} newCharacters - The new characters to insert in place of the existing range.
-   * @return {void} This function does not return anything.
+   * @return {HistoryRecord} A history record of the replacement.
    */
   function replaceCharactersBetweenUuids(
     leftUuid: string | null,
     rightUuid: string | null,
     newCharacters: Character[],
-  ): void {
+  ): HistoryRecord {
     const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
     const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
@@ -723,7 +761,26 @@ export function useCharactersStore() {
 
     const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
 
-    snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
+    const deletedCharacters: Character[] = snippetCharacters.value.splice(
+      replaceStartIndex,
+      charsToDeleteCount,
+      ...newCharacters,
+    );
+
+    const historyRecord: HistoryRecord = {
+      timestamp: new Date(),
+      data: {
+        command: 'replaceText',
+        data: {
+          leftUuid,
+          rightUuid,
+          newCharacterData: newCharacters,
+          oldCharacterData: deletedCharacters,
+        },
+      },
+    };
+
+    return historyRecord;
   }
 
   /**
@@ -852,7 +909,7 @@ export function useCharactersStore() {
     findUuidBeforeWordStart,
     getCharacterIndexFromUuid,
     initializeCharacters,
-    insertCharactersAfterUuid,
+    insertCharactersBetweenUuids,
     insertSnippetIntoChain,
     nextCharacters,
     previousCharacters,
