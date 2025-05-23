@@ -1,10 +1,10 @@
 import { ref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
-import { areSetsEqual } from '../utils/helper/helper';
+import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
 import { Annotation, CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
 import { useTextStore } from './text';
-import { EDIT_DELAY, HISTORY_MAX_SIZE } from '../config/constants';
+import { HISTORY_MAX_SIZE } from '../config/constants';
 
 const { text, initialText } = useTextStore();
 const {
@@ -14,9 +14,13 @@ const {
   deleteCharactersBetweenUuids,
   deleteWordAfterUuid,
   deleteWordBeforeUuid,
+  getAfterEndCharacter,
+  getBeforeStartCharacter,
   insertCharactersBetweenUuids,
   removeAnnotationFromCharacters,
   replaceCharactersBetweenUuids,
+  setAfterEndCharacter,
+  setBeforeStartCharacter,
 } = useCharactersStore();
 const {
   annotations,
@@ -40,12 +44,31 @@ const redoStack = ref<HistoryRecord[]>([]);
  * the store is reset.
  */
 export function useEditorStore() {
-  function createHistoryRecord(command: CommandType, commandData: CommandData): HistoryRecord {
+  /**
+   * Initializes the editor. Currently only initializes history state.
+   * Called when the Editor component is mounted.
+   *
+   * @return {void} No return value.
+   */
+  function initializeEditor(): void {
+    const record: HistoryRecord = createHistoryRecord();
+
+    history.value.push(record);
+  }
+
+  /**
+   * Creates a new history record with the current annotations, characters and boundaries.
+   *
+   * @return {HistoryRecord} The new history record.
+   */
+  function createHistoryRecord(): HistoryRecord {
     return {
       timestamp: new Date(),
       data: {
-        command,
-        data: commandData,
+        afterEndCharacter: cloneDeep(getAfterEndCharacter()),
+        annotations: cloneDeep(annotations.value),
+        beforeStartCharacter: cloneDeep(getBeforeStartCharacter()),
+        characters: cloneDeep(snippetCharacters.value),
       },
     };
   }
@@ -53,18 +76,18 @@ export function useEditorStore() {
   function execCommand(command: CommandType, data: CommandData): void {
     const { annotation, characters, leftUuid, rightUuid } = data;
 
-    let historyRecord: HistoryRecord | null = null;
+    // let historyRecord: HistoryRecord | null = null;
 
     if (command === 'insertText') {
-      historyRecord = insertCharactersBetweenUuids(leftUuid, rightUuid, characters);
+      insertCharactersBetweenUuids(leftUuid, rightUuid, characters);
     } else if (command === 'replaceText') {
-      historyRecord = replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
+      replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
     } else if (command === 'deleteWordBefore') {
-      historyRecord = deleteWordBeforeUuid(rightUuid);
+      deleteWordBeforeUuid(rightUuid);
     } else if (command === 'deleteWordAfter') {
-      historyRecord = deleteWordAfterUuid(leftUuid);
+      deleteWordAfterUuid(leftUuid);
     } else if (command === 'deleteText') {
-      historyRecord = deleteCharactersBetweenUuids(leftUuid, rightUuid);
+      deleteCharactersBetweenUuids(leftUuid, rightUuid);
     } else if (command === 'createAnnotation') {
       // TODO: Handle undo/redo for this
       const addedAnnotation: Annotation = addAnnotation(annotation);
@@ -74,31 +97,20 @@ export function useEditorStore() {
       deleteAnnotation(annotation.data.properties.uuid);
       removeAnnotationFromCharacters(annotation.data.properties.uuid);
     } else if (command === 'shiftAnnotationLeft') {
-      const changedAnnotation = shiftAnnotationLeft(annotation);
-      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      shiftAnnotationLeft(annotation);
+      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'shiftAnnotationRight') {
-      const changedAnnotation = shiftAnnotationRight(annotation);
-      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      shiftAnnotationRight(annotation);
+      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'expandAnnotation') {
-      const changedAnnotation = expandAnnotation(annotation);
-      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      expandAnnotation(annotation);
+      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'shrinkAnnotation') {
-      const changedAnnotation = shrinkAnnotation(annotation);
-      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      shrinkAnnotation(annotation);
+      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     }
 
-    if (historyRecord) {
-      history.value.push(historyRecord);
-      // Clear redo stack on any new command
-      redoStack.value = [];
-
-      // Enforce history size limit
-      // if (history.value.length > HISTORY_MAX_SIZE) {
-      //   history.value.shift(); // Remove the oldest entry
-      // }
-    }
-
-    console.log(historyRecord);
+    pushHistoryEntry();
   }
 
   /**
@@ -146,76 +158,95 @@ export function useEditorStore() {
     window.getSelection().addRange(range);
   }
 
-  // function pushHistoryEntry(record: HistoryRecord): void {
-  //   // if (Date.now() - lastEditTimestamp < EDIT_DELAY) {
-  //   //   lastEditTimestamp = Date.now();
-  //   //   return;
-  //   // }
+  /**
+   * Creates a new history record with the current annotations, characters and boundaries and adds it to the history stack.
+   * Removes the oldest entry if the stack exceeds the maximum size.
+   *
+   * @return {void} No return value.
+   */
+  function pushHistoryEntry(): void {
+    // if (Date.now() - lastEditTimestamp < EDIT_DELAY) {
+    //   lastEditTimestamp = Date.now();
+    //   return;
+    // }
 
-  //   // lastEditTimestamp = Date.now();
+    // lastEditTimestamp = Date.now();
 
-  //   // const newEntry: HistoryRecord = {
-  //   //   annotations: cloneDeep(annotations.value),
-  //   //   characters: cloneDeep(snippetCharacters.value),
-  //   // };
+    const record: HistoryRecord = createHistoryRecord();
 
-  //   // history.value.push(record);
-  //   history.value.splice(currentHistoryPosition + 1, Infinity, record);
+    history.value.push(record);
 
-  //   // Keep stack reasonably small
-  //   // TODO: Give hint for user (like toast/message)
-  //   // if (history.value.length > HISTORY_MAX_SIZE) {
-  //   //   history.value.shift();
-  //   // }
+    // Clear redo stack on any new command
+    redoStack.value = [];
 
-  //   currentHistoryPosition = history.value.length - 1;
-  //   console.log(currentHistoryPosition);
-  // }
+    // Keep stack reasonably small
+    if (history.value.length > HISTORY_MAX_SIZE) {
+      history.value.shift(); // Remove the oldest entry
+    }
+  }
 
+  /**
+   * Undoes the last action. Pops the last record from the history stack and applies the previous state.
+   * Pushes the popped record to the redo stack.
+   *
+   * @return {void} No return value.
+   */
   function undo(): void {
     if (history.value.length === 0) {
       console.log('Nothing to undo.');
       return;
     }
 
-    const record: HistoryRecord = history.value.pop();
+    const lastRecord: HistoryRecord = history.value.pop();
 
-    if (!record) {
+    if (!lastRecord) {
       return;
     }
 
-    const { command, data } = record.data;
+    const newLastRecord: HistoryRecord | null = history.value[history.value.length - 1];
 
-    if (command === 'insertText') {
-      deleteCharactersBetweenUuids(data.leftUuid, data.rightUuid);
-    } else if (command === 'replaceText') {
-      replaceCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData);
-    } else if (
-      command === 'deleteWordBefore' ||
-      command === 'deleteWordAfter' ||
-      command === 'deleteText'
-    ) {
-      insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData!);
-    } else if (command === 'createAnnotation') {
-      deleteAnnotation(data.annotation.data.properties.uuid);
-    } else if (command === 'deleteAnnotation') {
-      addAnnotation(data.annotation!);
-    } else if (command === 'shiftAnnotationLeft') {
-      shiftAnnotationRight(data.annotation);
-    } else if (command === 'shiftAnnotationRight') {
-      shiftAnnotationLeft(data.annotation);
-    } else if (command === 'expandAnnotation') {
-      shrinkAnnotation(data.annotation);
-    } else if (command === 'shrinkAnnotation') {
-      expandAnnotation(data.annotation);
+    if (!newLastRecord) {
+      console.log('Nothing to undo.');
+      return;
     }
 
-    redoStack.value.push(record);
+    snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
+    annotations.value = cloneDeep(newLastRecord.data.annotations);
+    setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
+    setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
+
+    // if (command === 'insertText') { // const { command, data } = record.data;
+    //   deleteCharactersBetweenUuids(data.leftUuid, data.rightUuid);
+    // } else if (command === 'replaceText') {
+    //   replaceCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData);
+    // } else if (
+    //   command === 'deleteWordBefore' ||
+    //   command === 'deleteWordAfter' ||
+    //   command === 'deleteText'
+    // ) {
+    //   insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData!);
+    // } else if (command === 'createAnnotation') {
+    //   deleteAnnotation(data.annotation.data.properties.uuid);
+    // } else if (command === 'deleteAnnotation') {
+    //   addAnnotation(data.annotation!);
+    // } else if (command === 'shiftAnnotationLeft') {
+    //   shiftAnnotationRight(data.annotation);
+    // } else if (command === 'shiftAnnotationRight') {
+    //   shiftAnnotationLeft(data.annotation);
+    // } else if (command === 'expandAnnotation') {
+    //   shrinkAnnotation(data.annotation);
+    // } else if (command === 'shrinkAnnotation') {
+    //   expandAnnotation(data.annotation);
+    // }
+
+    redoStack.value.push(lastRecord);
   }
 
   /**
-   * Performs a redo operation by re-applying the last undone command.
-   * Moves the redone command's record back to the undo stack.
+   * Redoes the last action that was undone. Pops the last record from the redo stack and applies the state that was saved when the action was undone.
+   * Pushes the popped record to the history stack.
+   *
+   * @return {void} No return value.
    */
   function redo(): void {
     if (redoStack.value.length === 0) {
@@ -229,31 +260,36 @@ export function useEditorStore() {
       return;
     }
 
-    const { command, data } = record.data;
+    // const { command, data } = record.data;
 
-    if (command === 'insertText') {
-      insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
-    } else if (command === 'replaceText') {
-      replaceCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
-    } else if (command === 'deleteWordBefore') {
-      deleteWordBeforeUuid(data.rightUuid);
-    } else if (command === 'deleteWordAfter') {
-      deleteWordAfterUuid(data.leftUuid);
-    } else if (command === 'deleteText') {
-      deleteCharactersBetweenUuids(data.leftUuid, data.rightUuid);
-    } else if (command === 'createAnnotation') {
-      addAnnotation(data.annotation);
-    } else if (command === 'deleteAnnotation') {
-      deleteAnnotation(data.annotation.data.properties.uuid);
-    } else if (command === 'shiftAnnotationLeft') {
-      shiftAnnotationLeft(data.annotation);
-    } else if (command === 'shiftAnnotationRight') {
-      shiftAnnotationRight(data.annotation);
-    } else if (command === 'expandAnnotation') {
-      expandAnnotation(data.annotation);
-    } else if (command === 'shrinkAnnotation') {
-      shrinkAnnotation(data.annotation);
-    }
+    // if (command === 'insertText') {
+    //   insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
+    // } else if (command === 'replaceText') {
+    //   replaceCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
+    // } else if (command === 'deleteWordBefore') {
+    //   deleteWordBeforeUuid(data.rightUuid);
+    // } else if (command === 'deleteWordAfter') {
+    //   deleteWordAfterUuid(data.leftUuid);
+    // } else if (command === 'deleteText') {
+    //   deleteCharactersBetweenUuids(data.leftUuid, data.rightUuid);
+    // } else if (command === 'createAnnotation') {
+    //   addAnnotation(data.annotation);
+    // } else if (command === 'deleteAnnotation') {
+    //   deleteAnnotation(data.annotation.data.properties.uuid);
+    // } else if (command === 'shiftAnnotationLeft') {
+    //   shiftAnnotationLeft(data.annotation);
+    // } else if (command === 'shiftAnnotationRight') {
+    //   shiftAnnotationRight(data.annotation);
+    // } else if (command === 'expandAnnotation') {
+    //   expandAnnotation(data.annotation);
+    // } else if (command === 'shrinkAnnotation') {
+    //   shrinkAnnotation(data.annotation);
+    // }
+
+    snippetCharacters.value = cloneDeep(record.data.characters);
+    annotations.value = cloneDeep(record.data.annotations);
+    setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
+    setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
     history.value.push(record);
   }
@@ -369,6 +405,7 @@ export function useEditorStore() {
     redoStack,
     execCommand,
     hasUnsavedChanges,
+    initializeEditor,
     placeCaret,
     redo,
     resetEditor,

@@ -113,14 +113,10 @@ export type HistoryStack = HistoryRecord[];
 export type HistoryRecord = {
   timestamp: Date;
   data: {
-    command: CommandType;
-    data: {
-      annotation?: Annotation;
-      leftUuid?: string | null;
-      newCharacterData?: Character[];
-      oldCharacterData?: Character[];
-      rightUuid?: string | null;
-    };
+    afterEndCharacter: Character | null;
+    annotations: Annotation[];
+    beforeStartCharacter: Character | null;
+    characters: Character[];
   };
 };
 
