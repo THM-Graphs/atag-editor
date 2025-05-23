@@ -541,8 +541,8 @@ export function useCharactersStore() {
     const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
     const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
-    const prevChar: CharacterInfo = leftIndex ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
-    const nextChar: CharacterInfo = rightIndex
+    const prevChar: CharacterInfo = leftUuid ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightUuid
       ? getCharInfo(rightIndex)
       : getNextCharInfo(rightIndex);
 
@@ -676,8 +676,8 @@ export function useCharactersStore() {
     const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
     const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
-    const prevChar: CharacterInfo = leftIndex ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
-    const nextChar: CharacterInfo = rightIndex
+    const prevChar: CharacterInfo = leftUuid ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightUuid
       ? getCharInfo(rightIndex)
       : getNextCharInfo(rightIndex);
 
