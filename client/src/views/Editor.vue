@@ -64,7 +64,7 @@ onUnmounted((): void => {
   resetCharacters();
   resetAnnotations();
   resetEditor();
-  // resetHistory();
+  resetHistory();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -84,7 +84,8 @@ const isValidText = ref<boolean>(false);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
-const { hasUnsavedChanges, initializeEditor, resetEditor, resetHistory } = useEditorStore();
+const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
+  useEditorStore();
 const { text, initialText, initializeText } = useTextStore();
 const {
   afterEndIndex,
@@ -205,7 +206,7 @@ async function handleCancelChanges(): Promise<void> {
   totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
   totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
 
-  resetHistory();
+  initializeHistory();
 }
 
 async function saveCharacters(): Promise<void> {

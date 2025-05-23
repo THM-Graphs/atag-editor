@@ -51,9 +51,19 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function initializeEditor(): void {
+    initializeHistory();
+  }
+
+  /**
+   * Initializes the editing history by creating the first entry in the history stack from the current character snippet.
+   * Called when the Editor component is mounted and when the snippet changes on pagination (Undo behaviour is scoped to the current snippet).
+   *
+   * @return {void} No return value.
+   */
+  function initializeHistory(): void {
     const record: HistoryRecord = createHistoryRecord();
 
-    history.value.push(record);
+    history.value = [record];
   }
 
   /**
@@ -192,8 +202,8 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function undo(): void {
-    if (history.value.length === 0) {
-      console.log('Nothing to undo.');
+    if (history.value.length <= 1) {
+      console.log('Nothing to undo, last entry is initial...');
       return;
     }
 
@@ -406,6 +416,7 @@ export function useEditorStore() {
     execCommand,
     hasUnsavedChanges,
     initializeEditor,
+    initializeHistory,
     placeCaret,
     redo,
     resetEditor,

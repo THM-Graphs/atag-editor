@@ -60,8 +60,8 @@ const {
   nextCharacters,
   previousCharacters,
 } = useCharactersStore();
-const { keepTextOnPagination, setNewRangeAnchorUuid, hasUnsavedChanges } = useEditorStore();
-// const { initializeHistory } = useHistoryStore();
+const { keepTextOnPagination, setNewRangeAnchorUuid, hasUnsavedChanges, initializeHistory } =
+  useEditorStore();
 
 function handlePagination() {
   if (hasUnsavedChanges()) {
@@ -118,7 +118,7 @@ function handlePagination() {
 
   setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
 
-  // initializeHistory();
+  initializeHistory();
 }
 </script>
 
