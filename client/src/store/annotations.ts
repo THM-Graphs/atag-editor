@@ -104,8 +104,10 @@ export function useAnnotationStore() {
     }
   }
 
-  function addAnnotation(annotation: Annotation): void {
+  function addAnnotation(annotation: Annotation): Annotation {
     annotations.value.push(annotation);
+
+    return annotation;
   }
 
   function deleteAnnotation(uuid: string): void {
@@ -113,7 +115,7 @@ export function useAnnotationStore() {
     annotation.status = 'deleted';
   }
 
-  function expandAnnotation(annotation: Annotation): void {
+  function expandAnnotation(annotation: Annotation): Annotation {
     if (annotation.isTruncated) {
       return;
     }
@@ -136,6 +138,8 @@ export function useAnnotationStore() {
     lastCharacter.annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = false;
+
+    return annotation;
   }
 
   /**
@@ -195,7 +199,7 @@ export function useAnnotationStore() {
     initialAnnotations.value = [];
   }
 
-  function shiftAnnotationLeft(annotation: Annotation): void {
+  function shiftAnnotationLeft(annotation: Annotation): Annotation {
     if (annotation.isTruncated) {
       return;
     }
@@ -228,9 +232,11 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex - 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
+
+    return annotation;
   }
 
-  function shiftAnnotationRight(annotation: Annotation): void {
+  function shiftAnnotationRight(annotation: Annotation): Annotation {
     if (annotation.isTruncated) {
       return;
     }
@@ -263,9 +269,11 @@ export function useAnnotationStore() {
     snippetCharacters.value[firstIndex + 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isFirstCharacter = true;
+
+    return annotation;
   }
 
-  function shrinkAnnotation(annotation: Annotation): void {
+  function shrinkAnnotation(annotation: Annotation): Annotation {
     if (annotation.isTruncated) {
       return;
     }
@@ -285,6 +293,8 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex - 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
+
+    return annotation;
   }
 
   /**

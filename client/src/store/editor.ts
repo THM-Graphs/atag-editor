@@ -40,6 +40,16 @@ const redoStack = ref<HistoryRecord[]>([]);
  * the store is reset.
  */
 export function useEditorStore() {
+  function createHistoryRecord(command: CommandType, commandData: CommandData): HistoryRecord {
+    return {
+      timestamp: new Date(),
+      data: {
+        command,
+        data: commandData,
+      },
+    };
+  }
+
   function execCommand(command: CommandType, data: CommandData): void {
     const { annotation, characters, leftUuid, rightUuid } = data;
 
@@ -56,19 +66,25 @@ export function useEditorStore() {
     } else if (command === 'deleteText') {
       historyRecord = deleteCharactersBetweenUuids(leftUuid, rightUuid);
     } else if (command === 'createAnnotation') {
-      addAnnotation(annotation);
+      // TODO: Handle undo/redo for this
+      const addedAnnotation: Annotation = addAnnotation(annotation);
       annotateCharacters(characters, annotation);
     } else if (command === 'deleteAnnotation') {
+      // TODO: Handle undo/redo for this
       deleteAnnotation(annotation.data.properties.uuid);
       removeAnnotationFromCharacters(annotation.data.properties.uuid);
     } else if (command === 'shiftAnnotationLeft') {
-      shiftAnnotationLeft(annotation);
+      const changedAnnotation = shiftAnnotationLeft(annotation);
+      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'shiftAnnotationRight') {
-      shiftAnnotationRight(annotation);
+      const changedAnnotation = shiftAnnotationRight(annotation);
+      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'expandAnnotation') {
-      expandAnnotation(annotation);
+      const changedAnnotation = expandAnnotation(annotation);
+      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     } else if (command === 'shrinkAnnotation') {
-      shrinkAnnotation(annotation);
+      const changedAnnotation = shrinkAnnotation(annotation);
+      historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
     }
 
     if (historyRecord) {
@@ -164,7 +180,6 @@ export function useEditorStore() {
 
     const record: HistoryRecord = history.value.pop();
 
-    // Should not happen if stack is not empty
     if (!record) {
       return;
     }
@@ -180,30 +195,22 @@ export function useEditorStore() {
       command === 'deleteWordAfter' ||
       command === 'deleteText'
     ) {
-      insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData!); // Insert after the char that was to the left of deletion
+      insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.oldCharacterData!);
     } else if (command === 'createAnnotation') {
       deleteAnnotation(data.annotation.data.properties.uuid);
     } else if (command === 'deleteAnnotation') {
       addAnnotation(data.annotation!);
     } else if (command === 'shiftAnnotationLeft') {
-      // To undo shifting left, shift right using the old state.
-      // This implies `shiftAnnotationRight` can take the full annotation state (or its old/new boundaries)
-      // shiftAnnotationRight(data.oldAnnotationData!); // Pass the annotation *before* the shift left
+      shiftAnnotationRight(data.annotation);
     } else if (command === 'shiftAnnotationRight') {
-      // To undo shifting right, shift left using the old state.
-      // shiftAnnotationLeft(data.oldAnnotationData!);
+      shiftAnnotationLeft(data.annotation);
     } else if (command === 'expandAnnotation') {
-      // To undo expand, shrink it.
-      // shrinkAnnotation(data.oldAnnotationData!);
+      shrinkAnnotation(data.annotation);
     } else if (command === 'shrinkAnnotation') {
-      // To undo shrink, expand it.
-      // expandAnnotation(data.oldAnnotationData!);
+      expandAnnotation(data.annotation);
     }
-    // else if (command === 'someGroupedCommand') {
-    //   // Call its specific undo handler
-    // }
 
-    redoStack.value.push(record); // Move the undone record to the redo stack
+    redoStack.value.push(record);
   }
 
   /**
@@ -225,10 +232,8 @@ export function useEditorStore() {
     const { command, data } = record.data;
 
     if (command === 'insertText') {
-      // Re-insert the characters that were originally inserted.
       insertCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
     } else if (command === 'replaceText') {
-      // Re-apply the replacement with the new characters.
       replaceCharactersBetweenUuids(data.leftUuid, data.rightUuid, data.newCharacterData);
     } else if (command === 'deleteWordBefore') {
       deleteWordBeforeUuid(data.rightUuid);
@@ -237,15 +242,20 @@ export function useEditorStore() {
     } else if (command === 'deleteText') {
       deleteCharactersBetweenUuids(data.leftUuid, data.rightUuid);
     } else if (command === 'createAnnotation') {
-      // Re-create the annotation.
       addAnnotation(data.annotation);
     } else if (command === 'deleteAnnotation') {
-      // Re-delete the annotation.
       deleteAnnotation(data.annotation.data.properties.uuid);
+    } else if (command === 'shiftAnnotationLeft') {
+      shiftAnnotationLeft(data.annotation);
+    } else if (command === 'shiftAnnotationRight') {
+      shiftAnnotationRight(data.annotation);
+    } else if (command === 'expandAnnotation') {
+      expandAnnotation(data.annotation);
+    } else if (command === 'shrinkAnnotation') {
+      shrinkAnnotation(data.annotation);
     }
-    // ... Implement redo logic for all other command types
 
-    history.value.push(record); // Move the redone record back to the undo stack
+    history.value.push(record);
   }
 
   function hasUnsavedChanges(): boolean {
@@ -331,7 +341,8 @@ export function useEditorStore() {
   }
 
   /**
-   * Resets the editing history by clearing history and redo stack. Called when the Editor component is unmounted.
+   * Resets the editing history by clearing history and redo stack. Called when the Editor component is unmounted,
+   * changes are canceled or when the snippet changes on pagination.
    *
    * @return {void} This function does not return anything.
    */
@@ -361,6 +372,7 @@ export function useEditorStore() {
     placeCaret,
     redo,
     resetEditor,
+    resetHistory,
     setNewRangeAnchorUuid,
     undo,
   };
