@@ -64,6 +64,7 @@ export function useEditorStore() {
     const record: HistoryRecord = createHistoryRecord();
 
     history.value = [record];
+    redoStack.value = [];
   }
 
   /**
