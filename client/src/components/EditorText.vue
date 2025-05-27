@@ -18,7 +18,6 @@ import TextOperationError from '../utils/errors/textOperation.error';
 import { useToast } from 'primevue/usetoast';
 import { Character } from '../models/types';
 import { ToastServiceMethods } from 'primevue/toastservice';
-// import { useHistoryStore } from '../store/history';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -49,7 +48,6 @@ const {
   findUuidBeforeWordStart,
 } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
-// const { pushHistoryEntry, redo, undo } = useHistoryStore();
 
 const editorRef = ref<HTMLDivElement>(null);
 
@@ -775,9 +773,6 @@ function getCharacterUuidFromSpan(span: HTMLSpanElement | Element | null): strin
   <div class="counter text-right mb-1">
     <small>{{ charCounterMessage }}</small>
   </div>
-
-  <div>Undo stack: {{ history.length }}</div>
-  <div>Redo stack: {{ redoStack.length }}</div>
   <!-- TODO: Restructure/rename this mess -->
   <div class="content flex flex-column flex-1 px-3 py-1 overflow-hidden">
     <div class="text-container h-full p-2 flex gap-1 overflow-hidden">

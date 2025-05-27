@@ -32,7 +32,6 @@ import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
-// import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
   isCollapsed: boolean;

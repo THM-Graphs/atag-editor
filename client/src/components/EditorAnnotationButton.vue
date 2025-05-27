@@ -10,7 +10,6 @@ import {
 } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
-// import { useHistoryStore } from '../store/history';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
@@ -36,7 +35,6 @@ const { execCommand, setNewRangeAnchorUuid } = useEditorStore();
 const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
-// const { pushHistoryEntry } = useHistoryStore();
 const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
