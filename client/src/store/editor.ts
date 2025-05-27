@@ -90,7 +90,7 @@ export function useEditorStore() {
     // let historyRecord: HistoryRecord | null = null;
 
     if (command === 'insertText') {
-      insertCharactersBetweenUuids(leftUuid, rightUuid, characters);
+      insertCharactersBetweenUuids(leftUuid, characters);
     } else if (command === 'replaceText') {
       replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
     } else if (command === 'deleteWordBefore') {
@@ -101,7 +101,7 @@ export function useEditorStore() {
       deleteCharactersBetweenUuids(leftUuid, rightUuid);
     } else if (command === 'createAnnotation') {
       // TODO: Handle undo/redo for this
-      const addedAnnotation: Annotation = addAnnotation(annotation);
+      addAnnotation(annotation);
       annotateCharacters(characters, annotation);
     } else if (command === 'deleteAnnotation') {
       // TODO: Handle undo/redo for this

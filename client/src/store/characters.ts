@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Annotation, AnnotationReference, Character, HistoryRecord } from '../models/types';
+import { Annotation, AnnotationReference, Character } from '../models/types';
 import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
 
 type CharacterInfo = {
@@ -427,20 +427,13 @@ export function useCharactersStore() {
   }
 
   /**
-   * Inserts new characters between the given UUIDs. If one of the UUIDs is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
-   *
-   * Technically, `rightUuid` is not needed for the insert operation, but kept for consistency with other functions and to simplify creating the history record.
+   * Inserts new characters after the given UUI. If the UUID is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
    *
    * @param {string | null} leftUuid - The UUID of the character to the left of the range to insert into.
-   * @param {string | null} rightUuid - The UUID of the character to the right of the range to insert into.
    * @param {Character[]} newCharacters - The new characters to insert.
    * @return {void} This function does not return anything.
    */
-  function insertCharactersBetweenUuids(
-    leftUuid: string | null,
-    rightUuid: string | null,
-    newCharacters: Character[],
-  ): void {
+  function insertCharactersBetweenUuids(leftUuid: string | null, newCharacters: Character[]): void {
     const indexToInsert: number = leftUuid
       ? snippetCharacters.value.findIndex(c => c.data.uuid === leftUuid) + 1
       : 0;
@@ -498,20 +491,6 @@ export function useCharactersStore() {
     });
 
     snippetCharacters.value.splice(indexToInsert, 0, ...newCharacters);
-
-    // const historyRecord: HistoryRecord = {
-    //   timestamp: new Date(),
-    //   data: {
-    //     command: 'insertText',
-    //     data: {
-    //       leftUuid,
-    //       rightUuid,
-    //       newCharacterData: newCharacters,
-    //     },
-    //   },
-    // };
-
-    // return historyRecord;
   }
 
   /**
@@ -657,20 +636,6 @@ export function useCharactersStore() {
     const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
 
     snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
-
-    // const historyRecord: HistoryRecord = {
-    //   timestamp: new Date(),
-    //   data: {
-    //     command: 'deleteText',
-    //     data: {
-    //       leftUuid,
-    //       rightUuid,
-    //       oldCharacterData: deletedCharacters,
-    //     },
-    //   },
-    // };
-
-    // return historyRecord;
   }
 
   /**
@@ -779,21 +744,6 @@ export function useCharactersStore() {
     const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
 
     snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
-
-    // const historyRecord: HistoryRecord = {
-    //   timestamp: new Date(),
-    //   data: {
-    //     command: 'replaceText',
-    //     data: {
-    //       leftUuid,
-    //       rightUuid,
-    //       newCharacterData: newCharacters,
-    //       oldCharacterData: deletedCharacters,
-    //     },
-    //   },
-    // };
-
-    // return historyRecord;
   }
 
   /**
