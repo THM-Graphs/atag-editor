@@ -149,9 +149,7 @@ function handleInsertText(event: InputEvent): void {
     setNewRangeAnchorUuid(newCharacter.data.uuid);
     execCommand('insertText', { leftUuid, rightUuid, characters: [newCharacter] });
   } else {
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(newCharacter.data.uuid);
     execCommand('replaceText', { leftUuid, rightUuid, characters: [newCharacter] });
@@ -208,9 +206,7 @@ async function handleInsertFromPaste(): Promise<void> {
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { leftUuid, rightUuid, characters: newCharacters });
   } else {
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('replaceText', { leftUuid, rightUuid, characters: newCharacters });
@@ -258,9 +254,7 @@ function handleInsertFromDrop(event: InputEvent): void {
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('insertText', { leftUuid, rightUuid, characters: newCharacters });
   } else {
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(newCharacters[newCharacters.length - 1].data.uuid);
     execCommand('replaceText', { leftUuid, rightUuid, characters: newCharacters });
@@ -294,9 +288,7 @@ function handleDeleteWordBackward(): void {
       return;
     }
 
-    // Right span is right boundary of to-be-calculated deletion change set
-    const { rightSpan } = getOuterRangeBoundaries(range);
-    const rightUuid: string = getCharacterUuidFromSpan(rightSpan);
+    const { rightUuid } = getOuterRangeBoundaries(range);
 
     // TODO: This is kept for now to get the correct range anchor uuid. Remove after implementing edit history
     const uuidBeforeWordStart: string | null = findUuidBeforeWordStart(rightUuid);
@@ -388,9 +380,7 @@ function handleDeleteContentBackward(): void {
 
     const charIndex: number = getCharacterIndex(spanToDelete);
 
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(snippetCharacters.value[charIndex - 1]?.data.uuid);
 
@@ -416,9 +406,7 @@ function handleDeleteContentBackward(): void {
       startIndex = getCharacterIndex(startSpan);
     }
 
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(snippetCharacters.value[startIndex - 1]?.data.uuid);
 
@@ -485,9 +473,7 @@ function handleDeleteContentForward(): void {
       }
     }
   } else {
-    const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-    const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-    const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+    const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
     setNewRangeAnchorUuid(leftUuid);
 
@@ -509,9 +495,7 @@ function handleDeleteContentForward(): void {
 function handleDeleteByCut(): void {
   const { range } = getSelectionData();
 
-  const { leftSpan, rightSpan } = getOuterRangeBoundaries(range);
-  const leftUuid: string | null = getCharacterUuidFromSpan(leftSpan);
-  const rightUuid: string | null = getCharacterUuidFromSpan(rightSpan);
+  const { leftUuid, rightUuid } = getOuterRangeBoundaries(range);
 
   setNewRangeAnchorUuid(leftUuid);
 
@@ -596,16 +580,38 @@ function createNewCharacter(char: string): Character {
   };
 }
 
-// This returns the spans before and after the given range, not the first/last span inside the range
+/**
+ * Determines the outer boundary elements and their UUIDs of a given range.
+ * The function extracts the start and end span elements using `getRangeBoundaries`,
+ * then identifies the span elements immediately before the start and after the end
+ * of the range, if they exist. It returns these outer span elements and their corresponding
+ * UUIDs.
+ *
+ * @param {Range} range - A Range object representing the selected or highlighted text.
+ * @returns {Object} An object containing `leftSpan` and `rightSpan`, which are the
+ * HTML span elements immediately before and after the range, respectively, as well as
+ * `leftUuid` and `rightUuid`, which are the UUIDs of these span elements.
+ */
+
 function getOuterRangeBoundaries(range: Range): {
   leftSpan: HTMLSpanElement | null;
   rightSpan: HTMLSpanElement | null;
+  leftUuid: string | null;
+  rightUuid: string | null;
 } {
   const { startSpan, endSpan } = getRangeBoundaries(range);
 
+  const leftSpan: HTMLSpanElement | null =
+    (startSpan.previousElementSibling as HTMLSpanElement) ?? null;
+  const rightSpan: HTMLSpanElement | null = (endSpan.nextElementSibling as HTMLSpanElement) ?? null;
+  const leftUuid: string | null = leftSpan?.id ?? null;
+  const rightUuid: string | null = rightSpan?.id ?? null;
+
   return {
-    leftSpan: (startSpan.previousElementSibling as HTMLSpanElement) ?? null,
-    rightSpan: (endSpan.nextElementSibling as HTMLSpanElement) ?? null,
+    leftSpan,
+    rightSpan,
+    leftUuid,
+    rightUuid,
   };
 }
 
