@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Annotation, AnnotationReference, Character } from '../models/types';
+import { Annotation, AnnotationReference, Character, TextOperationResult } from '../models/types';
 import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
 
 type CharacterInfo = {
@@ -431,9 +431,12 @@ export function useCharactersStore() {
    *
    * @param {string | null} leftUuid - The UUID of the character to the left of the range to insert into.
    * @param {Character[]} newCharacters - The new characters to insert.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult object with the change set of characters.
    */
-  function insertCharactersBetweenUuids(leftUuid: string | null, newCharacters: Character[]): void {
+  function insertCharactersBetweenUuids(
+    leftUuid: string | null,
+    newCharacters: Character[],
+  ): TextOperationResult {
     const indexToInsert: number = leftUuid
       ? snippetCharacters.value.findIndex(c => c.data.uuid === leftUuid) + 1
       : 0;
@@ -491,6 +494,8 @@ export function useCharactersStore() {
     });
 
     snippetCharacters.value.splice(indexToInsert, 0, ...newCharacters);
+
+    return { changeSet: newCharacters };
   }
 
   /**
@@ -499,12 +504,12 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Delete".
    *
    * @param {string} uuid - The UUID of the character after which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteWordAfterUuid(uuid: string): void {
+  function deleteWordAfterUuid(uuid: string): TextOperationResult {
     const endWordUuid: string | null = findUuidAfterWordEnd(uuid);
 
-    deleteCharactersBetweenUuids(uuid, endWordUuid);
+    return deleteCharactersBetweenUuids(uuid, endWordUuid);
   }
 
   /**
@@ -513,12 +518,12 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Backspace".
    *
    * @param {string} uuid - The UUID of the character before which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteWordBeforeUuid(uuid: string): void {
+  function deleteWordBeforeUuid(uuid: string): TextOperationResult {
     const startWordUuid: string | null = findUuidBeforeWordStart(uuid);
 
-    deleteCharactersBetweenUuids(startWordUuid, uuid);
+    return deleteCharactersBetweenUuids(startWordUuid, uuid);
   }
 
   /**
@@ -529,9 +534,9 @@ export function useCharactersStore() {
    * @throws Error if there are no characters in between.
    * @param {string} leftUuid - The UUID of the character to the left of the range to delete.
    * @param {string} rightUuid - The UUID of the character to the right of the range to delete.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): void {
+  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): TextOperationResult {
     // Boundaries are the same character -> not valid
     if (leftUuid && rightUuid && leftUuid === rightUuid) {
       throw Error('Boundaries are the same character.');
@@ -636,6 +641,8 @@ export function useCharactersStore() {
     const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
 
     snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
+
+    return { leftBoundary: leftUuid, rightBoundary: rightUuid };
   }
 
   /**
@@ -648,13 +655,13 @@ export function useCharactersStore() {
    * @param {string | null} leftUuid - The UUID of the character to the left of the range to replace.
    * @param {string | null} rightUuid - The UUID of the character to the right of the range to replace.
    * @param {Character[]} newCharacters - The new characters to insert in place of the existing range.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult object with the change set of characters.
    */
   function replaceCharactersBetweenUuids(
     leftUuid: string | null,
     rightUuid: string | null,
     newCharacters: Character[],
-  ): void {
+  ): TextOperationResult {
     const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
     const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
@@ -744,6 +751,8 @@ export function useCharactersStore() {
     const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
 
     snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
+
+    return { changeSet: newCharacters };
   }
 
   /**
@@ -781,7 +790,10 @@ export function useCharactersStore() {
    * @param {Annotation} annotation - The annotation data to be applied to each character.
    * @return {void} No return value.
    */
-  function annotateCharacters(characters: Character[], annotation: Annotation): void {
+  function annotateCharacters(
+    characters: Character[],
+    annotation: Annotation,
+  ): TextOperationResult {
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
         uuid: annotation.data.properties.uuid,
@@ -791,6 +803,8 @@ export function useCharactersStore() {
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),
     );
+
+    return { changeSet: characters };
   }
 
   /**
@@ -799,7 +813,7 @@ export function useCharactersStore() {
    * @param {string} annotationUuid - The UUID of the annotation to be removed.
    * @return {void} No return value.
    */
-  function removeAnnotationFromCharacters(annotationUuid: string): void {
+  function removeAnnotationFromCharacters(annotationUuid: string): TextOperationResult {
     // TODO: Reduce loops/duplicate method chaining
     console.time('deannotate characters');
     const annotatedCharacters: Character[] = totalCharacters.value.filter(c =>
@@ -817,6 +831,8 @@ export function useCharactersStore() {
     );
 
     console.timeEnd('deannotate characters');
+
+    return { changeSet: annotatedSnippetCharacters };
   }
 
   /**

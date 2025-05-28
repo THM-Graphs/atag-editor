@@ -111,6 +111,7 @@ export type CommandType =
 export type HistoryStack = HistoryRecord[];
 
 export type HistoryRecord = {
+  caretPosition: string | null;
   timestamp: Date;
   data: {
     afterEndCharacter: Character | null;
@@ -195,4 +196,10 @@ export type TextAccessObject = {
   collection: Collection;
   path: Text[] | Collection[];
   text: Text;
+};
+
+export type TextOperationResult = {
+  leftBoundary?: string | null;
+  rightBoundary?: string | null;
+  changeSet?: Character[];
 };

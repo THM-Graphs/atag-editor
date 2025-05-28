@@ -1,5 +1,11 @@
 import { ref } from 'vue';
-import { Annotation, AnnotationData, AnnotationReference, Character } from '../models/types';
+import {
+  Annotation,
+  AnnotationData,
+  AnnotationReference,
+  Character,
+  TextOperationResult,
+} from '../models/types';
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
@@ -115,7 +121,7 @@ export function useAnnotationStore() {
     annotation.status = 'deleted';
   }
 
-  function expandAnnotation(annotation: Annotation): Annotation {
+  function expandAnnotation(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -139,7 +145,7 @@ export function useAnnotationStore() {
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = false;
 
-    return annotation;
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
   /**
@@ -199,7 +205,7 @@ export function useAnnotationStore() {
     initialAnnotations.value = [];
   }
 
-  function shiftAnnotationLeft(annotation: Annotation): Annotation {
+  function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -233,10 +239,10 @@ export function useAnnotationStore() {
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
 
-    return annotation;
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shiftAnnotationRight(annotation: Annotation): Annotation {
+  function shiftAnnotationRight(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -270,10 +276,10 @@ export function useAnnotationStore() {
       a => a.uuid === annotation.data.properties.uuid,
     ).isFirstCharacter = true;
 
-    return annotation;
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shrinkAnnotation(annotation: Annotation): Annotation {
+  function shrinkAnnotation(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -294,7 +300,7 @@ export function useAnnotationStore() {
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
 
-    return annotation;
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
   /**

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { toggleTextHightlighting } from '../utils/helper/helper';
@@ -24,8 +23,7 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const { getAnnotationInfo } = useAnnotationStore();
-const { execCommand, setNewRangeAnchorUuid } = useEditorStore();
+const { execCommand } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -60,28 +58,18 @@ function handleDeleteAnnotation(event: MouseEvent): void {
 
 function handleShiftLeft(): void {
   execCommand('shiftAnnotationLeft', { annotation });
-  setRangeAnchorAtEnd();
 }
 
 function handleShiftRight(): void {
   execCommand('shiftAnnotationRight', { annotation });
-  setRangeAnchorAtEnd();
 }
 
 function handleExpand(): void {
   execCommand('expandAnnotation', { annotation });
-  setRangeAnchorAtEnd();
 }
 
 function handleShrink(): void {
   execCommand('shrinkAnnotation', { annotation });
-  setRangeAnchorAtEnd();
-}
-
-function setRangeAnchorAtEnd(): void {
-  const { lastCharacter } = getAnnotationInfo(annotation);
-
-  setNewRangeAnchorUuid(lastCharacter.data.uuid);
 }
 </script>
 

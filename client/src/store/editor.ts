@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
@@ -75,6 +75,7 @@ export function useEditorStore() {
   function createHistoryRecord(): HistoryRecord {
     return {
       timestamp: new Date(),
+      caretPosition: unref(newRangeAnchorUuid),
       data: {
         afterEndCharacter: cloneDeep(getAfterEndCharacter()),
         annotations: cloneDeep(annotations.value),
@@ -88,38 +89,46 @@ export function useEditorStore() {
     const { annotation, characters, leftUuid, rightUuid } = data;
 
     // let historyRecord: HistoryRecord | null = null;
+    let newCaretPosition: string | null = null;
 
     if (command === 'insertText') {
-      insertCharactersBetweenUuids(leftUuid, characters);
+      const { changeSet } = insertCharactersBetweenUuids(leftUuid, characters);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'replaceText') {
-      replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
+      const { changeSet } = replaceCharactersBetweenUuids(leftUuid, rightUuid, characters);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'deleteWordBefore') {
-      deleteWordBeforeUuid(rightUuid);
+      const { leftBoundary } = deleteWordBeforeUuid(rightUuid);
+      newCaretPosition = leftBoundary;
     } else if (command === 'deleteWordAfter') {
-      deleteWordAfterUuid(leftUuid);
+      const { rightBoundary } = deleteWordAfterUuid(leftUuid);
+      newCaretPosition = rightBoundary;
     } else if (command === 'deleteText') {
-      deleteCharactersBetweenUuids(leftUuid, rightUuid);
+      const { leftBoundary } = deleteCharactersBetweenUuids(leftUuid, rightUuid);
+      newCaretPosition = leftBoundary;
     } else if (command === 'createAnnotation') {
-      // TODO: Handle undo/redo for this
       addAnnotation(annotation);
-      annotateCharacters(characters, annotation);
+      const { changeSet } = annotateCharacters(characters, annotation);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'deleteAnnotation') {
-      // TODO: Handle undo/redo for this
       deleteAnnotation(annotation.data.properties.uuid);
-      removeAnnotationFromCharacters(annotation.data.properties.uuid);
+      const { changeSet } = removeAnnotationFromCharacters(annotation.data.properties.uuid);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'shiftAnnotationLeft') {
-      shiftAnnotationLeft(annotation);
-      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      const { changeSet } = shiftAnnotationLeft(annotation);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'shiftAnnotationRight') {
-      shiftAnnotationRight(annotation);
-      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      const { changeSet } = shiftAnnotationRight(annotation);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'expandAnnotation') {
-      expandAnnotation(annotation);
-      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      const { changeSet } = expandAnnotation(annotation);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'shrinkAnnotation') {
-      shrinkAnnotation(annotation);
-      // historyRecord = createHistoryRecord(command, { annotation: changedAnnotation });
+      const { changeSet } = shrinkAnnotation(annotation);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     }
+
+    setNewRangeAnchorUuid(newCaretPosition);
 
     pushHistoryEntry();
   }
@@ -249,6 +258,9 @@ export function useEditorStore() {
     // } else if (command === 'shrinkAnnotation') {
     //   expandAnnotation(data.annotation);
     // }
+
+    console.log(newLastRecord.caretPosition);
+    setNewRangeAnchorUuid(newLastRecord.caretPosition);
 
     redoStack.value.push(lastRecord);
   }

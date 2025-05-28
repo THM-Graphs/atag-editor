@@ -31,7 +31,7 @@ import { onMounted, ref } from 'vue';
 const { annotationType } = defineProps<{ annotationType: string }>();
 
 const { snippetCharacters } = useCharactersStore();
-const { execCommand, setNewRangeAnchorUuid } = useEditorStore();
+const { execCommand } = useEditorStore();
 const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
@@ -218,9 +218,6 @@ function handleClick(dropdownOption?: string | number): void {
         annotation: newAnnotation,
         characters: selectedCharacters,
       });
-
-      // pushHistoryEntry();
-      setNewRangeAnchorUuid(selectedCharacters[selectedCharacters.length - 1].data.uuid);
     }
   } catch (error) {
     if (error instanceof AnnotationRangeError) {
