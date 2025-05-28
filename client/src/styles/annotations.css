@@ -1,6 +1,7 @@
 :root {
   --aboveLine-clr: hsl(22, 81%, 35%);
   --additionLaterHand-color: hsla(91, 59%, 64%, 0.3);
+  --belowLine-clr: hsl(22, 81%, 35%);
   --commentInternal-color: #e3dbcc99;
   --commentInternal-opacity: 0.9;
   --correction-clr: hsla(36, 85%, 76%, 0.6);
@@ -71,6 +72,10 @@
 #text > span:has(span.nonLinear) {
   &:has(.aboveLine) {
     color: var(--aboveLine-clr);
+  }
+
+  &:has(.belowLine) {
+    color: var(--belowLine-clr);
   }
 
   &:has(.marginNote) {

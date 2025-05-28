@@ -147,7 +147,7 @@
           {
             "name": "subtype",
             "type": "string",
-            "options": ["aboveLine", "marginNote"],
+            "options": ["aboveLine", "belowLine", "marginNote"],
             "required": true,
             "editable": true,
             "visible": true
