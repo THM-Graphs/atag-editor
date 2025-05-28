@@ -32,7 +32,6 @@ import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
-// import { useHistoryStore } from '../store/history';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -49,7 +48,7 @@ onMounted(async (): Promise<void> => {
     await getAnnotations();
     await getAnnotationStyles();
 
-    // initializeHistory();
+    initializeEditor();
 
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleMouseDown);
@@ -64,7 +63,7 @@ onUnmounted((): void => {
   resetCharacters();
   resetAnnotations();
   resetEditor();
-  // resetHistory();
+  resetHistory();
 
   console.log('unmount...');
   window.removeEventListener('mouseup', handleMouseUp);
@@ -84,7 +83,8 @@ const isValidText = ref<boolean>(false);
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
-const { hasUnsavedChanges, resetEditor } = useEditorStore();
+const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
+  useEditorStore();
 const { text, initialText, initializeText } = useTextStore();
 const {
   afterEndIndex,
@@ -112,8 +112,6 @@ const { initializeGuidelines } = useGuidelinesStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
 
 useTitle(computed(() => `Text | ${text.value?.nodeLabels.join(', ') ?? ''}`));
-
-// const { initializeHistory, resetHistory } = useHistoryStore();
 
 const resizerWidth = 5;
 
@@ -206,6 +204,8 @@ async function handleCancelChanges(): Promise<void> {
   annotations.value = cloneDeep(initialAnnotations.value);
   totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
   totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
+
+  initializeHistory();
 }
 
 async function saveCharacters(): Promise<void> {

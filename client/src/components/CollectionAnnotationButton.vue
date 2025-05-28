@@ -2,7 +2,6 @@
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
-// import { useHistoryStore } from '../store/history';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
@@ -25,7 +24,6 @@ const emit = defineEmits(['addAnnotation']);
 const { guidelines, getCollectionAnnotationFields, getCollectionAnnotationConfig } =
   useGuidelinesStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
-// const { pushHistoryEntry } = useHistoryStore();
 const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getCollectionAnnotationConfig(collectionNodeLabels, annotationType);

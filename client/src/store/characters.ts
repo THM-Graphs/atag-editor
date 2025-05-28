@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Annotation, AnnotationReference, Character } from '../models/types';
+import { Annotation, AnnotationReference, Character, TextOperationResult } from '../models/types';
 import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
 
 type CharacterInfo = {
@@ -91,6 +91,26 @@ export function useCharactersStore() {
     resetInitialBoundaryCharacters();
   }
 
+  function getAfterEndCharacter(): Character | null {
+    return afterEndIndex.value ? totalCharacters.value[afterEndIndex.value] : null;
+  }
+
+  function getBeforeStartCharacter(): Character | null {
+    return beforeStartIndex.value ? totalCharacters.value[beforeStartIndex.value] : null;
+  }
+
+  function setAfterEndCharacter(character: Character | null): void {
+    if (afterEndIndex.value) {
+      totalCharacters.value[afterEndIndex.value] = character;
+    }
+  }
+
+  function setBeforeStartCharacter(character: Character | null): void {
+    if (beforeStartIndex.value) {
+      totalCharacters.value[beforeStartIndex.value] = character;
+    }
+  }
+
   /**
    * Paginates character array to the previous characters. The mode parameter determines whether the currently displayed characters
    * should stay rendered or replaced by the previous characters.
@@ -100,7 +120,6 @@ export function useCharactersStore() {
    */
   function previousCharacters(mode: 'keep' | 'replace'): void {
     if (beforeStartIndex.value === null) {
-      console.log('Already at first character');
       return;
     }
 
@@ -133,7 +152,6 @@ export function useCharactersStore() {
    */
   function nextCharacters(mode: 'keep' | 'replace'): void {
     if (afterEndIndex.value === null) {
-      console.log('No more characters');
       return;
     }
 
@@ -207,73 +225,67 @@ export function useCharactersStore() {
   }
 
   /**
-   * Finds the UUID of the character at the position that is the end of the word containing the character with the given UUID.
-   * The search starts forward from the character at `charUuidAtIndex`.
+   * Finds the UUID of the character at the position AFTER the end of the word containing the character with the given UUID.
+   * The search starts forward after the character at `leftUuid`.
    *
    * Used for performing word deleting with "Ctrl + Delete".
    *
-   * @param {string | null} charUuid - The UUID of the character at the starting point of the forward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
-   * @return {string | null} The UUID of the character *at the position immediately after* the end of the word. Returns null if the word extends to the very end of the document.
+   * @param {string | null} leftUuid - The UUID of the character at the starting point of the forward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
+   * @return {string | null} The UUID of the character after the end character of the word boundary, or `null` if the word extends to the very end of the document.
    */
-  function findEndOfWordFromUuid(charUuid: string | null): string | null {
+  function findUuidAfterWordEnd(leftUuid: string | null): string | null {
     const characters: Character[] = snippetCharacters.value;
 
     if (characters.length === 0) {
       return null;
     }
 
-    const charIndex: number = charUuid ? getCharacterIndexFromUuid(charUuid) : 0;
+    const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : 0;
+    let currentIndex: number = leftIndex;
 
-    if (charIndex === -1) {
-      console.error(`findEndOfWordFromUuid: UUID ${charUuid} not found in store data.`);
-      return null;
+    // If word boundary is detected in the first loop, skip it (when it is a white space, the search needs to go on to delete the whole next word).
+    // Normal behaviour in text editors.
+    while (
+      currentIndex < characters.length - 1 &&
+      (!isWordBoundary(characters[currentIndex + 1].data.text) || currentIndex === leftIndex)
+    ) {
+      currentIndex++;
     }
 
-    let endIndex: number = charIndex;
-
-    // Iterate forward while the character at the current position is NOT a boundary
-    // The loop stops when endIndex reaches the end of the array OR the character at endIndex IS a boundary
-    while (endIndex < characters.length && !isWordBoundary(characters[endIndex].data.text)) {
-      endIndex++;
-    }
-
-    // endIndex is now the index of the position AFTER the end of the word
-    // If endIndex is characters.length, the word goes to the very end.
-    return endIndex < characters.length ? characters[endIndex].data.uuid : null;
+    return characters[currentIndex + 1]?.data.uuid ?? null;
   }
 
   /**
-   * Finds the UUID of the character that is the start of the word containing the character with the given UUID.
-   * The search starts backward from the character at `charUuidAtIndex`.
+   * Finds the UUID of the character at the position BEFORE the start of the word containing the character with the given UUID.
+   * The search starts backward before the character at `rightUuid`.
    *
    * Used for performing word deleting with "Ctrl + Backspace".
    *
-   * @param {string | null} charUuid - The UUID of the character at the starting point of the backward search (usually the caret position obtained from DOM). Pass null if the caret is before the very first character.
-   * @return {string | null} The UUID of the first character of the word, or null if the starting UUID is null or the word starts at the very beginning (index 0).
+   * @param {string | null} rightUuid - The UUID of the character before which the backward search starts. Pass null if the caret after the very last character.
+   * @return {string | null} The UUID of the character before the start character of the word boundary, or `null` if the word starts at the very beginning of the document.
    */
-  function findStartOfWordFromUuid(charUuid: string | null): string | null {
+  function findUuidBeforeWordStart(rightUuid: string | null): string | null {
     const characters: Character[] = snippetCharacters.value;
 
-    if (charUuid === null || characters.length === 0) {
+    if (characters.length === 0) {
       return null;
     }
 
-    const charIndex: number = getCharacterIndexFromUuid(charUuid);
+    const rightIndex: number = rightUuid
+      ? getCharacterIndexFromUuid(rightUuid)
+      : characters.length - 1;
+    let currentIndex: number = rightIndex;
 
-    if (charIndex === -1) {
-      console.error(`findStartOfWordFromUuid: UUID ${charUuid} not found in store data.`);
-      return null;
+    // If word boundary is detected in the first loop, skip it (when it is a white space, the search needs to go on to delete the whole previous word).
+    // Normal behaviour in text editors.
+    while (
+      currentIndex > 0 &&
+      (!isWordBoundary(characters[currentIndex - 1].data.text) || currentIndex === rightIndex)
+    ) {
+      currentIndex--;
     }
 
-    let startIndex: number = charIndex;
-
-    // Iterate backward while the character before the current position is NOT a boundary
-    // The loop stops when startIndex is 0 OR the character at startIndex - 1 IS a boundary
-    while (startIndex > 0 && !isWordBoundary(characters[startIndex - 1].data.text)) {
-      startIndex--;
-    }
-
-    return characters[startIndex].data.uuid;
+    return characters[currentIndex - 1]?.data.uuid ?? null;
   }
 
   /**
@@ -367,8 +379,10 @@ export function useCharactersStore() {
     return char;
   }
 
-  function getPrevCharInfo(index: number): CharacterInfo {
-    const char: Character | null = getPreviousChar(index);
+  function getPrevCharInfo(index: number | null): CharacterInfo {
+    // TODO: Fix this somehow better, ugly
+    const indexToSearch: number = index ?? 0;
+    const char: Character | null = getPreviousChar(indexToSearch);
     const annotations: AnnotationReference[] = char?.annotations ?? [];
     const anchorStartUuids: string[] = annotations
       .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isFirstCharacter)
@@ -379,8 +393,10 @@ export function useCharactersStore() {
     return prevChar;
   }
 
-  function getNextCharInfo(index: number): CharacterInfo {
-    const char: Character | null = getNextChar(index);
+  function getNextCharInfo(index: number | null): CharacterInfo {
+    // TODO: Fix this somehow better, ugly
+    const indexToSearch: number = index ?? snippetCharacters.value.length - 1;
+    const char: Character | null = getNextChar(indexToSearch);
     const annotations: AnnotationReference[] = char?.annotations ?? [];
     const anchorEndUuids: string[] = annotations
       .filter(a => getAnnotationConfig(a.type)?.isZeroPoint && a.isLastCharacter)
@@ -409,19 +425,22 @@ export function useCharactersStore() {
   }
 
   /**
-   * Inserts new characters after the character with the given UUID. If the UUID is `null`, the new characters are inserted at the beginning of the snippet.
+   * Inserts new characters after the given UUI. If the UUID is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
    *
-   * @param {string | null} uuid - The UUID of the character after which to insert the new characters.
+   * @param {string | null} leftUuid - The UUID of the character to the left of the range to insert into.
    * @param {Character[]} newCharacters - The new characters to insert.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult object with the change set of characters.
    */
-  function insertCharactersAfterUuid(uuid: string | null, newCharacters: Character[]): void {
-    const index: number = uuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === uuid) + 1
+  function insertCharactersBetweenUuids(
+    leftUuid: string | null,
+    newCharacters: Character[],
+  ): TextOperationResult {
+    const indexToInsert: number = leftUuid
+      ? snippetCharacters.value.findIndex(c => c.data.uuid === leftUuid) + 1
       : 0;
 
-    const prevChar: CharacterInfo = getPrevCharInfo(index);
-    const nextChar: CharacterInfo = getCharInfo(index);
+    const prevChar: CharacterInfo = getPrevCharInfo(indexToInsert);
+    const nextChar: CharacterInfo = getCharInfo(indexToInsert);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.annotations
@@ -472,7 +491,9 @@ export function useCharactersStore() {
       }
     });
 
-    snippetCharacters.value.splice(index, 0, ...newCharacters);
+    snippetCharacters.value.splice(indexToInsert, 0, ...newCharacters);
+
+    return { changeSet: newCharacters };
   }
 
   /**
@@ -481,12 +502,12 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Delete".
    *
    * @param {string} uuid - The UUID of the character after which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteWordAfterUuid(uuid: string): void {
-    const endWordUuid: string | null = findEndOfWordFromUuid(uuid);
+  function deleteWordAfterUuid(uuid: string): TextOperationResult {
+    const endWordUuid: string | null = findUuidAfterWordEnd(uuid);
 
-    deleteCharactersWithinUuidRange(uuid, endWordUuid);
+    return deleteCharactersBetweenUuids(uuid, endWordUuid);
   }
 
   /**
@@ -495,33 +516,37 @@ export function useCharactersStore() {
    * Called by the word deleting operations with "Ctrl + Backspace".
    *
    * @param {string} uuid - The UUID of the character before which to delete the word.
-   * @return {void} This function does not return anything.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteWordBeforeUuid(uuid: string): void {
-    const startWordUuid: string | null = findStartOfWordFromUuid(uuid);
+  function deleteWordBeforeUuid(uuid: string): TextOperationResult {
+    const startWordUuid: string | null = findUuidBeforeWordStart(uuid);
 
-    deleteCharactersWithinUuidRange(startWordUuid, uuid);
+    return deleteCharactersBetweenUuids(startWordUuid, uuid);
   }
 
   /**
-   * Deletes characters between the specified start and end UUIDs.
+   * Deletes the characters between two given UUIDs.
+   * If a UUID is `null`, it is treated as if the boundary is at the start/end of the snippet.
    *
-   * @param {string} startUuid - The UUID of the first character to delete.
-   * @param {string} endUuid - The UUID of the last character to delete.
-   * @return {void} This function does not return anything.
-   * @throws {TextOperationError} If the character can not be deleted since there is no previous/next character to be annotated as zero-point anchor.
+   * @throws Error if the boundaries are the same character.
+   * @throws Error if there are no characters in between.
+   * @param {string} leftUuid - The UUID of the character to the left of the range to delete.
+   * @param {string} rightUuid - The UUID of the character to the right of the range to delete.
+   * @return {TextOperationResult} A TextOperationResult with `leftUuid` and `rightUuid`.
    */
-  function deleteCharactersWithinUuidRange(startUuid: string, endUuid: string): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
+  function deleteCharactersBetweenUuids(leftUuid: string, rightUuid: string): TextOperationResult {
+    // Boundaries are the same character -> not valid
+    if (leftUuid && rightUuid && leftUuid === rightUuid) {
+      throw Error('Boundaries are the same character.');
+    }
 
-    const charsToDeleteCount: number = endIndex - startIndex;
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+    const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
+    const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
+
+    const prevChar: CharacterInfo = leftUuid ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightUuid
+      ? getCharInfo(rightIndex)
+      : getNextCharInfo(rightIndex);
 
     // Selection ends between two anchor spans and there is no previous character in the chain to be the new left anchor
     const hasNoPreviousAnchor: boolean =
@@ -596,31 +621,52 @@ export function useCharactersStore() {
       }
     });
 
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount + 1);
+    let deletionStartIndex: number;
+    let deletionEndIndex: number;
+
+    if (leftIndex !== null) {
+      deletionStartIndex = leftIndex + 1;
+    } else {
+      deletionStartIndex = 0;
+    }
+
+    if (rightIndex !== null) {
+      deletionEndIndex = rightIndex - 1;
+    } else {
+      deletionEndIndex = snippetCharacters.value.length - 1;
+    }
+
+    const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
+
+    snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
+
+    return { leftBoundary: leftUuid, rightBoundary: rightUuid };
   }
 
   /**
-   * Replaces characters between the specified start and end UUIDs with new characters.
+   * Replaces the characters between two given UUIDs with a new set of characters.
+   * If a UUID is `null`, it is treated as if the boundary is at the start/end of the snippet.
    *
-   * @param {string | null} startUuid - The UUID of the first character to replace.
-   * @param {string | null} endUuid - The UUID of the last character to replace.
-   * @param {Character[]} newCharacters - The array of new characters to replace the deleted characters.
-   * @return {void} This function does not return anything.
+   * Updates annotations for the characters being replaced and ensures the continuity of
+   * annotations across the newly inserted characters.
+   *
+   * @param {string | null} leftUuid - The UUID of the character to the left of the range to replace.
+   * @param {string | null} rightUuid - The UUID of the character to the right of the range to replace.
+   * @param {Character[]} newCharacters - The new characters to insert in place of the existing range.
+   * @return {TextOperationResult} A TextOperationResult object with the change set of characters.
    */
-  function replaceCharactersWithinUuidRange(
-    startUuid: string | null,
-    endUuid: string | null,
+  function replaceCharactersBetweenUuids(
+    leftUuid: string | null,
+    rightUuid: string | null,
     newCharacters: Character[],
-  ): void {
-    const startIndex: number | null = startUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === startUuid)
-      : 0;
-    const endIndex: number | null = endUuid
-      ? snippetCharacters.value.findIndex(c => c.data.uuid === endUuid)
-      : snippetCharacters.value.length - 1;
+  ): TextOperationResult {
+    const leftIndex: number | null = leftUuid ? getCharacterIndexFromUuid(leftUuid) : null;
+    const rightIndex: number | null = rightUuid ? getCharacterIndexFromUuid(rightUuid) : null;
 
-    const prevChar: CharacterInfo = getPrevCharInfo(startIndex);
-    const nextChar: CharacterInfo = getNextCharInfo(endIndex);
+    const prevChar: CharacterInfo = leftUuid ? getCharInfo(leftIndex) : getPrevCharInfo(leftIndex);
+    const nextChar: CharacterInfo = rightUuid
+      ? getCharInfo(rightIndex)
+      : getNextCharInfo(rightIndex);
 
     // These annotations have ended on the previous char. Stored in static variable since values are changed further down.
     let annotationEndsUuids: string[] = prevChar.char?.annotations
@@ -685,8 +731,26 @@ export function useCharactersStore() {
       }
     });
 
-    const charsToDeleteCount: number = endIndex - startIndex + 1;
-    snippetCharacters.value.splice(startIndex, charsToDeleteCount, ...newCharacters);
+    let replaceStartIndex: number;
+    let replaceEndIndex: number;
+
+    if (leftIndex !== null) {
+      replaceStartIndex = leftIndex + 1;
+    } else {
+      replaceStartIndex = 0;
+    }
+
+    if (rightIndex !== null) {
+      replaceEndIndex = rightIndex - 1;
+    } else {
+      replaceEndIndex = snippetCharacters.value.length - 1;
+    }
+
+    const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
+
+    snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
+
+    return { changeSet: newCharacters };
   }
 
   /**
@@ -724,7 +788,10 @@ export function useCharactersStore() {
    * @param {Annotation} annotation - The annotation data to be applied to each character.
    * @return {void} No return value.
    */
-  function annotateCharacters(characters: Character[], annotation: Annotation): void {
+  function annotateCharacters(
+    characters: Character[],
+    annotation: Annotation,
+  ): TextOperationResult {
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({
         uuid: annotation.data.properties.uuid,
@@ -734,6 +801,8 @@ export function useCharactersStore() {
         isLastCharacter: index === arr.length - 1 ? true : false,
       }),
     );
+
+    return { changeSet: characters };
   }
 
   /**
@@ -742,7 +811,7 @@ export function useCharactersStore() {
    * @param {string} annotationUuid - The UUID of the annotation to be removed.
    * @return {void} No return value.
    */
-  function removeAnnotationFromCharacters(annotationUuid: string): void {
+  function removeAnnotationFromCharacters(annotationUuid: string): TextOperationResult {
     // TODO: Reduce loops/duplicate method chaining
     console.time('deannotate characters');
     const annotatedCharacters: Character[] = totalCharacters.value.filter(c =>
@@ -760,6 +829,8 @@ export function useCharactersStore() {
     );
 
     console.timeEnd('deannotate characters');
+
+    return { changeSet: annotatedSnippetCharacters };
   }
 
   /**
@@ -807,22 +878,26 @@ export function useCharactersStore() {
     snippetCharacters,
     totalCharacters,
     annotateCharacters,
-    deleteCharactersWithinUuidRange,
+    deleteCharactersBetweenUuids,
     deleteWordAfterUuid,
     deleteWordBeforeUuid,
+    getAfterEndCharacter,
+    getBeforeStartCharacter,
     lastCharacters,
-    findEndOfWordFromUuid,
-    findStartOfWordFromUuid,
+    findUuidAfterWordEnd,
+    findUuidBeforeWordStart,
     getCharacterIndexFromUuid,
     initializeCharacters,
-    insertCharactersAfterUuid,
+    insertCharactersBetweenUuids,
     insertSnippetIntoChain,
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
-    replaceCharactersWithinUuidRange,
+    replaceCharactersBetweenUuids,
     resetCharacters,
     firstCharacters,
     resetInitialBoundaryCharacters,
+    setAfterEndCharacter,
+    setBeforeStartCharacter,
   };
 }

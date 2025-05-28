@@ -82,11 +82,43 @@ export type CollectionPostData = {
   initialData: CollectionAccessObject;
 };
 
+export type Command = {
+  command: CommandType;
+  data: CommandData;
+};
+
+export type CommandData = {
+  annotation?: Annotation;
+  characters?: Character[];
+  leftUuid?: string | null;
+  rightUuid?: string | null;
+  uuid?: string;
+};
+
+export type CommandType =
+  | 'createAnnotation'
+  | 'deleteAnnotation'
+  | 'deleteText'
+  | 'deleteWordAfter'
+  | 'deleteWordBefore'
+  | 'expandAnnotation'
+  | 'insertText'
+  | 'replaceText'
+  | 'shiftAnnotationLeft'
+  | 'shiftAnnotationRight'
+  | 'shrinkAnnotation';
+
 export type HistoryStack = HistoryRecord[];
 
 export type HistoryRecord = {
-  annotations: Annotation[];
-  characters: Character[];
+  caretPosition: string | null;
+  timestamp: Date;
+  data: {
+    afterEndCharacter: Character | null;
+    annotations: Annotation[];
+    beforeStartCharacter: Character | null;
+    characters: Character[];
+  };
 };
 
 export type MalformedAnnotation = {
@@ -164,4 +196,10 @@ export type TextAccessObject = {
   collection: Collection;
   path: Text[] | Collection[];
   text: Text;
+};
+
+export type TextOperationResult = {
+  leftBoundary?: string | null;
+  rightBoundary?: string | null;
+  changeSet?: Character[];
 };

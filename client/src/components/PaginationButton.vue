@@ -5,7 +5,6 @@ import Button from 'primevue/button';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { Annotation } from '../models/types';
-// import { useHistoryStore } from '../store/history';
 
 const { action } = defineProps<{ action: 'previous' | 'next' | 'start' | 'end' }>();
 
@@ -60,8 +59,8 @@ const {
   nextCharacters,
   previousCharacters,
 } = useCharactersStore();
-const { keepTextOnPagination, setNewRangeAnchorUuid, hasUnsavedChanges } = useEditorStore();
-// const { initializeHistory } = useHistoryStore();
+const { keepTextOnPagination, setNewRangeAnchorUuid, hasUnsavedChanges, initializeHistory } =
+  useEditorStore();
 
 function handlePagination() {
   if (hasUnsavedChanges()) {
@@ -118,7 +117,7 @@ function handlePagination() {
 
   setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
 
-  // initializeHistory();
+  initializeHistory();
 }
 </script>
 

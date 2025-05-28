@@ -1,5 +1,11 @@
 import { ref } from 'vue';
-import { Annotation, AnnotationData, AnnotationReference, Character } from '../models/types';
+import {
+  Annotation,
+  AnnotationData,
+  AnnotationReference,
+  Character,
+  TextOperationResult,
+} from '../models/types';
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
@@ -104,8 +110,10 @@ export function useAnnotationStore() {
     }
   }
 
-  function addAnnotation(annotation: Annotation): void {
+  function addAnnotation(annotation: Annotation): Annotation {
     annotations.value.push(annotation);
+
+    return annotation;
   }
 
   function deleteAnnotation(uuid: string): void {
@@ -113,7 +121,7 @@ export function useAnnotationStore() {
     annotation.status = 'deleted';
   }
 
-  function expandAnnotation(annotation: Annotation): void {
+  function expandAnnotation(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -136,6 +144,8 @@ export function useAnnotationStore() {
     lastCharacter.annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = false;
+
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
   /**
@@ -195,7 +205,7 @@ export function useAnnotationStore() {
     initialAnnotations.value = [];
   }
 
-  function shiftAnnotationLeft(annotation: Annotation): void {
+  function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -228,9 +238,11 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex - 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
+
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shiftAnnotationRight(annotation: Annotation): void {
+  function shiftAnnotationRight(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -263,9 +275,11 @@ export function useAnnotationStore() {
     snippetCharacters.value[firstIndex + 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isFirstCharacter = true;
+
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shrinkAnnotation(annotation: Annotation): void {
+  function shrinkAnnotation(annotation: Annotation): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -285,6 +299,8 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex - 1].annotations.find(
       a => a.uuid === annotation.data.properties.uuid,
     ).isLastCharacter = true;
+
+    return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
   /**

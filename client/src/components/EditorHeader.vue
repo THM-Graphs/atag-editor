@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
 import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
@@ -24,6 +25,8 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
         ></Button>
       </RouterLink>
       <div>
+        <EditorHistoryButton action="undo" />
+        <EditorHistoryButton action="redo" />
         <EditorImportButton />
       </div>
     </div>

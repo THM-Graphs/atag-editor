@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAnnotationStore } from '../store/annotations';
-import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { toggleTextHightlighting } from '../utils/helper/helper';
@@ -25,16 +23,7 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const {
-  deleteAnnotation,
-  expandAnnotation,
-  getAnnotationInfo,
-  shiftAnnotationLeft,
-  shiftAnnotationRight,
-  shrinkAnnotation,
-} = useAnnotationStore();
-const { removeAnnotationFromCharacters } = useCharactersStore();
-const { setNewRangeAnchorUuid } = useEditorStore();
+const { execCommand } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -42,7 +31,7 @@ const config: AnnotationType = getAnnotationConfig(annotation.data.properties.ty
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 const propertiesAreCollapsed = ref<boolean>(false);
 
-function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
+function handleDeleteAnnotation(event: MouseEvent): void {
   if (annotation.isTruncated) {
     return;
   }
@@ -62,38 +51,25 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
       severity: 'danger',
       title: 'Delete annotation',
     },
-    accept: () => {
-      deleteAnnotation(uuid);
-      removeAnnotationFromCharacters(uuid);
-    },
+    accept: () => execCommand('deleteAnnotation', { annotation }),
     reject: () => {},
   });
 }
 
 function handleShiftLeft(): void {
-  shiftAnnotationLeft(annotation);
-  setRangeAnchorAtEnd();
+  execCommand('shiftAnnotationLeft', { annotation });
 }
 
 function handleShiftRight(): void {
-  shiftAnnotationRight(annotation);
-  setRangeAnchorAtEnd();
+  execCommand('shiftAnnotationRight', { annotation });
 }
 
 function handleExpand(): void {
-  expandAnnotation(annotation);
-  setRangeAnchorAtEnd();
+  execCommand('expandAnnotation', { annotation });
 }
 
 function handleShrink(): void {
-  shrinkAnnotation(annotation);
-  setRangeAnchorAtEnd();
-}
-
-function setRangeAnchorAtEnd(): void {
-  const { lastCharacter } = getAnnotationInfo(annotation);
-
-  setNewRangeAnchorUuid(lastCharacter.data.uuid);
+  execCommand('shrinkAnnotation', { annotation });
 }
 </script>
 
@@ -211,7 +187,7 @@ function setRangeAnchorAtEnd(): void {
         icon="pi pi-trash"
         size="small"
         :disabled="annotation.isTruncated"
-        @click="handleDeleteAnnotation($event, annotation.data.properties.uuid)"
+        @click="handleDeleteAnnotation"
       />
     </div>
     <ConfirmPopup></ConfirmPopup>
