@@ -39,8 +39,8 @@ const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: PropertyConfig[] = getAnnotationFields(annotationType);
-const subtypeField: PropertyConfig = fields.find(field => field.name === 'subtype');
-const options: string[] | number[] = subtypeField?.options ?? [];
+const subTypeField: PropertyConfig = fields.find(field => field.name === 'subType');
+const options: string[] | number[] = subTypeField?.options ?? [];
 const dropdownOptions = options.map((option: string | number) => {
   return {
     label: option.toString(),
@@ -79,8 +79,8 @@ function setButtonStylingManually(): void {
   hasIcon.value = hasBackgroundImage;
 
   // SplitButton has its flaws: Dropdown button and annotation button can not be accessed (wait for Primevue update),
-  // therefore the DOM element need to be queried and styled manually. this is done via the subtypeField variable
-  if (subtypeField) {
+  // therefore the DOM element need to be queried and styled manually. this is done via the subTypeField variable
+  if (subTypeField) {
     const dropdownButton: HTMLButtonElement | null =
       buttonElm.value.$el.querySelector('.p-splitbutton-dropdown');
     const mainButton: HTMLButtonElement | null =
@@ -108,8 +108,8 @@ function setButtonStylingManually(): void {
   }
 }
 
-function handleDropdownClick(subtype: string | number): void {
-  handleClick(subtype);
+function handleDropdownClick(subType: string | number): void {
+  handleClick(subType);
 }
 
 function handleButtonClick(): void {
@@ -324,7 +324,7 @@ function isSelectionValid(): boolean {
 
 function createNewAnnotation(
   type: string,
-  subtype: string | number | undefined,
+  subType: string | number | undefined,
   characters: Character[],
 ): Annotation {
   const newAnnotationData: IAnnotation = {} as IAnnotation;
@@ -342,11 +342,11 @@ function createNewAnnotation(
   newAnnotationData.text = characters.map((char: Character) => char.data.text).join('');
   newAnnotationData.uuid = crypto.randomUUID();
 
-  // If a subtype field exists (filled with a default value just before), but not subtype was provided
+  // If a subType field exists (filled with a default value just before), but not subType was provided
   // (= the user clicked the button directly instead of selecting an entry from the dropdown),
   // set the first option as default value
-  if (subtypeField) {
-    newAnnotationData.subtype = subtype ?? subtypeField.options[0];
+  if (subTypeField) {
+    newAnnotationData.subType = subType ?? subTypeField.options[0];
   }
 
   // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
@@ -457,7 +457,7 @@ function findSpansWithinBoundaries(
 
 <template>
   <Button
-    v-if="!subtypeField"
+    v-if="!subTypeField"
     severity="secondary"
     ref="buttonElm"
     outlined

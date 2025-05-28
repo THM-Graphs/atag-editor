@@ -87,7 +87,7 @@
   background-color: var(--intervention-clr);
 }
 
-/* TODO: This is a hack since there is a annotion type as well as a subtype "correction".
+/* TODO: This is a hack since there is a annotion type as well as a subType "correction".
 Fix by changing classlists or annotation types? */
 #text > span:has(span.correction:not(.intervention)) {
   background-color: var(--correction-clr);

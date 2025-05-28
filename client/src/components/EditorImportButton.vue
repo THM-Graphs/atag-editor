@@ -385,7 +385,7 @@ function transformStandoffToAtag(): void {
           isFirstCharacter: index === a.start,
           isLastCharacter: index === a.end,
           type: a.type,
-          subtype: '',
+          subType: '',
         });
 
         index++;

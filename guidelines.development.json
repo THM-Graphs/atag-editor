@@ -122,7 +122,7 @@
         "isZeroPoint": false,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["rubricated", "initial", "underlined", "italic", "bold", "smallCaps"],
             "required": true,
@@ -145,7 +145,7 @@
         "isZeroPoint": false,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["aboveLine", "belowLine", "marginNote"],
             "required": true,
@@ -161,7 +161,7 @@
         "isZeroPoint": false,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["conjecture", "correction", "normalisation"],
             "required": true,
@@ -177,7 +177,7 @@
         "isZeroPoint": false,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["inPlace", "inRasura"],
             "required": true,
@@ -294,7 +294,7 @@
         "hasNormdata": false,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["corr", "conj", "reg"],
             "required": true,
@@ -311,7 +311,7 @@
         "hasNormdata": true,
         "properties": [
           {
-            "name": "subtype",
+            "name": "subType",
             "type": "string",
             "options": ["concept", "event", "imagery", "person", "place", "reference"],
             "required": true,

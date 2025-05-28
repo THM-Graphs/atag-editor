@@ -1,6 +1,6 @@
 export default interface IEntity {
   label: string;
-  subtype: string;
+  subType: string;
   type: string;
   uuid: string;
 }

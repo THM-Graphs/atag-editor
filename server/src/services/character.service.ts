@@ -17,7 +17,7 @@ export default class CharacterService {
       {
         uuid: a.uuid,
         type: a.type,
-        subtype: a.subtype,
+        subType: a.subType,
         isFirstCharacter: EXISTS((a)-[:STANDOFF_START]->(char)),
         isLastCharacter: EXISTS((a)-[:STANDOFF_END]->(char))
       }] AS annotations

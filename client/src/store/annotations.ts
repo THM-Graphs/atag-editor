@@ -136,7 +136,7 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex + 1].annotations.push({
       isLastCharacter: true,
       type: annotation.data.properties.type,
-      subtype: annotation.data.properties.subtype ?? null,
+      subType: annotation.data.properties.subType ?? null,
       uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 
@@ -220,7 +220,7 @@ export function useAnnotationStore() {
     snippetCharacters.value[firstIndex - 1].annotations.push({
       isFirstCharacter: true,
       type: annotation.data.properties.type,
-      subtype: annotation.data.properties.subtype ?? null,
+      subType: annotation.data.properties.subType ?? null,
       uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 
@@ -257,7 +257,7 @@ export function useAnnotationStore() {
     snippetCharacters.value[lastIndex + 1].annotations.push({
       isLastCharacter: true,
       type: annotation.data.properties.type,
-      subtype: annotation.data.properties.subtype ?? null,
+      subType: annotation.data.properties.subType ?? null,
       uuid: annotation.data.properties.uuid,
     } as AnnotationReference);
 

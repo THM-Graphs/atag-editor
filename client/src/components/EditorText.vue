@@ -632,7 +632,7 @@ function getCharacterUuidFromSpan(span: HTMLSpanElement | Element | null): strin
                   annotation.isFirstCharacter ? 'start' : '',
                   annotation.isLastCharacter ? 'end' : '',
                   annotation.type,
-                  annotation.subtype,
+                  annotation.subType,
                 ]"
                 :data-anno-uuid="annotation.uuid"
               >
