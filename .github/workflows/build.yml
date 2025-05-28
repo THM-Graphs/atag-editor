@@ -4,8 +4,6 @@ name: Build and publish Docker images
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
 
 # Define custom environment variables for the workflow.
 env:
