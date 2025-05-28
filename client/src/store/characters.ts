@@ -120,7 +120,6 @@ export function useCharactersStore() {
    */
   function previousCharacters(mode: 'keep' | 'replace'): void {
     if (beforeStartIndex.value === null) {
-      console.log('Already at first character');
       return;
     }
 
@@ -153,7 +152,6 @@ export function useCharactersStore() {
    */
   function nextCharacters(mode: 'keep' | 'replace'): void {
     if (afterEndIndex.value === null) {
-      console.log('No more characters');
       return;
     }
 

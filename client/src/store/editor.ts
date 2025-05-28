@@ -213,7 +213,6 @@ export function useEditorStore() {
    */
   function undo(): void {
     if (history.value.length <= 1) {
-      console.log('Nothing to undo, last entry is initial...');
       return;
     }
 
@@ -226,7 +225,6 @@ export function useEditorStore() {
     const newLastRecord: HistoryRecord | null = history.value[history.value.length - 1];
 
     if (!newLastRecord) {
-      console.log('Nothing to undo.');
       return;
     }
 
@@ -259,7 +257,6 @@ export function useEditorStore() {
     //   expandAnnotation(data.annotation);
     // }
 
-    console.log(newLastRecord.caretPosition);
     setNewRangeAnchorUuid(newLastRecord.caretPosition);
 
     redoStack.value.push(lastRecord);
@@ -273,7 +270,6 @@ export function useEditorStore() {
    */
   function redo(): void {
     if (redoStack.value.length === 0) {
-      console.log('Nothing to redo.');
       return;
     }
 
