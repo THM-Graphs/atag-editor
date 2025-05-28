@@ -2,66 +2,66 @@ name: Build and publish Docker images
 
 # Runs on every push to or merge into the main branch
 on:
- push:
-  branches: ['main']
- pull_request:
-  branches: ['main']
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
 
 # Define custom environment variables for the workflow.
 env:
- REGISTRY: ghcr.io
- IMAGE_NAME_BACKEND: ${{ github.repository }}-backend
- IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
+  REGISTRY: ghcr.io
+  IMAGE_NAME_BACKEND: ${{ github.repository }}-backend
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
 
 jobs:
- build-and-push-image:
-  runs-on: ubuntu-latest
-  strategy:
-   fail-fast: true
-   matrix:
-    include:
-     - service: frontend
-       context: ./client
-       image: ghcr.io/${{ github.repository }}-frontend
-     - service: backend
-       context: ./server
-       image: ghcr.io/${{ github.repository }}-backend
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - service: frontend
+            context: ./client
+            image: ghcr.io/${{ github.repository }}-frontend
+          - service: backend
+            context: ./server
+            image: ghcr.io/${{ github.repository }}-backend
 
-  # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
-  permissions:
-   contents: read
-   packages: write
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
 
-  steps:
-   # Check out code
-   - name: Checkout repository
-     uses: actions/checkout@v4
+    steps:
+      # Check out code
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-   # Log in to the Container registry registry.
-   - name: Log in to the Container registry
-     uses: docker/login-action@v3
-     with:
-      registry: ${{ env.REGISTRY }}
-      username: ${{ github.actor }}
-      password: ${{ secrets.GITHUB_TOKEN }}
+      # Log in to the Container registry registry.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-   # Extract tags and labels that will be applied to the specified image.
-   - name: Extract metadata (tags, labels) for Docker
-     id: meta
-     uses: docker/metadata-action@v5
-     with:
-      images: ${{ matrix.image}}
-      tags: |
-       type=ref,event=branch,branch=main
-       type=raw,value=latest
+      # Extract tags and labels that will be applied to the specified image.
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image}}
+          tags: |
+            type=ref,event=branch,branch=main
+            type=raw,value=latest
 
-   # Build images from the Docker files and push them to registry
-   - name: Build and push Docker image
-     id: push
-     uses: docker/build-push-action@v6
-     with:
-      context: ${{ matrix.context}}
-      file: ${{ matrix.context }}/Dockerfile.prod
-      push: true
-      tags: ${{ steps.meta.outputs.tags }}
-      labels: ${{ steps.meta.outputs.labels }}
+      # Build images from the Docker files and push them to registry
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context}}
+          file: ${{ matrix.context }}/Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
