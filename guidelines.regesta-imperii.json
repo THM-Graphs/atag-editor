@@ -287,6 +287,23 @@
         "hasAdditionalTexts": true
       },
       {
+        "type": "sic",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasNormdata": false,
+        "properties": [
+          {
+            "name": "subtype",
+            "type": "string",
+            "options": ["corr", "conj", "reg"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
         "type": "entity",
         "category": "entities",
         "defaultSelected": true,

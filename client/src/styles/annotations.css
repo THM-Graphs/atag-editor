@@ -17,6 +17,7 @@
   --repeated-text-decoration: line-through;
   --rubricated-clr: hsl(0, 76%, 38%);
   --rubricated-font-weight: 700;
+  --sic-clr: hsl(130, 99%, 29%);
   --transposition-clr: #ccc;
   --unclear-clr: hsl(328, 98%, 47%);
 }
@@ -168,6 +169,10 @@ Fix by changing classlists or annotation types? */
   text-decoration-thickness: 2px;
 }
 
+#text > span:has(span.sic) {
+  color: var(--sic-clr);
+}
+
 /* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
 .annotation-type-icon-entity {
@@ -228,6 +233,10 @@ Fix by changing classlists or annotation types? */
 
 .annotation-type-icon-commentInternal {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentInternal.svg');
+}
+
+.annotation-type-icon-sic {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/sic.svg');
 }
 
 /* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
