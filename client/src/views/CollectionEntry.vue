@@ -7,6 +7,7 @@ import {
   useRoute,
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
 import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
 import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
@@ -617,6 +618,9 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           >
             <template #header>
               <div class="flex items-center gap-1 align-items-center">
+                <div class="icon-container">
+                  <AnnotationTypeIcon :annotationType="annotation.properties.type" />
+                </div>
                 <div class="annotation-type-container">
                   <span class="font-bold">{{ annotation.properties.type }}</span>
                 </div>
@@ -843,5 +847,10 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
 
 .text-box {
   border: 2px solid grey;
+}
+
+.icon-container {
+  width: 20px;
+  height: 20px;
 }
 </style>

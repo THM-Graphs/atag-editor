@@ -244,6 +244,14 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/sic.svg');
 }
 
+.annotation-type-icon-sentPerson {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/sentPerson.svg');
+}
+
+.annotation-type-icon-receivedPerson {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
+}
+
 /* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
 
 #text > span:has(span.paragraph.end)::after {
