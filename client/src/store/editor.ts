@@ -78,8 +78,8 @@ export function useEditorStore() {
       caretPosition: unref(newRangeAnchorUuid),
       data: {
         afterEndCharacter: cloneDeep(getAfterEndCharacter()),
-        annotations: cloneDeep(annotations.value),
         beforeStartCharacter: cloneDeep(getBeforeStartCharacter()),
+        annotations: cloneDeep(annotations.value),
         characters: cloneDeep(snippetCharacters.value),
       },
     };
@@ -229,7 +229,7 @@ export function useEditorStore() {
     }
 
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    // annotations.value = cloneDeep(newLastRecord.data.annotations);
+    annotations.value = cloneDeep(newLastRecord.data.annotations);
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -306,7 +306,7 @@ export function useEditorStore() {
     // }
 
     snippetCharacters.value = cloneDeep(record.data.characters);
-    // annotations.value = cloneDeep(record.data.annotations);
+    annotations.value = cloneDeep(record.data.annotations);
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
