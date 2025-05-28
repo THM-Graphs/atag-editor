@@ -211,7 +211,7 @@
         "isZeroPoint": false
       },
       {
-        "type": "addition",
+        "type": "additionLaterHand",
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false

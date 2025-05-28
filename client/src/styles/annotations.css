@@ -1,6 +1,6 @@
 :root {
   --aboveLine-clr: hsl(22, 81%, 35%);
-  --addition-color: hsla(91, 59%, 64%, 0.3);
+  --additionLaterHand-color: hsla(91, 59%, 64%, 0.3);
   --commentInternal-color: #e3dbcc99;
   --commentInternal-opacity: 0.9;
   --correction-clr: hsla(36, 85%, 76%, 0.6);
@@ -107,8 +107,8 @@ Fix by changing classlists or annotation types? */
   text-decoration: var(--gap-text-decoration);
 }
 
-#text > span:has(span.addition) {
-  background-color: var(--addition-color);
+#text > span:has(span.additionLaterHand) {
+  background-color: var(--additionLaterHand-color);
 }
 
 #text > span:has(span.head) {
@@ -210,8 +210,8 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/gap.svg');
 }
 
-.annotation-type-icon-addition {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/addition.svg');
+.annotation-type-icon-additionLaterHand {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/additionLaterHand.svg');
 }
 
 .annotation-type-icon-head {
