@@ -28,7 +28,7 @@ function handleClick(): void {
     icon="pi pi-undo"
     aria-label="Home"
     severity="secondary"
-    :class="`w-2rem h-2rem ${props.action === 'undo' ? '' : 'mirrored'}`"
+    :class="`w-2rem h-2rem btn-${props.action}`"
     :title="title"
     :disabled="props.action === 'undo' ? !canUndo : !canRedo"
     @click="handleClick"
@@ -36,7 +36,11 @@ function handleClick(): void {
 </template>
 
 <style scoped>
-.mirrored {
+.btn-undo {
+  margin-right: 1px;
+}
+.btn-redo {
   transform: scale(-1, 1);
+  margin-right: 5px;
 }
 </style>
