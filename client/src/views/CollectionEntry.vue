@@ -115,6 +115,7 @@ onMounted(async (): Promise<void> => {
 
   if (isValidCollection.value) {
     await getGuidelines();
+    await getAnnotationStyles();
     window.addEventListener('beforeunload', handleBeforeUnload);
   }
 
@@ -144,6 +145,27 @@ function enrichCollectionData(): void {
         field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
+}
+
+async function getAnnotationStyles() {
+  try {
+    const url: string = buildFetchUrl('/api/styles');
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to load stylesheet');
+    }
+
+    const styles: string = await response.text();
+    const styleTag: HTMLStyleElement = document.createElement('style');
+
+    styleTag.id = 'custom-styles';
+    styleTag.innerHTML = styles;
+
+    document.head.appendChild(styleTag);
+  } catch (error) {
+    console.error('Error loading stylesheet:', error);
+  }
 }
 
 async function getGuidelines(): Promise<void> {
