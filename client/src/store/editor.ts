@@ -310,6 +310,8 @@ export function useEditorStore() {
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
+    setNewRangeAnchorUuid(record.caretPosition);
+
     history.value.push(record);
   }
 
