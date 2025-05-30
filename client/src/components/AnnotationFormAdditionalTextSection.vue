@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref, watch } from 'vue';
-import { templateRef } from '@vueuse/core';
+import { nextTick, Ref, ref, watch, useTemplateRef } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { camelCaseToTitleCase, getDefaultValueForProperty } from '../utils/helper/helper';
 import Button from 'primevue/button';
@@ -40,7 +39,7 @@ const additionalTextInputObject = ref<AdditionalTextInputObject>({
   availableLabels: guidelines.value.annotations.additionalTexts,
   inputLabels: [],
   mode: 'view',
-  inputElm: templateRef('additional-text-input'),
+  inputElm: useTemplateRef('additional-text-input'),
 });
 
 // Used for toggling additional text preview mode. Bit hacky for now, but works.

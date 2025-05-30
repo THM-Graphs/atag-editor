@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref } from 'vue';
-import { templateRef } from '@vueuse/core';
+import { nextTick, Ref, ref, useTemplateRef } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { buildFetchUrl, camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
@@ -47,8 +46,7 @@ const normdataSearchObject = ref<NormdataSearchObject>(
       fetchedItems: [],
       currentItem: null,
       mode: 'view',
-      // TODO: Use useTemplateRef when upgraded to Vue 3.5
-      elm: templateRef(`input-${category}`),
+      elm: useTemplateRef(`input-${category}`),
     };
 
     return object;
