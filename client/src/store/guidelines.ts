@@ -194,17 +194,15 @@ export function useGuidelinesStore() {
    * @return {PropertyConfig[]} The field configurations for the collection type.
    */
   function getCollectionConfigFields(nodeLabels: string[]): PropertyConfig[] {
-    const system: PropertyConfig[] = guidelines?.value.collections.properties.system;
-    const base: PropertyConfig[] = guidelines?.value.collections.properties.base;
-    const additional: PropertyConfig[] = guidelines?.value.collections.types.reduce(
-      (total: PropertyConfig[], curr) => {
+    const system: PropertyConfig[] = guidelines.value?.collections.properties.system ?? [];
+    const base: PropertyConfig[] = guidelines.value?.collections.properties.base ?? [];
+    const additional: PropertyConfig[] =
+      guidelines.value?.collections.types.reduce((total: PropertyConfig[], curr) => {
         if (nodeLabels.includes(curr.additionalLabel)) {
           total.push(...curr.properties);
         }
         return total;
-      },
-      [],
-    );
+      }, []) ?? [];
 
     return [...system, ...base, ...additional];
   }

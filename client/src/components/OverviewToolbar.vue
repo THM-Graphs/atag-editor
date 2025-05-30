@@ -9,7 +9,6 @@ import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import { MultiSelect } from 'primevue';
-import Skeleton from 'primevue/skeleton';
 import Tag from 'primevue/tag';
 import Toolbar from 'primevue/toolbar';
 import {
@@ -19,20 +18,21 @@ import {
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
-import { IGuidelines } from '../models/IGuidelines';
 import { CollectionAccessObject, PropertyConfig } from '../models/types';
 
 const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
 
-const { getAllCollectionConfigFields, getAvailableCollectionLabels, getCollectionConfigFields } =
-  useGuidelinesStore();
+const {
+  guidelines,
+  getAllCollectionConfigFields,
+  getAvailableCollectionLabels,
+  getCollectionConfigFields,
+} = useGuidelinesStore();
 
 const searchInput = ref<string>('');
 const newCollectionData = ref<CollectionAccessObject>(null);
-const guidelines = ref<IGuidelines>({} as IGuidelines);
 
 const dialogIsVisible = ref<boolean>(false);
-const guidelinesAreLoaded = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
@@ -44,11 +44,7 @@ const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
 // TODO: replace this with general form handling in the future
 // Used for enabling/disabling buttons when form inputs don't satisfy requirements
 const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
-  if (dialogIsVisible.value && !guidelinesAreLoaded.value) {
-    return false;
-  }
-
-  const selectedLabelsValid: boolean =
+  const selectedLabelsAreValid: boolean =
     availableCollectionLabels.value.length === 0 ||
     newCollectionData.value.collection.nodeLabels.length > 0;
 
@@ -61,7 +57,7 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
         newCollectionData.value?.collection.data[field.name] !== '',
     );
 
-  return selectedLabelsValid && requiredFieldsAreValid;
+  return selectedLabelsAreValid && requiredFieldsAreValid;
 });
 
 /**
@@ -129,49 +125,28 @@ async function createNewCollection(): Promise<void> {
 
 async function showDialog(): Promise<void> {
   dialogIsVisible.value = true;
-  await getGuidelines();
+
+  // Initialize newCollectionData that will be used in the form
+  newCollectionData.value = {
+    collection: {
+      data: Object.fromEntries(
+        getAllCollectionConfigFields().map(f => [
+          f.name,
+          f?.required === true ? getDefaultValueForProperty(f.type) : null,
+        ]),
+      ) as ICollection,
+      nodeLabels: guidelines.value.collections.types
+        .filter(t => t.level === 'primary')
+        .map(t => t.additionalLabel),
+    },
+    texts: [],
+    annotations: [],
+  };
 }
 
 async function hideDialog(): Promise<void> {
   newCollectionData.value = null;
   dialogIsVisible.value = false;
-  guidelinesAreLoaded.value = false;
-}
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl('/api/guidelines');
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-    guidelines.value = fetchedGuidelines;
-
-    // TODO: Load guidelines only once? Should be enough...
-    // Initialize newCollectionData with empty strings to include them in form data
-    newCollectionData.value = {
-      collection: {
-        data: Object.fromEntries(
-          getAllCollectionConfigFields().map(f => [
-            f.name,
-            f?.required === true ? getDefaultValueForProperty(f.type) : null,
-          ]),
-        ) as ICollection,
-        nodeLabels: guidelines.value.collections.types
-          .filter(t => t.level === 'primary')
-          .map(t => t.additionalLabel),
-      },
-      texts: [],
-      annotations: [],
-    };
-
-    guidelinesAreLoaded.value = true;
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
-  }
 }
 
 function handleSearchInput(): void {
@@ -216,53 +191,44 @@ function handleSearchInput(): void {
       <h2 class="w-full text-center m-0">Add new Collection</h2>
     </template>
     <form @submit.prevent="createNewCollection">
-      <div v-if="guidelinesAreLoaded">
-        <div class="select-label-container flex flex-column align-items-center">
-          <h4 class="mt-0">Select labels</h4>
-          <MultiSelect
-            v-model="newCollectionData.collection.nodeLabels"
-            :options="availableCollectionLabels"
-            display="chip"
-            :invalid="
-              availableCollectionLabels?.length > 0 &&
-              newCollectionData?.collection?.nodeLabels?.length === 0
-            "
-            placeholder="Select labels"
-            class="text-center"
-            :filter="false"
-          >
-            <template #chip="{ value }">
-              <Tag :value="value" severity="contrast" class="mr-1" />
-            </template>
-          </MultiSelect>
-        </div>
-        <div class="select-data-container">
-          <h4 class="text-center">Add data</h4>
-          <div
-            class="input-container flex align-items-center gap-3 mb-3"
-            v-for="field in dialogInputFields"
-          >
-            <label :for="field.name" class="font-semibold w-6rem"
-              >{{ capitalize(field.name) }}
-            </label>
-            <DataInputGroup
-              v-if="field.type === 'array'"
-              v-model="newCollectionData.collection.data[field.name]"
-              :config="field"
-            />
-            <DataInputComponent
-              v-else
-              v-model="newCollectionData.collection.data[field.name]"
-              :config="field"
-            />
-          </div>
-        </div>
+      <div class="select-label-container flex flex-column align-items-center">
+        <h4 class="mt-0">Select labels</h4>
+        <MultiSelect
+          v-model="newCollectionData.collection.nodeLabels"
+          :options="availableCollectionLabels"
+          display="chip"
+          :invalid="
+            availableCollectionLabels?.length > 0 &&
+            newCollectionData?.collection?.nodeLabels?.length === 0
+          "
+          placeholder="Select labels"
+          class="text-center"
+          :filter="false"
+        >
+          <template #chip="{ value }">
+            <Tag :value="value" severity="contrast" class="mr-1" />
+          </template>
+        </MultiSelect>
       </div>
-
-      <div v-else class="skeleton-container">
-        <div v-for="_n in 4" class="flex flex-row gap-2">
-          <Skeleton class="mb-3" height="2rem" width="10rem"></Skeleton>
-          <Skeleton class="mb-3" height="2rem"></Skeleton>
+      <div class="select-data-container">
+        <h4 class="text-center">Add data</h4>
+        <div
+          class="input-container flex align-items-center gap-3 mb-3"
+          v-for="field in dialogInputFields"
+        >
+          <label :for="field.name" class="font-semibold w-6rem"
+            >{{ capitalize(field.name) }}
+          </label>
+          <DataInputGroup
+            v-if="field.type === 'array'"
+            v-model="newCollectionData.collection.data[field.name]"
+            :config="field"
+          />
+          <DataInputComponent
+            v-else
+            v-model="newCollectionData.collection.data[field.name]"
+            :config="field"
+          />
         </div>
       </div>
 

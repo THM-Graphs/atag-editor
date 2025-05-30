@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, ref } from 'vue';
+import { computed, ComputedRef } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
-import { buildFetchUrl, capitalize } from '../utils/helper/helper';
+import { capitalize } from '../utils/helper/helper';
 import Column, { ColumnPassThroughMethodOptions } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
-import { IGuidelines } from '../models/IGuidelines';
 import { CollectionAccessObject, PropertyConfig, PaginationData } from '../models/types';
 
 type CollectionTableEntry = {
@@ -29,7 +28,23 @@ const emit = defineEmits(['paginationChanged', 'sortChanged']);
 
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 
-const columns = ref<ColumnConfig[]>([]);
+const columns: ComputedRef<ColumnConfig[]> = computed(() => {
+  // Get Collection type that is shown in the table and does not only exist as anchor to additional text
+  // Needs to be overhauled anyway when whole hierarchies should be handled in the future
+  const primaryCollectionLabel: ComputedRef<string> = computed(
+    () => guidelines.value?.collections.types.find(t => t.level === 'primary')?.additionalLabel,
+  );
+
+  // TODO: This approach is bad since possible data keys are reserved...
+  return [
+    { name: 'nodeLabels', isSortable: false },
+    ...getCollectionConfigFields([primaryCollectionLabel.value]).map(f => ({
+      name: f.name,
+      isSortable: true,
+    })),
+    { name: 'texts', isSortable: false },
+  ];
+});
 
 const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
   return props?.collections?.map(collection => {
@@ -39,26 +54,6 @@ const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
       nodeLabels: collection.collection.nodeLabels,
     };
   });
-});
-
-onMounted(async (): Promise<void> => {
-  await getGuidelines();
-
-  // Get Collection type that is shown in the table and does not only exist as anchor to additional text
-  // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-  const primaryCollectionLabel: string = guidelines.value.collections.types.find(
-    t => t.level === 'primary',
-  )?.additionalLabel;
-
-  // TODO: This approach is bad since possible data keys are reserved...
-  columns.value = [
-    { name: 'nodeLabels', isSortable: false },
-    ...getCollectionConfigFields([primaryCollectionLabel]).map(f => ({
-      name: f.name,
-      isSortable: true,
-    })),
-    { name: 'texts', isSortable: false },
-  ];
 });
 
 function getColumnWidth(columnName: string): string {
@@ -78,25 +73,6 @@ function handleSort(event: DataTableSortEvent): void {
 
 function handlePagination(event: DataTablePageEvent): void {
   emit('paginationChanged', event);
-}
-
-// TODO: getGuidelines exists in multiple components now, should be moved to a shared location
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/guidelines`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-
-    guidelines.value = fetchedGuidelines;
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
-  }
 }
 </script>
 

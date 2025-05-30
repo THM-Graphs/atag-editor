@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import { refDebounced, useTitle } from '@vueuse/core';
+import { useGuidelinesStore } from '../store/guidelines';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
+import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { CollectionAccessObject, PaginationData, PaginationResult } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
@@ -18,8 +20,12 @@ const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
+const { guidelines } = useGuidelinesStore();
+
 const collections = ref<CollectionAccessObject[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
+
+const asyncOperationRunning = ref<boolean>(false);
 
 // Refs for fetch url params to re-fetch collections on change
 
@@ -46,9 +52,10 @@ const fetchUrl = computed<string>(() => {
 
 watch(fetchUrl, async () => await getCollections());
 
-onMounted(async (): Promise<void> => await getCollections());
-
-const asyncOperationRunning = ref<boolean>(false);
+onMounted(async (): Promise<void> => {
+  await getGuidelines();
+  await getCollections();
+});
 
 async function getCollections(): Promise<void> {
   try {
@@ -69,6 +76,24 @@ async function getCollections(): Promise<void> {
     console.error('Error fetching collections:', error);
   } finally {
     asyncOperationRunning.value = false;
+  }
+}
+
+async function getGuidelines(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/guidelines`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedGuidelines: IGuidelines = await response.json();
+
+    guidelines.value = fetchedGuidelines;
+  } catch (error: unknown) {
+    console.error('Error fetching guidelines:', error);
   }
 }
 
