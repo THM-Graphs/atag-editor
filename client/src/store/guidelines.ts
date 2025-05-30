@@ -5,6 +5,7 @@ import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../mod
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
+const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 const { initializeFilter } = useFilterStore();
 
 /**
@@ -22,6 +23,7 @@ export function useGuidelinesStore() {
   function initializeGuidelines(guidelinesData: IGuidelines): void {
     guidelines.value = guidelinesData;
     groupedAnnotationTypes.value = groupAnnotationTypes();
+    groupedAndSortedAnnotationTypes.value = sortAnnotationTypesInGroup();
 
     initializeFilter(guidelines.value);
   }
@@ -243,7 +245,22 @@ export function useGuidelinesStore() {
     );
   }
 
+  /**
+   * Sorts each group of annotation types alphabetically by their type within their respective category.
+   *
+   * @return {Record<string, AnnotationType[]>} An object where the keys are the categories and the values are arrays of sorted annotation types.
+   */
+  function sortAnnotationTypesInGroup(): Record<string, AnnotationType[]> {
+    return Object.fromEntries(
+      Object.entries(groupedAnnotationTypes.value).map(([category, types]) => [
+        category,
+        types.toSorted((a, b) => a.type.localeCompare(b.type)),
+      ]),
+    );
+  }
+
   return {
+    groupedAndSortedAnnotationTypes,
     groupedAnnotationTypes,
     guidelines,
     getAllCollectionConfigFields,

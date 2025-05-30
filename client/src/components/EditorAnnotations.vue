@@ -26,7 +26,7 @@ export interface TreeNode {
 const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
 const { annotations } = useAnnotationStore();
-const { groupedAnnotationTypes } = useGuidelinesStore();
+const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
 
 const displayedAnnotations = ref<Annotation[]>([]);
 
@@ -59,49 +59,51 @@ watch(
 const nodes: ComputedRef<TreeNode[]> = computed(() => {
   const nodes: TreeNode[] = [];
 
-  Object.entries(groupedAnnotationTypes.value).forEach(([category, annotationType], i: number) => {
-    const newCategory: TreeNode = {
-      key: i.toString(),
-      label: category,
-      type: 'category',
-      children: [],
-      annotationCount: 0,
-    };
-
-    annotationType.forEach((annoType: AnnotationType, j: number) => {
-      const newAnnotationType: TreeNode = {
-        key: i.toString() + '-' + j.toString(),
-        label: annoType.type,
-        type: 'type',
+  Object.entries(groupedAndSortedAnnotationTypes.value).forEach(
+    ([category, annotationType], i: number) => {
+      const newCategory: TreeNode = {
+        key: i.toString(),
+        label: category,
+        type: 'category',
         children: [],
+        annotationCount: 0,
       };
 
-      const annos: Annotation[] = displayedAnnotations.value.filter(
-        a => a.data.properties.type === annoType.type,
-      );
-
-      annos.forEach((anno: Annotation, k: number) => {
-        const newAnnotation: TreeNode = {
-          key: i.toString() + '-' + j.toString() + '-' + k.toString(),
-          label: anno.data.properties.text,
-          type: 'annotation',
-          data: anno,
+      annotationType.forEach((annoType: AnnotationType, j: number) => {
+        const newAnnotationType: TreeNode = {
+          key: i.toString() + '-' + j.toString(),
+          label: annoType.type,
+          type: 'type',
+          children: [],
         };
 
-        newAnnotationType.children.push(newAnnotation);
+        const annos: Annotation[] = displayedAnnotations.value.filter(
+          a => a.data.properties.type === annoType.type,
+        );
+
+        annos.forEach((anno: Annotation, k: number) => {
+          const newAnnotation: TreeNode = {
+            key: i.toString() + '-' + j.toString() + '-' + k.toString(),
+            label: anno.data.properties.text,
+            type: 'annotation',
+            data: anno,
+          };
+
+          newAnnotationType.children.push(newAnnotation);
+        });
+
+        newCategory.annotationCount += annos.length;
+
+        if (newAnnotationType.children.length > 0) {
+          newCategory.children.push(newAnnotationType);
+        }
       });
 
-      newCategory.annotationCount += annos.length;
-
-      if (newAnnotationType.children.length > 0) {
-        newCategory.children.push(newAnnotationType);
+      if (newCategory.children.length > 0) {
+        nodes.push(newCategory);
       }
-    });
-
-    if (newCategory.children.length > 0) {
-      nodes.push(newCategory);
-    }
-  });
+    },
+  );
 
   return nodes;
 });
