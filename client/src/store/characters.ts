@@ -112,6 +112,41 @@ export function useCharactersStore() {
   }
 
   /**
+   * Calculates the slice indices for a text operation happens between two characters with given indices.
+   *
+   * These slice indices are calculated to slice the totalCharacters array into two parts and append the snippetCharacters array in between.
+   * The slice method is used instead of splice to avoid exceeding the call stack size limit when handling very long texts.
+   *
+   * @param {number | null} leftIndex - The index of the character to the left of the operation, or `null` if operation is at the very beginning of the current snippet.
+   * @param {number | null} rightIndex - The index of the character to the right of the operation, or `null` if operation is at the very end of the current snippet.
+   * @returns {{sliceUntil: number, sliceFrom: number}} An object containing the slice indices.
+   */
+  function getTextOperationSliceIndizes(
+    leftIndex: number | null,
+    rightIndex: number | null,
+  ): {
+    sliceUntil: number;
+    sliceFrom: number;
+  } {
+    let sliceUntil: number | null = null;
+    let sliceFrom: number | null = null;
+
+    if (leftIndex !== null) {
+      sliceUntil = leftIndex + 1;
+    } else {
+      sliceUntil = 0;
+    }
+
+    if (rightIndex !== null) {
+      sliceFrom = rightIndex;
+    } else {
+      sliceFrom = snippetCharacters.value.length;
+    }
+
+    return { sliceUntil, sliceFrom };
+  }
+
+  /**
    * Paginates character array to the previous characters. The mode parameter determines whether the currently displayed characters
    * should stay rendered or replaced by the previous characters.
    *
@@ -425,7 +460,7 @@ export function useCharactersStore() {
   }
 
   /**
-   * Inserts new characters after the given UUI. If the UUID is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
+   * Inserts new characters after the given UUID. If the UUID is `null`, the new characters are inserted at the very beginning or end of the snippet, respectively.
    *
    * @param {string | null} leftUuid - The UUID of the character to the left of the range to insert into.
    * @param {Character[]} newCharacters - The new characters to insert.
@@ -491,7 +526,11 @@ export function useCharactersStore() {
       }
     });
 
-    snippetCharacters.value.splice(indexToInsert, 0, ...newCharacters);
+    snippetCharacters.value = [
+      ...snippetCharacters.value.slice(0, indexToInsert),
+      ...newCharacters,
+      ...snippetCharacters.value.slice(indexToInsert),
+    ];
 
     return { changeSet: newCharacters };
   }
@@ -621,24 +660,12 @@ export function useCharactersStore() {
       }
     });
 
-    let deletionStartIndex: number;
-    let deletionEndIndex: number;
+    const { sliceUntil, sliceFrom } = getTextOperationSliceIndizes(leftIndex, rightIndex);
 
-    if (leftIndex !== null) {
-      deletionStartIndex = leftIndex + 1;
-    } else {
-      deletionStartIndex = 0;
-    }
-
-    if (rightIndex !== null) {
-      deletionEndIndex = rightIndex - 1;
-    } else {
-      deletionEndIndex = snippetCharacters.value.length - 1;
-    }
-
-    const charsToDeleteCount: number = deletionEndIndex - deletionStartIndex + 1;
-
-    snippetCharacters.value.splice(deletionStartIndex, charsToDeleteCount);
+    snippetCharacters.value = [
+      ...snippetCharacters.value.slice(0, sliceUntil),
+      ...snippetCharacters.value.slice(sliceFrom),
+    ];
 
     return { leftBoundary: leftUuid, rightBoundary: rightUuid };
   }
@@ -731,24 +758,13 @@ export function useCharactersStore() {
       }
     });
 
-    let replaceStartIndex: number;
-    let replaceEndIndex: number;
+    const { sliceUntil, sliceFrom } = getTextOperationSliceIndizes(leftIndex, rightIndex);
 
-    if (leftIndex !== null) {
-      replaceStartIndex = leftIndex + 1;
-    } else {
-      replaceStartIndex = 0;
-    }
-
-    if (rightIndex !== null) {
-      replaceEndIndex = rightIndex - 1;
-    } else {
-      replaceEndIndex = snippetCharacters.value.length - 1;
-    }
-
-    const charsToDeleteCount: number = replaceEndIndex - replaceStartIndex + 1;
-
-    snippetCharacters.value.splice(replaceStartIndex, charsToDeleteCount, ...newCharacters);
+    snippetCharacters.value = [
+      ...snippetCharacters.value.slice(0, sliceUntil),
+      ...newCharacters,
+      ...snippetCharacters.value.slice(sliceFrom),
+    ];
 
     return { changeSet: newCharacters };
   }
@@ -760,16 +776,24 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertSnippetIntoChain(): void {
-    const startAtIndex: number = beforeStartIndex.value ? beforeStartIndex.value + 1 : 0;
-    let charsToDeleteCount = 0;
+    // Slice totalCharacters until beforeStartIndex.value (must be inclusive)
+    const sliceUntil: number = beforeStartIndex.value !== null ? beforeStartIndex.value + 1 : 0;
 
-    if (afterEndIndex.value) {
-      charsToDeleteCount = afterEndIndex.value - startAtIndex;
-    } else {
-      charsToDeleteCount = totalCharacters.value.length;
-    }
+    // Slice totalCharacters from afterEndIndex.value (must be inclusive)
+    let sliceFrom: number =
+      afterEndIndex.value !== null ? afterEndIndex.value : totalCharacters.value.length;
 
-    totalCharacters.value.splice(startAtIndex, charsToDeleteCount, ...snippetCharacters.value);
+    // console.log('slice until (exclusive): ', sliceUntil);
+    // console.log('slice afterwards: ', sliceFrom);
+    const charsBefore: Character[] = totalCharacters.value.slice(0, sliceUntil);
+    const charsAfter: Character[] = totalCharacters.value.slice(sliceFrom);
+    // console.log('char count before: ', charsBefore.map(c => c.data.text).join('').length);
+    // console.log('char count after: ', charsAfter.map(c => c.data.text).join('').length);
+
+    totalCharacters.value = [...charsBefore, ...snippetCharacters.value, ...charsAfter];
+
+    // console.log('after operation: ', totalCharacters.value.length);
+
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
 
     if (afterEndIndex.value === null) {
