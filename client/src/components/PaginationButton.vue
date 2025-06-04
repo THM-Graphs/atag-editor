@@ -53,8 +53,9 @@ const {
   afterEndIndex,
   beforeStartIndex,
   snippetCharacters,
-  totalCharacters,
   firstCharacters,
+  getAfterEndCharacter,
+  getBeforeStartCharacter,
   lastCharacters,
   nextCharacters,
   previousCharacters,
@@ -84,34 +85,35 @@ function handlePagination() {
       break;
   }
 
-  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
-  let charUuids: Set<string> = new Set();
+  // TODO: Basically the same as during store initialization. Refactor.
 
-  snippetCharacters.value.forEach(c => {
-    c.annotations.forEach(a => charUuids.add(a.uuid));
-  });
+  // Get UUIDs of annotations in snippet and at the characteres before and after it.
+  // Used to calculate truncation status
+  const snippetAnnotationUuids: Set<string> = new Set(
+    snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
+  );
+
+  const beforeStartAnnotationUuids: Set<string> = new Set(
+    getBeforeStartCharacter()?.annotations.map(a => a.uuid) ?? [],
+  );
+
+  const afterEndAnnotationUuids: Set<string> = new Set(
+    getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
+  );
 
   annotations.value.forEach((annotation: Annotation) => {
-    if (!charUuids.has(annotation.data.properties.uuid)) {
+    const uuid: string = annotation.data.properties.uuid;
+
+    if (!snippetAnnotationUuids.has(uuid)) {
       annotation.isTruncated = false;
     } else {
       const isLeftTruncated: boolean =
-        beforeStartIndex.value &&
-        totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.data.properties.uuid,
-        );
+        beforeStartAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
 
       const isRightTruncated: boolean =
-        afterEndIndex.value &&
-        totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.data.properties.uuid,
-        );
+        afterEndAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
 
-      if (isLeftTruncated || isRightTruncated) {
-        annotation.isTruncated = true;
-      } else {
-        annotation.isTruncated = false;
-      }
+      annotation.isTruncated = isLeftTruncated || isRightTruncated;
     }
   });
 
