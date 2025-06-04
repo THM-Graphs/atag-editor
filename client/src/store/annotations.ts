@@ -35,14 +35,21 @@ export function useAnnotationStore() {
   ): void {
     resetAnnotations();
 
+    console.time('initialization');
+
+    console.time('map');
+
+    // Map for checking which annotation has which characters. Structure: { "annotationUuid": <"charUuid1", "charUuid2", ...> }
+    const characterAnnotationMap = createCharacterAnnotationMap(totalCharacters.value);
+
+    console.timeEnd('map');
+
+    // console.log(characterAnnotationMap);
+
     // TODO: This can be simplified, too much duplication
     // TODO: This IS slow when importing text with many annotations -> fix!
-    annotations.value = annotationData.map((annotation: AnnotationData, index: number) => {
-      const charUuids: string[] = [
-        ...totalCharacters.value
-          .filter(c => c.annotations.some(a => a.uuid === annotationData[index].properties.uuid))
-          .map(cc => cc.data.uuid),
-      ];
+    annotations.value = annotationData.map((annotation: AnnotationData) => {
+      const charUuids: string[] = [...characterAnnotationMap.get(annotation.properties.uuid)];
 
       const isLeftTruncated: boolean =
         beforeStartIndex.value &&
@@ -70,6 +77,8 @@ export function useAnnotationStore() {
         status: source === 'database' ? 'existing' : 'created',
       };
     });
+
+    console.timeEnd('initialization');
 
     // TODO: Duplicate functionality with character pagination methods -> simplify
 
@@ -114,6 +123,31 @@ export function useAnnotationStore() {
     annotations.value.push(annotation);
 
     return annotation;
+  }
+
+  /**
+   * Creates a map from each annotation UUID to the set of character UUIDs that
+   * the annotation is associated with. Used during initialization of the store.
+   *
+   * @param {Character[]} characters The characters to iterate over, for example the `totalCharacters` state variable.
+   * @returns {Map<string, Set<string>>} A map from annotation UUIDs to sets of character UUIDs.
+   */
+  function createCharacterAnnotationMap(characters: Character[]): Map<string, Set<string>> {
+    const map: Map<string, Set<string>> = new Map<string, Set<string>>();
+
+    characters.forEach(c => {
+      c.annotations.forEach(a => {
+        const characterUuidSet: Set<string> = map.get(a.uuid);
+
+        if (!characterUuidSet) {
+          map.set(a.uuid, new Set([c.data.uuid]));
+        } else {
+          characterUuidSet.add(c.data.uuid);
+        }
+      });
+    });
+
+    return map;
   }
 
   function deleteAnnotation(uuid: string): void {
