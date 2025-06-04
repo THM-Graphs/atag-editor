@@ -48,14 +48,12 @@ const paginationMode: ComputedRef<'keep' | 'replace'> = computed(() =>
   keepTextOnPagination.value === true ? 'keep' : 'replace',
 );
 
-const { annotations } = useAnnotationStore();
+const { updateTruncationStatus } = useAnnotationStore();
 const {
   afterEndIndex,
   beforeStartIndex,
   snippetCharacters,
   firstCharacters,
-  getAfterEndCharacter,
-  getBeforeStartCharacter,
   lastCharacters,
   nextCharacters,
   previousCharacters,
@@ -85,37 +83,7 @@ function handlePagination() {
       break;
   }
 
-  // TODO: Basically the same as during store initialization. Refactor.
-
-  // Get UUIDs of annotations in snippet and at the characteres before and after it.
-  // Used to calculate truncation status
-  const snippetAnnotationUuids: Set<string> = new Set(
-    snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
-  );
-
-  const beforeStartAnnotationUuids: Set<string> = new Set(
-    getBeforeStartCharacter()?.annotations.map(a => a.uuid) ?? [],
-  );
-
-  const afterEndAnnotationUuids: Set<string> = new Set(
-    getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
-  );
-
-  annotations.value.forEach((annotation: Annotation) => {
-    const uuid: string = annotation.data.properties.uuid;
-
-    if (!snippetAnnotationUuids.has(uuid)) {
-      annotation.isTruncated = false;
-    } else {
-      const isLeftTruncated: boolean =
-        beforeStartAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
-
-      const isRightTruncated: boolean =
-        afterEndAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
-
-      annotation.isTruncated = isLeftTruncated || isRightTruncated;
-    }
-  });
+  updateTruncationStatus();
 
   setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
 

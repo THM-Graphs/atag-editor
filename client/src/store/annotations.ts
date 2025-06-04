@@ -38,41 +38,24 @@ export function useAnnotationStore() {
     // Map for checking which annotation has which characters. Structure: { "annotationUuid": <"charUuid1", "charUuid2", ...> }
     const characterAnnotationMap = createCharacterAnnotationMap(totalCharacters.value);
 
-    // Get UUIDs of annotations in snippet and at the characteres before and after it.
-    // Used to calculate truncation status
-    const snippetAnnotationUuids: Set<string> = new Set(
-      snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
-    );
-
-    const beforeStartAnnotationUuids: Set<string> = new Set(
-      getBeforeStartCharacter()?.annotations.map(a => a.uuid) ?? [],
-    );
-
-    const afterEndAnnotationUuids: Set<string> = new Set(
-      getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
-    );
-
     annotations.value = annotationData.map((annotationDataObject: AnnotationData) => {
       const uuid: string = annotationDataObject.properties.uuid;
 
       const annotatedCharacterUuids: string[] = [...characterAnnotationMap.get(uuid)];
 
-      const isLeftTruncated: boolean =
-        beforeStartAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
-
-      const isRightTruncated: boolean =
-        afterEndAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
-
+      // isTruncated is set to false at first since truncation happens in separate method
       return {
         characterUuids: annotatedCharacterUuids,
         data: cloneDeep(annotationDataObject),
         endUuid: annotatedCharacterUuids[annotatedCharacterUuids.length - 1],
         initialData: cloneDeep(annotationDataObject),
-        isTruncated: isLeftTruncated || isRightTruncated,
+        isTruncated: false,
         startUuid: annotatedCharacterUuids[0],
         status: source === 'database' ? 'existing' : 'created',
       };
     });
+
+    updateTruncationStatus();
 
     if (source === 'database') {
       initialAnnotations.value = cloneDeep(annotations.value);
@@ -365,6 +348,42 @@ export function useAnnotationStore() {
     });
   }
 
+  /**
+   * Updates the `isTruncated` property of each annotation in the `annotations` value.
+   * An annotation is marked as truncated if it is present in the snippet and either the character before or after the snippet.
+   *
+   * Called during initialization (after the annotation object were created) and after pagination.
+   *
+   * @return {void} This function does not return a value.
+   */
+  function updateTruncationStatus(): void {
+    // Get UUIDs of annotations in snippet and at the characteres before and after it.
+    // Used to calculate truncation status
+    const snippetAnnotationUuids: Set<string> = new Set(
+      snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
+    );
+
+    const beforeStartAnnotationUuids: Set<string> = new Set(
+      getBeforeStartCharacter()?.annotations.map(a => a.uuid) ?? [],
+    );
+
+    const afterEndAnnotationUuids: Set<string> = new Set(
+      getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
+    );
+
+    annotations.value.forEach((annotation: Annotation) => {
+      const uuid: string = annotation.data.properties.uuid;
+
+      const isLeftTruncated: boolean =
+        beforeStartAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
+
+      const isRightTruncated: boolean =
+        afterEndAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
+
+      annotation.isTruncated = isLeftTruncated || isRightTruncated;
+    });
+  }
+
   return {
     annotations,
     initialAnnotations,
@@ -380,5 +399,6 @@ export function useAnnotationStore() {
     shrinkAnnotation,
     updateAnnotationStatuses,
     updateAnnotationsBeforeSave,
+    updateTruncationStatus,
   };
 }
