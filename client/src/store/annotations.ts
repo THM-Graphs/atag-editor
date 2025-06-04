@@ -12,7 +12,7 @@ import { cloneDeep } from '../utils/helper/helper';
 const annotations = ref<Annotation[]>([]);
 const initialAnnotations = ref<Annotation[]>([]);
 
-const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
+const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
   useCharactersStore();
 
 /**
@@ -35,81 +35,43 @@ export function useAnnotationStore() {
   ): void {
     resetAnnotations();
 
-    console.time('initialization');
-
-    console.time('map');
-
     // Map for checking which annotation has which characters. Structure: { "annotationUuid": <"charUuid1", "charUuid2", ...> }
     const characterAnnotationMap = createCharacterAnnotationMap(totalCharacters.value);
 
-    console.timeEnd('map');
+    // Get UUIDs of annotations in snippet and at the characteres before and after it.
+    // Used to calculate truncation status
+    const snippetAnnotationUuids: Set<string> = new Set(
+      snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
+    );
 
-    // console.log(characterAnnotationMap);
+    const beforeStartAnnotationUuids: Set<string> = new Set(
+      getBeforeStartCharacter()?.annotations.map(a => a.uuid) ?? [],
+    );
 
-    // TODO: This can be simplified, too much duplication
-    // TODO: This IS slow when importing text with many annotations -> fix!
-    annotations.value = annotationData.map((annotation: AnnotationData) => {
-      const charUuids: string[] = [...characterAnnotationMap.get(annotation.properties.uuid)];
+    const afterEndAnnotationUuids: Set<string> = new Set(
+      getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
+    );
+
+    annotations.value = annotationData.map((annotationDataObject: AnnotationData) => {
+      const uuid: string = annotationDataObject.properties.uuid;
+
+      const annotatedCharacterUuids: string[] = [...characterAnnotationMap.get(uuid)];
 
       const isLeftTruncated: boolean =
-        beforeStartIndex.value &&
-        totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.properties.uuid,
-        );
+        beforeStartAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
 
       const isRightTruncated: boolean =
-        afterEndIndex.value &&
-        totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.properties.uuid,
-        );
-
-      if (isLeftTruncated || isRightTruncated) {
-        console.log(annotation);
-      }
+        afterEndAnnotationUuids.has(uuid) && snippetAnnotationUuids.has(uuid);
 
       return {
-        characterUuids: charUuids,
-        data: cloneDeep(annotation),
-        endUuid: charUuids[charUuids.length - 1],
-        initialData: cloneDeep(annotation),
+        characterUuids: annotatedCharacterUuids,
+        data: cloneDeep(annotationDataObject),
+        endUuid: annotatedCharacterUuids[annotatedCharacterUuids.length - 1],
+        initialData: cloneDeep(annotationDataObject),
         isTruncated: isLeftTruncated || isRightTruncated,
-        startUuid: charUuids[0],
+        startUuid: annotatedCharacterUuids[0],
         status: source === 'database' ? 'existing' : 'created',
       };
-    });
-
-    console.timeEnd('initialization');
-
-    // TODO: Duplicate functionality with character pagination methods -> simplify
-
-    let charUuids: Set<string> = new Set();
-
-    snippetCharacters.value.forEach(c => {
-      c.annotations.forEach(a => charUuids.add(a.uuid));
-    });
-
-    annotations.value.forEach((annotation: Annotation) => {
-      if (!charUuids.has(annotation.data.properties.uuid)) {
-        annotation.isTruncated = false;
-      } else {
-        const isLeftTruncated: boolean =
-          beforeStartIndex.value &&
-          totalCharacters.value[beforeStartIndex.value].annotations.some(
-            a => a.uuid === annotation.data.properties.uuid,
-          );
-
-        const isRightTruncated: boolean =
-          afterEndIndex.value &&
-          totalCharacters.value[afterEndIndex.value].annotations.some(
-            a => a.uuid === annotation.data.properties.uuid,
-          );
-
-        if (isLeftTruncated || isRightTruncated) {
-          annotation.isTruncated = true;
-        } else {
-          annotation.isTruncated = false;
-        }
-      }
     });
 
     if (source === 'database') {
@@ -129,7 +91,7 @@ export function useAnnotationStore() {
    * Creates a map from each annotation UUID to the set of character UUIDs that
    * the annotation is associated with. Used during initialization of the store.
    *
-   * @param {Character[]} characters The characters to iterate over, for example the `totalCharacters` state variable.
+   * @param {Character[]} characters The characters to iterate over, currently only case is the `totalCharacters` state variable.
    * @returns {Map<string, Set<string>>} A map from annotation UUIDs to sets of character UUIDs.
    */
   function createCharacterAnnotationMap(characters: Character[]): Map<string, Set<string>> {
