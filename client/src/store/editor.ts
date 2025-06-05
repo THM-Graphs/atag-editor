@@ -2,7 +2,14 @@ import { ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
-import { Annotation, CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
+import {
+  Annotation,
+  AnnotationMap,
+  CommandData,
+  CommandType,
+  HistoryRecord,
+  HistoryStack,
+} from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 
@@ -28,6 +35,7 @@ const {
   addAnnotation,
   deleteAnnotation,
   expandAnnotation,
+  filterAnnotationsBy,
   shiftAnnotationLeft,
   shiftAnnotationRight,
   shrinkAnnotation,
@@ -73,13 +81,18 @@ export function useEditorStore() {
    * @return {HistoryRecord} The new history record.
    */
   function createHistoryRecord(): HistoryRecord {
+    const clonedAnnotations: AnnotationMap = new Map();
+    for (const [key, value] of annotations.value) {
+      clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
+    }
+
     return {
       timestamp: new Date(),
       caretPosition: unref(newRangeAnchorUuid),
       data: {
         afterEndCharacter: cloneDeep(getAfterEndCharacter()),
         beforeStartCharacter: cloneDeep(getBeforeStartCharacter()),
-        annotations: cloneDeep(annotations.value),
+        annotations: clonedAnnotations,
         characters: cloneDeep(snippetCharacters.value),
       },
     };
@@ -228,8 +241,13 @@ export function useEditorStore() {
       return;
     }
 
+    const clonedAnnotations: AnnotationMap = new Map();
+    for (const [key, value] of annotations.value) {
+      clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
+    }
+
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    annotations.value = cloneDeep(newLastRecord.data.annotations);
+    annotations.value = clonedAnnotations;
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -305,8 +323,13 @@ export function useEditorStore() {
     //   shrinkAnnotation(data.annotation);
     // }
 
+    const clonedAnnotations: AnnotationMap = new Map();
+    for (const [key, value] of annotations.value) {
+      clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
+    }
+
     snippetCharacters.value = cloneDeep(record.data.characters);
-    annotations.value = cloneDeep(record.data.annotations);
+    annotations.value = clonedAnnotations;
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
@@ -327,10 +350,10 @@ export function useEditorStore() {
       return true;
     }
 
-    // Compare annotations length
+    // Compare annotations map size
     if (
-      annotations.value.filter(a => a.status !== 'deleted').length !==
-      initialAnnotations.value.length
+      filterAnnotationsBy(annotations.value, a => a.status !== 'deleted').size !==
+      initialAnnotations.value.size
     ) {
       return true;
     }
@@ -355,7 +378,7 @@ export function useEditorStore() {
     }
 
     // Check annotation status and data
-    for (let i = 0; i < annotations.value.length; i++) {
+    for (let i = 0; i < annotations.value.size; i++) {
       const a: Annotation = annotations.value[i];
 
       const normdataUuids: Set<string> = new Set(

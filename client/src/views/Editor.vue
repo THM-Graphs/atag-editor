@@ -20,8 +20,8 @@ import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
 import {
-  Annotation,
   AnnotationData,
+  AnnotationMap,
   Character,
   CharacterPostData,
   TextAccessObject,
@@ -265,7 +265,7 @@ async function saveAnnotations(): Promise<void> {
   updateAnnotationsBeforeSave();
 
   // Reduce amount of data that need to sent to the backend
-  const annotationsToSave: Annotation[] = getAnnotationsToSave();
+  const annotationsToSave: AnnotationMap = getAnnotationsToSave();
 
   const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
 

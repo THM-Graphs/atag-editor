@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import {
   Annotation,
   AnnotationData,
+  AnnotationMap,
   AnnotationReference,
   Character,
   TextOperationResult,
@@ -9,8 +10,8 @@ import {
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
-const annotations = ref<Annotation[]>([]);
-const initialAnnotations = ref<Annotation[]>([]);
+const annotations = ref<AnnotationMap>(new Map());
+const initialAnnotations = ref<AnnotationMap>(new Map());
 
 const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
   useCharactersStore();
@@ -38,34 +39,48 @@ export function useAnnotationStore() {
     // Map for checking which annotation has which characters. Structure: { "annotationUuid": <"charUuid1", "charUuid2", ...> }
     const characterAnnotationMap = createCharacterAnnotationMap(totalCharacters.value);
 
-    annotations.value = annotationData.map((annotationDataObject: AnnotationData) => {
-      const uuid: string = annotationDataObject.properties.uuid;
+    const annotationObjects: Annotation[] = annotationData.map(
+      (annotationDataObject: AnnotationData) => {
+        const uuid: string = annotationDataObject.properties.uuid;
 
-      const annotatedCharacterUuids: string[] = [...characterAnnotationMap.get(uuid)];
+        const annotatedCharacterUuids: string[] = [...characterAnnotationMap.get(uuid)];
 
-      // isTruncated is set to false at first since truncation happens in separate method
-      return {
-        characterUuids: annotatedCharacterUuids,
-        data: cloneDeep(annotationDataObject),
-        endUuid: annotatedCharacterUuids[annotatedCharacterUuids.length - 1],
-        initialData: cloneDeep(annotationDataObject),
-        isTruncated: false,
-        startUuid: annotatedCharacterUuids[0],
-        status: source === 'database' ? 'existing' : 'created',
-      };
-    });
+        // isTruncated is set to false at first since truncation happens in separate method
+        return {
+          characterUuids: annotatedCharacterUuids,
+          data: cloneDeep(annotationDataObject),
+          endUuid: annotatedCharacterUuids[annotatedCharacterUuids.length - 1],
+          initialData: cloneDeep(annotationDataObject),
+          isTruncated: false,
+          startUuid: annotatedCharacterUuids[0],
+          status: source === 'database' ? 'existing' : 'created',
+        };
+      },
+    );
 
     updateTruncationStatus();
+
+    console.time('total map');
+    annotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
+    console.timeEnd('total map');
+
+    // extractSnippetAnnotations();
 
     if (source === 'database') {
       initialAnnotations.value = cloneDeep(annotations.value);
     } else {
-      initialAnnotations.value = [];
+      initialAnnotations.value = new Map();
     }
   }
 
+  function extractSnippetAnnotations() {
+    const snippetAnnotationUuids: Set<string> = new Set(
+      snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
+    );
+  }
+
   function addAnnotation(annotation: Annotation): Annotation {
-    annotations.value.push(annotation);
+    annotations.value.set(annotation.data.properties.uuid, annotation);
 
     return annotation;
   }
@@ -96,7 +111,9 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = annotations.value.find(a => a.data.properties.uuid === uuid);
+    const annotation: Annotation = annotations.value
+      .values()
+      .find(a => a.data.properties.uuid === uuid);
     annotation.status = 'deleted';
   }
 
@@ -125,6 +142,21 @@ export function useAnnotationStore() {
     ).isLastCharacter = false;
 
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
+  }
+
+  function filterAnnotationsBy(
+    annotationsToFilter: AnnotationMap,
+    predicate: (annotation: Annotation) => boolean,
+  ): AnnotationMap {
+    const filtered: AnnotationMap = new Map<string, Annotation>();
+
+    annotationsToFilter.forEach((annotation: Annotation, uuid: string) => {
+      if (predicate(annotation)) {
+        filtered.set(uuid, annotation);
+      }
+    });
+
+    return filtered;
   }
 
   /**
@@ -158,17 +190,21 @@ export function useAnnotationStore() {
    * Retrieves the annotations that need to be saved to the database. This includes annotations connected to
    * at least one character in the snippet as well as annotations marked as deleted.
    *
-   * @returns {Annotation[]} An array of annotations to be saved.
+   * @returns {AnnotationMap} An array of annotations to be saved.
    */
-  function getAnnotationsToSave(): Annotation[] {
+  function getAnnotationsToSave(): AnnotationMap {
     let charUuids: Set<string> = new Set();
 
     snippetCharacters.value.forEach(c => {
       c.annotations.forEach(a => charUuids.add(a.uuid));
     });
 
-    const affectedAnnotations: Annotation[] = annotations.value.filter((annotation: Annotation) => {
-      return charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted';
+    const affectedAnnotations: AnnotationMap = new Map();
+
+    annotations.value.forEach((annotation: Annotation) => {
+      if (charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted') {
+        affectedAnnotations.set(annotation.data.properties.uuid, annotation);
+      }
     });
 
     return affectedAnnotations;
@@ -180,8 +216,8 @@ export function useAnnotationStore() {
    * @return {void} No return value.
    */
   function resetAnnotations(): void {
-    annotations.value = [];
-    initialAnnotations.value = [];
+    annotations.value = new Map();
+    initialAnnotations.value = new Map();
   }
 
   function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
@@ -316,20 +352,22 @@ export function useAnnotationStore() {
       });
     });
 
-    annotations.value
-      .filter((a: Annotation) => a.status !== 'deleted')
-      .forEach((a: Annotation) => {
-        const annotatedCharacters: Character[] = charMap.get(a.data.properties.uuid) ?? [];
+    annotations.value.forEach((a: Annotation) => {
+      if (a.status !== 'deleted') {
+        return;
+      }
 
-        if (annotatedCharacters.length === 0) {
-          a.status = 'deleted';
-        } else {
-          a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
-          a.data.properties.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
-          a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
-          a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
-        }
-      });
+      const annotatedCharacters: Character[] = charMap.get(a.data.properties.uuid) ?? [];
+
+      if (annotatedCharacters.length === 0) {
+        a.status = 'deleted';
+      } else {
+        a.characterUuids = annotatedCharacters.map(c => c.data.uuid) ?? [];
+        a.data.properties.text = annotatedCharacters.map(c => c.data.text).join('') ?? '';
+        a.startUuid = annotatedCharacters[0]?.data.uuid ?? '';
+        a.endUuid = annotatedCharacters[annotatedCharacters.length - 1]?.data.uuid ?? '';
+      }
+    });
   }
 
   /**
@@ -340,12 +378,18 @@ export function useAnnotationStore() {
    * @return {void} This function does not return a value.
    */
   function updateAnnotationStatuses(): void {
-    annotations.value = annotations.value.filter((a: Annotation) => a.status !== 'deleted');
+    // Delete annotations with status 'deleted'
+    for (const [uuid, annotation] of annotations.value.entries()) {
+      if (annotation.status === 'deleted') {
+        annotations.value.delete(uuid);
+      }
+    }
 
-    annotations.value.forEach((a: Annotation) => {
-      a.status = 'existing';
-      a.initialData = cloneDeep(a.data);
-    });
+    // Update the remaining annotations
+    for (const annotation of annotations.value.values()) {
+      annotation.status = 'existing';
+      annotation.initialData = cloneDeep(annotation.data);
+    }
   }
 
   /**
@@ -390,6 +434,7 @@ export function useAnnotationStore() {
     addAnnotation,
     deleteAnnotation,
     expandAnnotation,
+    filterAnnotationsBy,
     getAnnotationInfo,
     getAnnotationsToSave,
     initializeAnnotations,
