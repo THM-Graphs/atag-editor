@@ -48,12 +48,11 @@ const paginationMode: ComputedRef<'keep' | 'replace'> = computed(() =>
   keepTextOnPagination.value === true ? 'keep' : 'replace',
 );
 
-const { annotations } = useAnnotationStore();
+const { updateTruncationStatus } = useAnnotationStore();
 const {
   afterEndIndex,
   beforeStartIndex,
   snippetCharacters,
-  totalCharacters,
   firstCharacters,
   lastCharacters,
   nextCharacters,
@@ -84,36 +83,7 @@ function handlePagination() {
       break;
   }
 
-  // TODO: Move this to store or helper, similar methods in EditorAnnotations.vue
-  let charUuids: Set<string> = new Set();
-
-  snippetCharacters.value.forEach(c => {
-    c.annotations.forEach(a => charUuids.add(a.uuid));
-  });
-
-  annotations.value.forEach((annotation: Annotation) => {
-    if (!charUuids.has(annotation.data.properties.uuid)) {
-      annotation.isTruncated = false;
-    } else {
-      const isLeftTruncated: boolean =
-        beforeStartIndex.value &&
-        totalCharacters.value[beforeStartIndex.value].annotations.some(
-          a => a.uuid === annotation.data.properties.uuid,
-        );
-
-      const isRightTruncated: boolean =
-        afterEndIndex.value &&
-        totalCharacters.value[afterEndIndex.value].annotations.some(
-          a => a.uuid === annotation.data.properties.uuid,
-        );
-
-      if (isLeftTruncated || isRightTruncated) {
-        annotation.isTruncated = true;
-      } else {
-        annotation.isTruncated = false;
-      }
-    }
-  });
+  updateTruncationStatus();
 
   setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
 
