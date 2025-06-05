@@ -7,7 +7,7 @@ const { groupedAnnotationTypes } = useGuidelinesStore();
 </script>
 
 <template>
-  <div class="annotation-button-pane flex flex-wrap gap-3 py-3">
+  <div class="annotation-button-pane flex flex-wrap gap-3">
     <div
       class="group"
       v-for="(annotationTypes, category) in groupedAnnotationTypes"
