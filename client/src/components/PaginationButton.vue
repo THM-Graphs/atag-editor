@@ -4,7 +4,6 @@ import { useCharactersStore } from '../store/characters';
 import Button from 'primevue/button';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
-import { Annotation } from '../models/types';
 
 const { action } = defineProps<{ action: 'previous' | 'next' | 'start' | 'end' }>();
 
