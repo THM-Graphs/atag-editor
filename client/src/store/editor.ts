@@ -3,7 +3,6 @@ import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
 import {
-  Annotation,
   AnnotationMap,
   CommandData,
   CommandType,
@@ -368,9 +367,7 @@ export function useEditorStore() {
     }
 
     // Check annotation status and data
-    for (let i = 0; i < annotations.value.size; i++) {
-      const a: Annotation = annotations.value[i];
-
+    for (const a of annotations.value.values()) {
       const normdataUuids: Set<string> = new Set(
         Object.values(a.data.normdata)
           .flat()
@@ -397,7 +394,7 @@ export function useEditorStore() {
         !areSetsEqual(normdataUuids, initialNormdataUuids) ||
         !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
-        console.log(`Annotation at index ${i} has a changed status or data.`);
+        console.log(`Annotation with UUID ${a.data.properties.uuid} has a changed status or data.`);
         return true;
       }
     }

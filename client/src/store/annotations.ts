@@ -60,9 +60,7 @@ export function useAnnotationStore() {
 
     updateTruncationStatus();
 
-    console.time('total map');
     annotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
-    console.timeEnd('total map');
 
     // extractSnippetAnnotations();
 
@@ -188,22 +186,29 @@ export function useAnnotationStore() {
   // TODO: This should be more advanced to create a real changeset (annotated characters, updated information etc.)
   /**
    * Retrieves the annotations that need to be saved to the database. This includes annotations connected to
-   * at least one character in the snippet as well as annotations marked as deleted.
+   * at least one character in the snippet (or a boundary character) as well as annotations marked as deleted.
    *
-   * @returns {AnnotationMap} An array of annotations to be saved.
+   * The function returns an array of annotations instead of a Map to match the expected format by the server.
+   *
+   * @returns {Annotation[]} An array of annotations to be saved.
    */
-  function getAnnotationsToSave(): AnnotationMap {
+  function getAnnotationsToSave(): Annotation[] {
     let charUuids: Set<string> = new Set();
 
     snippetCharacters.value.forEach(c => {
       c.annotations.forEach(a => charUuids.add(a.uuid));
     });
 
-    const affectedAnnotations: AnnotationMap = new Map();
+    // annotations of the boundary characters need to be included since for truncated annotations
+    // the standoffStart and standoffEnd information can be updated and must be stored in the node.
+    getBeforeStartCharacter()?.annotations.forEach(a => charUuids.add(a.uuid));
+    getAfterEndCharacter()?.annotations.forEach(a => charUuids.add(a.uuid));
+
+    const affectedAnnotations: Annotation[] = [];
 
     annotations.value.forEach((annotation: Annotation) => {
       if (charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted') {
-        affectedAnnotations.set(annotation.data.properties.uuid, annotation);
+        affectedAnnotations.push(annotation);
       }
     });
 
