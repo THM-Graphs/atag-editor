@@ -241,13 +241,8 @@ export function useEditorStore() {
       return;
     }
 
-    const clonedAnnotations: AnnotationMap = new Map();
-    for (const [key, value] of annotations.value) {
-      clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
-    }
-
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    annotations.value = clonedAnnotations;
+    annotations.value = cloneDeep(annotations.value);
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -323,13 +318,8 @@ export function useEditorStore() {
     //   shrinkAnnotation(data.annotation);
     // }
 
-    const clonedAnnotations: AnnotationMap = new Map();
-    for (const [key, value] of annotations.value) {
-      clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
-    }
-
     snippetCharacters.value = cloneDeep(record.data.characters);
-    annotations.value = clonedAnnotations;
+    annotations.value = cloneDeep(annotations.value);
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
