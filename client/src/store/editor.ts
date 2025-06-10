@@ -29,8 +29,8 @@ const {
   setBeforeStartCharacter,
 } = useCharactersStore();
 const {
-  annotations,
-  initialAnnotations,
+  initialTotalAnnotations,
+  totalAnnotations,
   addAnnotation,
   deleteAnnotation,
   expandAnnotation,
@@ -81,7 +81,7 @@ export function useEditorStore() {
    */
   function createHistoryRecord(): HistoryRecord {
     const clonedAnnotations: AnnotationMap = new Map();
-    for (const [key, value] of annotations.value) {
+    for (const [key, value] of totalAnnotations.value) {
       clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
     }
 
@@ -241,7 +241,7 @@ export function useEditorStore() {
     }
 
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    annotations.value = cloneDeep(annotations.value);
+    totalAnnotations.value = cloneDeep(totalAnnotations.value);
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -318,7 +318,7 @@ export function useEditorStore() {
     // }
 
     snippetCharacters.value = cloneDeep(record.data.characters);
-    annotations.value = cloneDeep(annotations.value);
+    totalAnnotations.value = cloneDeep(totalAnnotations.value);
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
@@ -341,8 +341,8 @@ export function useEditorStore() {
 
     // Compare annotations map size
     if (
-      filterAnnotationsBy(annotations.value, a => a.status !== 'deleted').size !==
-      initialAnnotations.value.size
+      filterAnnotationsBy(totalAnnotations.value, a => a.status !== 'deleted').size !==
+      initialTotalAnnotations.value.size
     ) {
       return true;
     }
@@ -367,7 +367,7 @@ export function useEditorStore() {
     }
 
     // Check annotation status and data
-    for (const a of annotations.value.values()) {
+    for (const a of totalAnnotations.value.values()) {
       const normdataUuids: Set<string> = new Set(
         Object.values(a.data.normdata)
           .flat()

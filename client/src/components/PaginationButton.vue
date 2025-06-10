@@ -47,7 +47,7 @@ const paginationMode: ComputedRef<'keep' | 'replace'> = computed(() =>
   keepTextOnPagination.value === true ? 'keep' : 'replace',
 );
 
-const { updateTruncationStatus } = useAnnotationStore();
+const { extractSnippetAnnotations, updateTruncationStatus } = useAnnotationStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -81,6 +81,8 @@ function handlePagination() {
       lastCharacters();
       break;
   }
+
+  extractSnippetAnnotations();
 
   updateTruncationStatus();
 

@@ -10,8 +10,10 @@ import {
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
-const annotations = ref<AnnotationMap>(new Map());
-const initialAnnotations = ref<AnnotationMap>(new Map());
+const totalAnnotations = ref<AnnotationMap>(new Map());
+const initialTotalAnnotations = ref<AnnotationMap>(new Map());
+const snippetAnnotations = ref<AnnotationMap>(new Map());
+const initialSnippetAnnotations = ref<AnnotationMap>(new Map());
 
 const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
   useCharactersStore();
@@ -58,27 +60,44 @@ export function useAnnotationStore() {
       },
     );
 
+    // TODO: Would be sufficient to do this with only the snippet annotations
     updateTruncationStatus();
 
-    annotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
+    totalAnnotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
 
-    // extractSnippetAnnotations();
+    extractSnippetAnnotations();
 
     if (source === 'database') {
-      initialAnnotations.value = cloneDeep(annotations.value);
+      initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
     } else {
-      initialAnnotations.value = new Map();
+      initialTotalAnnotations.value = new Map();
     }
   }
 
   function extractSnippetAnnotations() {
+    console.time('snippet');
+
+    snippetAnnotations.value.clear();
+
     const snippetAnnotationUuids: Set<string> = new Set(
       snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
     );
+
+    snippetAnnotationUuids.forEach(uuid => {
+      const annotation: Annotation | undefined = totalAnnotations.value.get(uuid);
+
+      if (annotation) {
+        snippetAnnotations.value.set(uuid, cloneDeep(annotation));
+        initialSnippetAnnotations.value.set(uuid, cloneDeep(annotation));
+      }
+    });
+
+    // console.log(snippetAnnotations.value.size);
+    console.timeEnd('snippet');
   }
 
   function addAnnotation(annotation: Annotation): Annotation {
-    annotations.value.set(annotation.data.properties.uuid, annotation);
+    totalAnnotations.value.set(annotation.data.properties.uuid, annotation);
 
     return annotation;
   }
@@ -109,7 +128,7 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = annotations.value
+    const annotation: Annotation = totalAnnotations.value
       .values()
       .find(a => a.data.properties.uuid === uuid);
     annotation.status = 'deleted';
@@ -206,7 +225,7 @@ export function useAnnotationStore() {
 
     const affectedAnnotations: Annotation[] = [];
 
-    annotations.value.forEach((annotation: Annotation) => {
+    totalAnnotations.value.forEach((annotation: Annotation) => {
       if (charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted') {
         affectedAnnotations.push(annotation);
       }
@@ -221,8 +240,8 @@ export function useAnnotationStore() {
    * @return {void} No return value.
    */
   function resetAnnotations(): void {
-    annotations.value = new Map();
-    initialAnnotations.value = new Map();
+    totalAnnotations.value = new Map();
+    initialTotalAnnotations.value = new Map();
   }
 
   function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
@@ -357,7 +376,7 @@ export function useAnnotationStore() {
       });
     });
 
-    annotations.value.forEach((a: Annotation) => {
+    totalAnnotations.value.forEach((a: Annotation) => {
       if (a.status !== 'deleted') {
         return;
       }
@@ -384,14 +403,14 @@ export function useAnnotationStore() {
    */
   function updateAnnotationStatuses(): void {
     // Delete annotations with status 'deleted'
-    for (const [uuid, annotation] of annotations.value.entries()) {
+    for (const [uuid, annotation] of totalAnnotations.value.entries()) {
       if (annotation.status === 'deleted') {
-        annotations.value.delete(uuid);
+        totalAnnotations.value.delete(uuid);
       }
     }
 
     // Update the remaining annotations
-    for (const annotation of annotations.value.values()) {
+    for (const annotation of totalAnnotations.value.values()) {
       annotation.status = 'existing';
       annotation.initialData = cloneDeep(annotation.data);
     }
@@ -420,7 +439,7 @@ export function useAnnotationStore() {
       getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
     );
 
-    annotations.value.forEach((annotation: Annotation) => {
+    totalAnnotations.value.forEach((annotation: Annotation) => {
       const uuid: string = annotation.data.properties.uuid;
 
       const isLeftTruncated: boolean =
@@ -434,11 +453,12 @@ export function useAnnotationStore() {
   }
 
   return {
-    annotations,
-    initialAnnotations,
+    initialTotalAnnotations,
+    totalAnnotations,
     addAnnotation,
     deleteAnnotation,
     expandAnnotation,
+    extractSnippetAnnotations,
     filterAnnotationsBy,
     getAnnotationInfo,
     getAnnotationsToSave,

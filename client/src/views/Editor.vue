@@ -100,8 +100,8 @@ const {
   resetInitialBoundaryCharacters,
 } = useCharactersStore();
 const {
-  annotations,
-  initialAnnotations,
+  initialTotalAnnotations,
+  totalAnnotations,
   initializeAnnotations,
   getAnnotationsToSave,
   resetAnnotations,
@@ -183,7 +183,7 @@ async function handleSaveChanges(): Promise<void> {
     // Reset initial values of all state components
     initialText.value = cloneDeep(text.value);
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
-    initialAnnotations.value = cloneDeep(annotations.value);
+    initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
 
     // Store function is used, combines boundaries resettings
     resetInitialBoundaryCharacters();
@@ -201,7 +201,7 @@ async function handleCancelChanges(): Promise<void> {
   // Also works, needs less condition checking in stores and skips requests
   text.value = cloneDeep(initialText.value);
   snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
-  annotations.value = cloneDeep(initialAnnotations.value);
+  totalAnnotations.value = cloneDeep(initialTotalAnnotations.value);
   totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
   totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
 

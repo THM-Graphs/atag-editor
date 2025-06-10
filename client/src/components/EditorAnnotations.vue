@@ -25,7 +25,7 @@ export interface TreeNode {
 
 const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
-const { annotations, filterAnnotationsBy } = useAnnotationStore();
+const { totalAnnotations, filterAnnotationsBy } = useAnnotationStore();
 const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
 
 const displayedAnnotations = ref<AnnotationMap>(new Map());
@@ -37,7 +37,7 @@ const isAllSelected: ComputedRef<boolean> = computed(() => selectedView.value ==
 const expandedKeys = ref<Record<string, boolean>>({});
 
 watch(
-  [afterEndIndex, beforeStartIndex, annotations, selectedView],
+  [afterEndIndex, beforeStartIndex, totalAnnotations, selectedView],
   () => {
     if (selectedView.value === 'current') {
       let charUuids: Set<string> = new Set();
@@ -46,12 +46,12 @@ watch(
         c.annotations.forEach(a => charUuids.add(a.uuid));
       });
 
-      displayedAnnotations.value = filterAnnotationsBy(annotations.value, (a: Annotation) => {
+      displayedAnnotations.value = filterAnnotationsBy(totalAnnotations.value, (a: Annotation) => {
         return charUuids.has(a.data.properties.uuid) && a.status !== 'deleted';
       });
     } else {
       displayedAnnotations.value = filterAnnotationsBy(
-        annotations.value,
+        totalAnnotations.value,
         a => a.status !== 'deleted',
       );
     }
