@@ -830,7 +830,7 @@ export function useCharactersStore() {
   }
 
   /**
-   * Removes the annotation with the specified UUID from all characters.
+   * Removes the annotation with the specified UUID from snippet characters.
    *
    * @param {string} annotationUuid - The UUID of the annotation to be removed.
    * @return {void} No return value.
@@ -838,7 +838,7 @@ export function useCharactersStore() {
   function removeAnnotationFromCharacters(annotationUuid: string): TextOperationResult {
     // TODO: Reduce loops/duplicate method chaining
     console.time('deannotate characters');
-    const annotatedCharacters: Character[] = totalCharacters.value.filter(c =>
+    const annotatedCharacters: Character[] = snippetCharacters.value.filter(c =>
       c.annotations.some(a => a.uuid === annotationUuid),
     );
     annotatedCharacters.forEach(
