@@ -74,11 +74,6 @@ export function useEditorStore() {
    * @return {HistoryRecord} The new history record.
    */
   function createHistoryRecord(): HistoryRecord {
-    // const clonedAnnotations: AnnotationMap = new Map();
-    // for (const [key, value] of snippetAnnotations.value) {
-    //   clonedAnnotations.set(key, cloneDeep(value)); // Deep clone each annotation object
-    // }
-
     return {
       timestamp: new Date(),
       caretPosition: unref(newRangeAnchorUuid),

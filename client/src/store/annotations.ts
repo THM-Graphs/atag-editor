@@ -76,7 +76,16 @@ export function useAnnotationStore() {
     }
   }
 
-  function extractSnippetAnnotations() {
+  /**
+   * Extracts the annotations that are present in the current characters snippet in a new Map via deep copy.
+   * This map is used as working copy to perform operations on, similar to `snippetCharacters`, and inserted back
+   * into the `totalAnnotations` Map on save.
+   *
+   * This function is called after initialization of the store and after pagination.
+   *
+   * @return {void} This function does not return any value.
+   */
+  function extractSnippetAnnotations(): void {
     // Clear snippet related state
     snippetAnnotations.value.clear();
     initialSnippetAnnotations.value.clear();
@@ -161,6 +170,16 @@ export function useAnnotationStore() {
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
+  /**
+   * Creates a new `AnnotationMap` with only the annotations that satisfy the given predicate. The annotations are
+   * shallow copied, so the reference to the Annotation object is preserved.
+   *
+   * Replacement for the JS array filter method since annotations are stored in a Map.
+   *
+   * @param {AnnotationMap} annotationsToFilter The map of annotations to filter.
+   * @param {(annotation: Annotation) => boolean} predicate A predicate that takes in an `Annotation` object and returns a boolean.
+   * @returns {AnnotationMap} A new `AnnotationMap` with the filtered annotations.
+   */
   function filterAnnotationsBy(
     annotationsToFilter: AnnotationMap,
     predicate: (annotation: Annotation) => boolean,
@@ -236,11 +255,10 @@ export function useAnnotationStore() {
 
   /**
    * Inserts or replaces each annotation from `snippetAnnotations` into `totalAnnotations`.
-   * This effectively makes `totalAnnotations` reflect the current state of `snippetAnnotations`
-   * for the corresponding UUIDs.
-   * After synchronization, the snippet annotations state is cleared.
    *
-   * @returns {void}
+   * Called on save.
+   *
+   * @return {void} This function does not return a value.
    */
   function insertSnippetIntoTotalAnnotations(): void {
     console.time('insertSnippetIntoTotal');
