@@ -136,11 +136,11 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = [...snippetAnnotations.value.values()].find(
-      a => a.data.properties.uuid === uuid,
-    );
+    const annotation: Annotation = snippetAnnotations.value.get(uuid);
 
-    annotation.status = 'deleted';
+    if (annotation) {
+      annotation.status = 'deleted';
+    }
   }
 
   function expandAnnotation(annotation: Annotation): TextOperationResult {
