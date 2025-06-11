@@ -5,7 +5,7 @@ import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
-import { Annotation, AnnotationMap, AnnotationType, Character } from '../models/types';
+import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
@@ -25,10 +25,10 @@ export interface TreeNode {
 
 const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
-const { snippetAnnotations, totalAnnotations, filterAnnotationsBy } = useAnnotationStore();
+const { snippetAnnotations, totalAnnotations } = useAnnotationStore();
 const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
 
-const displayedAnnotations = ref<AnnotationMap>(new Map());
+const displayedAnnotations = ref<Annotation[]>([]);
 
 const selectedView = ref<'current' | 'all'>('current');
 const isCurrentSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'current');
@@ -40,21 +40,24 @@ watch(
   [afterEndIndex, beforeStartIndex, snippetAnnotations, selectedView],
   () => {
     if (selectedView.value === 'current') {
-      displayedAnnotations.value = filterAnnotationsBy(
-        snippetAnnotations.value,
+      displayedAnnotations.value = snippetAnnotations.value.filter(
         (a: Annotation) => a.status !== 'deleted',
       );
     } else {
       // Combine snippetAnnotations and totalAnnotations without overriding
-      const combined: AnnotationMap = snippetAnnotations.value;
+      const combined: Map<string, Annotation> = new Map(
+        snippetAnnotations.value.map(a => [a.data.properties.uuid, a]),
+      );
 
       totalAnnotations.value.forEach((annotation: Annotation) => {
-        if (!combined.has(annotation.data.properties.uuid)) {
-          combined.set(annotation.data.properties.uuid, annotation);
+        const uuid: string = annotation.data.properties.uuid;
+
+        if (!combined.has(uuid)) {
+          combined.set(uuid, annotation);
         }
       });
 
-      displayedAnnotations.value = filterAnnotationsBy(combined, a => a.status !== 'deleted');
+      displayedAnnotations.value = [...combined.values()].filter(a => a.status !== 'deleted');
     }
   },
   { deep: true, immediate: true },
@@ -81,15 +84,11 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           children: [],
         };
 
-        const annos: AnnotationMap = filterAnnotationsBy(
-          displayedAnnotations.value,
+        const annos: Annotation[] = displayedAnnotations.value.filter(
           a => a.data.properties.type === annoType.type,
         );
 
-        // TODO: Remove this hack maybe? Comes from the conversion of annotations in a map
-        let k: number = 0;
-
-        annos.forEach((anno: Annotation) => {
+        annos.forEach((anno: Annotation, k: number) => {
           const newAnnotation: TreeNode = {
             key: i.toString() + '-' + j.toString() + '-' + k.toString(),
             label: anno.data.properties.text,
@@ -97,12 +96,10 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
             data: anno,
           };
 
-          k++;
-
           newAnnotationType.children.push(newAnnotation);
         });
 
-        newCategory.annotationCount += annos.size;
+        newCategory.annotationCount += annos.length;
 
         if (newAnnotationType.children.length > 0) {
           newCategory.children.push(newAnnotationType);
@@ -181,7 +178,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
     }"
   >
     <template #header>
-      <div class="header font-bold">Annotations [{{ displayedAnnotations.size }}]</div>
+      <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
     </template>
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>

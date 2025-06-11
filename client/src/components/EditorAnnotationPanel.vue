@@ -5,7 +5,7 @@ import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
 import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../utils/helper/helper';
-import { AnnotationMap } from '../models/types';
+import { Annotation } from '../models/types';
 import Badge from 'primevue/badge';
 
 interface SelectionObject {
@@ -17,22 +17,22 @@ interface SelectionObject {
 }
 
 // Last annotations in selection. Is used when new selection is not valid (e.g. outside of text)
-const cachedAnnotationsInSelection = ref<AnnotationMap>(new Map());
+const cachedAnnotationsInSelection = ref<Annotation[]>([]);
 
 // Snapshot of last valid selection. Used to prevent multiple computings and rerenders
 // (see `selectionHasChanged()` documentation)
 let lastSelection: SelectionObject | null = null;
 
 const { ranges, selection } = useTextSelection();
-const { snippetAnnotations, filterAnnotationsBy } = useAnnotationStore();
+const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
-const displayedAnnotations: ComputedRef<AnnotationMap> = computed(() =>
-  filterAnnotationsBy(snippetAnnotations.value, a => a.status !== 'deleted'),
+const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
+  snippetAnnotations.value.filter(a => a.status !== 'deleted'),
 );
 
 // TODO: Fix bug, on cancel the counter still shows cached number
-const annotationsInSelection: ComputedRef<AnnotationMap> = computed(() => {
+const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
   if (!isValidSelection()) {
     return cachedAnnotationsInSelection.value;
   }
@@ -79,11 +79,11 @@ const annotationsInSelection: ComputedRef<AnnotationMap> = computed(() => {
 
   if (!firstSpan && !lastSpan) {
     // Text element is empty
-    cachedAnnotationsInSelection.value = new Map();
+    cachedAnnotationsInSelection.value = [];
   } else {
     annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
 
-    cachedAnnotationsInSelection.value = filterAnnotationsBy(snippetAnnotations.value, a =>
+    cachedAnnotationsInSelection.value = snippetAnnotations.value.filter(a =>
       annotationUuids.has(a.data.properties.uuid),
     );
   }
@@ -170,14 +170,14 @@ function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanEleme
   <div class="annotation-details-panel h-full flex flex-column overflow-y-auto">
     <div class="header flex align-items-center gap-2 my-4">
       <h3 class="m-0">Annotations</h3>
-      <Badge :value="annotationsInSelection.size" severity="contrast" />
+      <Badge :value="annotationsInSelection.length" severity="contrast" />
     </div>
     <div class="annotation-list flex-grow-1 overflow-y-auto p-1">
-      <template v-for="[uuid, annotation] in displayedAnnotations" :key="uuid">
+      <template v-for="annotation in displayedAnnotations" :key="annotation.data.properties.uuid">
         <EditorAnnotationForm
           :annotation="annotation"
           v-if="
-            annotationsInSelection.get(uuid) &&
+            annotationsInSelection.includes(annotation) &&
             selectedOptions.includes(annotation.data.properties.type)
           "
         />

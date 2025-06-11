@@ -2,7 +2,6 @@ import { ref } from 'vue';
 import {
   Annotation,
   AnnotationData,
-  AnnotationMap,
   AnnotationReference,
   Character,
   TextOperationResult,
@@ -10,10 +9,10 @@ import {
 import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
-const totalAnnotations = ref<AnnotationMap>(new Map());
-const initialTotalAnnotations = ref<AnnotationMap>(new Map());
-const snippetAnnotations = ref<AnnotationMap>(new Map());
-const initialSnippetAnnotations = ref<AnnotationMap>(new Map());
+const totalAnnotations = ref<Annotation[]>([]);
+const initialTotalAnnotations = ref<Annotation[]>([]);
+const snippetAnnotations = ref<Annotation[]>([]);
+const initialSnippetAnnotations = ref<Annotation[]>([]);
 
 const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
   useCharactersStore();
@@ -60,26 +59,29 @@ export function useAnnotationStore() {
       },
     );
 
+    console.time('total map');
     // Create map of ALL annotations
-    totalAnnotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
+    totalAnnotations.value = annotationObjects;
+    console.timeEnd('total map');
 
+    console.time('snippet map');
     // Create copy of annotations in the current characters snippet
     extractSnippetAnnotations();
+    console.timeEnd('snippet map');
 
-    // TODO: Would be sufficient to do this with only the snippet annotations
     updateTruncationStatus();
 
     if (source === 'database') {
       initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
     } else {
-      initialTotalAnnotations.value = new Map();
+      initialTotalAnnotations.value = [];
     }
   }
 
   /**
-   * Extracts the annotations that are present in the current characters snippet in a new Map via deep copy.
-   * This map is used as working copy to perform operations on, similar to `snippetCharacters`, and inserted back
-   * into the `totalAnnotations` Map on save.
+   * Extracts the annotations that are present in the current characters snippet in a new Array via deep copy.
+   * This Array is used as working copy to perform operations on, similar to `snippetCharacters`, and inserted back
+   * into the `totalAnnotations` Array on save.
    *
    * This function is called after initialization of the store and after pagination.
    *
@@ -87,25 +89,23 @@ export function useAnnotationStore() {
    */
   function extractSnippetAnnotations(): void {
     // Clear snippet related state
-    snippetAnnotations.value.clear();
-    initialSnippetAnnotations.value.clear();
+    snippetAnnotations.value = [];
+    initialSnippetAnnotations.value = [];
 
     const snippetAnnotationUuids: Set<string> = new Set(
       snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
     );
 
-    snippetAnnotationUuids.forEach(uuid => {
-      const annotation: Annotation | undefined = totalAnnotations.value.get(uuid);
-
-      if (annotation) {
-        snippetAnnotations.value.set(uuid, cloneDeep(annotation));
-        initialSnippetAnnotations.value.set(uuid, cloneDeep(annotation));
+    totalAnnotations.value.forEach(anno => {
+      if (snippetAnnotationUuids.has(anno.data.properties.uuid)) {
+        snippetAnnotations.value.push(cloneDeep(anno));
+        initialSnippetAnnotations.value.push(cloneDeep(anno));
       }
     });
   }
 
   function addAnnotation(annotation: Annotation): Annotation {
-    snippetAnnotations.value.set(annotation.data.properties.uuid, annotation);
+    snippetAnnotations.value.push(annotation);
 
     return annotation;
   }
@@ -136,11 +136,11 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = snippetAnnotations.value.get(uuid);
+    const annotation: Annotation = snippetAnnotations.value.find(
+      a => a.data.properties.uuid === uuid,
+    );
 
-    if (annotation) {
-      annotation.status = 'deleted';
-    }
+    annotation.status = 'deleted';
   }
 
   function expandAnnotation(annotation: Annotation): TextOperationResult {
@@ -168,31 +168,6 @@ export function useAnnotationStore() {
     ).isLastCharacter = false;
 
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
-  }
-
-  /**
-   * Creates a new `AnnotationMap` with only the annotations that satisfy the given predicate. The annotations are
-   * shallow copied, so the reference to the Annotation object is preserved.
-   *
-   * Replacement for the JS array filter method since annotations are stored in a Map.
-   *
-   * @param {AnnotationMap} annotationsToFilter The map of annotations to filter.
-   * @param {(annotation: Annotation) => boolean} predicate A predicate that takes in an `Annotation` object and returns a boolean.
-   * @returns {AnnotationMap} A new `AnnotationMap` with the filtered annotations.
-   */
-  function filterAnnotationsBy(
-    annotationsToFilter: AnnotationMap,
-    predicate: (annotation: Annotation) => boolean,
-  ): AnnotationMap {
-    const filtered: AnnotationMap = new Map<string, Annotation>();
-
-    annotationsToFilter.forEach((annotation: Annotation, uuid: string) => {
-      if (predicate(annotation)) {
-        filtered.set(uuid, annotation);
-      }
-    });
-
-    return filtered;
   }
 
   /**
@@ -225,8 +200,6 @@ export function useAnnotationStore() {
   /**
    * Retrieves the annotations that need to be saved to the database. This includes annotations connected to
    * at least one character in the snippet (or a boundary character) as well as annotations marked as deleted.
-   *
-   * The function returns an array of annotations instead of a Map to match the expected format by the server.
    *
    * @returns {Annotation[]} An array of annotations to be saved.
    */
@@ -263,12 +236,17 @@ export function useAnnotationStore() {
   function insertSnippetIntoTotalAnnotations(): void {
     console.time('insertSnippetIntoTotal');
 
-    // Iterate over each annotation in the current snippetAnnotations map
-    snippetAnnotations.value.forEach((annotation, uuid) => {
-      const clonedAnnotation: Annotation = cloneDeep(annotation);
+    const snippetUuids: Set<string> = new Set(
+      snippetAnnotations.value.map(a => a.data.properties.uuid),
+    );
 
-      totalAnnotations.value.set(uuid, clonedAnnotation);
-    });
+    // These are the annotations which will NOT be replaced by the snippet annotations
+    const annotationsOutsideOfSnippet: Annotation[] = totalAnnotations.value.filter(
+      (annotation: Annotation) => !snippetUuids.has(annotation.data.properties.uuid),
+    );
+
+    // Combine annotations
+    totalAnnotations.value = [...annotationsOutsideOfSnippet, ...snippetAnnotations.value];
 
     console.timeEnd('insertSnippetIntoTotal');
   }
@@ -279,10 +257,10 @@ export function useAnnotationStore() {
    * @return {void} No return value.
    */
   function resetAnnotations(): void {
-    snippetAnnotations.value = new Map();
-    initialSnippetAnnotations.value = new Map();
-    totalAnnotations.value = new Map();
-    initialTotalAnnotations.value = new Map();
+    snippetAnnotations.value = [];
+    initialSnippetAnnotations.value = [];
+    totalAnnotations.value = [];
+    initialTotalAnnotations.value = [];
   }
 
   function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
@@ -443,18 +421,14 @@ export function useAnnotationStore() {
    * @return {void} This function does not return a value.
    */
   function updateAnnotationStatuses(): void {
-    // Delete annotations with status 'deleted'
-    for (const [uuid, annotation] of totalAnnotations.value.entries()) {
-      if (annotation.status === 'deleted') {
-        totalAnnotations.value.delete(uuid);
-      }
-    }
+    totalAnnotations.value = totalAnnotations.value.filter(
+      (a: Annotation) => a.status !== 'deleted',
+    );
 
-    // Update the remaining annotations
-    for (const annotation of totalAnnotations.value.values()) {
-      annotation.status = 'existing';
-      annotation.initialData = cloneDeep(annotation.data);
-    }
+    totalAnnotations.value.forEach((a: Annotation) => {
+      a.status = 'existing';
+      a.initialData = cloneDeep(a.data);
+    });
   }
 
   /**
@@ -502,7 +476,6 @@ export function useAnnotationStore() {
     deleteAnnotation,
     expandAnnotation,
     extractSnippetAnnotations,
-    filterAnnotationsBy,
     getAnnotationInfo,
     getAnnotationsToSave,
     initializeAnnotations,

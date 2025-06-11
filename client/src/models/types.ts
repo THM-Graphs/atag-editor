@@ -27,8 +27,6 @@ export interface AnnotationData {
   properties: IAnnotation;
 }
 
-export type AnnotationMap = Map<string, Annotation>;
-
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;
@@ -117,7 +115,7 @@ export type HistoryRecord = {
   timestamp: Date;
   data: {
     afterEndCharacter: Character | null;
-    annotations: Map<string, Annotation>;
+    annotations: Annotation[];
     beforeStartCharacter: Character | null;
     characters: Character[];
   };

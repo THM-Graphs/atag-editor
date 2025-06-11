@@ -10,13 +10,13 @@ import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.erro
 import IAnnotation from '../models/IAnnotation';
 import {
   AdditionalText,
+  Annotation,
   AnnotationData,
-  PropertyConfig,
   AnnotationType,
   Character,
   MalformedAnnotation,
+  PropertyConfig,
   StandoffJson,
-  AnnotationMap,
 } from '../models/types';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
@@ -36,8 +36,8 @@ interface DataDump {
     afterEndIndex: number;
   };
   annotations: {
-    initialAnnotations: AnnotationMap;
-    annotations: AnnotationMap;
+    initialAnnotations: Annotation[];
+    annotations: Annotation[];
   };
 }
 
@@ -601,7 +601,7 @@ function transformStandoffToAtag(): void {
           Text imported successfully
           <ul class="m-0 pl-5">
             <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
-            <li class="list-disc">{{ totalAnnotations.size.toLocaleString() }} annotations</li>
+            <li class="list-disc">{{ totalAnnotations.length.toLocaleString() }} annotations</li>
           </ul>
         </div>
       </Message>

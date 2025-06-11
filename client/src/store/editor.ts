@@ -28,7 +28,6 @@ const {
   addAnnotation,
   deleteAnnotation,
   expandAnnotation,
-  filterAnnotationsBy,
   shiftAnnotationLeft,
   shiftAnnotationRight,
   shrinkAnnotation,
@@ -193,7 +192,9 @@ export function useEditorStore() {
 
     // lastEditTimestamp = Date.now();
 
+    console.time('record');
     const record: HistoryRecord = createHistoryRecord();
+    console.timeEnd('record');
 
     history.value.push(record);
 
@@ -328,11 +329,12 @@ export function useEditorStore() {
       return true;
     }
 
-    // Compare annotations map size
+    // Compare annotations array length
     if (
-      filterAnnotationsBy(snippetAnnotations.value, a => a.status !== 'deleted').size !==
-      initialSnippetAnnotations.value.size
+      snippetAnnotations.value.filter(a => a.status !== 'deleted').length !==
+      initialSnippetAnnotations.value.length
     ) {
+      console.log('Annotation length has changed.');
       return true;
     }
 
