@@ -45,10 +45,16 @@ watch(
         (a: Annotation) => a.status !== 'deleted',
       );
     } else {
-      displayedAnnotations.value = filterAnnotationsBy(
-        totalAnnotations.value,
-        a => a.status !== 'deleted',
-      );
+      // Combine snippetAnnotations and totalAnnotations without overriding
+      const combined: AnnotationMap = snippetAnnotations.value;
+
+      totalAnnotations.value.forEach((annotation: Annotation) => {
+        if (!combined.has(annotation.data.properties.uuid)) {
+          combined.set(annotation.data.properties.uuid, annotation);
+        }
+      });
+
+      displayedAnnotations.value = filterAnnotationsBy(combined, a => a.status !== 'deleted');
     }
   },
   { deep: true, immediate: true },
