@@ -100,9 +100,13 @@ const {
   resetInitialBoundaryCharacters,
 } = useCharactersStore();
 const {
-  annotations,
-  initialAnnotations,
+  initialSnippetAnnotations,
+  initialTotalAnnotations,
+  snippetAnnotations,
+  totalAnnotations,
+  extractSnippetAnnotations,
   initializeAnnotations,
+  insertSnippetIntoTotalAnnotations,
   getAnnotationsToSave,
   resetAnnotations,
   updateAnnotationsBeforeSave,
@@ -183,7 +187,11 @@ async function handleSaveChanges(): Promise<void> {
     // Reset initial values of all state components
     initialText.value = cloneDeep(text.value);
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
-    initialAnnotations.value = cloneDeep(annotations.value);
+    initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
+
+    // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
+    // since the new snippetAnnotations will be extracted from the new totalAnnotations state
+    extractSnippetAnnotations();
 
     // Store function is used, combines boundaries resettings
     resetInitialBoundaryCharacters();
@@ -198,10 +206,10 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 async function handleCancelChanges(): Promise<void> {
-  // Also works, needs less condition checking in stores and skips requests
   text.value = cloneDeep(initialText.value);
   snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
-  annotations.value = cloneDeep(initialAnnotations.value);
+  snippetAnnotations.value = cloneDeep(initialSnippetAnnotations.value);
+
   totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
   totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
 
@@ -262,6 +270,9 @@ async function saveCharacters(): Promise<void> {
 }
 
 async function saveAnnotations(): Promise<void> {
+  // Insert into total map since next operations are executed on the total map
+  insertSnippetIntoTotalAnnotations();
+
   updateAnnotationsBeforeSave();
 
   // Reduce amount of data that need to sent to the backend

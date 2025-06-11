@@ -23,14 +23,34 @@ export function capitalize(inputString: string): string {
 }
 
 /**
- * Creates a deep copy of a JSON object with JSON.parse/JSON.stringify.
- * Used to remove unwanted references e.g. during slicing the character array snippet.
+ * Deep clones an object, map or array. This means that any nested objects, maps or arrays will also be cloned.
+ * Used to remove unwanted references e.g. resetting editor state on save/cancel/undo/redo operations.
  *
- * @param {Record<any, any>} json - The object to be deep cloned.
- * @return {Record<any, any>} A deep copy of the input object.
+ * @param {T} input - The object, map or array to be deep cloned.
+ * @return {T} The cloned object, map or array.
  */
-export function cloneDeep(json: Record<any, any>) {
-  return JSON.parse(JSON.stringify(json));
+export function cloneDeep<T>(input: T): T {
+  if (input instanceof Map) {
+    const clonedMap: Map<any, any> = new Map() as Map<any, any>;
+
+    // new Map(input) would not work since the reference to nested objects would still be the same
+    input.forEach((value, key) => {
+      clonedMap.set(key, cloneDeep(value));
+    });
+
+    return clonedMap as T;
+  }
+
+  if (Array.isArray(input)) {
+    return JSON.parse(JSON.stringify(input)) as T;
+  }
+
+  if (typeof input === 'object' && input !== null) {
+    return JSON.parse(JSON.stringify(input)) as T;
+  }
+
+  // Default for primitive types like string, number, boolean, etc.
+  return input;
 }
 
 /**

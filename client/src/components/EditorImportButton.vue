@@ -10,13 +10,13 @@ import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.erro
 import IAnnotation from '../models/IAnnotation';
 import {
   AdditionalText,
-  Annotation,
   AnnotationData,
   PropertyConfig,
   AnnotationType,
   Character,
   MalformedAnnotation,
   StandoffJson,
+  AnnotationMap,
 } from '../models/types';
 import ProgressBar from 'primevue/progressbar';
 import Button from 'primevue/button';
@@ -36,14 +36,14 @@ interface DataDump {
     afterEndIndex: number;
   };
   annotations: {
-    initialAnnotations: Annotation[];
-    annotations: Annotation[];
+    initialAnnotations: AnnotationMap;
+    annotations: AnnotationMap;
   };
 }
 
 type PipelineStep = null | 'validating' | 'importing' | 'finishing';
 
-const { initialAnnotations, annotations, initializeAnnotations } = useAnnotationStore();
+const { initialTotalAnnotations, totalAnnotations, initializeAnnotations } = useAnnotationStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -150,7 +150,10 @@ function createDump(): DataDump {
       snippetCharacters: snippetCharacters.value,
       initialSnippetCharacters: initialSnippetCharacters.value,
     },
-    annotations: { annotations: annotations.value, initialAnnotations: initialAnnotations.value },
+    annotations: {
+      annotations: totalAnnotations.value,
+      initialAnnotations: initialTotalAnnotations.value,
+    },
   };
 
   return cloneDeep(dump);
@@ -285,8 +288,8 @@ function restoreDump(data: DataDump): void {
   afterEndIndex.value = data.characters.afterEndIndex;
   beforeStartIndex.value = data.characters.beforeStartIndex;
 
-  annotations.value = data.annotations.annotations;
-  initialAnnotations.value = data.annotations.annotations;
+  totalAnnotations.value = data.annotations.annotations;
+  initialTotalAnnotations.value = data.annotations.annotations;
 }
 
 function setPipelineStep(step: PipelineStep): void {
@@ -598,7 +601,7 @@ function transformStandoffToAtag(): void {
           Text imported successfully
           <ul class="m-0 pl-5">
             <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
-            <li class="list-disc">{{ annotations.length.toLocaleString() }} annotations</li>
+            <li class="list-disc">{{ totalAnnotations.size.toLocaleString() }} annotations</li>
           </ul>
         </div>
       </Message>

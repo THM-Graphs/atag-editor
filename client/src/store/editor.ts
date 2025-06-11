@@ -2,7 +2,7 @@ import { ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
-import { Annotation, CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
+import { CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 
@@ -23,11 +23,12 @@ const {
   setBeforeStartCharacter,
 } = useCharactersStore();
 const {
-  annotations,
-  initialAnnotations,
+  initialSnippetAnnotations,
+  snippetAnnotations,
   addAnnotation,
   deleteAnnotation,
   expandAnnotation,
+  filterAnnotationsBy,
   shiftAnnotationLeft,
   shiftAnnotationRight,
   shrinkAnnotation,
@@ -79,7 +80,7 @@ export function useEditorStore() {
       data: {
         afterEndCharacter: cloneDeep(getAfterEndCharacter()),
         beforeStartCharacter: cloneDeep(getBeforeStartCharacter()),
-        annotations: cloneDeep(annotations.value),
+        annotations: cloneDeep(snippetAnnotations.value),
         characters: cloneDeep(snippetCharacters.value),
       },
     };
@@ -229,7 +230,7 @@ export function useEditorStore() {
     }
 
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    annotations.value = cloneDeep(newLastRecord.data.annotations);
+    snippetAnnotations.value = cloneDeep(snippetAnnotations.value);
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -306,7 +307,7 @@ export function useEditorStore() {
     // }
 
     snippetCharacters.value = cloneDeep(record.data.characters);
-    annotations.value = cloneDeep(record.data.annotations);
+    snippetAnnotations.value = cloneDeep(snippetAnnotations.value);
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
@@ -327,10 +328,10 @@ export function useEditorStore() {
       return true;
     }
 
-    // Compare annotations length
+    // Compare annotations map size
     if (
-      annotations.value.filter(a => a.status !== 'deleted').length !==
-      initialAnnotations.value.length
+      filterAnnotationsBy(snippetAnnotations.value, a => a.status !== 'deleted').size !==
+      initialSnippetAnnotations.value.size
     ) {
       return true;
     }
@@ -355,9 +356,7 @@ export function useEditorStore() {
     }
 
     // Check annotation status and data
-    for (let i = 0; i < annotations.value.length; i++) {
-      const a: Annotation = annotations.value[i];
-
+    for (const a of snippetAnnotations.value.values()) {
       const normdataUuids: Set<string> = new Set(
         Object.values(a.data.normdata)
           .flat()
@@ -384,7 +383,7 @@ export function useEditorStore() {
         !areSetsEqual(normdataUuids, initialNormdataUuids) ||
         !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
-        console.log(`Annotation at index ${i} has a changed status or data.`);
+        console.log(`Annotation with UUID ${a.data.properties.uuid} has a changed status or data.`);
         return true;
       }
     }

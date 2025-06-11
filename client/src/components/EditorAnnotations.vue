@@ -5,7 +5,7 @@ import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
-import { Annotation, AnnotationType, Character } from '../models/types';
+import { Annotation, AnnotationMap, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
@@ -25,10 +25,10 @@ export interface TreeNode {
 
 const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
 const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
-const { annotations } = useAnnotationStore();
+const { snippetAnnotations, totalAnnotations, filterAnnotationsBy } = useAnnotationStore();
 const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
 
-const displayedAnnotations = ref<Annotation[]>([]);
+const displayedAnnotations = ref<AnnotationMap>(new Map());
 
 const selectedView = ref<'current' | 'all'>('current');
 const isCurrentSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'current');
@@ -37,20 +37,24 @@ const isAllSelected: ComputedRef<boolean> = computed(() => selectedView.value ==
 const expandedKeys = ref<Record<string, boolean>>({});
 
 watch(
-  [afterEndIndex, beforeStartIndex, annotations, selectedView],
+  [afterEndIndex, beforeStartIndex, snippetAnnotations, selectedView],
   () => {
     if (selectedView.value === 'current') {
-      let charUuids: Set<string> = new Set();
-
-      snippetCharacters.value.forEach(c => {
-        c.annotations.forEach(a => charUuids.add(a.uuid));
-      });
-
-      displayedAnnotations.value = annotations.value.filter((annotation: Annotation) => {
-        return charUuids.has(annotation.data.properties.uuid) && annotation.status !== 'deleted';
-      });
+      displayedAnnotations.value = filterAnnotationsBy(
+        snippetAnnotations.value,
+        (a: Annotation) => a.status !== 'deleted',
+      );
     } else {
-      displayedAnnotations.value = annotations.value.filter(a => a.status !== 'deleted');
+      // Combine snippetAnnotations and totalAnnotations without overriding
+      const combined: AnnotationMap = snippetAnnotations.value;
+
+      totalAnnotations.value.forEach((annotation: Annotation) => {
+        if (!combined.has(annotation.data.properties.uuid)) {
+          combined.set(annotation.data.properties.uuid, annotation);
+        }
+      });
+
+      displayedAnnotations.value = filterAnnotationsBy(combined, a => a.status !== 'deleted');
     }
   },
   { deep: true, immediate: true },
@@ -77,11 +81,15 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           children: [],
         };
 
-        const annos: Annotation[] = displayedAnnotations.value.filter(
+        const annos: AnnotationMap = filterAnnotationsBy(
+          displayedAnnotations.value,
           a => a.data.properties.type === annoType.type,
         );
 
-        annos.forEach((anno: Annotation, k: number) => {
+        // TODO: Remove this hack maybe? Comes from the conversion of annotations in a map
+        let k: number = 0;
+
+        annos.forEach((anno: Annotation) => {
           const newAnnotation: TreeNode = {
             key: i.toString() + '-' + j.toString() + '-' + k.toString(),
             label: anno.data.properties.text,
@@ -89,10 +97,12 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
             data: anno,
           };
 
+          k++;
+
           newAnnotationType.children.push(newAnnotation);
         });
 
-        newCategory.annotationCount += annos.length;
+        newCategory.annotationCount += annos.size;
 
         if (newAnnotationType.children.length > 0) {
           newCategory.children.push(newAnnotationType);
@@ -171,7 +181,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
     }"
   >
     <template #header>
-      <div class="header font-bold">Annotations [{{ displayedAnnotations.length }}]</div>
+      <div class="header font-bold">Annotations [{{ displayedAnnotations.size }}]</div>
     </template>
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
