@@ -60,12 +60,14 @@ export function useAnnotationStore() {
       },
     );
 
-    // TODO: Would be sufficient to do this with only the snippet annotations
-    updateTruncationStatus();
-
+    // Create map of ALL annotations
     totalAnnotations.value = new Map(annotationObjects.map(a => [a.data.properties.uuid, a]));
 
+    // Create copy of annotations in the current characters snippet
     extractSnippetAnnotations();
+
+    // TODO: Would be sufficient to do this with only the snippet annotations
+    updateTruncationStatus();
 
     if (source === 'database') {
       initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
@@ -75,9 +77,9 @@ export function useAnnotationStore() {
   }
 
   function extractSnippetAnnotations() {
-    console.time('snippet');
-
+    // Clear snippet related state
     snippetAnnotations.value.clear();
+    initialSnippetAnnotations.value.clear();
 
     const snippetAnnotationUuids: Set<string> = new Set(
       snippetCharacters.value.flatMap(c => c.annotations.map(a => a.uuid)),
@@ -91,13 +93,10 @@ export function useAnnotationStore() {
         initialSnippetAnnotations.value.set(uuid, cloneDeep(annotation));
       }
     });
-
-    // console.log(snippetAnnotations.value.size);
-    console.timeEnd('snippet');
   }
 
   function addAnnotation(annotation: Annotation): Annotation {
-    totalAnnotations.value.set(annotation.data.properties.uuid, annotation);
+    snippetAnnotations.value.set(annotation.data.properties.uuid, annotation);
 
     return annotation;
   }
@@ -128,9 +127,10 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = totalAnnotations.value
-      .values()
-      .find(a => a.data.properties.uuid === uuid);
+    const annotation: Annotation = [...snippetAnnotations.value.values()].find(
+      a => a.data.properties.uuid === uuid,
+    );
+
     annotation.status = 'deleted';
   }
 
@@ -235,11 +235,34 @@ export function useAnnotationStore() {
   }
 
   /**
+   * Inserts or replaces each annotation from `snippetAnnotations` into `totalAnnotations`.
+   * This effectively makes `totalAnnotations` reflect the current state of `snippetAnnotations`
+   * for the corresponding UUIDs.
+   * After synchronization, the snippet annotations state is cleared.
+   *
+   * @returns {void}
+   */
+  function insertSnippetIntoTotalAnnotations(): void {
+    console.time('insertSnippetIntoTotal');
+
+    // Iterate over each annotation in the current snippetAnnotations map
+    snippetAnnotations.value.forEach((annotation, uuid) => {
+      const clonedAnnotation: Annotation = cloneDeep(annotation);
+
+      totalAnnotations.value.set(uuid, clonedAnnotation);
+    });
+
+    console.timeEnd('insertSnippetIntoTotal');
+  }
+
+  /**
    * Resets all annotation-related state variables to their initial values. Called when the Editor component is unmounted.
    *
    * @return {void} No return value.
    */
   function resetAnnotations(): void {
+    snippetAnnotations.value = new Map();
+    initialSnippetAnnotations.value = new Map();
     totalAnnotations.value = new Map();
     initialTotalAnnotations.value = new Map();
   }
@@ -417,7 +440,7 @@ export function useAnnotationStore() {
   }
 
   /**
-   * Updates the `isTruncated` property of each annotation in the `annotations` value.
+   * Updates the `isTruncated` property of each annotation in the `snippetAnnotations` value.
    * An annotation is marked as truncated if it is present in the snippet and either the character before or after the snippet.
    *
    * Called during initialization (after the annotation object were created) and after pagination.
@@ -439,7 +462,7 @@ export function useAnnotationStore() {
       getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
     );
 
-    totalAnnotations.value.forEach((annotation: Annotation) => {
+    snippetAnnotations.value.forEach((annotation: Annotation) => {
       const uuid: string = annotation.data.properties.uuid;
 
       const isLeftTruncated: boolean =
@@ -453,7 +476,9 @@ export function useAnnotationStore() {
   }
 
   return {
+    initialSnippetAnnotations,
     initialTotalAnnotations,
+    snippetAnnotations,
     totalAnnotations,
     addAnnotation,
     deleteAnnotation,
@@ -463,6 +488,7 @@ export function useAnnotationStore() {
     getAnnotationInfo,
     getAnnotationsToSave,
     initializeAnnotations,
+    insertSnippetIntoTotalAnnotations,
     resetAnnotations,
     shiftAnnotationLeft,
     shiftAnnotationRight,

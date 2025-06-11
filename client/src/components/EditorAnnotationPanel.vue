@@ -24,11 +24,11 @@ const cachedAnnotationsInSelection = ref<AnnotationMap>(new Map());
 let lastSelection: SelectionObject | null = null;
 
 const { ranges, selection } = useTextSelection();
-const { totalAnnotations, filterAnnotationsBy } = useAnnotationStore();
+const { snippetAnnotations, filterAnnotationsBy } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
 const displayedAnnotations: ComputedRef<AnnotationMap> = computed(() =>
-  filterAnnotationsBy(totalAnnotations.value, a => a.status !== 'deleted'),
+  filterAnnotationsBy(snippetAnnotations.value, a => a.status !== 'deleted'),
 );
 
 // TODO: Fix bug, on cancel the counter still shows cached number
@@ -83,7 +83,7 @@ const annotationsInSelection: ComputedRef<AnnotationMap> = computed(() => {
   } else {
     annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
 
-    cachedAnnotationsInSelection.value = filterAnnotationsBy(totalAnnotations.value, a =>
+    cachedAnnotationsInSelection.value = filterAnnotationsBy(snippetAnnotations.value, a =>
       annotationUuids.has(a.data.properties.uuid),
     );
   }
