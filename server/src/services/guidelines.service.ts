@@ -1,5 +1,5 @@
 import { IGuidelines } from '../models/IGuidelines.js';
-import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../models/types.js';
+import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types.js';
 import NotFoundError from '../errors/not-found.error.js';
 
 export default class GuidelinesService {
@@ -27,32 +27,31 @@ export default class GuidelinesService {
   }
 
   /**
-   * Retrieves all available resource configurations for annotations from the guidelines.
+   * Retrieves all available entity configurations for annotations from the guidelines.
    *
-   * This method combines the resources defined in the annotations and collections sections
+   * This method combines the entities defined in the annotations and collections sections
    * of the guidelines and removes any duplicates. It is currently a hack since the guidelines structure can change.
    *
-   * @return {Promise<AnnotationConfigResource[]>} A promise that resolves to the combined and deduplicated resources.
+   * @return {Promise<AnnotationConfigEntity[]>} A promise that resolves to the combined and deduplicated entities.
    */
-  public async getAvailableAnnotationResourceConfigs(): Promise<AnnotationConfigResource[]> {
+  public async getAvailableAnnotationEntityConfigs(): Promise<AnnotationConfigEntity[]> {
     const guidelines: IGuidelines = await this.getGuidelines();
 
-    const baseAnnotationResources: AnnotationConfigResource[] =
-      guidelines.annotations.resources ?? [];
+    const baseAnnotationResources: AnnotationConfigEntity[] = guidelines.annotations.entities ?? [];
 
-    const baseCollectionResources: AnnotationConfigResource[] =
-      guidelines.collections.annotations.resources ?? [];
+    const baseCollectionResources: AnnotationConfigEntity[] =
+      guidelines.collections.annotations.entities ?? [];
 
-    const additionalCollectionResources: AnnotationConfigResource[] =
-      guidelines.collections.types.flatMap(c => c.annotations?.resources ?? []);
+    const additionalCollectionResources: AnnotationConfigEntity[] =
+      guidelines.collections.types.flatMap(c => c.annotations?.entities ?? []);
 
-    const combined: AnnotationConfigResource[] = [
+    const combined: AnnotationConfigEntity[] = [
       ...baseAnnotationResources,
       ...baseCollectionResources,
       ...additionalCollectionResources,
     ];
 
-    const unique: AnnotationConfigResource[] = combined.reduce<AnnotationConfigResource[]>(
+    const unique: AnnotationConfigEntity[] = combined.reduce<AnnotationConfigEntity[]>(
       (total, curr) => {
         if (!total.some(r => r.category === curr.category && r.nodeLabel === curr.nodeLabel)) {
           total.push(curr);

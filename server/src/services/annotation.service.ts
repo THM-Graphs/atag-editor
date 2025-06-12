@@ -6,7 +6,7 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
   Annotation,
-  AnnotationConfigResource,
+  AnnotationConfigEntity,
   AnnotationData,
   CollectionPostData,
   PropertyConfig,
@@ -104,8 +104,8 @@ export default class AnnotationService {
 
   public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
     const guidelineService: GuidelinesService = new GuidelinesService();
-    const resources: AnnotationConfigResource[] =
-      await guidelineService.getAvailableAnnotationResourceConfigs();
+    const entities: AnnotationConfigEntity[] =
+      await guidelineService.getAvailableAnnotationEntityConfigs();
 
     const query: string = `
     // Match all annotations for given selection
@@ -113,18 +113,18 @@ export default class AnnotationService {
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a
-    UNWIND $resources AS resource
+    UNWIND $entities AS entity
 
     CALL {
-        WITH a, resource
+        WITH a, entity
         
         // TODO: This query can be improved (direct label access instead of WHERE filter)
         CALL apoc.cypher.run(
             'MATCH (a)-[r:REFERS_TO]->(x) WHERE $nodeLabel IN labels(x) RETURN collect(x {.*}) AS nodes',
-            {a: a, nodeLabel: resource.nodeLabel}
+            {a: a, nodeLabel: entity.nodeLabel}
         ) YIELD value
 
-        RETURN resource.category AS key, value.nodes AS nodes
+        RETURN entity.category AS key, value.nodes AS nodes
     }
 
     // Create key-value pair with category and matched nodes
@@ -162,7 +162,7 @@ export default class AnnotationService {
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
       nodeUuid,
-      resources,
+      entities,
     });
     const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 

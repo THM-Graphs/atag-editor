@@ -84,7 +84,7 @@
               "visible": true
             }
           ],
-          "resources": [
+          "entities": [
             {
               "category": "persons",
               "nodeLabel": "Person"
@@ -105,7 +105,7 @@
         "base": []
       },
       "types": [],
-      "resources": [],
+      "entities": [],
       "additionalTexts": []
     }
   },
@@ -360,7 +360,7 @@
         }
       ]
     },
-    "resources": [
+    "entities": [
       {
         "category": "concepts",
         "nodeLabel": "Concept"

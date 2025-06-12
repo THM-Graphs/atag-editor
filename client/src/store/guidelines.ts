@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationConfigResource, AnnotationType, PropertyConfig } from '../models/types';
+import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
@@ -116,30 +116,30 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves all available resource configurations for annotations from the guidelines.
+   * Retrieves all available entity configurations for annotations from the guidelines.
    *
-   * This method combines the resources defined in the annotations and collections sections
+   * This method combines the entities defined in the annotations and collections sections
    * of the guidelines and removes any duplicates. It is currently a hack since the guidelines structure can change.
    *
-   * @return {AnnotationConfigResource[]} The combined and deduplicated resources.
+   * @return {AnnotationConfigEntity[]} The combined and deduplicated entities.
    */
-  function getAvailableAnnotationResourceConfigs(): AnnotationConfigResource[] {
-    const baseAnnotationResources: AnnotationConfigResource[] =
-      guidelines.value.annotations.resources ?? [];
+  function getAvailableAnnotationEntityConfigs(): AnnotationConfigEntity[] {
+    const baseAnnotationEntities: AnnotationConfigEntity[] =
+      guidelines.value.annotations.entities ?? [];
 
-    const baseCollectionResources: AnnotationConfigResource[] =
-      guidelines.value.collections.annotations.resources ?? [];
+    const baseCollectionEntities: AnnotationConfigEntity[] =
+      guidelines.value.collections.annotations.entities ?? [];
 
-    const additionalCollectionResources: AnnotationConfigResource[] =
-      guidelines.value.collections.types.flatMap(c => c.annotations?.resources ?? []);
+    const additionalCollectionEntities: AnnotationConfigEntity[] =
+      guidelines.value.collections.types.flatMap(c => c.annotations?.entities ?? []);
 
-    const combined: AnnotationConfigResource[] = [
-      ...baseAnnotationResources,
-      ...baseCollectionResources,
-      ...additionalCollectionResources,
+    const combined: AnnotationConfigEntity[] = [
+      ...baseAnnotationEntities,
+      ...baseCollectionEntities,
+      ...additionalCollectionEntities,
     ];
 
-    const unique: AnnotationConfigResource[] = combined.reduce<AnnotationConfigResource[]>(
+    const unique: AnnotationConfigEntity[] = combined.reduce<AnnotationConfigEntity[]>(
       (total, curr) => {
         if (!total.some(r => r.category === curr.category && r.nodeLabel === curr.nodeLabel)) {
           total.push(curr);
@@ -266,7 +266,7 @@ export function useGuidelinesStore() {
     getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,
-    getAvailableAnnotationResourceConfigs,
+    getAvailableAnnotationResourceConfigs: getAvailableAnnotationEntityConfigs,
     getAvailableCollectionAnnotationConfigs,
     getAvailableCollectionLabels,
     getAvailableTextLabels,

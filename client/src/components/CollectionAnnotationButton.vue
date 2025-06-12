@@ -163,7 +163,7 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
   }
 
   // Entities (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const entityCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+  const entityCategories: string[] = guidelines.value.annotations.entities.map(r => r.category);
   const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
 
   // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays

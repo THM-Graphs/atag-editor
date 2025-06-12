@@ -41,8 +41,7 @@ const entitiesAreCollapsed = ref<boolean>(false);
 const entitiesSearchObject = ref<EntitiesSearchObject>(
   entityCategories.reduce((object: EntitiesSearchObject, category) => {
     object[category] = {
-      nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
-        .nodeLabel,
+      nodeLabel: guidelines.value.annotations.entities.find(r => r.category === category).nodeLabel,
       fetchedItems: [],
       currentItem: null,
       mode: 'view',
@@ -151,7 +150,7 @@ function renderHTML(text: string, searchStr: string): string {
  */
 async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
-  const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
+  const url: string = buildFetchUrl(`/api/entities?node=${nodeLabel}&searchStr=${searchString}`);
 
   const response: Response = await fetch(url);
 

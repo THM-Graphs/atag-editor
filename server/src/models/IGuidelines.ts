@@ -1,4 +1,4 @@
-import { AnnotationConfigResource, AnnotationType, PropertyConfig } from './types.js';
+import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from './types.js';
 
 export interface IGuidelines {
   collections: {
@@ -16,7 +16,7 @@ export interface IGuidelines {
         additionalTexts: string[];
         types: AnnotationType[];
         properties: PropertyConfig[];
-        resources: AnnotationConfigResource[];
+        entities: AnnotationConfigEntity[];
       };
     }[];
     annotations: {
@@ -26,7 +26,7 @@ export interface IGuidelines {
         system: PropertyConfig[];
         base: PropertyConfig[];
       };
-      resources: AnnotationConfigResource[];
+      entities: AnnotationConfigEntity[];
     };
   };
   annotations: {
@@ -36,7 +36,7 @@ export interface IGuidelines {
       system: PropertyConfig[];
       base: PropertyConfig[];
     };
-    resources: AnnotationConfigResource[];
+    entities: AnnotationConfigEntity[];
   };
   texts: {
     additionalLabels: string[];

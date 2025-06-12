@@ -48,7 +48,7 @@ export type AnnotationReference = {
   uuid: string;
 };
 
-export type AnnotationConfigResource = {
+export type AnnotationConfigEntity = {
   category: string;
   nodeLabel: string;
 };

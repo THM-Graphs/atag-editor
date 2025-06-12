@@ -372,9 +372,7 @@ function transformStandoffToAtag(): void {
       newAnnotationProperties.uuid = crypto.randomUUID();
 
       // Entities (= connected nodes). Not provided, but needed in Annotation structure -> empty arrays
-      const entityCategories: string[] = guidelines.value.annotations.resources.map(
-        r => r.category,
-      );
+      const entityCategories: string[] = guidelines.value.annotations.entities.map(r => r.category);
 
       const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
       const newAdditionalTexts: AdditionalText[] = [];
