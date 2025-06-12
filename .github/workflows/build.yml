@@ -52,6 +52,8 @@ jobs:
           tags: |
             type=ref,event=branch,branch=main
             type=raw,value=latest
+            type=raw,value={{date 'YYYY-MM-DD:HH-mm-ss'}}
+            type=raw,value=commit-{{sha}}
 
       # Build images from the Docker files and push them to registry
       - name: Build and push Docker image
