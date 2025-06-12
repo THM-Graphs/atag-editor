@@ -276,7 +276,7 @@
         "isZeroPoint": false
       },
       {
-        "type": "commentInternal",
+        "type": "commentary",
         "category": "project",
         "defaultSelected": true,
         "isZeroPoint": false,

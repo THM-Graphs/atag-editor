@@ -2,8 +2,8 @@
   --aboveLine-clr: hsl(22, 81%, 35%);
   --additionLaterHand-color: hsla(91, 59%, 64%, 0.3);
   --belowLine-clr: hsl(22, 81%, 35%);
-  --commentInternal-color: #e3dbcc99;
-  --commentInternal-opacity: 0.9;
+  --commentary-color: #e3dbcc99;
+  --commentary-opacity: 0.9;
   --correction-clr: hsla(36, 85%, 76%, 0.6);
   --deleted-text-decoration: line-through;
   --deleted-clr: hsl(0, 0%, 44%);
@@ -121,9 +121,9 @@ Fix by changing classlists or annotation types? */
   font-weight: var(--head-font-weight);
 }
 
-#text > span:has(span.commentInternal) {
-  background-color: var(--commentInternal-color);
-  opacity: var(--commentInternal-opacity);
+#text > span:has(span.commentary) {
+  background-color: var(--commentary-color);
+  opacity: var(--commentary-opacity);
 }
 
 #text > span:has(span.line.end)::after {
@@ -236,8 +236,8 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/transposition.svg');
 }
 
-.annotation-type-icon-commentInternal {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentInternal.svg');
+.annotation-type-icon-commentary {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentary.svg');
 }
 
 .annotation-type-icon-sic {
