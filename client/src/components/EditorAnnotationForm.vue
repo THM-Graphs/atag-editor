@@ -29,6 +29,8 @@ const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 // TODO: Maybe give whole config instead of only fields...?
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
+
+const panelIsCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
 
 function handleDeleteAnnotation(event: MouseEvent): void {
@@ -78,6 +80,7 @@ function handleShrink(): void {
     class="annotation-form mb-3"
     :data-annotation-uuid="annotation.data.properties.uuid"
     toggleable
+    @update:collapsed="panelIsCollapsed = !panelIsCollapsed"
     :collapsed="true"
     :toggle-button-props="{
       severity: 'secondary',
@@ -113,6 +116,7 @@ function handleShrink(): void {
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
     <Fieldset
+      v-if="!panelIsCollapsed"
       legend="Properties"
       :toggle-button-props="{
         title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
@@ -130,18 +134,18 @@ function handleShrink(): void {
       />
     </Fieldset>
     <AnnotationFormEntitiesSection
-      v-if="config.hasEntities === true"
+      v-if="config.hasEntities === true && !panelIsCollapsed"
       v-model="annotation.data.entities"
       mode="edit"
     />
     <AnnotationFormAdditionalTextSection
-      v-if="config.hasAdditionalTexts === true"
+      v-if="config.hasAdditionalTexts === true && !panelIsCollapsed"
       v-model="annotation.data.additionalTexts"
       :initial-additional-texts="annotation.initialData.additionalTexts"
       mode="edit"
     />
 
-    <div class="edit-buttons flex justify-content-center">
+    <div v-if="!panelIsCollapsed" class="edit-buttons flex justify-content-center">
       <Button
         icon="pi pi-angle-left"
         size="small"
@@ -179,7 +183,7 @@ function handleShrink(): void {
         @click="handleShrink"
       />
     </div>
-    <div class="action-buttons flex justify-content-center">
+    <div v-if="!panelIsCollapsed" class="action-buttons flex justify-content-center">
       <Button
         label="Delete"
         title="Delete annotation"
