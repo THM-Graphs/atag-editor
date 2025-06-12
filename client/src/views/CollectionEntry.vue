@@ -7,12 +7,14 @@ import {
   useRoute,
 } from 'vue-router';
 import { useGuidelinesStore } from '../store/guidelines';
+import AnnotationFormAdditionalTextSection from '../components/AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
 import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
 import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
+import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areSetsEqual,
@@ -34,6 +36,7 @@ import Button from 'primevue/button';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
 import DataTable from 'primevue/datatable';
+import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
 import Splitter from 'primevue/splitter';
@@ -64,6 +67,7 @@ const {
   getAvailableCollectionAnnotationConfigs,
   getAvailableTextLabels,
   getCollectionAnnotationConfig,
+  getCollectionAnnotationFields,
   getCollectionConfigFields,
   initializeGuidelines,
 } = useGuidelinesStore();
@@ -74,6 +78,7 @@ const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
+const propertiesAreCollapsed = ref<boolean>(false);
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
@@ -651,7 +656,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             <template #toggleicon="{ collapsed }">
               <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
             </template>
-            <!-- <Fieldset
+            <Fieldset
               legend="Properties"
               :toggle-button-props="{
                 title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
@@ -672,7 +677,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 "
                 :mode="mode"
               />
-            </Fieldset> -->
+            </Fieldset>
             <AnnotationFormNormdataSection
               v-if="
                 getCollectionAnnotationConfig(
@@ -683,7 +688,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :mode="mode"
               v-model="annotation.normdata"
             />
-            <!-- <AnnotationFormAdditionalTextSection
+            <AnnotationFormAdditionalTextSection
               v-if="
                 getCollectionAnnotationConfig(
                   collectionAccessObject.collection.nodeLabels,
@@ -697,7 +702,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   a => a.properties.uuid === annotation.properties.uuid,
                 )?.additionalTexts ?? []
               "
-            /> -->
+            />
             <div class="action-buttons flex justify-content-center">
               <Button
                 v-if="mode === 'edit'"

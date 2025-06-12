@@ -49,34 +49,14 @@
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasNormdata": true,
-              "hasAdditionalTexts": true,
-              "properties": [
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true,
-                  "editable": true,
-                  "visible": true
-                }
-              ]
+              "hasNormdata": true
             },
             {
               "type": "receivedPerson",
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasNormdata": true,
-              "hasAdditionalTexts": true,
-              "properties": [
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true,
-                  "editable": true,
-                  "visible": true
-                }
-              ]
+              "hasNormdata": true
             }
           ],
           "properties": [
@@ -85,6 +65,22 @@
               "type": "string",
               "required": true,
               "editable": false,
+              "visible": true
+            },
+            {
+              "name": "comment",
+              "type": "string",
+              "template": "textarea",
+              "required": false,
+              "editable": true,
+              "visible": true
+            },
+            {
+              "name": "commentInternal",
+              "type": "string",
+              "template": "textarea",
+              "required": false,
+              "editable": true,
               "visible": true
             }
           ],
