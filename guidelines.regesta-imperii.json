@@ -49,14 +49,14 @@
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasNormdata": true
+              "hasEntities": true
             },
             {
               "type": "receivedPerson",
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasNormdata": true
+              "hasEntities": true
             }
           ],
           "properties": [
@@ -287,7 +287,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "hasNormdata": false,
+        "hasEntities": false,
         "properties": [
           {
             "name": "subType",
@@ -304,7 +304,7 @@
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
-        "hasNormdata": true,
+        "hasEntities": true,
         "properties": [
           {
             "name": "subType",

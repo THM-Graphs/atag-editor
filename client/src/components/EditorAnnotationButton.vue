@@ -349,9 +349,9 @@ function createNewAnnotation(
     newAnnotationData.subType = subType ?? subTypeField.options[0];
   }
 
-  // Normdata (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const normdataCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
-  const newAnnotationNormdata = Object.fromEntries(normdataCategories.map(m => [m, []]));
+  // Entities (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
+  const entityCategories: string[] = guidelines.value.annotations.resources.map(r => r.category);
+  const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
 
   // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays
   const additionalTexts: AdditionalText[] = [];
@@ -360,12 +360,12 @@ function createNewAnnotation(
     characterUuids: characters.map((char: Character) => char.data.uuid),
     data: {
       properties: cloneDeep(newAnnotationData),
-      normdata: cloneDeep(newAnnotationNormdata),
+      entities: cloneDeep(newAnnotationEntities),
       additionalTexts: cloneDeep(additionalTexts),
     },
     initialData: {
       properties: cloneDeep(newAnnotationData),
-      normdata: cloneDeep(newAnnotationNormdata),
+      entities: cloneDeep(newAnnotationEntities),
       additionalTexts: cloneDeep(additionalTexts),
     },
     isTruncated: false,

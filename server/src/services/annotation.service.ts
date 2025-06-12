@@ -21,12 +21,12 @@ import ICollection from '../models/ICollection.js';
  * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
  */
 type ProcessedAnnotation = Omit<Annotation, 'data'> & {
-  data: Omit<AnnotationData, 'normdata' | 'additionalTexts'> & {
+  data: Omit<AnnotationData, 'entities' | 'additionalTexts'> & {
     additionalTexts: {
       deleted: AdditionalText[];
       created: CreatedAdditionalText[];
     };
-    normdata: {
+    entities: {
       deleted: string[];
       created: string[];
     };
@@ -85,12 +85,12 @@ export default class AnnotationService {
       annotationObjects.push({
         characterUuids: [],
         data: annotation,
-        // No initial data -> annotation is new -> Use empty values for normdata and additional texts
+        // No initial data -> annotation is new -> Use empty values for entities and additional texts
         // to create a minimal structure for further processing. Properties will not be used anyway.
         initialData:
           initial ??
           ({
-            normdata: {},
+            entities: {},
             additionalTexts: [],
             properties: {} as IAnnotation,
           } as AnnotationData),
@@ -128,7 +128,7 @@ export default class AnnotationService {
     }
 
     // Create key-value pair with category and matched nodes
-    WITH a AS annotations, collect({category: key, nodes: nodes}) AS normdata
+    WITH a AS annotations, collect({category: key, nodes: nodes}) AS entities
 
     // Fetch additional text nodes
     UNWIND annotations AS a
@@ -151,11 +151,11 @@ export default class AnnotationService {
 
     }
 
-    WITH a, normdata, additionalTexts
+    WITH a, entities, additionalTexts
 
     RETURN collect({
         properties: a {.*},
-        normdata: apoc.map.fromPairs([n in normdata | [n.category, n.nodes]]),
+        entities: apoc.map.fromPairs([n in entities | [n.category, n.nodes]]),
         additionalTexts: additionalTexts
     }) AS annotations
     `;
@@ -194,20 +194,20 @@ export default class AnnotationService {
           annotation.data!.properties.type,
         );
 
-      const initialNormdataUuids: string[] = Object.values(annotation.initialData!.normdata)
+      const initialEntityUuids: string[] = Object.values(annotation.initialData!.entities)
         .flat()
         .map(item => item.uuid);
 
-      const newNormdataUuids: string[] = Object.values(annotation.data!.normdata)
+      const newEntityUuids: string[] = Object.values(annotation.data!.entities)
         .flat()
         .map(item => item.uuid);
 
-      const createdNormdataUuids: string[] = newNormdataUuids.filter(
-        uuid => !initialNormdataUuids.includes(uuid),
+      const createdEntityUuids: string[] = newEntityUuids.filter(
+        uuid => !initialEntityUuids.includes(uuid),
       );
 
-      const deletedNormdataUuids: string[] = initialNormdataUuids.filter(
-        uuid => !newNormdataUuids.includes(uuid),
+      const deletedEntityUuids: string[] = initialEntityUuids.filter(
+        uuid => !newEntityUuids.includes(uuid),
       );
 
       // ------------------------------------------------------------------------------------------------
@@ -266,9 +266,9 @@ export default class AnnotationService {
         ...annotation,
         data: {
           properties: toNeo4jTypes(annotation.data!.properties, annotationConfigFields),
-          normdata: {
-            deleted: deletedNormdataUuids,
-            created: createdNormdataUuids,
+          entities: {
+            deleted: deletedEntityUuids,
+            created: createdEntityUuids,
           },
           additionalTexts: {
             created: createdAdditionalTexts,
@@ -337,7 +337,7 @@ export default class AnnotationService {
 
     CALL {
         WITH ann, a
-        UNWIND ann.data.normdata.deleted AS deleteUuid
+        UNWIND ann.data.entities.deleted AS deleteUuid
         MATCH (a)-[r:REFERS_TO]->(e:Entity {uuid: deleteUuid})
         DELETE r
     }
@@ -345,7 +345,7 @@ export default class AnnotationService {
     // Create edges to nodes that were added to the annotation data
     CALL {
         WITH ann, a
-        UNWIND ann.data.normdata.created AS createdUuid
+        UNWIND ann.data.entities.created AS createdUuid
         MATCH (e:Entity {uuid: createdUuid})
         MERGE (a)-[r:REFERS_TO]->(e)
     }

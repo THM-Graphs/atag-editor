@@ -222,7 +222,7 @@ export default class CollectionService {
 
       return {
         properties: toNeo4jTypes(a.properties, annotationConfigFields) as IAnnotation,
-        normdata: Object.values(a.normdata)
+        entities: Object.values(a.entities)
           .flat()
           .map(i => i.uuid),
         additionalTexts: a.additionalTexts.map(additionalText => {
@@ -281,7 +281,7 @@ export default class CollectionService {
         // Create edges to Entity nodes
         CALL {
             WITH ann, a
-            UNWIND ann.normdata AS createdUuid
+            UNWIND ann.entities AS createdUuid
             MATCH (e:Entity {uuid: createdUuid})
             MERGE (a)-[r:REFERS_TO]->(e)
         }

@@ -357,13 +357,13 @@ export function useEditorStore() {
 
     // Check annotation status and data
     for (const a of snippetAnnotations.value.values()) {
-      const normdataUuids: Set<string> = new Set(
-        Object.values(a.data.normdata)
+      const entityUuids: Set<string> = new Set(
+        Object.values(a.data.entities)
           .flat()
           .map(m => m.uuid),
       );
-      const initialNormdataUuids: Set<string> = new Set(
-        Object.values(a.initialData.normdata)
+      const initialEntityUuids: Set<string> = new Set(
+        Object.values(a.initialData.entities)
           .flat()
           .map(m => m.uuid),
       );
@@ -380,7 +380,7 @@ export function useEditorStore() {
         a.status === 'deleted' ||
         a.status === 'created' ||
         JSON.stringify(a.data.properties) !== JSON.stringify(a.initialData.properties) ||
-        !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+        !areSetsEqual(entityUuids, initialEntityUuids) ||
         !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
       ) {
         console.log(`Annotation with UUID ${a.data.properties.uuid} has a changed status or data.`);

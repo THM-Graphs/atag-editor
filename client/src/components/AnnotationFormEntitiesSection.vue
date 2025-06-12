@@ -8,24 +8,24 @@ import Fieldset from 'primevue/fieldset';
 import IEntity from '../models/IEntity';
 
 /**
- *  Enriches normdata item with an html key that contains the highlighted parts of the node label
+ *  Enriches entities item with an html key that contains the highlighted parts of the node label
  * */
-type NormdataEntry = IEntity & { html: string };
+type EntityEntry = IEntity & { html: string };
 
 /**
- * Interface for relevant state information about each normdata category
+ * Interface for relevant state information about each entities category
  */
-interface NormdataSearchObject {
+interface EntitiesSearchObject {
   [key: string]: {
-    fetchedItems: NormdataEntry[] | string[];
+    fetchedItems: EntityEntry[] | string[];
     nodeLabel: string;
-    currentItem: NormdataEntry | null;
+    currentItem: EntityEntry | null;
     mode: 'edit' | 'view';
     elm: Ref<any>;
   };
 }
 
-const normdata = defineModel<{
+const entities = defineModel<{
   [index: string]: IEntity[];
 }>();
 
@@ -35,11 +35,11 @@ const props = defineProps<{
 
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
 
-const normdataCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
+const entityCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
 
-const normdataAreCollapsed = ref<boolean>(false);
-const normdataSearchObject = ref<NormdataSearchObject>(
-  normdataCategories.reduce((object: NormdataSearchObject, category) => {
+const entitiesAreCollapsed = ref<boolean>(false);
+const entitiesSearchObject = ref<EntitiesSearchObject>(
+  entityCategories.reduce((object: EntitiesSearchObject, category) => {
     object[category] = {
       nodeLabel: guidelines.value.annotations.resources.find(r => r.category === category)
         .nodeLabel,
@@ -54,18 +54,18 @@ const normdataSearchObject = ref<NormdataSearchObject>(
 );
 
 /**
- * Adds a normdata item to the specified category in the annotation's data.
+ * Adds a entity item to the specified category in the annotation's data.
  *
- * @param {NormdataEntry} item - The normdata item to be added.
+ * @param {EntityEntry} item - The entity item to be added.
  */
-function addNormdataItem(item: NormdataEntry, category: string): void {
+function addEntityItem(item: EntityEntry, category: string): void {
   // Omit 'html' property from entry since it was only created for rendering purposes
   const { html, ...rest } = item;
-  normdata.value[category].push(rest);
+  entities.value[category].push(rest);
 }
 
 /**
- * Changes the mode of the normdata search component for the given category. This triggers
+ * Changes the mode of the entities search component for the given category. This triggers
  * re-renders in the template.
  *
  * - If set to `view`, the search bar will be hidden and its related state variables reset.
@@ -74,11 +74,11 @@ function addNormdataItem(item: NormdataEntry, category: string): void {
  * @param {string} category - The category for which the mode should be changed.
  * @param {'view' | 'edit'} mode - The new mode.
  */
-function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): void {
-  normdataSearchObject.value[category].mode = mode;
+function changeEntitiesSelectionMode(category: string, mode: 'view' | 'edit'): void {
+  entitiesSearchObject.value[category].mode = mode;
 
   if (mode === 'view') {
-    normdataSearchObject.value[category].currentItem = null;
+    entitiesSearchObject.value[category].currentItem = null;
 
     return;
   }
@@ -86,9 +86,9 @@ function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): v
   // Wait for DOM to update before trying to focus the element
   nextTick(() => {
     // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    // The normdataSearchObject's "elm" property is an one-entry-array with the referenced primevue components
+    // The entitiesSearchObject's "elm" property is an one-entry-array with the referenced primevue components
     // that holds the component. Is an array because since the refs are set in a loop in the template
-    const elm = normdataSearchObject.value[category].elm[0];
+    const elm = entitiesSearchObject.value[category].elm[0];
 
     if (!elm) {
       console.warn(`Focus failed: Element not found for category "${category}"`);
@@ -102,25 +102,25 @@ function changeNormdataSelectionMode(category: string, mode: 'view' | 'edit'): v
 }
 
 /**
- * Handles the selection of a normdata item by adding it to the annotation and resetting the search component.
+ * Handles the selection of a entity item by adding it to the annotation and resetting the search component.
  *  Called on selection of an item from the autocomplete dropdown pane.
  *
- * @param {NormdataEntry} item - The normdata item to be added.
+ * @param {EntityEntry} item - The entity item to be added.
  * @param {string} category - The category to which the item should be added.
  */
-function handleNormdataItemSelect(item: NormdataEntry, category: string): void {
-  addNormdataItem(item, category);
-  changeNormdataSelectionMode(category, 'view');
+function handleEntityItemSelect(item: EntityEntry, category: string): void {
+  addEntityItem(item, category);
+  changeEntitiesSelectionMode(category, 'view');
 }
 
 /**
- * Removes a normdata item from the given category in the annotation's data.
+ * Removes a entity item from the given category in the annotation's data.
  *
- * @param {NormdataEntry} item - The normdata item to be removed.
+ * @param {EntityEntry} item - The entity item to be removed.
  * @param {string} category - The category from which the item should be removed.
  */
-function removeNormdataItem(item: NormdataEntry, category: string): void {
-  normdata.value[category] = normdata.value[category].filter(entry => entry.uuid !== item.uuid);
+function removeEntityItem(item: EntityEntry, category: string): void {
+  entities.value[category] = entities.value[category].filter(entry => entry.uuid !== item.uuid);
 }
 
 /**
@@ -143,14 +143,14 @@ function renderHTML(text: string, searchStr: string): string {
 }
 
 /**
- * Fetches normdata items from the server whose's label matches the given search string and stores the results
- * in the corresponding normdataSearchObject entry.
+ * Fetches entity items from the server whose's label matches the given search string and stores the results
+ * in the corresponding entitiesSearchObject entry.
  *
  * @param {string} searchString - The string to be searched for.
  * @param {string} category - The category for which the search should be performed.
  */
-async function searchNormdataOptions(searchString: string, category: string): Promise<void> {
-  const nodeLabel: string = normdataSearchObject.value[category].nodeLabel;
+async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
+  const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
   const url: string = buildFetchUrl(`/api/resources?node=${nodeLabel}&searchStr=${searchString}`);
 
   const response: Response = await fetch(url);
@@ -159,45 +159,43 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
     throw new Error('Network response was not ok');
   }
 
-  const fetchedNormdata: NormdataEntry[] = await response.json();
+  const fetchedEntities: EntityEntry[] = await response.json();
 
   // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = normdata.value[category].map(
-    (entry: NormdataEntry) => entry.uuid,
-  );
+  const existingUuids: string[] = entities.value[category].map((entry: EntityEntry) => entry.uuid);
 
-  const withoutDuplicates: NormdataEntry[] = fetchedNormdata.filter(
-    (entry: NormdataEntry) => !existingUuids.includes(entry.uuid),
+  const withoutDuplicates: EntityEntry[] = fetchedEntities.filter(
+    (entry: EntityEntry) => !existingUuids.includes(entry.uuid),
   );
 
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = withoutDuplicates.map((entry: NormdataEntry) => ({
+  const withHtml = withoutDuplicates.map((entry: EntityEntry) => ({
     ...entry,
     html: renderHTML(entry.label, searchString),
   }));
 
-  normdataSearchObject.value[category].fetchedItems = withHtml;
+  entitiesSearchObject.value[category].fetchedItems = withHtml;
 }
 </script>
 
 <template>
   <Fieldset
-    legend="Normdata"
+    legend="Entities"
     :toggleable="true"
     :toggle-button-props="{
-      title: `${normdataAreCollapsed ? 'Expand' : 'Collapse'} normdata`,
+      title: `${entitiesAreCollapsed ? 'Expand' : 'Collapse'} entities`,
     }"
-    @toggle="normdataAreCollapsed = !normdataAreCollapsed"
+    @toggle="entitiesAreCollapsed = !entitiesAreCollapsed"
   >
     <template #toggleicon>
-      <span :class="`pi pi-chevron-${normdataAreCollapsed ? 'down' : 'up'}`"></span>
+      <span :class="`pi pi-chevron-${entitiesAreCollapsed ? 'down' : 'up'}`"></span>
     </template>
 
-    <div v-for="category in normdataCategories">
+    <div v-for="category in entityCategories">
       <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
       <div
-        class="normdata-entry flex justify-content-between align-items-center"
-        v-for="entry in normdata[category]"
+        class="entities-entry flex justify-content-between align-items-center"
+        v-for="entry in entities[category]"
       >
         <span>
           {{ entry.label }}
@@ -207,39 +205,39 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
           icon="pi pi-times"
           size="small"
           severity="danger"
-          @click="removeNormdataItem(entry as NormdataEntry, category)"
+          @click="removeEntityItem(entry as EntityEntry, category)"
         ></Button>
       </div>
       <Button
         v-if="props.mode === 'edit'"
-        v-show="normdataSearchObject[category].mode === 'view'"
+        v-show="entitiesSearchObject[category].mode === 'view'"
         class="mt-2 w-full h-2rem"
         icon="pi pi-plus"
         size="small"
         severity="secondary"
         label="Add item"
-        @click="changeNormdataSelectionMode(category, 'edit')"
+        @click="changeEntitiesSelectionMode(category, 'edit')"
       />
       <AutoComplete
         v-if="props.mode === 'edit'"
-        v-show="normdataSearchObject[category].mode === 'edit'"
-        v-model="normdataSearchObject[category].currentItem"
+        v-show="entitiesSearchObject[category].mode === 'edit'"
+        v-model="entitiesSearchObject[category].currentItem"
         dropdown
         dropdownMode="current"
         :placeholder="`Type to see suggestions`"
-        :suggestions="normdataSearchObject[category].fetchedItems"
-        :overlayClass="normdataSearchObject[category].mode === 'view' ? 'hidden' : ''"
+        :suggestions="entitiesSearchObject[category].fetchedItems"
+        :overlayClass="entitiesSearchObject[category].mode === 'view' ? 'hidden' : ''"
         optionLabel="label"
         class="mt-2 w-full h-2rem"
         variant="filled"
         :ref="`input-${category}`"
         input-class="w-full"
-        @complete="searchNormdataOptions($event.query, category)"
-        @option-select="handleNormdataItemSelect($event.value, category)"
+        @complete="searchEntitiesOptions($event.query, category)"
+        @option-select="handleEntityItemSelect($event.value, category)"
       >
-        <template #header v-if="normdataSearchObject[category].fetchedItems.length > 0">
+        <template #header v-if="entitiesSearchObject[category].fetchedItems.length > 0">
           <div class="font-medium px-3 py-2">
-            {{ normdataSearchObject[category].fetchedItems.length }} Results
+            {{ entitiesSearchObject[category].fetchedItems.length }} Results
           </div>
         </template>
         <template #option="slotProps">
@@ -263,7 +261,7 @@ async function searchNormdataOptions(searchString: string, category: string): Pr
   max-height: calc-size(auto);
 }
 
-.normdata-entry {
+.entities-entry {
   border: 1px solid gray;
   border-radius: 5px;
   margin-bottom: 0.5rem;

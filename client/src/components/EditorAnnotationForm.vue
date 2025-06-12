@@ -10,7 +10,7 @@ import Panel from 'primevue/panel';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
-import AnnotationFormNormdataSection from './AnnotationFormNormdataSection.vue';
+import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import FormPropertiesSection from './FormPropertiesSection.vue';
@@ -129,9 +129,9 @@ function handleShrink(): void {
         mode="edit"
       />
     </Fieldset>
-    <AnnotationFormNormdataSection
-      v-if="config.hasNormdata === true"
-      v-model="annotation.data.normdata"
+    <AnnotationFormEntitiesSection
+      v-if="config.hasEntities === true"
+      v-model="annotation.data.entities"
       mode="edit"
     />
     <AnnotationFormAdditionalTextSection

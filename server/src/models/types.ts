@@ -21,7 +21,7 @@ export type Annotation = {
 
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
-  normdata: {
+  entities: {
     [index: string]: IEntity[];
   };
   properties: IAnnotation;
@@ -33,7 +33,7 @@ export type AnnotationType = {
   isSeparator?: boolean;
   isZeroPoint?: boolean;
   hasAdditionalTexts?: boolean;
-  hasNormdata?: boolean;
+  hasEntities?: boolean;
   properties?: PropertyConfig[];
   shortcut: string[];
   text: string;

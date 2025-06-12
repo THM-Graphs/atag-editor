@@ -9,7 +9,7 @@ import {
 import { useGuidelinesStore } from '../store/guidelines';
 import AnnotationFormAdditionalTextSection from '../components/AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
-import AnnotationFormNormdataSection from '../components/AnnotationFormNormdataSection.vue';
+import AnnotationFormEntitiesSection from '../components/AnnotationFormEntitiesSection.vue';
 import CollectionAnnotationButton from '../components/CollectionAnnotationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
@@ -335,13 +335,13 @@ function hasUnsavedChanges(): boolean {
       return true;
     }
 
-    const normdataUuids: Set<string> = new Set(
-      Object.values(currentAnnotation.normdata)
+    const entityUuids: Set<string> = new Set(
+      Object.values(currentAnnotation.entities)
         .flat()
         .map(m => m.uuid),
     );
-    const initialNormdataUuids: Set<string> = new Set(
-      Object.values(initialAnnotation.normdata)
+    const initialEntityUuids: Set<string> = new Set(
+      Object.values(initialAnnotation.entities)
         .flat()
         .map(m => m.uuid),
     );
@@ -357,7 +357,7 @@ function hasUnsavedChanges(): boolean {
     if (
       JSON.stringify(currentAnnotation.properties) !==
         JSON.stringify(currentAnnotation.properties) ||
-      !areSetsEqual(normdataUuids, initialNormdataUuids) ||
+      !areSetsEqual(entityUuids, initialEntityUuids) ||
       !areSetsEqual(initialAdditionalTextUuids, additionalTextUuids)
     ) {
       console.log(`Annotation at index ${i} has changed data.`);
@@ -678,15 +678,15 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 :mode="mode"
               />
             </Fieldset>
-            <AnnotationFormNormdataSection
+            <AnnotationFormEntitiesSection
               v-if="
                 getCollectionAnnotationConfig(
                   collectionAccessObject.collection.nodeLabels,
                   annotation.properties.type,
-                ).hasNormdata === true
+                ).hasEntities === true
               "
               :mode="mode"
-              v-model="annotation.normdata"
+              v-model="annotation.entities"
             />
             <AnnotationFormAdditionalTextSection
               v-if="

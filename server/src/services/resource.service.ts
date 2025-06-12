@@ -5,7 +5,7 @@ import IEntity from '../models/IEntity.js';
 export default class ResourceService {
   /**
    * Retrieves resources of a given node label that contain the search string in their `label` property.
-   * Resource nodes are nodes connected to `Annotation` nodes and part of the normdata/metadata network
+   * Resource nodes are nodes connected to `Annotation` nodes and part of the entities/metadata network
    *
    * @param {string} nodeLabel - The node label to search, e.g. "ActorRole" or "Entity"
    * @param {string} searchStr - The search string to search for.
