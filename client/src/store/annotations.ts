@@ -234,8 +234,6 @@ export function useAnnotationStore() {
    * @return {void} This function does not return a value.
    */
   function insertSnippetIntoTotalAnnotations(): void {
-    console.time('insertSnippetIntoTotal');
-
     const snippetUuids: Set<string> = new Set(
       snippetAnnotations.value.map(a => a.data.properties.uuid),
     );
@@ -247,8 +245,6 @@ export function useAnnotationStore() {
 
     // Combine annotations
     totalAnnotations.value = [...annotationsOutsideOfSnippet, ...snippetAnnotations.value];
-
-    console.timeEnd('insertSnippetIntoTotal');
   }
 
   /**

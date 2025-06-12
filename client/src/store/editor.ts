@@ -192,9 +192,7 @@ export function useEditorStore() {
 
     // lastEditTimestamp = Date.now();
 
-    console.time('record');
     const record: HistoryRecord = createHistoryRecord();
-    console.timeEnd('record');
 
     history.value.push(record);
 
