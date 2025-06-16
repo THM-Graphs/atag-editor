@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
 import { useCharactersStore } from '../store/characters';
-import { useTextStore } from '../store/text';
 import EditorTextNavigation from './EditorTextNavigation.vue';
 import {
   getParentCharacterSpan,
