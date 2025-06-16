@@ -30,7 +30,6 @@ onUpdated(() => {
 });
 
 const { keepTextOnPagination, execCommand, placeCaret, redo, undo } = useEditorStore();
-const { correspondingCollection } = useTextStore();
 const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
   useCharactersStore();
 const { selectedOptions } = useFilterStore();
@@ -150,11 +149,8 @@ function handleInsertReplacementText(event: InputEvent): void {
   console.log('Replacement event:', event);
 
   // const newCharacter: ICharacter = {
-  //   text: event.data || '',
-  //   letterLabel: 'someLabel',
-  //   textGuid: '',
-  //   textUrl: '',
   //   uuid: crypto.randomUUID(),
+  //   text: event.data || '',
   // };
   // characters.value.push(newCharacter);
   // Additional logic for replacement can be added here
@@ -530,9 +526,8 @@ async function handleCopy(): Promise<void> {
 function createNewCharacter(char: string): Character {
   return {
     data: {
-      text: char,
-      letterLabel: correspondingCollection.value.data.label,
       uuid: crypto.randomUUID(),
+      text: char,
     },
     annotations: [],
   };

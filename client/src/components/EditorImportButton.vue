@@ -324,7 +324,6 @@ function transformStandoffToAtag(): void {
         data: {
           uuid: crypto.randomUUID(),
           text: c,
-          letterLabel: '',
         },
         annotations: [],
       };

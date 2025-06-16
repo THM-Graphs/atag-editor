@@ -245,9 +245,8 @@ export default class CollectionService {
               data: additionalText.text.data,
               characters: additionalText.text.data.text.split('').map(c => {
                 return {
-                  letterLabel: additionalText.collection.data.label,
-                  text: c,
                   uuid: crypto.randomUUID(),
+                  text: c,
                 };
               }),
             },
