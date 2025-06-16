@@ -392,7 +392,7 @@ export function useAnnotationStore() {
     });
 
     totalAnnotations.value.forEach((a: Annotation) => {
-      if (a.status !== 'deleted') {
+      if (a.status === 'deleted') {
         return;
       }
 
