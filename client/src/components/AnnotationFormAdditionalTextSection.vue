@@ -293,10 +293,14 @@ function togglePreviewMode(uuid: string): void {
             v-model="inputObject.input.collectionLabels"
             :options="inputObject.labelOptions.collection"
             display="chip"
-            placeholder="Select label"
-            size="small"
+            placeholder="Collection labels"
             class="text-center"
             :filter="false"
+            :pt="{
+              root: {
+                title: `Select Collection labels`,
+              },
+            }"
           >
             <template #chip="{ value }">
               <Tag :value="value" severity="contrast" class="mr-1" />
@@ -306,10 +310,14 @@ function togglePreviewMode(uuid: string): void {
             v-model="inputObject.input.textLabels"
             :options="inputObject.labelOptions.text"
             display="chip"
-            placeholder="Select label"
-            size="small"
+            placeholder="Text labels"
             class="text-center"
             :filter="false"
+            :pt="{
+              root: {
+                title: `Select Text labels`,
+              },
+            }"
           >
             <template #chip="{ value }">
               <Tag :value="value" severity="contrast" class="mr-1" />
