@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, Ref, ref, watch, useTemplateRef, ComponentPublicInstance } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
-import { camelCaseToTitleCase, getDefaultValueForProperty } from '../utils/helper/helper';
+import { getDefaultValueForProperty } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
