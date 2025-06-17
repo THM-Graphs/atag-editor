@@ -217,13 +217,36 @@ function togglePreviewMode(uuid: string): void {
     </template>
     <template v-for="additionalText in additionalTexts" :key="additionalText.collection.data.uuid">
       <div class="additional-text-entry">
-        <div class="additional-text-header flex justify-content-between align-items-center">
-          <span v-if="additionalText.collection.nodeLabels.length > 0" class="font-semibold">{{
-            additionalText.collection.nodeLabels
-              .map((l: string) => camelCaseToTitleCase(l))
-              .join(' | ')
-          }}</span>
-          <span v-else class="font-italic"> No label provided yet... </span>
+        <div class="button-pane flex justify-content-center">
+          <div class="label-container w-full">
+            <div class="collection-labels font-semibold">
+              <Tag
+                v-for="label in additionalText.collection.nodeLabels"
+                :value="label"
+                severity="contrast"
+                size="small"
+                class="mr-1 mb-1"
+                :pt="{
+                  root: {
+                    title: 'Collection labels',
+                  },
+                }"
+              />
+            </div>
+            <div class="text-labels font-semibold">
+              <Tag
+                v-for="label in additionalText.text.nodeLabels"
+                :value="label"
+                severity="secondary"
+                class="mr-1 mb-1"
+                :pt="{
+                  root: {
+                    title: 'Text labels',
+                  },
+                }"
+              />
+            </div>
+          </div>
           <Button
             v-if="props.mode === 'edit'"
             icon="pi pi-times"
@@ -232,7 +255,8 @@ function togglePreviewMode(uuid: string): void {
             @click="handleDeleteAdditionalText(additionalText.collection.data.uuid)"
           />
         </div>
-        <div class="flex align-items-center gap-2 overflow">
+
+        <div class="text-container flex align-items-center gap-2 overflow">
           <a
             :href="`/texts/${additionalText.text.data.uuid}`"
             title="Open text in new editor tab"
@@ -322,7 +346,7 @@ function togglePreviewMode(uuid: string): void {
             }"
           >
             <template #chip="{ value }">
-              <Tag :value="value" severity="contrast" class="mr-1" />
+              <Tag :value="value" severity="secondary" class="mr-1" />
             </template>
           </MultiSelect>
           <InputText
@@ -366,7 +390,7 @@ function togglePreviewMode(uuid: string): void {
   max-height: calc-size(auto);
 }
 
-.additional-text-header {
+.label-container {
   cursor: default;
 }
 
