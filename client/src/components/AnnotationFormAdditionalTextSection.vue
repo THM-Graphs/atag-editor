@@ -290,6 +290,7 @@ function togglePreviewMode(uuid: string): void {
       <form v-show="inputMode === 'edit'" @submit.prevent="addAdditionalText">
         <InputGroup>
           <MultiSelect
+            v-if="inputObject.labelOptions.collection.length > 0"
             v-model="inputObject.input.collectionLabels"
             :options="inputObject.labelOptions.collection"
             display="chip"
@@ -307,6 +308,7 @@ function togglePreviewMode(uuid: string): void {
             </template>
           </MultiSelect>
           <MultiSelect
+            v-if="inputObject.labelOptions.text.length > 0"
             v-model="inputObject.input.textLabels"
             :options="inputObject.labelOptions.text"
             display="chip"
