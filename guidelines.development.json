@@ -382,6 +382,6 @@
         "nodeLabel": "Role"
       }
     ],
-    "additionalTexts": ["Comment"]
+    "additionalTexts": ["Comment", "CommentInternal"]
   }
 }
