@@ -379,7 +379,11 @@ export default class AnnotationService {
 
         WITH textToCreate, a, c, t
 
-        CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node
+        // Set labels
+        CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node AS collectionNode
+        CALL apoc.create.addLabels(t, textToCreate.text.nodeLabels) YIELD node AS textNode
+
+        // Set properties
         SET c += textToCreate.collection.data
         SET t += textToCreate.text.data
 

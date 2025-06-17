@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref, watch, useTemplateRef } from 'vue';
+import { nextTick, Ref, ref, watch, useTemplateRef, ComponentPublicInstance } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { camelCaseToTitleCase, getDefaultValueForProperty } from '../utils/helper/helper';
 import Button from 'primevue/button';
@@ -17,11 +17,15 @@ import IText from '../models/IText';
  * Interface for relevant state information about additional texts of the annotation
  */
 interface AdditionalTextInputObject {
-  availableLabels: string[];
-  inputElm: Ref<any>;
-  inputLabels: string[];
-  inputText: string;
-  mode: 'edit' | 'view';
+  labelOptions: {
+    collection: string[];
+    text: string[];
+  };
+  input: {
+    collectionLabels: string[];
+    textLabels: string[];
+    text: string;
+  };
 }
 
 const additionalTexts = defineModel<AdditionalText[]>();
@@ -31,16 +35,23 @@ const props = defineProps<{
   mode?: 'edit' | 'view';
 }>();
 
-const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
+const { guidelines, getAvailableTextLabels, getCollectionConfigFields } = useGuidelinesStore();
 
 const additionalTextIsCollapsed = ref<boolean>(false);
-const additionalTextInputObject = ref<AdditionalTextInputObject>({
-  inputText: '',
-  availableLabels: guidelines.value.annotations.additionalTexts,
-  inputLabels: [],
-  mode: 'view',
-  inputElm: useTemplateRef('additional-text-input'),
+const additionalTextInputObject: Ref<AdditionalTextInputObject> = ref<AdditionalTextInputObject>({
+  labelOptions: {
+    collection: guidelines.value.annotations.additionalTexts,
+    text: getAvailableTextLabels(),
+  },
+  input: {
+    collectionLabels: [],
+    textLabels: [],
+    text: '',
+  },
 });
+
+const inputMode = ref<'edit' | 'view'>('view');
+const inputElm = useTemplateRef<ComponentPublicInstance>('additional-text-input');
 
 // Used for toggling additional text preview mode. Bit hacky for now, but works.
 const additionalTextStatusObject = ref<Map<string, 'collapsed' | 'expanded'>>(new Map());
@@ -73,31 +84,31 @@ watch(
 
 // TODO: Add JSDoc
 function addAdditionalText(): void {
-  const nodeLabels: string[] = additionalTextInputObject.value.inputLabels;
-  const defaultFields: PropertyConfig[] = getCollectionConfigFields(nodeLabels);
+  const collectionLabels: string[] = additionalTextInputObject.value.input.collectionLabels;
+  const textLabels: string[] = additionalTextInputObject.value.input.textLabels;
+  const defaultCollectionFields: PropertyConfig[] = getCollectionConfigFields(collectionLabels);
   const newCollectionProperties: ICollection = {} as ICollection;
 
-  defaultFields.forEach((field: PropertyConfig) => {
+  defaultCollectionFields.forEach((field: PropertyConfig) => {
     newCollectionProperties[field.name] =
       field?.required === true ? getDefaultValueForProperty(field.type) : null;
   });
 
   additionalTexts.value.push({
     collection: {
-      nodeLabels,
+      nodeLabels: collectionLabels,
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
         // TODO: Fix this.....
-        label: `${nodeLabels.join(' | ')} for annotation this beautiful annotation`,
+        label: `${collectionLabels.join(' | ')} for annotation`,
       } as ICollection,
     },
     text: {
-      // TODO: Text node labels should be made selectable too in the future
-      nodeLabels: [],
+      nodeLabels: textLabels,
       data: {
         uuid: crypto.randomUUID(),
-        text: additionalTextInputObject.value.inputText,
+        text: additionalTextInputObject.value.input.text,
       } as IText,
     },
   });
@@ -123,23 +134,15 @@ function cancelAdditionalTextOperation(): void {
  * @returns {void} This function does not return any value.
  */
 function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
-  additionalTextInputObject.value.mode = mode;
+  inputMode.value = mode;
 
   if (mode === 'view') {
     return;
   }
 
-  // // Wait for DOM to update before trying to focus the element
+  // Wait for DOM to update before trying to focus the element
   nextTick(() => {
-    // TODO: A bit hacky, replace this when upgraded to Vue 3.5?
-    const inputElm: HTMLInputElement | null = additionalTextInputObject.value.inputElm.$el;
-
-    if (!inputElm) {
-      console.warn('Focus failed: Element not found');
-      return;
-    }
-
-    inputElm.focus();
+    inputElm.value.$el.focus();
   });
 }
 
@@ -173,8 +176,11 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
  * @returns {void} This function does not return any value.
  */
 function resetAdditionalTextInputForm(): void {
-  additionalTextInputObject.value.inputLabels = [];
-  additionalTextInputObject.value.inputText = '';
+  additionalTextInputObject.value.input = {
+    collectionLabels: [],
+    textLabels: [],
+    text: '',
+  };
 }
 
 /**
@@ -269,7 +275,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
     <div>
       <Button
         v-if="props.mode === 'edit'"
-        v-show="additionalTextInputObject.mode === 'view'"
+        v-show="inputMode === 'view'"
         class="mt-2 w-full h-2rem"
         icon="pi pi-plus"
         size="small"
@@ -278,13 +284,27 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
         title="Add new additional text entry"
         @click="changeAdditionalTextSelectionMode('edit')"
       />
-      <form v-show="additionalTextInputObject.mode === 'edit'" @submit.prevent="addAdditionalText">
+      <form v-show="inputMode === 'edit'" @submit.prevent="addAdditionalText">
         <InputGroup>
           <MultiSelect
-            v-model="additionalTextInputObject.inputLabels"
-            :options="additionalTextInputObject.availableLabels"
+            v-model="additionalTextInputObject.input.collectionLabels"
+            :options="additionalTextInputObject.labelOptions.collection"
             display="chip"
-            placeholder="Select collection labels"
+            placeholder="Select label"
+            size="small"
+            class="text-center"
+            :filter="false"
+          >
+            <template #chip="{ value }">
+              <Tag :value="value" severity="contrast" class="mr-1" />
+            </template>
+          </MultiSelect>
+          <MultiSelect
+            v-model="additionalTextInputObject.input.textLabels"
+            :options="additionalTextInputObject.labelOptions.text"
+            display="chip"
+            placeholder="Select label"
+            size="small"
             class="text-center"
             :filter="false"
           >
@@ -295,7 +315,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
           <InputText
             ref="additional-text-input"
             required
-            v-model="additionalTextInputObject.inputText"
+            v-model="additionalTextInputObject.input.text"
             placeholder="Enter text"
             title="Enter text"
           />
