@@ -16,7 +16,7 @@ import IText from '../models/IText';
 /**
  * Interface for relevant state information about additional texts of the annotation
  */
-interface AdditionalTextInputObject {
+interface InputObject {
   labelOptions: {
     collection: string[];
     text: string[];
@@ -37,8 +37,8 @@ const props = defineProps<{
 
 const { guidelines, getAvailableTextLabels, getCollectionConfigFields } = useGuidelinesStore();
 
-const additionalTextIsCollapsed = ref<boolean>(false);
-const additionalTextInputObject: Ref<AdditionalTextInputObject> = ref<AdditionalTextInputObject>({
+const sectionIsCollapsed = ref<boolean>(false);
+const inputObject: Ref<InputObject> = ref<InputObject>({
   labelOptions: {
     collection: guidelines.value.annotations.additionalTexts,
     text: getAvailableTextLabels(),
@@ -54,15 +54,15 @@ const inputMode = ref<'edit' | 'view'>('view');
 const inputElm = useTemplateRef<ComponentPublicInstance>('additional-text-input');
 
 // Used for toggling additional text preview mode. Bit hacky for now, but works.
-const additionalTextStatusObject = ref<Map<string, 'collapsed' | 'expanded'>>(new Map());
+const textPreviewHandler = ref<Map<string, 'collapsed' | 'expanded'>>(new Map());
 
 watch(
   () => additionalTexts,
   (newTexts, oldTexts) => {
     // Add new text if it doesn't already exist
     newTexts.value.forEach(text => {
-      if (!additionalTextStatusObject.value.has(text.collection.data.uuid)) {
-        additionalTextStatusObject.value.set(text.collection.data.uuid, 'collapsed');
+      if (!textPreviewHandler.value.has(text.collection.data.uuid)) {
+        textPreviewHandler.value.set(text.collection.data.uuid, 'collapsed');
       }
     });
 
@@ -74,7 +74,7 @@ watch(
             newText => newText.collection.data.uuid === text.collection.data.uuid,
           )
         ) {
-          additionalTextStatusObject.value.delete(text.collection.data.uuid);
+          textPreviewHandler.value.delete(text.collection.data.uuid);
         }
       });
     }
@@ -84,8 +84,8 @@ watch(
 
 // TODO: Add JSDoc
 function addAdditionalText(): void {
-  const collectionLabels: string[] = additionalTextInputObject.value.input.collectionLabels;
-  const textLabels: string[] = additionalTextInputObject.value.input.textLabels;
+  const collectionLabels: string[] = inputObject.value.input.collectionLabels;
+  const textLabels: string[] = inputObject.value.input.textLabels;
   const defaultCollectionFields: PropertyConfig[] = getCollectionConfigFields(collectionLabels);
   const newCollectionProperties: ICollection = {} as ICollection;
 
@@ -108,32 +108,32 @@ function addAdditionalText(): void {
       nodeLabels: textLabels,
       data: {
         uuid: crypto.randomUUID(),
-        text: additionalTextInputObject.value.input.text,
+        text: inputObject.value.input.text,
       } as IText,
     },
   });
 
-  finishAdditionalTextInputOperation();
+  finishInputOperation();
 }
 
 /**
- * Cancels an additional text input operation without submitting any data. This resets the form and
+ * Cancels an input operation without submitting any data. This resets the form and
  * changes the mode to 'view'. Is called when the cancel button is clicked explicitly by the user.
  *
  * @returns {void} This function does not return any value.
  */
-function cancelAdditionalTextOperation(): void {
-  finishAdditionalTextInputOperation();
+function cancelInputOperation(): void {
+  finishInputOperation();
 }
 
 /**
- * Changes the mode of the additional text input component between `view` and `edit`. If set to `edit`,
+ * Changes the mode of the input component between `view` and `edit`. If set to `edit`,
  * the input field will be focused.
  *
  * @param {'view' | 'edit'} mode - The new mode. Is either 'view' or 'edit'.
  * @returns {void} This function does not return any value.
  */
-function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
+function changeSelectionMode(mode: 'view' | 'edit'): void {
   inputMode.value = mode;
 
   if (mode === 'view') {
@@ -152,9 +152,9 @@ function changeAdditionalTextSelectionMode(mode: 'view' | 'edit'): void {
  *
  * @returns {void} This function does not return any value.
  */
-function finishAdditionalTextInputOperation(): void {
-  resetAdditionalTextInputForm();
-  changeAdditionalTextSelectionMode('view');
+function finishInputOperation(): void {
+  resetInputForm();
+  changeSelectionMode('view');
 }
 
 /**
@@ -175,8 +175,8 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
  *
  * @returns {void} This function does not return any value.
  */
-function resetAdditionalTextInputForm(): void {
-  additionalTextInputObject.value.input = {
+function resetInputForm(): void {
+  inputObject.value.input = {
     collectionLabels: [],
     textLabels: [],
     text: '',
@@ -184,17 +184,14 @@ function resetAdditionalTextInputForm(): void {
 }
 
 /**
- * Toggles the view modeof an additional text entry. By default, the whole text is shown as preview to keep
+ * Toggles the view mode of an text entry. By default, the whole text is shown as preview to keep
  * the form compact, but can be expanded on button click.
  *
  * @param {string} uuid - The UUID of the additional text for which the mode should be toggled.
  */
-function toggleAdditionalTextPreviewMode(uuid: string): void {
-  const currentViewMode: 'collapsed' | 'expanded' = additionalTextStatusObject.value.get(uuid);
-  additionalTextStatusObject.value.set(
-    uuid,
-    currentViewMode === 'collapsed' ? 'expanded' : 'collapsed',
-  );
+function togglePreviewMode(uuid: string): void {
+  const currentViewMode: 'collapsed' | 'expanded' = textPreviewHandler.value.get(uuid);
+  textPreviewHandler.value.set(uuid, currentViewMode === 'collapsed' ? 'expanded' : 'collapsed');
 }
 </script>
 
@@ -202,13 +199,13 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
   <Fieldset
     legend="Additional texts"
     :toggle-button-props="{
-      title: `${additionalTextIsCollapsed ? 'Expand' : 'Collapse'} additional texts`,
+      title: `${sectionIsCollapsed ? 'Expand' : 'Collapse'} additional texts`,
     }"
     :toggleable="true"
-    @toggle="additionalTextIsCollapsed = !additionalTextIsCollapsed"
+    @toggle="sectionIsCollapsed = !sectionIsCollapsed"
   >
     <template #toggleicon>
-      <span :class="`pi pi-chevron-${additionalTextIsCollapsed ? 'down' : 'up'}`"></span>
+      <span :class="`pi pi-chevron-${sectionIsCollapsed ? 'down' : 'up'}`"></span>
     </template>
     <template v-for="additionalText in additionalTexts" :key="additionalText.collection.data.uuid">
       <div class="additional-text-entry">
@@ -234,9 +231,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
             class="flex align-items-center gap-1"
             target="_blank"
           >
-            <div
-              :class="`preview ${additionalTextStatusObject.get(additionalText.collection.data.uuid)}`"
-            >
+            <div :class="`preview ${textPreviewHandler.get(additionalText.collection.data.uuid)}`">
               {{ additionalText.text.data.text }}
             </div>
             <i class="pi pi-external-link"></i>
@@ -244,7 +239,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
         </div>
         <Button
           :icon="
-            additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
+            textPreviewHandler.get(additionalText.collection.data.uuid) === 'collapsed'
               ? 'pi pi-angle-double-down'
               : 'pi pi-angle-double-up'
           "
@@ -252,11 +247,11 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
           size="small"
           class="w-full"
           :title="
-            additionalTextStatusObject.get(additionalText.collection.data.uuid) === 'collapsed'
+            textPreviewHandler.get(additionalText.collection.data.uuid) === 'collapsed'
               ? 'Show full text'
               : 'Hide full text'
           "
-          @click="toggleAdditionalTextPreviewMode(additionalText.collection.data.uuid)"
+          @click="togglePreviewMode(additionalText.collection.data.uuid)"
         />
         <Message
           v-if="
@@ -282,13 +277,13 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
         severity="secondary"
         label="Add text"
         title="Add new additional text entry"
-        @click="changeAdditionalTextSelectionMode('edit')"
+        @click="changeSelectionMode('edit')"
       />
       <form v-show="inputMode === 'edit'" @submit.prevent="addAdditionalText">
         <InputGroup>
           <MultiSelect
-            v-model="additionalTextInputObject.input.collectionLabels"
-            :options="additionalTextInputObject.labelOptions.collection"
+            v-model="inputObject.input.collectionLabels"
+            :options="inputObject.labelOptions.collection"
             display="chip"
             placeholder="Select label"
             size="small"
@@ -300,8 +295,8 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
             </template>
           </MultiSelect>
           <MultiSelect
-            v-model="additionalTextInputObject.input.textLabels"
-            :options="additionalTextInputObject.labelOptions.text"
+            v-model="inputObject.input.textLabels"
+            :options="inputObject.labelOptions.text"
             display="chip"
             placeholder="Select label"
             size="small"
@@ -315,7 +310,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
           <InputText
             ref="additional-text-input"
             required
-            v-model="additionalTextInputObject.input.text"
+            v-model="inputObject.input.text"
             placeholder="Enter text"
             title="Enter text"
           />
@@ -332,7 +327,7 @@ function toggleAdditionalTextPreviewMode(uuid: string): void {
             severity="secondary"
             size="small"
             title="Cancel"
-            @click="cancelAdditionalTextOperation"
+            @click="cancelInputOperation"
           />
         </InputGroup>
       </form>
