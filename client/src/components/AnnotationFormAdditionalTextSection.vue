@@ -82,7 +82,15 @@ watch(
   { deep: true, immediate: true },
 );
 
-// TODO: Add JSDoc
+/**
+ * Adds a new additional text entry to the list of additional texts. The entry is based on the
+ * current input values for collection labels, text labels, and text content.
+ *
+ * After adding the entry, the input form is reset and the mode is changed to 'view'.
+ *
+ * @returns {void} This function does not return any value.
+ */
+
 function addAdditionalText(): void {
   const collectionLabels: string[] = inputObject.value.input.collectionLabels;
   const textLabels: string[] = inputObject.value.input.textLabels;
