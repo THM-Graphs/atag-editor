@@ -97,6 +97,11 @@
         "additionalLabel": "Comment",
         "level": "secondary",
         "properties": []
+      },
+      {
+        "additionalLabel": "CommentInternal",
+        "level": "secondary",
+        "properties": []
       }
     ],
     "annotations": {
