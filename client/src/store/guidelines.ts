@@ -180,7 +180,7 @@ export function useGuidelinesStore() {
   }
 
   /**
-   * Retrieves the available labels that can be assigned to a no Text node.
+   * Retrieves the available labels that can be assigned to a a Text node.
    *
    * @return {string[]} The available labels.
    */
