@@ -35,16 +35,19 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
       <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
         <template #item="{ item }">
           <div v-if="item.role === 'Collection'">
-            <Tag :value="item.label" severity="contrast" :title="`Collection: ${item.label}`" />
+            <span severity="contrast" :title="`Collection: ${item.label}`">{{ item.label }}</span>
           </div>
-          <div v-else>
+          <div v-else class="text-labels">
             <Tag
               v-if="item.labels.length > 0"
-              :value="item.labels.join(' | ')"
+              v-for="label in item.labels"
+              :value="label"
               severity="secondary"
-              :title="`Text labels: ${item.labels.join(', ')}`"
+              class="mr-1 mb-1"
             />
-            <Tag v-else="" :value="'\u00A0'" severity="secondary" title="No label yet" />
+            <span v-else class="font-italic" title="This Text has no labels yet"
+              >No Text labels yet</span
+            >
           </div>
         </template>
       </Breadcrumb>
