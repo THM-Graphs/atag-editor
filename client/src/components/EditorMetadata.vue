@@ -125,10 +125,24 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
               />
               <i class="pi pi-external-link"></i>
             </RouterLink>
+            <a
+              v-else-if="node.nodeLabels.includes('Text')"
+              :href="`/texts/${node.data.uuid}`"
+              :title="`Go to Text ${node.data.uuid}`"
+              target="_blank"
+            >
+              <Tag
+                :value="node.nodeLabels.join(' | ')"
+                :severity="getNodeLabelTagColor(node.nodeLabels)"
+                class="mr-2"
+              />
+              <i class="pi pi-external-link"></i>
+            </a>
             <span v-else>
               <Tag
                 :value="node.nodeLabels.join(' | ')"
                 :severity="getNodeLabelTagColor(node.nodeLabels)"
+                :title="`${node.data.type}, '${node.data.text}'`"
                 class="mr-2"
               />
             </span>
