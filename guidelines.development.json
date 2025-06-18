@@ -49,14 +49,16 @@
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasEntities": true
+              "hasEntities": true,
+              "hasAdditionalTexts": true
             },
             {
               "type": "receivedPerson",
               "category": "none",
               "defaultSelected": true,
               "isZeroPoint": false,
-              "hasEntities": true
+              "hasEntities": true,
+              "hasAdditionalTexts": true
             }
           ],
           "properties": [
@@ -65,22 +67,6 @@
               "type": "string",
               "required": true,
               "editable": false,
-              "visible": true
-            },
-            {
-              "name": "comment",
-              "type": "string",
-              "template": "textarea",
-              "required": false,
-              "editable": true,
-              "visible": true
-            },
-            {
-              "name": "commentInternal",
-              "type": "string",
-              "template": "textarea",
-              "required": false,
-              "editable": true,
               "visible": true
             }
           ],
@@ -121,6 +107,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -137,6 +124,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "hasAdditionalTexts": true,
         "shortcut": ["Ctrl", "Shift", "E"]
       },
       {
@@ -144,6 +132,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -160,6 +149,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -176,6 +166,7 @@
         "category": "edition",
         "defaultSelected": true,
         "isZeroPoint": false,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -191,37 +182,43 @@
         "type": "deleted",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": true
+        "isZeroPoint": true,
+        "hasAdditionalTexts": true
       },
       {
         "type": "unclear",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "repeated",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "gap",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "additionLaterHand",
         "category": "edition",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "head",
         "category": "layout",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "line",
@@ -229,6 +226,7 @@
         "defaultSelected": false,
         "isZeroPoint": false,
         "shortcut": ["Ctrl", "Shift", "L"],
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "page",
@@ -278,7 +276,8 @@
         "type": "transposition",
         "category": "layout",
         "defaultSelected": true,
-        "isZeroPoint": false
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
       },
       {
         "type": "commentary",
@@ -293,6 +292,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": false,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -310,6 +310,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "hasAdditionalTexts": true,
         "properties": [
           {
             "name": "subType",
@@ -343,22 +344,6 @@
         {
           "name": "originalText",
           "type": "string",
-          "required": false,
-          "editable": true,
-          "visible": true
-        },
-        {
-          "name": "comment",
-          "type": "string",
-          "template": "textarea",
-          "required": false,
-          "editable": true,
-          "visible": true
-        },
-        {
-          "name": "commentInternal",
-          "type": "string",
-          "template": "textarea",
           "required": false,
           "editable": true,
           "visible": true
