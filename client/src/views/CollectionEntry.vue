@@ -678,16 +678,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 :mode="mode"
               />
             </Fieldset>
-            <AnnotationFormEntitiesSection
-              v-if="
-                getCollectionAnnotationConfig(
-                  collectionAccessObject.collection.nodeLabels,
-                  annotation.properties.type,
-                ).hasEntities === true
-              "
-              :mode="mode"
-              v-model="annotation.entities"
-            />
             <AnnotationFormAdditionalTextSection
               v-if="
                 getCollectionAnnotationConfig(
@@ -702,6 +692,16 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   a => a.properties.uuid === annotation.properties.uuid,
                 )?.additionalTexts ?? []
               "
+            />
+            <AnnotationFormEntitiesSection
+              v-if="
+                getCollectionAnnotationConfig(
+                  collectionAccessObject.collection.nodeLabels,
+                  annotation.properties.type,
+                ).hasEntities === true
+              "
+              :mode="mode"
+              v-model="annotation.entities"
             />
             <div class="action-buttons flex justify-content-center">
               <Button

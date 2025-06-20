@@ -133,15 +133,15 @@ function handleShrink(): void {
         mode="edit"
       />
     </Fieldset>
-    <AnnotationFormEntitiesSection
-      v-if="config.hasEntities === true && !panelIsCollapsed"
-      v-model="annotation.data.entities"
-      mode="edit"
-    />
     <AnnotationFormAdditionalTextSection
       v-if="config.hasAdditionalTexts === true && !panelIsCollapsed"
       v-model="annotation.data.additionalTexts"
       :initial-additional-texts="annotation.initialData.additionalTexts"
+      mode="edit"
+    />
+    <AnnotationFormEntitiesSection
+      v-if="config.hasEntities === true && !panelIsCollapsed"
+      v-model="annotation.data.entities"
       mode="edit"
     />
 
