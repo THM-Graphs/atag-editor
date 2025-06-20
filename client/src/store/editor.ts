@@ -130,6 +130,9 @@ export function useEditorStore() {
 
     setNewRangeAnchorUuid(newCaretPosition);
 
+    // TODO: Bug on annotation deletion because snapshot stores the annotation with status "deleted". On undo,
+    // the annotation is restored but still "deleted" and treated like this. Solution: Make snapshot BEFORE operation 
+    // and add it here, since it can only be allowed on a successfull operation.
     pushHistoryEntry();
   }
 
@@ -212,6 +215,7 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function undo(): void {
+    return;
     if (history.value.length <= 1) {
       return;
     }
@@ -269,6 +273,7 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function redo(): void {
+    return;
     if (redoStack.value.length === 0) {
       return;
     }
