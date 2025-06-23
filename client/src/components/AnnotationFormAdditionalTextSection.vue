@@ -108,8 +108,8 @@ function addAdditionalText(): void {
       data: {
         ...newCollectionProperties,
         uuid: crypto.randomUUID(),
-        // TODO: Fix this.....
-        label: `${collectionLabels.join(' | ')} for annotation`,
+        // Create empty label property (is required, but should not contain any default data)
+        label: '',
       } as ICollection,
     },
     text: {
