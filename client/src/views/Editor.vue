@@ -111,6 +111,7 @@ const {
   resetAnnotations,
   updateAnnotationsBeforeSave,
   updateAnnotationStatuses,
+  updateTruncationStatus,
 } = useAnnotationStore();
 const { initializeGuidelines } = useGuidelinesStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
@@ -209,6 +210,9 @@ async function handleCancelChanges(): Promise<void> {
   text.value = cloneDeep(initialText.value);
   snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
   snippetAnnotations.value = cloneDeep(initialSnippetAnnotations.value);
+
+  // TODO: Combine this with extractSnippetAnnotations.
+  updateTruncationStatus();
 
   totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
   totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
