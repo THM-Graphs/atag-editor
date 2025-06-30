@@ -63,7 +63,7 @@ function toggleDropdown(): void {
             />
           </div>
         </div>
-        <div class="container flex gap-2">
+        <div class="container flex flex-wrap gap-2">
           <div v-for="(annotationTypes, category) in groupedAndSortedAnnotationTypes" class="group">
             <div class="name font-semibold">
               {{ capitalize(category) }}
