@@ -55,7 +55,100 @@ To be updated
 
 If you have a deployed version of the editor, you can customize it by providing you own configuration JSON file and your own CSS stylesheet. Both files must be available via URL and are referenced with environment variables in your `.env` file (`GUIDELINES_URL` and `STYLESHEET_URL`).
 
+### 1. Guidelines
+
 The JSON file provided by `GUIDELINES_URL` is a representation of your project-specific data model. It defines which labels and properties can be used inside the neo4j database, available annotation types etc. To start, you can follow one of the guidelines files in this repository like `guidelines.development.json`.
+
+Otherwise, follow this preliminary explanation for the guidelines structure:
+
+The `guidelines.json` file defines the annotation schema for your text analysis project. It consists of three main sections that can be customized:
+
+#### Configuration Structure
+
+| Section       | Purpose                        | Customizable Elements                                                                       |
+| ------------- | ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `texts`       | Text structure/behaviour       | Additional labels for `Text` nodes                                                          |
+| `collections` | Collection structure/behaviour | Data for Collections (labels for `Collection` nodes, properties, possible annotations etc.) |
+| `annotations` | Annotation structure/behaviour | Annotation types, categories, and categories/labels for linked `Entity` nodes               |
+
+#### Collection Types
+
+Collections define document categories with specific properties:
+
+```json
+{
+  "additionalLabel": "Letter",
+  "level": "primary",
+  "properties": [
+    {
+      "name": "status",
+      "type": "string",
+      "required": false,
+      "editable": true,
+      "visible": true
+    }
+  ]
+}
+```
+
+| Property          | Options                    | Description            |
+| ----------------- | -------------------------- | ---------------------- |
+| `additionalLabel` | Custom string              | Additional node label  |
+| `level`           | `"primary"`, `"secondary"` | Hierarchy level        |
+| `properties`      | Array of property objects  | Custom metadata fields |
+
+**Important**: At least one Collection type must be set to primary. Collections with this additional node labels will be shown in the overview of the editor. All other Collection types **MUST** have "secondary"
+
+#### Annotation Types
+
+Annotations define how text can be marked up.
+
+##### Adding Custom Annotation Types
+
+```json
+{
+  "type": "customType",
+  "category": "project", // Groups annotation type in a category on the page. Is not stored in the database anywhere
+  "defaultSelected": true, // if annotation type is enabled per defauled in the filter panel
+  "isZeroPoint": false, // usually "false". This means, an annotation can have exactly two annotated characters and covers a phenomen between these two (e.g. deleted text)
+  "hasAdditionalTexts": true, //deprecated, set always to true for now, but it will be available for each annotation type anyway
+  "properties": [
+    {
+      "name": "subType",
+      "type": "string",
+      "options": ["option1", "option2"],
+      "required": true,
+      "editable": true,
+      "visible": true
+    }
+  ]
+}
+```
+
+#### Entity Categories
+
+```json
+"entities": [
+  {"category": "places", // Category, is used to group linked entities in the annotation form
+   "nodeLabel": "Place" // additional node label of the entity. Mainly used to fetch autocomplete data when typing in the input field
+   },
+]
+```
+
+#### Property Configuration
+
+Each property supports these options:
+
+| Option     | Type                                                                           | Description                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`     | string                                                                         | Property identifier                                                                                                                  |
+| `type`     | `array`, `boolean`, `date`, `date-time`, `integer`, `number`, `string`, `time` | Data type. Different types get different input fields (dropdown calendars, number modifiers etc.)                                    |
+| `required` | boolean                                                                        | Whether field is mandatory                                                                                                           |
+| `editable` | boolean                                                                        | Can users modify this field                                                                                                          |
+| `visible`  | boolean                                                                        | Is ivsible in interface. For example, the annotation type should NOT be editable - when an annotation is created, it is fix forever. |
+| `options`  | array                                                                          | Predefined values for dropdowns                                                                                                      |
+
+### 2. Styles
 
 With the CSS stylesheet provided by `STYLESHEET_URL` you can style the appearance of the annotations inside the text as well as icons for each annotation type. You can refer to the [`annotations.css`](https://github.com/THM-Graphs/atag-editor/blob/main/client/src/styles/annotations.css) stylesheet in this repository to see how the styling is done. The class name of the span element must match the annotation type exactly.
 
