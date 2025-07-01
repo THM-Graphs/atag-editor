@@ -130,9 +130,9 @@ export function useEditorStore() {
 
     setNewRangeAnchorUuid(newCaretPosition);
 
-    // TODO: Bug on annotation deletion because snapshot stores the annotation with status "deleted". On undo,
-    // the annotation is restored but still "deleted" and treated like this. Solution: Make snapshot BEFORE operation 
-    // and add it here, since it can only be allowed on a successfull operation.
+    // History entry is created afterwards to enable redo directly after an undo was executed. Alternatively,
+    // on the first undo the current state would have to saved in a record and pushed to redo stack.
+    // This is just a design choice but good keep in mind
     pushHistoryEntry();
   }
 
@@ -215,7 +215,6 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function undo(): void {
-    return;
     if (history.value.length <= 1) {
       return;
     }
@@ -233,7 +232,7 @@ export function useEditorStore() {
     }
 
     snippetCharacters.value = cloneDeep(newLastRecord.data.characters);
-    snippetAnnotations.value = cloneDeep(snippetAnnotations.value);
+    snippetAnnotations.value = cloneDeep(newLastRecord.data.annotations);
     setBeforeStartCharacter(cloneDeep(newLastRecord.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(newLastRecord.data.afterEndCharacter));
 
@@ -273,7 +272,6 @@ export function useEditorStore() {
    * @return {void} No return value.
    */
   function redo(): void {
-    return;
     if (redoStack.value.length === 0) {
       return;
     }
@@ -311,7 +309,7 @@ export function useEditorStore() {
     // }
 
     snippetCharacters.value = cloneDeep(record.data.characters);
-    snippetAnnotations.value = cloneDeep(snippetAnnotations.value);
+    snippetAnnotations.value = cloneDeep(record.data.annotations);
     setBeforeStartCharacter(cloneDeep(record.data.beforeStartCharacter));
     setAfterEndCharacter(cloneDeep(record.data.afterEndCharacter));
 
