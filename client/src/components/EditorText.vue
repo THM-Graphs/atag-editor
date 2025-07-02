@@ -22,6 +22,11 @@ const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }
 
 onMounted(() => {
   placeCaret();
+
+  document.addEventListener('forceCaretPlacement', () => {
+    placeCaret();
+    console.log('Forced caret placement executed');
+  });
 });
 
 onUpdated(() => {

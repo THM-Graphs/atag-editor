@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, ref, useTemplateRef } from 'vue';
+import { ComponentPublicInstance, nextTick, onUpdated, Ref, ref, useTemplateRef } from 'vue';
 import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
 import { useTextStore } from '../store/text';
@@ -29,23 +29,19 @@ interface TextSearchObject {
   fetchedItems: SearchResult[];
   searchStr: string | null;
   mode: 'edit' | 'view';
-  elm: ReturnType<typeof useTemplateRef>;
+  elm: ReturnType<typeof useTemplateRef<ComponentPublicInstance>>;
 }
 
 const { text } = useTextStore();
-const { jumpToSnippetByIndex } = useCharactersStore();
-const { hasUnsavedChanges } = useEditorStore();
+const { jumpToSnippetByIndex, snippetCharacters } = useCharactersStore();
+const { hasUnsavedChanges, setNewRangeAnchorUuid } = useEditorStore();
 
 const textSearchObject = ref<TextSearchObject>({
   fetchedItems: [],
   searchStr: '',
   mode: 'view',
-  elm: useTemplateRef('searchbar'),
+  elm: useTemplateRef<ComponentPublicInstance>('searchbar'),
 });
-
-function jumpToText(item: SearchResult): void {
-  // paginate characters to this startIndex/endIndex
-}
 
 async function searchTextMatches(searchString: string): Promise<void> {
   const textToSearch = text.value.data.text;
@@ -97,7 +93,7 @@ async function searchTextMatches(searchString: string): Promise<void> {
   textSearchObject.value.fetchedItems = withHtml;
 }
 
-function handleEntityItemSelect(item: SearchResult): void {
+function handleResultItemSelect(item: SearchResult): void {
   if (hasUnsavedChanges()) {
     window.alert(
       'Save your changes before jumping to a new snippet. Be aware that if you have unsaved changes and still decide to jump to the snippet, the result might not be correct',
@@ -105,10 +101,18 @@ function handleEntityItemSelect(item: SearchResult): void {
     return;
   }
 
-  //   addEntityItem(item, category);
-
   jumpToSnippetByIndex(item.startIndex);
-  //   changeEntitiesSelectionMode(category, 'view');
+
+  textSearchObject.value.searchStr = '';
+
+  setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
+
+  // Necessary since caret placement in EditorText.vue's onUpdated hook is overriden afterwards
+  // by PrimeVue's focus and selection management. The emitted event is registered by an event listener
+  // in EditorText.vue. Bit hacky, but it works. 100ms is currently enough, but might be adapted later...
+  setTimeout(() => {
+    document.dispatchEvent(new CustomEvent('forceCaretPlacement'));
+  }, 100);
 }
 </script>
 
@@ -121,7 +125,7 @@ function handleEntityItemSelect(item: SearchResult): void {
     variant="filled"
     ref="searchbar"
     @complete="searchTextMatches($event.query)"
-    @option-select="handleEntityItemSelect($event.value)"
+    @option-select="handleResultItemSelect($event.value)"
   >
     <template #header v-if="textSearchObject.fetchedItems.length > 0">
       <div class="font-medium px-3 py-2">{{ textSearchObject.fetchedItems.length }} Results</div>

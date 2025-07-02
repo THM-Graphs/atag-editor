@@ -200,7 +200,7 @@ export function useCharactersStore() {
     if (afterEndIndex.value + PAGINATION_SIZE >= totalCharacters.value.length) {
       afterEndIndex.value = null;
     } else {
-      afterEndIndex.value += PAGINATION_SIZE;
+      afterEndIndex.value = beforeStartIndex.value + PAGINATION_SIZE + 1;
     }
 
     resetInitialBoundaryCharacters();
