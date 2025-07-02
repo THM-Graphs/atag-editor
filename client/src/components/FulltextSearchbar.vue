@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, nextTick, onUpdated, Ref, ref, useTemplateRef } from 'vue';
-import EditorHistoryButton from './EditorHistoryButton.vue';
-import EditorImportButton from './EditorImportButton.vue';
+import { ComponentPublicInstance, ref, useTemplateRef } from 'vue';
 import { useTextStore } from '../store/text';
-import Breadcrumb from 'primevue/breadcrumb';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
 import { useCharactersStore } from '../store/characters';
-import IText from '../models/IText';
 import { useEditorStore } from '../store/editor';
 
 /**
@@ -46,6 +40,7 @@ const textSearchObject = ref<TextSearchObject>({
 });
 
 async function searchTextMatches(searchString: string): Promise<void> {
+  // TODO: Not good, put character chains together instead
   const textToSearch: string = text.value.data.text;
 
   const searchResults: SearchResult[] = [];
