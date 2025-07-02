@@ -44,7 +44,7 @@ const textSearchObject = ref<TextSearchObject>({
 });
 
 async function searchTextMatches(searchString: string): Promise<void> {
-  const textToSearch = text.value.data.text;
+  const textToSearch: string = text.value.data.text;
 
   // Return early if search string is empty
   //   if (!searchString.trim()) {
@@ -57,30 +57,22 @@ async function searchTextMatches(searchString: string): Promise<void> {
   try {
     // Escape special regex characters in the search string to treat it as literal text
     const escapedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Create regex object with global and case-insensitive flags
     const regex: RegExp = new RegExp(escapedSearchString, 'gi');
 
-    let match;
-    let index = 1;
+    const stringMatches = textToSearch.matchAll(regex);
 
-    // Find all matches
-    while ((match = regex.exec(textToSearch)) !== null) {
+    stringMatches.forEach(match => {
       matches.push({
-        index: index++,
+        index: match.index,
         match: match[0],
         startIndex: match.index,
         endIndex: match.index + match[0].length - 1,
       } as SearchResult);
-
-      // Prevent infinite loop if regex doesn't advance
-      if (match.index === regex.lastIndex) {
-        regex.lastIndex++;
-      }
-    }
+    });
   } catch (error) {
     console.error('Error during regex search:', error);
     textSearchObject.value.fetchedItems = [];
+
     return;
   }
 
