@@ -179,6 +179,35 @@ export function useCharactersStore() {
   }
 
   /**
+   * Jump to a specific index in the totalCharacters array and update the snippet accordingly. Called when result
+   * of fulltext search is clicked.
+   *
+   * @param {number} newStartIndex - The index to jump to.
+   * @return {void} This function does not return any value.
+   */
+  function jumpToSnippetByIndex(newStartIndex: number): void {
+    // Return if out of scope
+    if (newStartIndex >= totalCharacters.value.length || newStartIndex < 0) {
+      return;
+    }
+
+    if (newStartIndex === 0) {
+      beforeStartIndex.value = null;
+    } else {
+      beforeStartIndex.value = newStartIndex - 1;
+    }
+
+    if (afterEndIndex.value + PAGINATION_SIZE >= totalCharacters.value.length) {
+      afterEndIndex.value = null;
+    } else {
+      afterEndIndex.value += PAGINATION_SIZE;
+    }
+
+    resetInitialBoundaryCharacters();
+    sliceCharactersSnippet();
+  }
+
+  /**
    * Paginates character array to the next characters. The mode parameter determines whether the currently displayed characters
    * should stay rendered or replaced by the next characters.
    *
@@ -914,6 +943,7 @@ export function useCharactersStore() {
     initializeCharacters,
     insertCharactersBetweenUuids,
     insertSnippetIntoChain,
+    jumpToSnippetByIndex,
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,
