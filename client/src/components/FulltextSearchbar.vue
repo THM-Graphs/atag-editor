@@ -35,7 +35,7 @@ interface TextSearchObject {
 const PREVIEW_CHARACTER_SIZE: number = 25;
 
 const { text } = useTextStore();
-const { jumpToSnippetByIndex, snippetCharacters } = useCharactersStore();
+const { jumpToSnippetByIndex, totalCharacters } = useCharactersStore();
 const { hasUnsavedChanges, setNewRangeAnchorUuid } = useEditorStore();
 
 const textSearchObject = ref<TextSearchObject>({
@@ -120,7 +120,9 @@ function handleResultItemSelect(item: SearchResult): void {
 
   textSearchObject.value.searchStr = '';
 
-  setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1]?.data.uuid);
+  // TODO: This works because pagination to a new snippet can only happen when there are now unsaved changes,
+  // meaning totalCharacters and snippetCharacters have no differenct. But this can change later
+  setNewRangeAnchorUuid(totalCharacters.value[item.endIndex].data.uuid);
 
   // Necessary since caret placement in EditorText.vue's onUpdated hook is overriden afterwards
   // by PrimeVue's focus and selection management. The emitted event is registered by an event listener
