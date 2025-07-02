@@ -12,7 +12,7 @@ import IText from '../models/IText';
 import { useEditorStore } from '../store/editor';
 
 /**
- *  Enriches Search with an html key that contains the highlighted parts of the node label
+ *  Enriches Search with an html key that contains the formatted search result
  */
 type SearchResult = {
   index: number;
@@ -23,7 +23,7 @@ type SearchResult = {
 };
 
 /**
- * Interface for relevant state information about each entities category
+ * Interface for relevant state information about the text search
  */
 interface TextSearchObject {
   fetchedItems: SearchResult[];
@@ -31,6 +31,8 @@ interface TextSearchObject {
   mode: 'edit' | 'view';
   elm: ReturnType<typeof useTemplateRef<ComponentPublicInstance>>;
 }
+
+const PREVIEW_CHARACTER_SIZE: number = 25;
 
 const { text } = useTextStore();
 const { jumpToSnippetByIndex, snippetCharacters } = useCharactersStore();
@@ -46,28 +48,24 @@ const textSearchObject = ref<TextSearchObject>({
 async function searchTextMatches(searchString: string): Promise<void> {
   const textToSearch: string = text.value.data.text;
 
-  // Return early if search string is empty
-  //   if (!searchString.trim()) {
-  //     textSearchObject.value.fetchedItems = [];
-  //     return;
-  //   }
-
-  const matches: SearchResult[] = [];
+  const searchResults: SearchResult[] = [];
 
   try {
     // Escape special regex characters in the search string to treat it as literal text
     const escapedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex: RegExp = new RegExp(escapedSearchString, 'gi');
 
-    const stringMatches = textToSearch.matchAll(regex);
+    const matches = textToSearch.matchAll(regex);
 
-    stringMatches.forEach(match => {
-      matches.push({
+    matches.forEach(match => {
+      searchResults.push({
         index: match.index,
         match: match[0],
         startIndex: match.index,
         endIndex: match.index + match[0].length - 1,
-      } as SearchResult);
+        // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
+        html: renderHtml(match),
+      });
     });
   } catch (error) {
     console.error('Error during regex search:', error);
@@ -76,13 +74,38 @@ async function searchTextMatches(searchString: string): Promise<void> {
     return;
   }
 
-  // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = matches.map((match: SearchResult) => ({
-    ...match,
-    html: `<span>${match.match}, ${match.startIndex}-${match.endIndex}</span>`,
-  }));
+  textSearchObject.value.fetchedItems = searchResults;
+}
 
-  textSearchObject.value.fetchedItems = withHtml;
+/**
+ * Generates an HTML string with the matched text highlighted and surrounding context preview.
+ *
+ * The function takes a RegExp match result and constructs an HTML snippet
+ * that highlights the matched portion of the text, showing a preview of
+ * characters before and after the match.
+ *
+ * Called for each search result of a fulltext search operation.
+ *
+ * @param {RegExpExecArray} match - The regex match result containing details of the match.
+ * @returns {string} HTML string with the matched text highlighted and context preview.
+ */
+
+function renderHtml(match: RegExpExecArray): string {
+  const textToSearch: string = match.input;
+
+  const startIndex: number = match.index;
+  const endIndex: number = startIndex + match[0].length - 1;
+
+  const prevText: string = textToSearch.slice(startIndex - PREVIEW_CHARACTER_SIZE, startIndex);
+  const nextText: string = textToSearch.slice(endIndex + 1, endIndex + 1 + PREVIEW_CHARACTER_SIZE);
+
+  const hasMoreBefore: boolean = startIndex - PREVIEW_CHARACTER_SIZE > 0;
+  const hasMoreAfter: boolean = endIndex + 1 + PREVIEW_CHARACTER_SIZE < textToSearch.length;
+
+  const ellipsesBefore: string = hasMoreBefore ? '...' : '';
+  const ellipsesAfter: string = hasMoreAfter ? '...' : '';
+
+  return `<small>${ellipsesBefore}${prevText}<b>${match[0]}</b>${nextText}${ellipsesAfter}</small>`;
 }
 
 function handleResultItemSelect(item: SearchResult): void {
@@ -123,7 +146,7 @@ function handleResultItemSelect(item: SearchResult): void {
       <div class="font-medium px-3 py-2">{{ textSearchObject.fetchedItems.length }} Results</div>
     </template>
     <template #option="slotProps">
-      <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
+      <span v-html="slotProps.option.html" :title="slotProps.option.match"></span>
     </template>
   </AutoComplete>
 </template>
