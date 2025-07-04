@@ -4,6 +4,8 @@ import { useTextStore } from '../store/text';
 import AutoComplete from 'primevue/autocomplete';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
+import InputGroup from 'primevue/inputgroup';
+import Button from 'primevue/button';
 
 /**
  *  Enriches Search with an html key that contains the formatted search result
@@ -31,6 +33,8 @@ const PREVIEW_CHARACTER_SIZE: number = 25;
 const { text } = useTextStore();
 const { jumpToSnippetByIndex, totalCharacters } = useCharactersStore();
 const { hasUnsavedChanges, setNewRangeAnchorUuid } = useEditorStore();
+
+const isSearchActive = ref<boolean>(false);
 
 const textSearchObject = ref<TextSearchObject>({
   fetchedItems: [],
@@ -70,6 +74,10 @@ async function searchTextMatches(searchString: string): Promise<void> {
   }
 
   textSearchObject.value.fetchedItems = searchResults;
+}
+
+function setIsSearchActive(mode: boolean): void {
+  isSearchActive.value = mode;
 }
 
 /**
@@ -114,6 +122,7 @@ function handleResultItemSelect(item: SearchResult): void {
   jumpToSnippetByIndex(item.startIndex);
 
   textSearchObject.value.searchStr = '';
+  setIsSearchActive(false);
 
   // TODO: This works because pagination to a new snippet can only happen when there are now unsaved changes,
   // meaning totalCharacters and snippetCharacters have no differenct. But this can change later
@@ -129,23 +138,45 @@ function handleResultItemSelect(item: SearchResult): void {
 </script>
 
 <template>
-  <AutoComplete
-    v-model="textSearchObject.searchStr"
-    :placeholder="`Search for text`"
-    :suggestions="textSearchObject.fetchedItems"
-    class="mt-2 h-2rem"
-    variant="filled"
-    ref="searchbar"
-    @complete="searchTextMatches($event.query)"
-    @option-select="handleResultItemSelect($event.value)"
-  >
-    <template #header v-if="textSearchObject.fetchedItems.length > 0">
-      <div class="font-medium px-3 py-2">{{ textSearchObject.fetchedItems.length }} Results</div>
-    </template>
-    <template #option="slotProps">
-      <span v-html="slotProps.option.html" :title="slotProps.option.match"></span>
-    </template>
-  </AutoComplete>
+  <InputGroup class="mr-1" :pt="{ root: { style: { width: 'auto' } } }">
+    <AutoComplete
+      v-if="isSearchActive"
+      :class="isSearchActive ? 'active' : 'inactive'"
+      v-model="textSearchObject.searchStr"
+      :placeholder="`Search for text`"
+      :suggestions="textSearchObject.fetchedItems"
+      class="searchbar h-2rem"
+      variant="filled"
+      ref="searchbar"
+      title="Enter search term"
+      @complete="searchTextMatches($event.query)"
+      @option-select="handleResultItemSelect($event.value)"
+      @blur="isSearchActive = textSearchObject.searchStr === '' ? false : true"
+    >
+      <template #header v-if="textSearchObject.fetchedItems.length > 0">
+        <div class="font-medium px-3 py-2">{{ textSearchObject.fetchedItems.length }} Results</div>
+      </template>
+      <template #option="slotProps">
+        <span v-html="slotProps.option.html" :title="slotProps.option.match"></span>
+      </template>
+    </AutoComplete>
+    <Button
+      v-if="!isSearchActive"
+      severity="secondary"
+      size="small"
+      icon="pi pi-search"
+      @click="isSearchActive = true"
+      title="Open search bar"
+    />
+    <Button
+      v-if="isSearchActive"
+      severity="secondary"
+      size="small"
+      icon="pi pi-times"
+      title="Reset search"
+      @click="isSearchActive = false"
+    />
+  </InputGroup>
 </template>
 
 <style scoped></style>

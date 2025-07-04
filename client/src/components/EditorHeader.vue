@@ -26,7 +26,7 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
           title="Go to overview"
         ></Button>
       </RouterLink>
-      <div>
+      <div class="flex">
         <FulltextSearchbar />
         <EditorHistoryButton action="undo" />
         <EditorHistoryButton action="redo" />
