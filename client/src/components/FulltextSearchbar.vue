@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, ref, useTemplateRef } from 'vue';
-import { useTextStore } from '../store/text';
+import { ComponentPublicInstance, nextTick, ref, useTemplateRef } from 'vue';
 import AutoComplete from 'primevue/autocomplete';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
@@ -30,8 +29,8 @@ interface TextSearchObject {
 
 const PREVIEW_CHARACTER_SIZE: number = 25;
 
-const { text } = useTextStore();
-const { jumpToSnippetByIndex, totalCharacters } = useCharactersStore();
+const { createFullTextFromCharacters, jumpToSnippetByIndex, totalCharacters } =
+  useCharactersStore();
 const { hasUnsavedChanges, setNewRangeAnchorUuid } = useEditorStore();
 
 const isSearchActive = ref<boolean>(false);
@@ -43,15 +42,20 @@ const textSearchObject = ref<TextSearchObject>({
   elm: useTemplateRef<ComponentPublicInstance>('searchbar'),
 });
 
-async function searchTextMatches(searchString: string): Promise<void> {
-  // TODO: Not good, put character chains together instead
-  const textToSearch: string = text.value.data.text;
+function resetSearch(): void {
+  textSearchObject.value.searchStr = '';
+  textSearchObject.value.fetchedItems = [];
 
+  setIsSearchActive(false);
+}
+
+async function searchTextMatches(searchString: string): Promise<void> {
+  const textToSearch: string = createFullTextFromCharacters();
   const searchResults: SearchResult[] = [];
 
   try {
     // Escape special regex characters in the search string to treat it as literal text
-    const escapedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedSearchString: string = searchString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex: RegExp = new RegExp(escapedSearchString, 'gi');
 
     const matches = textToSearch.matchAll(regex);
@@ -113,19 +117,27 @@ function renderHtml(match: RegExpExecArray): string {
 
 function handleResultItemSelect(item: SearchResult): void {
   if (hasUnsavedChanges()) {
-    window.alert(
+    const answer: boolean = window.confirm(
       'Save your changes before jumping to a new snippet. Be aware that if you have unsaved changes and still decide to jump to the snippet, the result might not be correct',
     );
-    return;
+
+    if (!answer) {
+      // Next tick necessary to prevent race conditions between state updates of this component and
+      // PrimeVue's component
+      nextTick(() => {
+        textSearchObject.value.searchStr = item.match;
+      });
+      return;
+    }
   }
 
   jumpToSnippetByIndex(item.startIndex);
 
-  textSearchObject.value.searchStr = '';
-  setIsSearchActive(false);
+  resetSearch();
 
-  // TODO: This works because pagination to a new snippet can only happen when there are now unsaved changes,
-  // meaning totalCharacters and snippetCharacters have no differenct. But this can change later
+  // TODO: This works when the user decides to jump to a new snippet despite the confirmation windows
+  // warns him not to (since he/she has unsaved changes). Maybe find a more elegant way, but currently
+  // this is the best solution
   setNewRangeAnchorUuid(totalCharacters.value[item.endIndex].data.uuid);
 
   // Necessary since caret placement in EditorText.vue's onUpdated hook is overriden afterwards
@@ -174,7 +186,7 @@ function handleResultItemSelect(item: SearchResult): void {
       size="small"
       icon="pi pi-times"
       title="Reset search"
-      @click="isSearchActive = false"
+      @click="resetSearch"
     />
   </InputGroup>
 </template>
