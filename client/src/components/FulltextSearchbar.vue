@@ -154,7 +154,7 @@ function handleResultItemSelect(item: SearchResult): void {
   // by PrimeVue's focus and selection management. The emitted event is registered by an event listener
   // in EditorText.vue. Bit hacky, but it works. 100ms is currently enough, but might be adapted later...
   setTimeout(() => {
-    document.dispatchEvent(new CustomEvent('forceCaretPlacement'));
+    window.dispatchEvent(new CustomEvent('forceCaretPlacement'));
   }, 100);
 }
 </script>

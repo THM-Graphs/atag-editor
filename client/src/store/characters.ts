@@ -214,7 +214,7 @@ export function useCharactersStore() {
       beforeStartIndex.value = newStartIndex - 1;
     }
 
-    if (afterEndIndex.value + PAGINATION_SIZE >= totalCharacters.value.length) {
+    if ((beforeStartIndex.value ?? 0) + PAGINATION_SIZE >= totalCharacters.value.length) {
       afterEndIndex.value = null;
     } else {
       afterEndIndex.value = beforeStartIndex.value + PAGINATION_SIZE + 1;

@@ -7,7 +7,6 @@ import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
-import { useEditorStore } from '../store/editor';
 
 const { text, correspondingCollection } = useTextStore();
 
