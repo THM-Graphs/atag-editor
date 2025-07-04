@@ -82,6 +82,16 @@ async function searchTextMatches(searchString: string): Promise<void> {
 
 function setIsSearchActive(mode: boolean): void {
   isSearchActive.value = mode;
+
+  if (mode === false) {
+    return;
+  }
+
+  nextTick(() => {
+    const inputElm: HTMLInputElement = textSearchObject.value.elm?.$el?.querySelector('input');
+
+    inputElm?.focus();
+  });
 }
 
 /**
@@ -177,7 +187,7 @@ function handleResultItemSelect(item: SearchResult): void {
       severity="secondary"
       size="small"
       icon="pi pi-search"
-      @click="isSearchActive = true"
+      @click="setIsSearchActive(true)"
       title="Open search bar"
     />
     <Button
