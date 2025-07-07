@@ -112,6 +112,23 @@ export function useCharactersStore() {
   }
 
   /**
+   * Constructs the full text of the current snippet from the characters before the current snippet,
+   * the characters inside the current snippet, and the characters after the current snippet. Is currently only used for fulltext search
+   * inside a single text.
+   *
+   * @return {string} The constructed full text.
+   */
+  function createFullTextFromCharacters(): string {
+    const { charsBefore, charsAfter } = getCharactersBeforeAndAfterSnippet();
+
+    const constructedFullText: string = [...charsBefore, ...snippetCharacters.value, ...charsAfter]
+      .map(char => char.data.text)
+      .join('');
+
+    return constructedFullText;
+  }
+
+  /**
    * Calculates the slice indices for a text operation happens between two characters with given indices.
    *
    * These slice indices are calculated to slice the totalCharacters array into two parts and append the snippetCharacters array in between.
@@ -175,6 +192,35 @@ export function useCharactersStore() {
 
     resetInitialBoundaryCharacters();
 
+    sliceCharactersSnippet();
+  }
+
+  /**
+   * Jump to a specific index in the totalCharacters array and update the snippet accordingly. Called when result
+   * of fulltext search is clicked.
+   *
+   * @param {number} newStartIndex - The index to jump to.
+   * @return {void} This function does not return any value.
+   */
+  function jumpToSnippetByIndex(newStartIndex: number): void {
+    // Return if out of scope
+    if (newStartIndex >= totalCharacters.value.length || newStartIndex < 0) {
+      return;
+    }
+
+    if (newStartIndex === 0) {
+      beforeStartIndex.value = null;
+    } else {
+      beforeStartIndex.value = newStartIndex - 1;
+    }
+
+    if ((beforeStartIndex.value ?? 0) + PAGINATION_SIZE >= totalCharacters.value.length) {
+      afterEndIndex.value = null;
+    } else {
+      afterEndIndex.value = beforeStartIndex.value + PAGINATION_SIZE + 1;
+    }
+
+    resetInitialBoundaryCharacters();
     sliceCharactersSnippet();
   }
 
@@ -440,6 +486,34 @@ export function useCharactersStore() {
     const nextChar = { char, annotations, anchorEndUuids };
 
     return nextChar;
+  }
+
+  /**
+   * Returns two arrays of characters: the characters before the current snippet, and the characters after the current snippet.
+   *
+   * This function is used when inserting or deleting characters at the start or end of the snippet or when creating a
+   * temporary fulltext for search.
+   *
+   * **Important**: The returned arrays are slices of the `totalCharacters` array and therefore only *references* to the
+   * character objects, *not* the deep cloned objects themselves.
+   *
+   * @return {Object} An object with two properties: `charsBefore` and `charsAfter`, each being an array of Character objects.
+   */
+  function getCharactersBeforeAndAfterSnippet(): {
+    charsBefore: Character[];
+    charsAfter: Character[];
+  } {
+    // Slice totalCharacters until beforeStartIndex.value (must be inclusive)
+    const sliceUntil: number = beforeStartIndex.value !== null ? beforeStartIndex.value + 1 : 0;
+
+    // Slice totalCharacters from afterEndIndex.value (must be inclusive)
+    let sliceFrom: number =
+      afterEndIndex.value !== null ? afterEndIndex.value : totalCharacters.value.length;
+
+    const charsBefore: Character[] = totalCharacters.value.slice(0, sliceUntil);
+    const charsAfter: Character[] = totalCharacters.value.slice(sliceFrom);
+
+    return { charsBefore, charsAfter };
   }
 
   /**
@@ -776,23 +850,9 @@ export function useCharactersStore() {
    * @return {void} This function does not return anything.
    */
   function insertSnippetIntoChain(): void {
-    // Slice totalCharacters until beforeStartIndex.value (must be inclusive)
-    const sliceUntil: number = beforeStartIndex.value !== null ? beforeStartIndex.value + 1 : 0;
-
-    // Slice totalCharacters from afterEndIndex.value (must be inclusive)
-    let sliceFrom: number =
-      afterEndIndex.value !== null ? afterEndIndex.value : totalCharacters.value.length;
-
-    // console.log('slice until (exclusive): ', sliceUntil);
-    // console.log('slice afterwards: ', sliceFrom);
-    const charsBefore: Character[] = totalCharacters.value.slice(0, sliceUntil);
-    const charsAfter: Character[] = totalCharacters.value.slice(sliceFrom);
-    // console.log('char count before: ', charsBefore.map(c => c.data.text).join('').length);
-    // console.log('char count after: ', charsAfter.map(c => c.data.text).join('').length);
+    const { charsBefore, charsAfter } = getCharactersBeforeAndAfterSnippet();
 
     totalCharacters.value = [...charsBefore, ...snippetCharacters.value, ...charsAfter];
-
-    // console.log('after operation: ', totalCharacters.value.length);
 
     initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
 
@@ -907,6 +967,7 @@ export function useCharactersStore() {
     deleteWordBeforeUuid,
     getAfterEndCharacter,
     getBeforeStartCharacter,
+    createFullTextFromCharacters,
     lastCharacters,
     findUuidAfterWordEnd,
     findUuidBeforeWordStart,
@@ -914,6 +975,7 @@ export function useCharactersStore() {
     initializeCharacters,
     insertCharactersBetweenUuids,
     insertSnippetIntoChain,
+    jumpToSnippetByIndex,
     nextCharacters,
     previousCharacters,
     removeAnnotationFromCharacters,

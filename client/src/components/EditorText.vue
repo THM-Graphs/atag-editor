@@ -17,6 +17,7 @@ import TextOperationError from '../utils/errors/textOperation.error';
 import { useToast } from 'primevue/usetoast';
 import { Character } from '../models/types';
 import { ToastServiceMethods } from 'primevue/toastservice';
+import { useEventListener } from '@vueuse/core';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -32,6 +33,8 @@ const { keepTextOnPagination, execCommand, placeCaret, redo, undo } = useEditorS
 const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
   useCharactersStore();
 const { selectedOptions } = useFilterStore();
+
+useEventListener(window, 'forceCaretPlacement', placeCaret);
 
 const editorRef = ref<HTMLDivElement>(null);
 

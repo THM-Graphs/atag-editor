@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
+import FulltextSearchbar from './FulltextSearchbar.vue';
 import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
@@ -24,7 +25,8 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
           title="Go to overview"
         ></Button>
       </RouterLink>
-      <div>
+      <div class="flex">
+        <FulltextSearchbar />
         <EditorHistoryButton action="undo" />
         <EditorHistoryButton action="redo" />
         <EditorImportButton />
