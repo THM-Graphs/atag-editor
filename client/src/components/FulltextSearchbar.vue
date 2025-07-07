@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ComponentPublicInstance, nextTick, ref, useTemplateRef } from 'vue';
 import AutoComplete from 'primevue/autocomplete';
+import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import InputGroup from 'primevue/inputgroup';
@@ -31,7 +32,8 @@ const PREVIEW_CHARACTER_SIZE: number = 25;
 
 const { createFullTextFromCharacters, jumpToSnippetByIndex, totalCharacters } =
   useCharactersStore();
-const { hasUnsavedChanges, setNewRangeAnchorUuid } = useEditorStore();
+const { extractSnippetAnnotations, updateTruncationStatus } = useAnnotationStore();
+const { hasUnsavedChanges, setNewRangeAnchorUuid, initializeHistory } = useEditorStore();
 
 const isSearchActive = ref<boolean>(false);
 
@@ -143,12 +145,17 @@ function handleResultItemSelect(item: SearchResult): void {
 
   jumpToSnippetByIndex(item.startIndex);
 
-  resetSearch();
+  extractSnippetAnnotations();
+  updateTruncationStatus();
 
   // TODO: This works when the user decides to jump to a new snippet despite the confirmation windows
   // warns him not to (since he/she has unsaved changes). Maybe find a more elegant way, but currently
   // this is the best solution
   setNewRangeAnchorUuid(totalCharacters.value[item.endIndex].data.uuid);
+
+  initializeHistory();
+
+  resetSearch();
 
   // Necessary since caret placement in EditorText.vue's onUpdated hook is overriden afterwards
   // by PrimeVue's focus and selection management. The emitted event is registered by an event listener

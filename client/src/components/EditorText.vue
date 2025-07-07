@@ -23,10 +23,6 @@ const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }
 
 onMounted(() => {
   placeCaret();
-
-  // window.addEventListener('forceCaretPlacement', () => {
-  //   placeCaret();
-  // });
 });
 
 onUpdated(() => {
