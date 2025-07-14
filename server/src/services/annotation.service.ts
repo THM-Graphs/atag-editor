@@ -445,7 +445,7 @@ export default class AnnotationService {
       SET aStart.startIndex = idx
       SET aEnd.endIndex = idx
 
-      RETURN annotations
+      RETURN collect(distinct annotations) as annotations
       `;
     }
 
