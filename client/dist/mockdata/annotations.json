@@ -1,23 +1,2502 @@
 [
   {
-    "text": "Medizin",
-    "startIndex": 495,
-    "commentInternal": "",
-    "subtype": "inPlace",
-    "originalText": "",
-    "uuid": "3ad7cb2e-a043-4c99-9c6c-4523ae6e751f",
-    "endIndex": 501,
-    "comment": "",
-    "type": "correction"
+    "additionalTexts": [],
+    "properties": {
+      "text": "ss",
+      "startIndex": 878,
+      "uuid": "3d34b7cc-4e88-4a93-a9df-2eaca71af441",
+      "endIndex": 879,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
   },
   {
-    "text": "Hildegard von Bingen ",
-    "startIndex": 0,
-    "commentInternal": "",
-    "originalText": "",
-    "uuid": "33a87d42-a48f-4566-9d49-fb98b6239622",
-    "endIndex": 20,
-    "comment": "",
-    "type": "head"
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 478,
+      "uuid": "223bba8d-6fa4-42d8-8974-26992bbf5a3f",
+      "endIndex": 478,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 708,
+      "uuid": "70bd4045-1eb3-47c6-8d2d-d094df153903",
+      "endIndex": 708,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "e",
+      "startIndex": 1265,
+      "uuid": "de2b3c28-fc46-4f25-86f7-6bac5cc7e1af",
+      "endIndex": 1265,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "an",
+      "startIndex": 328,
+      "uuid": "f4d9745a-2ef0-4bb1-b5d6-4d17feb8d05c",
+      "endIndex": 329,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "Hildigardi",
+      "startIndex": 33,
+      "uuid": "9479b277-95c4-4969-a68a-cb0f3a7a1e45",
+      "endIndex": 42,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " ceteris societatis suę fratribus sub defensionem be",
+      "startIndex": 150,
+      "uuid": "dc811f6c-3b00-458f-a633-a7b955049871",
+      "endIndex": 201,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 1563,
+      "uuid": "3c623ee0-c29a-46be-b392-804e86070825",
+      "endIndex": 1564,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 1298,
+      "uuid": "6e8dd379-3184-43ab-9d6c-6156a30acd72",
+      "endIndex": 1299,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "de cenobio  beati Roberti",
+      "startIndex": 60,
+      "uuid": "b9ff67be-f618-478d-ac8d-ab1024977a25",
+      "endIndex": 84,
+      "type": "place"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "dę. A. E. H. heu solo nomine sacerdotes cum ",
+      "startIndex": 106,
+      "uuid": "6fed4d8a-3dc0-4c50-9177-6b52054d9723",
+      "endIndex": 149,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " mater et conscia secretorum dei. audi nos te ob",
+      "startIndex": 1235,
+      "uuid": "53d78618-d0fb-47e8-a416-6e8911bf6968",
+      "endIndex": 1282,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "hildegardi",
+      "startIndex": 20,
+      "uuid": "ea12ec3f-f178-42c9-90b2-4144f31d3463",
+      "endIndex": 29,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "e",
+      "startIndex": 506,
+      "uuid": "5f5f73a0-9ef1-4ed3-8b6a-70f8506d616f",
+      "endIndex": 506,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 711,
+      "uuid": "4b6514e8-f5b6-43e0-b473-8d6f9baebc89",
+      "endIndex": 712,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 853,
+      "uuid": "2e59a562-99cd-4da6-b15c-3e75c0a913e3",
+      "endIndex": 853,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "e",
+      "startIndex": 464,
+      "uuid": "cf54c9b2-1803-41dc-b63b-d9ef3d8d5830",
+      "endIndex": 464,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "on",
+      "startIndex": 1509,
+      "uuid": "de3369a8-ba34-48d7-975b-95f00fcfeb3a",
+      "endIndex": 1510,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 1132,
+      "uuid": "47a85707-dd1c-4aec-8ead-bc3b8456fea8",
+      "endIndex": 1132,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "re",
+      "startIndex": 741,
+      "uuid": "d3c062ad-6e38-4ea0-bb13-00c061dcac5b",
+      "endIndex": 742,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 1475,
+      "uuid": "a9301383-453e-4f2c-9109-b9b151c56426",
+      "endIndex": 1475,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sacerdotes",
+      "startIndex": 8,
+      "uuid": "75bfc52b-4db7-4fdf-8708-81573ba45a88",
+      "endIndex": 17,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " hominis affectum cum uisceribus intimę deuotio",
+      "startIndex": 250,
+      "uuid": "efd4cfd1-2900-4f0f-b9c6-6721ac2181ec",
+      "endIndex": 296,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "tra soliditatis. Vnde et multa mala inuenerunt ",
+      "startIndex": 1095,
+      "uuid": "6e944852-2b91-4c97-87cf-edd5338b1726",
+      "endIndex": 1141,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "fratribus",
+      "startIndex": 174,
+      "uuid": "a0902b39-1ef5-4691-87ab-f9cf1c977a5d",
+      "endIndex": 182,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 154,
+      "uuid": "38ec0ecf-d359-4022-83c6-7151f11c9ce5",
+      "endIndex": 155,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " Hildigardi dominę et matri de cenobio ",
+      "startIndex": 32,
+      "uuid": "b2ae27f6-30f6-4034-bf4b-a729c723d946",
+      "endIndex": 70,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "cerdotium peruenerimus ubi digne et irre",
+      "startIndex": 700,
+      "uuid": "2f2c8951-6fd2-4bc6-a051-e19c5d1724a1",
+      "endIndex": 739,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 586,
+      "uuid": "6fe36d73-997b-4d6e-8f37-e45560c673bd",
+      "endIndex": 586,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1472,
+      "uuid": "15f648f4-fa1e-45fd-b53a-0306112c9f8a",
+      "endIndex": 1472,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 181,
+      "uuid": "fb67019e-6528-46dd-8de7-581ebfabb065",
+      "endIndex": 182,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "ro",
+      "startIndex": 1597,
+      "uuid": "6891c73e-3116-4f2b-8a26-1d223ec23b59",
+      "endIndex": 1598,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 198,
+      "uuid": "8f23f971-14d0-431e-820f-41ffbb017a2a",
+      "endIndex": 198,
+      "type": "deleted"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "un",
+      "startIndex": 1138,
+      "uuid": "cc02169f-b923-4a29-843a-0e1af91c0796",
+      "endIndex": 1139,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "nę admonitionis ad nos proferas. nos corri",
+      "startIndex": 1327,
+      "uuid": "bae6250e-9ceb-4865-b54d-f6170478b850",
+      "endIndex": 1368,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "en",
+      "startIndex": 1451,
+      "uuid": "e732c902-0e40-4799-8ce0-20dfd789ee80",
+      "endIndex": 1452,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "Quidam sacerdotes. hildegardi.",
+      "startIndex": 1,
+      "uuid": "cd6413fb-f4a9-4795-b0af-66031193f637",
+      "endIndex": 30,
+      "type": "emphasised"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "t",
+      "startIndex": 1162,
+      "uuid": "ff55d099-4e3f-4387-ac44-e00f42debf4c",
+      "endIndex": 1162,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sacerdotes",
+      "startIndex": 8,
+      "uuid": "b4068e8c-4a69-4e66-8da2-8220fc8e43be",
+      "endIndex": 17,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "fundas. Vale.",
+      "startIndex": 1627,
+      "uuid": "aea997b2-8fe5-4e03-a70f-072a983614f7",
+      "endIndex": 1639,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "cam scientiam scripturarum habeamus. te tamen ",
+      "startIndex": 1408,
+      "uuid": "e26b973f-07e9-4873-b6ad-64a851cb7503",
+      "endIndex": 1453,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "t",
+      "startIndex": 331,
+      "uuid": "c876967e-8db9-453b-8d51-daa255565d05",
+      "endIndex": 331,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "uonia",
+      "startIndex": 1149,
+      "uuid": "eedd678e-4d11-4b2e-9077-0e1f723aa709",
+      "endIndex": 1153,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "esfundas",
+      "startIndex": 1625,
+      "subType": "",
+      "uuid": "2e93a207-98f0-42ad-8d4a-39a374395012",
+      "endIndex": 1632,
+      "type": "sic"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " esse oculus contemplationis. auris obeditionis ",
+      "startIndex": 876,
+      "uuid": "6b2b6f33-daee-4857-a195-6dd290a2ccd4",
+      "endIndex": 923,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1022,
+      "uuid": "fcb7579a-7b63-46d5-a04f-7f5fe0d62afa",
+      "endIndex": 1022,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " Quidam sacerdotes. hildegardi. ",
+      "startIndex": 0,
+      "uuid": "87e1792f-e291-4279-8f12-fd36b5b5ffd1",
+      "endIndex": 31,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "me audire desideramus. Nunc deus tibi in",
+      "startIndex": 1544,
+      "uuid": "3cf301c8-1999-4cb5-b5bf-92f8bf9f36f5",
+      "endIndex": 1583,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1410,
+      "uuid": "4d28347d-a0d0-4398-b392-22218dcf4219",
+      "endIndex": 1410,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " beati Roberti uenerandę ac diligen",
+      "startIndex": 71,
+      "uuid": "e24309d7-e9a4-4abd-a812-49f1197dd774",
+      "endIndex": 105,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 198,
+      "uuid": "b4082c29-4eaf-4f0c-b32c-9ad61dc78923",
+      "endIndex": 198,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 270,
+      "uuid": "01045e75-49ed-4e1f-82a9-6d3e1eef2915",
+      "endIndex": 270,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "um",
+      "startIndex": 1261,
+      "uuid": "030a77ef-cfd8-4860-ada5-d2339582af6a",
+      "endIndex": 1262,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 793,
+      "uuid": "4414e0ff-5e59-4204-b60c-a6789ee6b90d",
+      "endIndex": 793,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " creatori nostro fideliter seruiamus. cum ad sa",
+      "startIndex": 653,
+      "uuid": "b64ea779-1928-4799-a0e6-07ae16a93fe3",
+      "endIndex": 699,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "nis. Quia o electa et dilecta sanctitatis famula ",
+      "startIndex": 297,
+      "uuid": "4a9c04e8-cd9e-4772-b2ec-504936832ff4",
+      "endIndex": 345,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "nixe et humiliter deprecantes. ut uerba diui",
+      "startIndex": 1283,
+      "uuid": "9915678e-b46e-407d-9054-f2821f224755",
+      "endIndex": 1326,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "eu",
+      "startIndex": 1573,
+      "uuid": "deac553e-a0be-4088-b9b3-114279469bc3",
+      "endIndex": 1574,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " quatenus etiam sacris ordinibus diuini officij ",
+      "startIndex": 605,
+      "uuid": "8152d92f-3d51-45d2-84f4-77c719ef48af",
+      "endIndex": 652,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "prehensibiliter uiuere deberemus. ea quę ",
+      "startIndex": 740,
+      "uuid": "f58d1432-8544-4c48-a656-cf7a0f38ef9c",
+      "endIndex": 780,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 619,
+      "uuid": "895e8fba-d9f5-46ae-a7d2-a232f2eab272",
+      "endIndex": 619,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 484,
+      "uuid": "7d5940c2-b4fb-4ba6-a794-e1649777d673",
+      "endIndex": 484,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "ue",
+      "startIndex": 247,
+      "uuid": "8a92a19d-3bc8-4a80-a333-8cc0c70af11f",
+      "endIndex": 248,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1459,
+      "uuid": "45be73f4-5c6d-467e-83d4-f4e54ce012d3",
+      "endIndex": 1459,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "ro",
+      "startIndex": 1351,
+      "uuid": "41fc4966-fc7f-4ffe-a94e-1d6ea2c282ca",
+      "endIndex": 1352,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " exemplum uirtutum. illi magis odor mor",
+      "startIndex": 1014,
+      "uuid": "14be90aa-948c-48fd-a577-c05fdeb410d4",
+      "endIndex": 1052,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "A.",
+      "startIndex": 110,
+      "uuid": "3db2ac47-8916-482e-a17b-0a19a88df06a",
+      "endIndex": 111,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sima. de te plura audiuimus. quę odorem ",
+      "startIndex": 395,
+      "uuid": "bbdf2f5f-4f29-4bb6-8e92-13b3051f81e1",
+      "endIndex": 434,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sub defensionem beati Martini",
+      "startIndex": 184,
+      "uuid": "07322046-a4d2-4eba-809f-44139bd6638f",
+      "endIndex": 212,
+      "type": "place"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 284,
+      "uuid": "b76db615-bedd-4c42-b72a-e104b6755861",
+      "endIndex": 284,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 811,
+      "uuid": "a2569cc7-6f15-4bc4-a0aa-bc4be61a3bc9",
+      "endIndex": 812,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "H",
+      "startIndex": 33,
+      "uuid": "74096718-6dbd-4fd4-ae87-5b987fbb8daa",
+      "endIndex": 33,
+      "type": "emphasised"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " in lutum feditatis cadimus. Tu autem o pia ",
+      "startIndex": 1191,
+      "uuid": "5979773f-ad75-4d73-a6d7-741c2b6c0d57",
+      "endIndex": 1234,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "an",
+      "startIndex": 1159,
+      "uuid": "f2485b25-498c-4322-af20-7a001d18b1ce",
+      "endIndex": 1160,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sacerdotes",
+      "startIndex": 8,
+      "uuid": "3d0180a0-06d5-4838-9b59-3199d9cee2ed",
+      "endIndex": 17,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 693,
+      "uuid": "bd87f5a0-3d7f-4fd2-9ac3-42d1dc5b79b7",
+      "endIndex": 693,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1487,
+      "uuid": "f9591669-63b8-4ebd-8d9c-3140934bc64b",
+      "endIndex": 1487,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "an",
+      "startIndex": 368,
+      "uuid": "c9c44bd0-5600-478b-8482-7f033b64788b",
+      "endIndex": 369,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 81,
+      "uuid": "c51132a7-dd21-4264-9374-1a269faa3a16",
+      "endIndex": 82,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "f",
+      "startIndex": 1584,
+      "uuid": "c6f3a866-3e0f-4e95-908a-6d22788f2819",
+      "endIndex": 1584,
+      "type": "pb"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 353,
+      "uuid": "b0eb6de1-7c9b-4370-b847-99c11da52140",
+      "endIndex": 354,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "Quidam sacerdotes. hildegardi.",
+      "startIndex": 1,
+      "uuid": "d7acfd8e-5b4b-491d-9e86-dee9eabb2466",
+      "endIndex": 30,
+      "type": "head"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1395,
+      "uuid": "69e93af3-54e4-4ef1-85dd-9ad54982ac14",
+      "endIndex": 1395,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 753,
+      "uuid": "112e1f0f-9f71-4c33-98e2-7bc3902bdbc8",
+      "endIndex": 754,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "de",
+      "startIndex": 1114,
+      "uuid": "efdd4bf0-f4f3-4043-9099-b9fd0318b15c",
+      "endIndex": 1115,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "ati Martini degentibus. sincerissimum utriusque ",
+      "startIndex": 202,
+      "uuid": "de64aac6-4bdf-4071-8fb0-225a6b4024ad",
+      "endIndex": 249,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " ",
+      "startIndex": 0,
+      "uuid": "f834dbc3-7a86-49fd-9ee4-d266b2ef7efa",
+      "endIndex": 0,
+      "type": "pb"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "re",
+      "startIndex": 1304,
+      "uuid": "8afb5bc7-494c-462a-acc0-de3843e48302",
+      "endIndex": 1305,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " nasus discretionis. os ueritatis. manus iu",
+      "startIndex": 924,
+      "uuid": "1447352c-9a23-49ab-81c7-4697a9542274",
+      "endIndex": 966,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 420,
+      "uuid": "42ea89c1-e00f-4258-b975-843b89b1e27d",
+      "endIndex": 421,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "omi",
+      "startIndex": 45,
+      "uuid": "090b2af6-b59c-40fa-81ab-e5ea55dc45ea",
+      "endIndex": 47,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 873,
+      "uuid": "cb4805a3-07eb-43d9-a81a-6b022fd770a9",
+      "endIndex": 874,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1068,
+      "uuid": "e69bf073-cc6b-4b94-b265-bb3a59a34b4c",
+      "endIndex": 1068,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "bundo corde postulantes. Nos enim qui a ",
+      "startIndex": 524,
+      "uuid": "183a60d2-7e57-4a89-8fa0-ff9af486a6f8",
+      "endIndex": 563,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 511,
+      "uuid": "d4b61c62-3399-48ba-8270-b2489344cd48",
+      "endIndex": 511,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "n",
+      "startIndex": 455,
+      "uuid": "9c801cf8-f31a-4e81-8cc7-f078785d49de",
+      "endIndex": 455,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "iritu",
+      "startIndex": 784,
+      "uuid": "cc6911a1-7edd-480b-a5e3-afa3b6e3ef05",
+      "endIndex": 788,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 556,
+      "uuid": "93d65a61-1ca6-46f3-b164-4812103751a4",
+      "endIndex": 556,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " tuam confugimus. ea quę dei sunt. a te siti",
+      "startIndex": 480,
+      "uuid": "e71480fe-0fae-4965-b202-10a205b151a2",
+      "endIndex": 523,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 1615,
+      "uuid": "f1284173-846b-4aae-9e11-60db4c16f749",
+      "endIndex": 1616,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1420,
+      "uuid": "f8885b44-074f-4ca3-b22c-84f5bc298276",
+      "endIndex": 1420,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 894,
+      "uuid": "b904c51e-9f52-46a1-83d5-9adbd6e993cf",
+      "endIndex": 894,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 222,
+      "uuid": "5dbe6d81-2747-4d99-bc54-9bcb90c9852a",
+      "endIndex": 223,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " ueram et mirabilem intelligentiam a summo doc",
+      "startIndex": 1454,
+      "uuid": "f09b777a-89ae-4c1f-bec9-87311adaeec3",
+      "endIndex": 1499,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 266,
+      "uuid": "eba398de-2980-4030-b29a-5b5a3e3be2cc",
+      "endIndex": 266,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "em",
+      "startIndex": 1226,
+      "uuid": "46c497ab-b7cd-4508-9167-5e033fb3d61b",
+      "endIndex": 1227,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "atr",
+      "startIndex": 176,
+      "uuid": "78f2597e-6ec0-42bc-afac-b1ce66b5ec9f",
+      "endIndex": 178,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 280,
+      "uuid": "bdc2e733-7117-4cf0-ad72-fb8b373d80eb",
+      "endIndex": 281,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 377,
+      "uuid": "40d0c21a-86d4-4e31-b6ec-7834b2a5f153",
+      "endIndex": 377,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 973,
+      "uuid": "18b2bfde-845f-4793-a2d5-8c01e4718610",
+      "endIndex": 974,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "stę operationis. et pes in uia rectitudinis et ",
+      "startIndex": 967,
+      "uuid": "e87ea2b6-15d2-482e-aa58-f992c401ebd0",
+      "endIndex": 1013,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "e",
+      "startIndex": 863,
+      "uuid": "443878ce-db17-49be-8e92-0450158e5d44",
+      "endIndex": 863,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "omi",
+      "startIndex": 1170,
+      "uuid": "f0cbb779-ae74-4e36-99b9-8144ac624505",
+      "endIndex": 1172,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1091,
+      "uuid": "a0407ce5-70f1-4275-98c7-75623babeb06",
+      "endIndex": 1091,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "un",
+      "startIndex": 834,
+      "uuid": "513f2bbc-58f3-443d-a710-43826f816c82",
+      "endIndex": 835,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " sunt facimus. Nam cum populo dei deberemus ",
+      "startIndex": 832,
+      "uuid": "873ed4ac-6c32-40bb-b14c-5e11ecb8f97b",
+      "endIndex": 875,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1493,
+      "uuid": "dd6932b1-a3af-4e83-aec4-a1e71b4728b4",
+      "endIndex": 1493,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 238,
+      "uuid": "b733c2f6-b46a-44c4-9c1e-d657c90bd831",
+      "endIndex": 238,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " et mater plurimorum sanctitatem sequentium caris",
+      "startIndex": 346,
+      "uuid": "eebf0446-bcc8-4b1a-bc29-e4a170d85a40",
+      "endIndex": 394,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "um",
+      "startIndex": 364,
+      "uuid": "beae262b-b176-4c3d-bc3d-1ffba350c5e8",
+      "endIndex": 365,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1031,
+      "uuid": "a1fd8291-0f73-4684-84a2-68cb9c6a5500",
+      "endIndex": 1031,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "E.",
+      "startIndex": 113,
+      "uuid": "3543c79f-7c16-46a5-ae72-a72a258f9cc6",
+      "endIndex": 114,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1532,
+      "uuid": "6c41b374-66ef-434b-be5c-6e7fab7b2157",
+      "endIndex": 1532,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "ost",
+      "startIndex": 664,
+      "uuid": "e1f7cb59-7b29-4e5c-b2c6-8227b5766744",
+      "endIndex": 666,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 1199,
+      "uuid": "17189804-fcf0-4fef-95fb-231a18a88aae",
+      "endIndex": 1199,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 388,
+      "uuid": "53a6770c-51cd-483c-9d91-c59e072c9c47",
+      "endIndex": 388,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "fundat! quę pro nobis sitientibus deuote es",
+      "startIndex": 1584,
+      "uuid": "bab0d4fc-7254-458e-974b-e18582ed9a9c",
+      "endIndex": 1626,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "H.",
+      "startIndex": 116,
+      "uuid": "302001ff-29dc-423a-a7a2-1433c24ee262",
+      "endIndex": 117,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "tis et scandalum offensionis sumus quam pe",
+      "startIndex": 1053,
+      "uuid": "ff30dead-f6fd-4e74-a9ee-df37cadbf2ab",
+      "endIndex": 1094,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 720,
+      "uuid": "bf046975-987b-45bb-a388-376da26c8060",
+      "endIndex": 721,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "sacerdotes",
+      "startIndex": 8,
+      "uuid": "33b38c84-0bfc-43eb-833e-a22e3acd4fba",
+      "endIndex": 17,
+      "type": "akteur"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " puericia ad seruitutem dei consecramur. ",
+      "startIndex": 564,
+      "uuid": "a045de90-71cc-41a9-bab8-f924064cd04e",
+      "endIndex": 604,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 677,
+      "uuid": "7b94cf3d-43ad-44bb-8634-84f1f483361a",
+      "endIndex": 678,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "er",
+      "startIndex": 1239,
+      "uuid": "a1a1426b-0c7d-4a28-8052-ab32a5a982bd",
+      "endIndex": 1240,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "r",
+      "startIndex": 1424,
+      "uuid": "06360a16-47ab-447f-8cdf-ba2121eba40e",
+      "endIndex": 1424,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "t",
+      "startIndex": 371,
+      "uuid": "e7241414-7c10-4491-9f0f-73de426912f4",
+      "endIndex": 371,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 244,
+      "uuid": "60168c65-82c6-47a9-97b3-fc55580c1873",
+      "endIndex": 245,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 148,
+      "uuid": "58fa735d-267e-4b31-92d7-0833a9c893aa",
+      "endIndex": 148,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "pias et admoneas. quia quamuis uel modi",
+      "startIndex": 1369,
+      "uuid": "0da9beb3-306b-4756-91cf-61c362b799e2",
+      "endIndex": 1407,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "um",
+      "startIndex": 1432,
+      "uuid": "bd4dbd4e-4f93-43ea-afff-c3d6d8536e19",
+      "endIndex": 1433,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " nos. quoniam a sanctuario domini ut ita dicamus ",
+      "startIndex": 1142,
+      "uuid": "911b2553-7e7a-4942-ad59-2aadc7229234",
+      "endIndex": 1190,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 635,
+      "uuid": "5572cbf8-d057-4fe9-bdcb-5cafb30068d4",
+      "endIndex": 636,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "m",
+      "startIndex": 6,
+      "uuid": "e50201ae-a793-45ce-8284-6ab57e044687",
+      "endIndex": 6,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " uitę multis conferunt. et ideo ad almitatem ",
+      "startIndex": 435,
+      "uuid": "cbc3c7ff-c112-474f-afa6-87b423f7e8c6",
+      "endIndex": 479,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "tore et non ab homine accipientem. deuotissi",
+      "startIndex": 1500,
+      "uuid": "ead02fcb-d1ee-45c4-ba66-ebeeaab7694f",
+      "endIndex": 1543,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": "us",
+      "startIndex": 612,
+      "uuid": "2d3a1bb8-a718-45a8-a923-931c70691f12",
+      "endIndex": 613,
+      "type": "expansion"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
+  },
+  {
+    "additionalTexts": [],
+    "properties": {
+      "text": " spiritus sunt sepius negligimus. et ea quę carnis ",
+      "startIndex": 781,
+      "uuid": "a78743a8-22ce-44a0-baa4-aedca26e2185",
+      "endIndex": 831,
+      "type": "line"
+    },
+    "entities": {
+      "events": [],
+      "roles": [],
+      "places": [],
+      "persons": [],
+      "concepts": []
+    }
   }
 ]

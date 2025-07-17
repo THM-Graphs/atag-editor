@@ -261,13 +261,13 @@ export function buildFetchUrl(path: string): string {
       case '/api/guidelines':
         url = 'mockdata/guidelines.json';
         break;
-      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f`:
+      case `/api/collections/42363cde-5e6a-4a5e-b42c-c3082d354719`:
         url = `mockdata/collection.json`;
         break;
-      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f/characters`:
+      case `/api/collections/42363cde-5e6a-4a5e-b42c-c3082d354719/characters`:
         url = `mockdata/characters.json`;
         break;
-      case `/api/collections/8f03b6d8-50a0-4cde-98f8-9e6cb739617f/annotations`:
+      case `/api/collections/42363cde-5e6a-4a5e-b42c-c3082d354719/annotations`:
         url = `mockdata/annotations.json`;
         break;
       default:
