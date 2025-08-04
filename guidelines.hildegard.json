@@ -145,23 +145,6 @@
         ]
       },
       {
-        "type": "intervention",
-        "category": "edition",
-        "defaultSelected": true,
-        "isZeroPoint": false,
-        "hasAdditionalTexts": true,
-        "properties": [
-          {
-            "name": "subType",
-            "type": "string",
-            "options": ["conjecture", "correction", "normalisation"],
-            "required": true,
-            "editable": true,
-            "visible": true
-          }
-        ]
-      },
-      {
         "type": "correction",
         "category": "edition",
         "defaultSelected": true,

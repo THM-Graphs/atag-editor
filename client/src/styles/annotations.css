@@ -12,7 +12,6 @@
   --gap-text-decoration: underline dotted;
   --head-font-weight: 700;
   --initial-clr: hsl(114, 100%, 37%);
-  --intervention-clr: hsl(292, 100%, 80%);
   --marginNote-clr: hsl(34, 100%, 47%);
   --repeated-clr: #cbcbcb;
   --repeated-text-decoration: line-through;
@@ -83,13 +82,7 @@
   }
 }
 
-#text > span:has(span.intervention) {
-  background-color: var(--intervention-clr);
-}
-
-/* TODO: This is a hack since there is a annotion type as well as a subType "correction".
-Fix by changing classlists or annotation types? */
-#text > span:has(span.correction:not(.intervention)) {
+#text > span:has(span.correction) {
   background-color: var(--correction-clr);
 }
 
@@ -194,10 +187,6 @@ Fix by changing classlists or annotation types? */
 
 .annotation-type-icon-nonLinear {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/nonLinear.svg');
-}
-
-.annotation-type-icon-intervention {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/intervention.svg');
 }
 
 .annotation-type-icon-correction {
