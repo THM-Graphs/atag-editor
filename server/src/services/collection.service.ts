@@ -427,7 +427,7 @@ export default class CollectionService {
     // Remove NEXT relationships from all texts
     CALL {
       WITH c
-      MATCH (c)<-[:PART_OF]->(t:Text)-[r:NEXT]->(t2:Text)
+      MATCH (c)<-[:PART_OF]-(t:Text)-[r:NEXT]->(t2:Text)
       DETACH DELETE r
     }
 
