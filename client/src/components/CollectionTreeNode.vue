@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { buildFetchUrl } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import { Collection, CollectionSubTree } from '../models/types';
 
 const treeNode = defineModel<TreeNode>();
+
 const { isRoot, level } = defineProps<{
   isRoot: boolean;
   level: number;
@@ -23,6 +24,14 @@ type TreeNode = {
 };
 
 const baseFetchUrl: string = '/api/collections';
+
+const iconClass = computed<string>(() => {
+  if (asyncOperationRunning.value) {
+    return 'pi pi-spin pi-spinner';
+  }
+
+  return treeNode.value.state.isCollapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-down';
+});
 
 const asyncOperationRunning = ref<boolean>(false);
 
@@ -43,6 +52,7 @@ const asyncOperationRunning = ref<boolean>(false);
 async function getCollections(): Promise<void> {
   try {
     asyncOperationRunning.value = true;
+
     const url: string = buildFetchUrl(
       baseFetchUrl + `?uuid=${treeNode.value.data.collection?.data.uuid}`,
     );
@@ -102,7 +112,7 @@ async function toggleSubTree(): Promise<void> {
         class="w-full h-full"
         size="small"
         severity="secondary"
-        :icon="`pi pi-chevron-${treeNode.state.isCollapsed ? 'right' : 'down'}`"
+        :icon="iconClass"
         @click="toggleSubTree"
       />
       <div v-else class="w-full"></div>
