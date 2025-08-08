@@ -13,6 +13,7 @@ import {
   PropertyConfig,
   Text,
   Collection,
+  CollectionSubTree,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -22,6 +23,75 @@ type CollectionTextObject = {
 };
 
 export default class CollectionService {
+  public async getCollectionSubTree(baseUuid: string | null): Promise<CollectionSubTree> {
+    const query: string = `
+    // Find base collection (if uuid was provided)
+    OPTIONAL MATCH (baseCollection:Collection {uuid: $uuid})
+
+    // Find children
+    CALL apoc.case([
+        $uuid IS NULL, 
+        "MATCH (cStart:Collection) 
+
+        WHERE
+            NOT (:Collection)-[:NEXT]->(cStart) AND
+            NOT (cStart)-[:PART_OF]->(:Collection) AND 
+            NOT (cStart)<-[:REFERS_TO]-(:Annotation)
+
+        OPTIONAL MATCH (cStart)-[:NEXT*]->(cNext:Collection)
+
+        WITH cStart, collect(cNext) AS nextCollections 
+
+        RETURN coalesce(cStart, []) + nextCollections as children
+        ",
+        
+        $uuid IS NOT NULL AND baseCollection IS NOT NULL,
+        "OPTIONAL MATCH (baseCollection)<-[:PART_OF]-(cStart:Collection)
+        WHERE NOT (:Collection)-[:NEXT]->(cStart)
+
+        OPTIONAL MATCH (cStart)-[:NEXT*]->(cNext:Collection) 
+        
+        WITH cStart, collect(cNext) AS nextCollections
+        
+        RETURN coalesce(cStart, []) + nextCollections as children"
+    ],
+    'RETURN [] as children',
+    {baseCollection: baseCollection}
+    )
+    YIELD value
+
+    RETURN {
+        collection: CASE 
+            WHEN baseCollection IS NULL THEN null
+            ELSE {
+                nodeLabels: [l IN labels(baseCollection) WHERE l <> 'Collection' | l],
+                data: baseCollection {.*}
+            }
+        END,
+        children: [
+            c IN value.children | {
+                collection: {
+                    nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+                    data: c {.*}
+                },
+                childCount: COUNT { MATCH (c)<-[:PART_OF]-(:Collection) }
+            }
+        ]
+    } AS subTree`;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid: baseUuid });
+
+    const rawSubTree: CollectionSubTree = result.records[0]?.get('subTree');
+
+    if (!rawSubTree) {
+      throw new NotFoundError(`Collection with UUID ${baseUuid} not found`);
+    }
+
+    const subTree: CollectionSubTree = toNativeTypes(rawSubTree) as CollectionSubTree;
+
+    return subTree;
+  }
+
   /**
    * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
    * as well as pagination parameters are provided.
@@ -34,7 +104,7 @@ export default class CollectionService {
    * @param {string} search - The search string to filter collections by their label.
    * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
    */
-  public async getCollections(
+  public async getCollectionsAsList(
     additionalLabel: string,
     sort: string,
     order: string,

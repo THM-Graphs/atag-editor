@@ -13,6 +13,7 @@ import {
   Collection,
   CollectionAccessObject,
   CollectionPostData,
+  CollectionSubTree,
   PaginationResult,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
@@ -21,32 +22,16 @@ const router: Router = express.Router({ mergeParams: true });
 
 const collectionService: CollectionService = new CollectionService();
 const annotationService: AnnotationService = new AnnotationService();
-const guidelineService: GuidelinesService = new GuidelinesService();
+// const guidelineService: GuidelinesService = new GuidelinesService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  // TODO: Fix this
+  const uuid: string | null = req.query.uuid ?? null;
+
   try {
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
+    const subTree: CollectionSubTree = await collectionService.getCollectionSubTree(uuid);
 
-    // Get Collection type that is shown in the table and does not only exist as anchor to additional text
-    // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-    // Careful, a collection with level "primary" MUST exist in the guidelines with this solution
-    const primaryCollectionLabel = guidelines.collections.types.find(
-      t => t.level === 'primary',
-    )!.additionalLabel;
-
-    const { sort, order, limit, skip, search } = getPagination(req);
-
-    const collections: PaginationResult<CollectionAccessObject[]> =
-      await collectionService.getCollections(
-        primaryCollectionLabel,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-      );
-
-    res.status(200).json(collections);
+    res.status(200).json(subTree);
   } catch (error: unknown) {
     next(error);
   }
