@@ -38,6 +38,8 @@ const rowCount = ref<number>(10);
 const sortField = ref<string>('');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
+const includedNodeLabels = ref<string[]>([]);
+
 const fetchUrl = computed<string>(() => {
   const searchParams: URLSearchParams = new URLSearchParams();
 
@@ -46,6 +48,7 @@ const fetchUrl = computed<string>(() => {
   searchParams.set('limit', rowCount.value.toString());
   searchParams.set('skip', offset.value.toString());
   searchParams.set('search', debouncedSearchInput.value);
+  searchParams.set('nodeLabels', includedNodeLabels.value.join(','));
 
   return `${baseFetchUrl}?${searchParams.toString()}`;
 });
@@ -102,6 +105,10 @@ function handleCollectionCreation(newCollection: ICollection): void {
   getCollections();
 }
 
+function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
+  includedNodeLabels.value = selectedLabels;
+}
+
 function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
 }
@@ -141,6 +148,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     <OverviewToolbar
       @collection-created="handleCollectionCreation"
       @search-input-changed="handleSearchInputChange"
+      @node-labels-input-changed="handleNodeLabelsInputChanged"
     />
 
     <div class="counter text-right pt-2 pb-3">

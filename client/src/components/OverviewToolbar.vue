@@ -8,8 +8,8 @@ import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
-import { MultiSelect } from 'primevue';
 import Tag from 'primevue/tag';
+import MultiSelect from 'primevue/multiselect';
 import Toolbar from 'primevue/toolbar';
 import {
   buildFetchUrl,
@@ -20,7 +20,7 @@ import {
 import ICollection from '../models/ICollection';
 import { CollectionAccessObject, PropertyConfig } from '../models/types';
 
-const emit = defineEmits(['collectionCreated', 'searchInputChanged']);
+const emit = defineEmits(['collectionCreated', 'nodeLabelsInputChanged', 'searchInputChanged']);
 
 const {
   guidelines,
@@ -35,6 +35,7 @@ const newCollectionData = ref<CollectionAccessObject>(null);
 const dialogIsVisible = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
+const includedNodeLabels = ref<string[]>([]);
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
@@ -149,13 +150,17 @@ async function hideDialog(): Promise<void> {
   dialogIsVisible.value = false;
 }
 
+function handleNodeLabelsInput(): void {
+  emit('nodeLabelsInputChanged', includedNodeLabels.value);
+}
+
 function handleSearchInput(): void {
   emit('searchInputChanged', searchInput.value.toLowerCase());
 }
 </script>
 
 <template>
-  <Toolbar class="toolbar w-7 m-auto">
+  <Toolbar class="toolbar w-9 m-auto">
     <template #start>
       <IconField iconPosition="left">
         <InputIcon>
@@ -168,6 +173,23 @@ function handleSearchInput(): void {
           @input="handleSearchInput"
         />
       </IconField>
+    </template>
+
+    <template #center>
+      <MultiSelect
+        v-model="includedNodeLabels"
+        :options="availableCollectionLabels"
+        placeholder="Collection labels"
+        class="text-center"
+        :filter="false"
+        :pt="{
+          root: {
+            title: `Select Collection labels`,
+          },
+        }"
+        @change="handleNodeLabelsInput"
+      >
+      </MultiSelect>
     </template>
 
     <template #end>

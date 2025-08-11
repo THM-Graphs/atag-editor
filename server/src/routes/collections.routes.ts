@@ -27,24 +27,11 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
-    // Get Collection type that is shown in the table and does not only exist as anchor to additional text
-    // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-    // Careful, a collection with level "primary" MUST exist in the guidelines with this solution
-    const primaryCollectionLabel = guidelines.collections.types.find(
-      t => t.level === 'primary',
-    )!.additionalLabel;
-
     const { sort, order, limit, skip, search } = getPagination(req);
+    const nodeLabels: string[] = (req.query.nodeLabels as string).split(',');
 
     const collections: PaginationResult<CollectionAccessObject[]> =
-      await collectionService.getCollections(
-        primaryCollectionLabel,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-      );
+      await collectionService.getCollections(nodeLabels, sort, order, limit, skip, search);
 
     res.status(200).json(collections);
   } catch (error: unknown) {

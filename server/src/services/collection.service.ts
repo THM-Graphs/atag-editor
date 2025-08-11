@@ -26,7 +26,7 @@ export default class CollectionService {
    * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
    * as well as pagination parameters are provided.
    *
-   * @param {string} additionalLabel - The additional label to match in the query, e.g., "Letter".
+   * @param {string} additionalLabels - The additional labels to match in the query, e.g., "Letter".
    * @param {string} sort - The field by which to sort the collections.
    * @param {string} order - The order in which to sort the collections (ascending or descending).
    * @param {number} limit - The maximum number of collections to return.
@@ -35,7 +35,7 @@ export default class CollectionService {
    * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
    */
   public async getCollections(
-    additionalLabel: string,
+    additionalLabels: string[],
     sort: string,
     order: string,
     limit: number,
@@ -43,15 +43,19 @@ export default class CollectionService {
     search: string,
   ): Promise<PaginationResult<CollectionAccessObject[]>> {
     const countQuery: string = `
-    MATCH (c:Collection:${additionalLabel})
-    WHERE c.label CONTAINS $search
+    MATCH (c:Collection)
+    WHERE
+        apoc.coll.intersection($additionalLabels, labels(c)) AND
+        c.label CONTAINS $search
     RETURN count(c) AS totalRecords
     `;
 
     // TODO: Should Annotations be included here?
     const dataQuery: string = `
-    MATCH (c:Collection:${additionalLabel})
-    WHERE toLower(c.label) CONTAINS $search
+    MATCH (c:Collection)
+    WHERE 
+        apoc.coll.intersection($additionalLabels, labels(c)) AND
+        toLower(c.label) CONTAINS $search
 
     WITH c
     ORDER BY c.${sort} ${order}
@@ -81,8 +85,9 @@ export default class CollectionService {
     `;
 
     const [countResult, dataResult] = await Promise.all([
-      Neo4jDriver.runQuery(countQuery, { search }),
+      Neo4jDriver.runQuery(countQuery, { additionalLabels, search }),
       Neo4jDriver.runQuery(dataQuery, {
+        additionalLabels,
         skip: int(skip),
         limit: int(limit),
         sort: int(sort),
