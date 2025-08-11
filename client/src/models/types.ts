@@ -71,16 +71,6 @@ export type Collection = {
   nodeLabels: string[];
 };
 
-export type CollectionSubTree = {
-  collection: Collection | null; // Can be null when showing top-level collections
-  children: CollectionTreeNodePreview[];
-};
-
-export type CollectionTreeNodePreview = {
-  collection: Collection;
-  childCount: number;
-};
-
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
   collection: Collection;
