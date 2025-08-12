@@ -20,7 +20,7 @@ const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
-const { guidelines } = useGuidelinesStore();
+const { initializeGuidelines, guidelines } = useGuidelinesStore();
 
 const collections = ref<CollectionAccessObject[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
@@ -94,7 +94,7 @@ async function getGuidelines(): Promise<void> {
 
     const fetchedGuidelines: IGuidelines = await response.json();
 
-    guidelines.value = fetchedGuidelines;
+    initializeGuidelines(fetchedGuidelines);
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);
   }
@@ -146,6 +146,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
 
     <OverviewToolbar
+      v-if="guidelines"
       @collection-created="handleCollectionCreation"
       @search-input-changed="handleSearchInputChange"
       @node-labels-input-changed="handleNodeLabelsInputChanged"
@@ -158,6 +159,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     </div>
 
     <OverviewCollectionTable
+      v-if="guidelines"
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
       :collections="collections"

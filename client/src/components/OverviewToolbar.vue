@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import { computed, ComputedRef, onMounted, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
@@ -23,9 +23,9 @@ import { CollectionAccessObject, PropertyConfig } from '../models/types';
 const emit = defineEmits(['collectionCreated', 'nodeLabelsInputChanged', 'searchInputChanged']);
 
 const {
+  availableCollectionLabels,
   guidelines,
   getAllCollectionConfigFields,
-  getAvailableCollectionLabels,
   getCollectionConfigFields,
 } = useGuidelinesStore();
 
@@ -36,7 +36,6 @@ const dialogIsVisible = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
 
 const includedNodeLabels = ref<string[]>([]);
-const availableCollectionLabels = computed(getAvailableCollectionLabels);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.collection.nodeLabels),
@@ -83,6 +82,14 @@ function removeUnnecessaryDataBeforeSave(): void {
     }
   });
 }
+
+// Set initial node labels and emit event explicitly to trigger fetch in parent. This is because of timing issues:
+// The parent fetches data when the this component is not ready, and the initial data setting in the Multiselect
+// does not trigger a "change" event. Therefore, no update and no refetch.
+onMounted(() => {
+  includedNodeLabels.value = availableCollectionLabels.value;
+  handleNodeLabelsInput();
+});
 
 // TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
 // TODO: Add error message to dialog if collection could not be created

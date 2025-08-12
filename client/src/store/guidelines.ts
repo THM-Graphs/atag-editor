@@ -5,6 +5,7 @@ import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../model
 
 const guidelines = ref<IGuidelines>();
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
+const availableCollectionLabels = ref<string[]>([]);
 const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 const { initializeFilter } = useFilterStore();
 
@@ -24,6 +25,7 @@ export function useGuidelinesStore() {
     guidelines.value = guidelinesData;
     groupedAnnotationTypes.value = groupAnnotationTypes();
     groupedAndSortedAnnotationTypes.value = sortAnnotationTypesInGroup();
+    availableCollectionLabels.value = getAvailableCollectionLabels();
 
     initializeFilter(guidelines.value);
   }
@@ -260,6 +262,7 @@ export function useGuidelinesStore() {
   }
 
   return {
+    availableCollectionLabels,
     groupedAndSortedAnnotationTypes,
     groupedAnnotationTypes,
     guidelines,
