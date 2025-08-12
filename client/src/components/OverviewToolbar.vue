@@ -167,8 +167,29 @@ function handleSearchInput(): void {
 </script>
 
 <template>
-  <Toolbar class="toolbar w-9 m-auto">
+  <Toolbar class="toolbar w-full m-auto">
     <template #start>
+      <MultiSelect
+        v-model="includedNodeLabels"
+        :options="availableCollectionLabels"
+        display="chip"
+        placeholder="Collection node labels"
+        class="text-center"
+        :filter="false"
+        :pt="{
+          root: {
+            title: `Select Collection Node labels`,
+          },
+        }"
+        @change="handleNodeLabelsInput"
+      >
+        <template #chip="{ value }">
+          <Tag :value="value" severity="contrast" class="mr-1" />
+        </template>
+      </MultiSelect>
+    </template>
+
+    <template #center>
       <IconField iconPosition="left">
         <InputIcon>
           <i class="pi pi-search" />
@@ -180,23 +201,6 @@ function handleSearchInput(): void {
           @input="handleSearchInput"
         />
       </IconField>
-    </template>
-
-    <template #center>
-      <MultiSelect
-        v-model="includedNodeLabels"
-        :options="availableCollectionLabels"
-        placeholder="Collection labels"
-        class="text-center"
-        :filter="false"
-        :pt="{
-          root: {
-            title: `Select Collection labels`,
-          },
-        }"
-        @change="handleNodeLabelsInput"
-      >
-      </MultiSelect>
     </template>
 
     <template #end>
