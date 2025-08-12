@@ -88,6 +88,16 @@
         "additionalLabel": "CommentInternal",
         "level": "secondary",
         "properties": []
+      },
+      {
+        "additionalLabel": "Manuscript",
+        "level": "secondary",
+        "properties": []
+      },
+      {
+        "additionalLabel": "Root",
+        "level": "secondary",
+        "properties": []
       }
     ],
     "annotations": {
