@@ -74,6 +74,7 @@ export type Collection = {
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
   collection: Collection;
+  collections: Collection[];
   texts: Text[];
 };
 

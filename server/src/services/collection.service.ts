@@ -155,13 +155,35 @@ export default class CollectionService {
     MATCH (c:Collection {uuid: $uuid})
 
     // Match optional Text node chain
-    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-    WHERE NOT ()-[:NEXT]->(tStart)
-    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+    CALL {
+        WITH c
+  
+        OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+        WHERE NOT ()-[:NEXT]->(tStart)
+        OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
 
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts    
-    WITH c, texts
+        WITH tStart, collect(t) AS nextTexts
+        WITH coalesce(tStart, []) + nextTexts AS texts
+
+        RETURN texts as texts
+    }
+
+    // Match optional Collection node chain
+    CALL {
+        WITH c
+
+        OPTIONAL MATCH (c)<-[:PART_OF]-(cStart:Collection)
+        WHERE NOT ()-[:NEXT]->(cStart)
+        OPTIONAL MATCH (cStart)-[:NEXT*]->(cNext:Collection)
+
+        WITH cStart, collect(cNext) AS nextCollections
+        WITH coalesce(cStart, []) + nextCollections AS collections
+
+        RETURN collections as collections
+    }
+
+
+    WITH c, texts, collections
 
     RETURN {
         collection: {
@@ -172,6 +194,12 @@ export default class CollectionService {
             t IN texts | {
                 nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
+            }
+        ],
+        collections: [
+            c IN collections | {
+                nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+                data: c {.*}
             }
         ]
     } AS collection

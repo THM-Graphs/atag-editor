@@ -55,11 +55,13 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const { collection, texts } = await collectionService.getExtendedCollectionById(uuid);
+    const { collection, texts, collections } =
+      await collectionService.getExtendedCollectionById(uuid);
     const annotations: AnnotationData[] = await annotationService.getAnnotations(uuid);
 
     const collectionAccessObject: CollectionAccessObject = {
       collection,
+      collections,
       texts,
       annotations,
     };
