@@ -53,6 +53,10 @@ export type AnnotationConfigEntity = {
   nodeLabel: string;
 };
 
+export type BaseNodeData = {
+  uuid: string;
+};
+
 export type Character = {
   data: ICharacter;
   annotations: AnnotationReference[];
@@ -66,10 +70,7 @@ export type CharacterPostData = {
   uuidStart: string;
 };
 
-export type Collection = {
-  data: ICollection;
-  nodeLabels: string[];
-};
+export type Collection = Node<ICollection>;
 
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
@@ -86,6 +87,11 @@ export type CollectionPostData = {
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;
+};
+
+export type Node<T extends BaseNodeData> = {
+  data: T;
+  nodeLabels: string[];
 };
 
 export type PaginationData = {
@@ -149,10 +155,7 @@ export type StandoffJson = {
   text: string;
 };
 
-export type Text = {
-  nodeLabels: string[];
-  data: IText;
-};
+export type Text = Node<IText>;
 
 export type TextAccessObject = {
   collection: Collection;
