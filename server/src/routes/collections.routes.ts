@@ -10,9 +10,9 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   Annotation,
   AnnotationData,
-  Collection,
   CollectionAccessObject,
   CollectionPostData,
+  CollectionPreview,
   PaginationResult,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
@@ -21,17 +21,26 @@ const router: Router = express.Router({ mergeParams: true });
 
 const collectionService: CollectionService = new CollectionService();
 const annotationService: AnnotationService = new AnnotationService();
-const guidelineService: GuidelinesService = new GuidelinesService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
-
     const { sort, order, limit, skip, search } = getPagination(req);
-    const nodeLabels: string[] = (req.query.nodeLabels as string).split(',');
+    const nodeLabels: string[] = (req.query.nodeLabels as string)
+      .split(',')
+      .filter(label => label.trim() !== '');
 
-    const collections: PaginationResult<CollectionAccessObject[]> =
-      await collectionService.getCollections(nodeLabels, sort, order, limit, skip, search);
+    const parentUuid: string | null = req.query.parentUuid as string | null;
+
+    const collections: PaginationResult<CollectionPreview[]> =
+      await collectionService.getCollections(
+        nodeLabels,
+        sort,
+        order,
+        limit,
+        skip,
+        search,
+        parentUuid,
+      );
 
     res.status(200).json(collections);
   } catch (error: unknown) {

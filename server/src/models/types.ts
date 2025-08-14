@@ -84,6 +84,15 @@ export type CollectionPostData = {
   initialData: CollectionAccessObject;
 };
 
+export type CollectionPreview = {
+  collection: Collection;
+  nodeCounts: {
+    annotations: number;
+    texts: number;
+    collections: number;
+  };
+};
+
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;

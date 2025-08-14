@@ -13,6 +13,7 @@ import {
   PropertyConfig,
   Text,
   Collection,
+  CollectionPreview,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -23,16 +24,24 @@ type CollectionTextObject = {
 
 export default class CollectionService {
   /**
-   * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
-   * as well as pagination parameters are provided.
+   * Retrieves a paginated list of collection preview objects. These objects include the properties and labels of
+   * the `Collection` node as well as counts of connected `Annotation`, `Text`, and `Collection` nodes. Be aware that only Sub-Collections are included in the
+   * collection count (= incoming `PART_OF` relationships).
    *
-   * @param {string} additionalLabels - The additional labels to match in the query, e.g., "Letter".
+   *
+   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection.
+   * Additional labels for the collection nodes can be specified to filter the results. Pagination parameters such as sort order,
+   * limit, skip, and search string are also taken into account.
+   *
+   * @param {string[]} additionalLabels - The additional labels to match in the query, e.g., "Letter".
    * @param {string} sort - The field by which to sort the collections.
    * @param {string} order - The order in which to sort the collections (ascending or descending).
    * @param {number} limit - The maximum number of collections to return.
    * @param {number} skip - The number of collections to skip before starting to collect the result set.
    * @param {string} search - The search string to filter collections by their label.
-   * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
+   * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
+   *
+   * @return {Promise<PaginationResult<CollectionPreview[]>>} A promise that resolves to a paginated result of Collection preview objects.
    */
   public async getCollections(
     additionalLabels: string[],
@@ -41,48 +50,55 @@ export default class CollectionService {
     limit: number,
     skip: number,
     search: string,
-  ): Promise<PaginationResult<CollectionAccessObject[]>> {
-    const countQuery: string = `
-    MATCH (c:Collection)
-    WHERE
-        apoc.coll.intersection($additionalLabels, labels(c)) AND
-        c.label CONTAINS $search
-    RETURN count(c) AS totalRecords
-    `;
+    parentUuid: string | null,
+  ): Promise<PaginationResult<CollectionPreview[]>> {
+    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch everything
+    const baseCollectionSnippet = parentUuid
+      ? `MATCH (parent:Collection {uuid: ${parentUuid}})<-[:PART_OF]-(c:Collection)`
+      : `MATCH (c:Collection)`;
 
-    // TODO: Should Annotations be included here?
-    const dataQuery: string = `
-    MATCH (c:Collection)
-    WHERE 
-        apoc.coll.intersection($additionalLabels, labels(c)) AND
-        toLower(c.label) CONTAINS $search
+    const baseQuery: string =
+      baseCollectionSnippet +
+      `
+      WHERE
+          CASE
+              WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
+              ELSE apoc.coll.intersection($additionalLabels, labels(c))
+          END
+          AND
+          toLower(c.label) CONTAINS $search
+      `;
 
-    WITH c
-    ORDER BY c.${sort} ${order}
-    SKIP ${skip}
-    LIMIT ${limit}
+    const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;
 
-    // Match optional Text node chain
-    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-    WHERE NOT ()-[:NEXT]->(tStart)
-    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+    const dataQuery: string =
+      baseQuery +
+      `
+      // TODO: Fix sorting. Can be numbers, too (text count, annotation count etc.)
+      WITH c
+      ORDER BY c.${sort} ${order}
+      SKIP ${skip}
+      LIMIT ${limit}
 
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts
+      // Get counts of connected nodes
+      WITH
+          c,
+          size([(c)<-[:PART_OF]-(sub:Collection) | sub]) as collectionCount,
+          size([(c)<-[:PART_OF]-(sub:Text) | sub]) as textCount,
+          size([(c)-[:HAS_ANNOTATION]-(a:Annotation) | a]) as annotationCount
 
-    RETURN collect({
-        collection: {
-            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-            data: c {.*}
-        }, 
-        texts: [
-            t IN texts | {
-                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
-                data: t {.*}
-            }
-        ]
-    }) AS collections
-    `;
+      RETURN collect({
+          collection: {
+              nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+              data: c {.*}
+          }, 
+          nodeCounts: {
+              collections: collectionCount,
+              texts: textCount,
+              annotations: annotationCount
+          }
+      }) AS collections
+      `;
 
     const [countResult, dataResult] = await Promise.all([
       Neo4jDriver.runQuery(countQuery, { additionalLabels, search }),
@@ -97,11 +113,9 @@ export default class CollectionService {
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const rawData: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: CollectionPreview[] = dataResult.records[0]?.get('collections') || [];
 
-    const data: CollectionAccessObject[] = rawData.map(cao =>
-      toNativeTypes(cao),
-    ) as CollectionAccessObject[];
+    const data: CollectionPreview[] = rawData.map(cao => toNativeTypes(cao)) as CollectionPreview[];
 
     return {
       data,

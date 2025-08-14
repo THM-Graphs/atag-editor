@@ -1,70 +1,52 @@
 <script setup lang="ts">
-import { computed, ComputedRef } from 'vue';
 import { RouterLink } from 'vue-router';
-import { useGuidelinesStore } from '../store/guidelines';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { capitalize } from '../utils/helper/helper';
-import Column, { ColumnPassThroughMethodOptions } from 'primevue/column';
+import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
-import { CollectionAccessObject, PropertyConfig, PaginationData } from '../models/types';
+import { PaginationData, CollectionPreview } from '../models/types';
 
-type CollectionTableEntry = {
-  [key: string | keyof PropertyConfig]: unknown;
-};
-
-type ColumnConfig = {
-  name: string;
-  isSortable: boolean;
-};
+type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
 
 const props = defineProps<{
-  collections: CollectionAccessObject[] | null;
+  collections: CollectionPreview[] | null;
   pagination: PaginationData | null;
   asyncOperationRunning: boolean;
 }>();
 
 const emit = defineEmits(['paginationChanged', 'sortChanged']);
 
-const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
+const COLUMN_CONFIG = {
+  nodeLabels: { width: '8rem', sortable: false },
+  label: { width: 'auto', sortable: true },
+  texts: { width: '5rem', sortable: true },
+  annotations: { width: 'auto', sortable: true },
+  collections: { width: 'auto', sortable: true },
+} as const;
 
-const columns: ComputedRef<ColumnConfig[]> = computed(() => {
-  // Get Collection type that is shown in the table and does not only exist as anchor to additional text
-  // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-  const primaryCollectionLabel: ComputedRef<string> = computed(
-    () => guidelines.value?.collections.types.find(t => t.level === 'primary')?.additionalLabel,
-  );
+/**
+ * Returns PrimeVue DataTable Column properties based on the given column name.
+ *
+ * The properties are determined by the COLUMN_CONFIG object.
+ *
+ * @param {ColumnName} columnName - The column name for which to return the properties.
+ * @returns {Partial<ColumnProps>} - The column properties.
+ */
+function getColumnProps(columnName: ColumnName): Partial<ColumnProps> {
+  const config = COLUMN_CONFIG[columnName];
 
-  // TODO: This approach is bad since possible data keys are reserved...
-  return [
-    { name: 'nodeLabels', isSortable: false },
-    ...getCollectionConfigFields([primaryCollectionLabel.value]).map(f => ({
-      name: f.name,
-      isSortable: true,
-    })),
-    { name: 'texts', isSortable: false },
-  ];
-});
-
-const tableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
-  return props?.collections?.map(collection => {
-    return {
-      ...collection.collection.data,
-      texts: collection.texts.length,
-      nodeLabels: collection.collection.nodeLabels,
-    };
-  });
-});
-
-function getColumnWidth(columnName: string): string {
-  switch (columnName) {
-    case 'nodeLabels':
-      return '8rem';
-    case 'texts':
-      return '5rem';
-    default:
-      return 'auto';
-  }
+  return {
+    field: columnName,
+    header: capitalize(columnName),
+    sortable: config.sortable,
+    headerStyle: `width: ${config.width}`,
+    pt: {
+      headerCell: {
+        title: config.sortable ? `Sort by ${capitalize(columnName)}` : '',
+      },
+    },
+  };
 }
 
 function handleSort(event: DataTableSortEvent): void {
@@ -78,12 +60,12 @@ function handlePagination(event: DataTablePageEvent): void {
 
 <template>
   <div class="flex-grow-1 overflow-y-auto">
-    <LoadingSpinner v-if="!tableData" />
+    <LoadingSpinner v-if="!props.collections" />
     <DataTable
       v-else
       scrollable
       scrollHeight="flex"
-      :value="tableData"
+      :value="props.collections"
       paginator
       lazy
       :rows="pagination?.limit || 0"
@@ -106,48 +88,48 @@ function handlePagination(event: DataTablePageEvent): void {
         },
       }"
     >
-      <Column
-        v-for="col of columns"
-        :key="col.name"
-        :field="col.name"
-        :header="capitalize(col.name)"
-        :sortable="col.isSortable"
-        :headerStyle="`width: ${getColumnWidth(col.name)}`"
-        :pt="{
-          headerCell: (options: ColumnPassThroughMethodOptions) => {
-            return {
-              title: options.props.sortable ? `Sort by ${options.props.header}` : undefined,
-            };
-          },
-        }"
-      >
-        <template #body="{ data }">
-          <!-- TODO: This should come from the configuration... -->
-          <!-- TODO: Bit hacky. Beautify? -->
-          <RouterLink
-            v-if="col.name === 'label'"
-            class="cell-link"
-            :to="`/collections/${data.uuid}`"
-            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
-            >{{ data[col.name] }}</RouterLink
-          >
-          <span v-else-if="col.name === 'texts'" class="cell-info">{{ data[col.name] }}</span>
-          <span v-else-if="col.name === 'nodeLabels'" class="cell-info">
+      <Column v-bind="getColumnProps('nodeLabels')">
+        <template #body="{ data: row }: { data: CollectionPreview }">
+          <span class="cell-info">
             <div class="box flex" style="flex-wrap: wrap">
               <Tag
-                v-for="label in data.nodeLabels"
+                v-for="label in row.collection.nodeLabels"
                 :value="label"
                 severity="contrast"
                 class="mr-1 mb-1 mt-1 inline-block"
               />
             </div>
           </span>
-          <span
-            v-else
-            class="cell-info"
-            v-tooltip.hover.top="{ value: data[col.name], showDelay: 0 }"
-            >{{ data[col.name] }}</span
+        </template>
+      </Column>
+
+      <Column v-bind="getColumnProps('label')">
+        <template #body="{ data: row }: { data: CollectionPreview }">
+          <RouterLink
+            class="cell-link"
+            :to="`/collections/${row.collection.data.uuid}`"
+            v-tooltip.hover.top="{ value: row.collection.data.label, showDelay: 0 }"
           >
+            {{ row.collection.data.label }}
+          </RouterLink>
+        </template>
+      </Column>
+
+      <Column v-bind="getColumnProps('collections')">
+        <template #body="{ data: row }: { data: CollectionPreview }">
+          <span class="cell-info">{{ row.nodeCounts.collections }}</span>
+        </template>
+      </Column>
+
+      <Column v-bind="getColumnProps('texts')">
+        <template #body="{ data: row }: { data: CollectionPreview }">
+          <span class="cell-info">{{ row.nodeCounts.texts }}</span>
+        </template>
+      </Column>
+
+      <Column v-bind="getColumnProps('annotations')">
+        <template #body="{ data: row }: { data: CollectionPreview }">
+          <span class="cell-info">{{ row.nodeCounts.annotations }}</span>
         </template>
       </Column>
     </DataTable>

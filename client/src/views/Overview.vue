@@ -10,7 +10,7 @@ import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { CollectionAccessObject, PaginationData, PaginationResult } from '../models/types';
+import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 
 const INPUT_DELAY: number = 300;
@@ -22,7 +22,7 @@ useTitle('ATAG Editor');
 
 const { initializeGuidelines, guidelines } = useGuidelinesStore();
 
-const collections = ref<CollectionAccessObject[] | null>(null);
+const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 
 const asyncOperationRunning = ref<boolean>(false);
@@ -71,7 +71,7 @@ async function getCollections(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const paginationResult: PaginationResult<CollectionAccessObject[]> = await response.json();
+    const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
 
     collections.value = paginationResult.data;
     pagination.value = paginationResult.pagination;
