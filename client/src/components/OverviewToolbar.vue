@@ -149,6 +149,7 @@ async function showDialog(): Promise<void> {
     },
     texts: [],
     annotations: [],
+    collections: [],
   };
 }
 
