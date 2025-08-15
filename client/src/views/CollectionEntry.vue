@@ -15,6 +15,7 @@ import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
+import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areSetsEqual,
@@ -27,7 +28,6 @@ import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
   AnnotationType,
-  Collection,
   CollectionAccessObject,
   CollectionPostData,
   PropertyConfig,
@@ -54,12 +54,6 @@ type TextTableEntry = {
   labels: string[];
   length: number;
   text: string;
-  uuid: string;
-};
-
-type CollectionTableEntry = {
-  label: string;
-  labels: string[];
   uuid: string;
 };
 
@@ -116,16 +110,6 @@ const textsTableData: ComputedRef<TextTableEntry[]> = computed(() => {
       text: text.data.text,
       uuid: text.data.uuid,
       length: text.data.text.length,
-    };
-  });
-});
-
-const collectionsTableData: ComputedRef<CollectionTableEntry[]> = computed(() => {
-  return collectionAccessObject.value.collections.map((collection: Collection) => {
-    return {
-      labels: collection.nodeLabels,
-      uuid: collection.data.uuid,
-      label: collection.data.label,
     };
   });
 });
@@ -503,6 +487,8 @@ async function getCollection(): Promise<void> {
     collectionAccessObject.value = fetchedCollectionAccessObject;
     initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
     isValidCollection.value = true;
+
+    console.log(collectionAccessObject.value);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -847,112 +833,15 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           </div>
         </div>
         <div class="collections-pane w-full">
-          <h2 class="text-center">Collections ({{ collectionAccessObject.collections.length }})</h2>
+          <h2 class="text-center">
+            Collections ({{ collectionAccessObject.collections.pagination.totalRecords }})
+          </h2>
           <div class="collection-pane-content">
-            <DataTable
-              :value="collectionsTableData"
-              scrollable
-              scrollHeight="flex"
-              resizableColumns
-              rowHover
-              tableStyle="table-layout: fixed;"
-              size="small"
-            >
-              <Column field="labels" header="Labels" headerStyle="width: 12rem">
-                <template #body="{ data }">
-                  <!-- TODO: Remove filter. Can be fixed when Primevue version is upgraded -->
-                  <MultiSelect
-                    v-if="mode === 'edit'"
-                    v-model="
-                      collectionAccessObject.collections.find(t => t.data.uuid === data.uuid)
-                        .nodeLabels
-                    "
-                    :options="availableCollectionLabels"
-                    display="chip"
-                    placeholder="Select labels"
-                    :filter="false"
-                  >
-                    <template #chip="{ value }">
-                      <Tag :value="value" severity="secondary" class="mr-1" />
-                    </template>
-                  </MultiSelect>
-                  <span v-else class="cell-info">
-                    <div class="box flex" style="flex-wrap: wrap">
-                      <Tag
-                        v-for="label in data.labels"
-                        :value="label"
-                        severity="secondary"
-                        class="mr-1 mb-1 inline-block"
-                      />
-                    </div>
-                  </span>
-                </template>
-              </Column>
-              <Column field="text" header="Label">
-                <template #body="{ data }">
-                  <RouterLink
-                    class="cell-link block w-full"
-                    :to="`/collections/${data.uuid}`"
-                    title="Go to Collection page"
-                  >
-                    <span>{{ data.label }}</span>
-                  </RouterLink>
-                </template>
-              </Column>
-
-              <Column v-if="mode === 'edit'" field="actions" headerStyle="width: 7rem">
-                <template #body="{ data }">
-                  <div class="flex gap-2">
-                    <div style="display: flex; flex-direction: column">
-                      <Button
-                        v-if="mode === 'edit'"
-                        :disabled="
-                          collectionAccessObject.collections.findIndex(
-                            t => t.data.uuid === data.uuid,
-                          ) === 0
-                        "
-                        class="h-1rem"
-                        title="Move text up"
-                        severity="secondary"
-                        icon="pi pi-chevron-up"
-                        size="small"
-                        @click="shiftText(data.uuid, 'up')"
-                      /><Button
-                        v-if="mode === 'edit'"
-                        :disabled="
-                          collectionAccessObject.collections.findIndex(
-                            t => t.data.uuid === data.uuid,
-                          ) ===
-                          collectionAccessObject.collections.length - 1
-                        "
-                        class="h-1rem"
-                        title="Move text down"
-                        severity="secondary"
-                        icon="pi pi-chevron-down"
-                        size="small"
-                        @click="shiftText(data.uuid, 'down')"
-                      />
-                    </div>
-                    <Button
-                      v-if="mode === 'edit'"
-                      title="Delete text"
-                      severity="danger"
-                      icon="pi pi-trash"
-                      size="small"
-                      @click="handleDeleteText(data.uuid)"
-                    />
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
-            <Button
-              v-show="mode === 'edit'"
-              label="Add new text"
-              title="Add new text to collection"
-              icon="pi pi-plus"
-              style="display: block; margin: 1rem auto"
-              @click="handleAddNewText"
-            ></Button>
+            <OverviewCollectionTable
+              :collections="collectionAccessObject.collections.data"
+              :pagination="collectionAccessObject.collections.pagination"
+              :async-operation-running="asyncOperationRunning"
+            />
           </div>
         </div>
       </SplitterPanel>
