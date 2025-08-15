@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, ref } from 'vue';
+import { computed, ComputedRef, onMounted, ref, watch } from 'vue';
 import {
   onBeforeRouteLeave,
   RouteLocationNormalizedLoaded,
@@ -14,6 +14,7 @@ import CollectionAnnotationButton from '../components/CollectionAnnotationButton
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
+import OverviewToolbar from '../components/OverviewToolbar.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
@@ -39,7 +40,7 @@ import {
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
-import DataTable from 'primevue/datatable';
+import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
@@ -50,7 +51,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import { useTitle } from '@vueuse/core';
+import { refDebounced, useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
 
 type TextTableEntry = {
@@ -77,6 +78,38 @@ const {
 } = useGuidelinesStore();
 
 const collectionUuid: string = route.params.uuid as string;
+
+// --------------- For paginating collection table --------------------------------
+const INPUT_DELAY: number = 300;
+const baseFetchUrl: string = `/api/collections/${collectionUuid}`;
+
+const searchInput = ref<string>('');
+// This ref is used to prevent too many fetches when rapid typing
+const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
+const offset = ref<number>(0);
+// TODO: Make dynamically
+const rowCount = ref<number>(10);
+const sortField = ref<string>('');
+const sortDirection = ref<'asc' | 'desc'>('asc');
+
+const includedNodeLabels = ref<string[]>([]);
+
+const collectionFetchUrl = computed<string>(() => {
+  const searchParams: URLSearchParams = new URLSearchParams();
+
+  searchParams.set('sort', sortField.value);
+  searchParams.set('order', sortDirection.value);
+  searchParams.set('limit', rowCount.value.toString());
+  searchParams.set('skip', offset.value.toString());
+  searchParams.set('search', debouncedSearchInput.value);
+  searchParams.set('nodeLabels', includedNodeLabels.value.join(','));
+
+  return `${baseFetchUrl}/collections?${searchParams.toString()}`;
+});
+
+watch(collectionFetchUrl, async () => await getSubCollections());
+
+// ------------------------------------------------------------------------------
 
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const isValidCollection = ref<boolean>(false);
@@ -288,6 +321,30 @@ async function handleSaveChanges(): Promise<void> {
   } finally {
     asyncOperationRunning.value = false;
   }
+}
+
+function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
+  includedNodeLabels.value = selectedLabels;
+}
+
+function handleSearchInputChange(newInput: string): void {
+  searchInput.value = newInput;
+}
+
+function handleSortChange(event: DataTableSortEvent): void {
+  updateTableUrlParams(event);
+}
+
+function handlePaginationChange(event: DataTablePageEvent): void {
+  updateTableUrlParams(event);
+}
+
+function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
+  // TODO: Fix this, looks ugly
+  sortField.value = (event.sortField as string | null) || '';
+  sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
+  rowCount.value = event.rows || 5;
+  offset.value = event.first || 0;
 }
 
 function hasUnsavedChanges(): boolean {
@@ -532,9 +589,7 @@ async function getAnnotations(): Promise<void> {
 async function getSubCollections(): Promise<void> {
   try {
     // TODO: Dynamic url
-    const url: string = buildFetchUrl(
-      `/api/collections/${collectionUuid}/collections?sort=&order=asc&limit=10&skip=0&search=&nodeLabels=Letter%2CComment%2CCommentInternal%2CManuscript%2CRoot`,
-    );
+    const url: string = buildFetchUrl(collectionFetchUrl.value);
 
     const response: Response = await fetch(url);
 
@@ -909,11 +964,18 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           <h2 class="text-center">
             Collections ({{ collectionAccessObject.collections.pagination.totalRecords }})
           </h2>
+          <OverviewToolbar
+            v-if="guidelines"
+            @search-input-changed="handleSearchInputChange"
+            @node-labels-input-changed="handleNodeLabelsInputChanged"
+          />
           <div class="collection-pane-content">
             <OverviewCollectionTable
               :collections="collectionAccessObject.collections.data"
               :pagination="collectionAccessObject.collections.pagination"
               :async-operation-running="asyncOperationRunning"
+              @sort-changed="handleSortChange"
+              @pagination-changed="handlePaginationChange"
             />
           </div>
         </div>
