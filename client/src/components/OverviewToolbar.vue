@@ -149,8 +149,8 @@ async function showDialog(): Promise<void> {
     },
     texts: [],
     annotations: [],
-    collections: [],
-  };
+    collections: {},
+  } as CollectionAccessObject;
 }
 
 async function hideDialog(): Promise<void> {

@@ -232,125 +232,29 @@ export default class CollectionService {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
-    const collectionFields: PropertyConfig[] =
-      guidelineService.getCollectionConfigFieldsFromGuidelines(
-        guidelines,
-        data.collection.nodeLabels,
-      );
+    const fields: PropertyConfig[] = guidelineService.getCollectionConfigFieldsFromGuidelines(
+      guidelines,
+      data.collection.nodeLabels,
+    );
 
     const collection: Collection = {
       nodeLabels: [...data.collection.nodeLabels, 'Collection'],
       data: {
-        ...toNeo4jTypes(data.collection.data, collectionFields),
+        ...toNeo4jTypes(data.collection.data, fields),
         uuid: crypto.randomUUID(),
-      } as ICollection,
-    };
-
-    // TODO: Improve this (own type?)
-    const annotations: any = data.annotations.map(a => {
-      const annotationConfigFields: PropertyConfig[] =
-        guidelineService.getAnnotationConfigFieldsFromGuidelines(guidelines, a.properties.type);
-
-      return {
-        properties: toNeo4jTypes(a.properties, annotationConfigFields) as IAnnotation,
-        entities: Object.values(a.entities)
-          .flat()
-          .map(i => i.uuid),
-        additionalTexts: a.additionalTexts.map(additionalText => {
-          const collectionConfigFields: PropertyConfig[] =
-            guidelineService.getCollectionConfigFieldsFromGuidelines(
-              guidelines,
-              additionalText.collection.nodeLabels,
-            );
-
-          return {
-            collection: {
-              nodeLabels: additionalText.collection.nodeLabels,
-              data: toNeo4jTypes(
-                additionalText.collection.data,
-                collectionConfigFields,
-              ) as ICollection,
-            },
-            text: {
-              nodeLabels: additionalText.text.nodeLabels,
-              data: additionalText.text.data,
-              characters: additionalText.text.data.text.split('').map(c => {
-                return {
-                  uuid: crypto.randomUUID(),
-                  text: c,
-                };
-              }),
-            },
-          };
-        }),
-      };
-    });
+      },
+    } as Collection;
 
     const query: string = `
     CALL apoc.create.node($collection.nodeLabels, $collection.data) YIELD node as c
 
-    CALL {
-        WITH c
-
-        UNWIND $annotations AS ann
-
-        WITH ann, c
-
-        // Create new annotation node
-        MERGE (a:Annotation {uuid: ann.properties.uuid})
-
-        // Set data
-        SET a = ann.properties
-
-        // Create edge to collection node
-        MERGE (t)-[:HAS_ANNOTATION]->(a)
-
-        // Remove edges to nodes that are not longer part of the annotation data
-        WITH ann, a, c
-
-        // Create edges to Entity nodes
-        CALL {
-            WITH ann, a
-            UNWIND ann.entities AS createdUuid
-            MATCH (e:Entity {uuid: createdUuid})
-            MERGE (a)-[r:REFERS_TO]->(e)
-        }
-
-        // Create additional text nodes
-        CALL {
-            WITH ann, a
-            UNWIND ann.additionalTexts as textToCreate
-            
-            CREATE (a)-[:REFERS_TO]->(c:Collection)<-[:PART_OF]-(t:Text)
-
-            WITH textToCreate, a, c, t
-
-            CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node
-            SET c += textToCreate.collection.data
-            SET t += textToCreate.text.data
-
-            WITH textToCreate, a, c, t
-
-            CALL atag.chains.update(t.uuid, null, null, textToCreate.text.characters, {
-              textLabel: "Text",
-              elementLabel: "Character",
-              relationshipType: "NEXT_CHARACTER"
-            }) YIELD path
-
-            RETURN collect(textToCreate) as createdText
-        }
-
-        RETURN collect(a) as createdAnnotations
-    }
-
-    RETURN c {.*} AS collection
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      data,
-      collection,
-      annotations,
-    });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { collection });
 
     return result.records[0]?.get('collection');
   }
