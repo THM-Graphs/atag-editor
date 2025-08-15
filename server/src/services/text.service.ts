@@ -1,25 +1,38 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/not-found.error.js';
-import IText from '../models/IText.js';
-import { TextAccessObject } from '../models/types.js';
+import { Text, TextAccessObject } from '../models/types.js';
 import { toNativeTypes } from '../utils/helper.js';
 
 export default class TextService {
-  /**
-   * Retrieves text nodes based on the additional label provided.
-   *
-   * @param {string} additionalLabel - The additional label to match in the query, for example "LetterText" for text nodes that are
-   * the entry point for a letter text.
-   * @return {Promise<IText[]>} A promise that resolves to an array of texts.
-   */
-  public async getTexts(additionalLabel?: string): Promise<IText[]> {
+  public async getTexts(collectionUuid: string): Promise<Text[]> {
     const query: string = `
-    MATCH (t:Text${additionalLabel ? `:${additionalLabel}` : ''})
-    RETURN COLLECT(t {.*}) as texts
+    MATCH (c:Collection {uuid: $uuid})
+
+    CALL {
+        WITH c
+  
+        OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+        WHERE NOT ()-[:NEXT]->(tStart)
+        OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+
+        WITH tStart, collect(t) AS nextTexts
+        WITH coalesce(tStart, []) + nextTexts AS texts
+
+        RETURN texts as texts
+    }
+
+    WITH c, texts
+
+    RETURN [
+            t IN texts | {
+                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                data: t {.*}
+            }
+    ] AS texts
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query);
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid: collectionUuid });
 
     return result.records[0]?.get('texts');
   }

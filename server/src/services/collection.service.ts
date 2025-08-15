@@ -54,7 +54,7 @@ export default class CollectionService {
   ): Promise<PaginationResult<CollectionPreview[]>> {
     // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch everything
     const baseCollectionSnippet = parentUuid
-      ? `MATCH (parent:Collection {uuid: ${parentUuid}})<-[:PART_OF]-(c:Collection)`
+      ? `MATCH (parent:Collection {uuid: '${parentUuid}'})<-[:PART_OF]-(c:Collection)`
       : `MATCH (c:Collection)`;
 
     const baseQuery: string =
@@ -135,20 +135,26 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the retrieved collection.
+   * @return {Promise<Collection>} A promise that resolves to the retrieved collection.
    */
-  public async getCollectionById(uuid: string): Promise<ICollection> {
+  public async getCollection(uuid: string): Promise<Collection> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    RETURN c {.*} AS collection
+
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const collection: ICollection = result.records[0]?.get('collection');
+    const rawCollection: Collection = result.records[0]?.get('collection');
 
-    if (!collection) {
+    if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
+
+    const collection: Collection = toNativeTypes(rawCollection) as Collection;
 
     return collection;
   }
@@ -159,12 +165,11 @@ export default class CollectionService {
   
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Omit<CollectionAccessObject, 'annotations'>>} A promise that resolves to the retrieved collection and text nodes, but not the annotations nodes.
+   * @return {Promise<Omit<CollectionAccessObject, 'annotations' | 'collections'>>} A promise that resolves to the retrieved collection and text nodes, but not the annotations nodes.
    */
   public async getExtendedCollectionById(
     uuid: string,
-  ): Promise<Omit<CollectionAccessObject, 'annotations'>> {
-    // TODO: This query is not working with more than one additional node label. Considerate
+  ): Promise<Omit<CollectionAccessObject, 'annotations' | 'collections'>> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
@@ -182,22 +187,7 @@ export default class CollectionService {
         RETURN texts as texts
     }
 
-    // Match optional Collection node chain
-    CALL {
-        WITH c
-
-        OPTIONAL MATCH (c)<-[:PART_OF]-(cStart:Collection)
-        WHERE NOT ()-[:NEXT]->(cStart)
-        OPTIONAL MATCH (cStart)-[:NEXT*]->(cNext:Collection)
-
-        WITH cStart, collect(cNext) AS nextCollections
-        WITH coalesce(cStart, []) + nextCollections AS collections
-
-        RETURN collections as collections
-    }
-
-
-    WITH c, texts, collections
+    WITH c, texts
 
     RETURN {
         collection: {
@@ -209,27 +199,21 @@ export default class CollectionService {
                 nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
                 data: t {.*}
             }
-        ],
-        collections: [
-            c IN collections | {
-                nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-                data: c {.*}
-            }
         ]
     } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const rawCollection: Omit<CollectionAccessObject, 'annotations'> =
+    const rawCollection: Omit<CollectionAccessObject, 'annotations' | 'collections'> =
       result.records[0]?.get('collection');
 
     if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    const collection: Omit<CollectionAccessObject, 'annotations'> = toNativeTypes(
+    const collection: Omit<CollectionAccessObject, 'annotations' | 'collections'> = toNativeTypes(
       rawCollection,
-    ) as Omit<CollectionAccessObject, 'annotations'>;
+    ) as Omit<CollectionAccessObject, 'annotations' | 'collections'>;
 
     return collection;
   }

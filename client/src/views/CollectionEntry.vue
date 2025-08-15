@@ -28,8 +28,11 @@ import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
   AnnotationType,
+  Collection,
   CollectionAccessObject,
   CollectionPostData,
+  CollectionPreview,
+  PaginationResult,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -90,7 +93,7 @@ const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
 useTitle(
-  computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label ?? ''}`),
+  computed(() => `Collection | ${collectionAccessObject.value?.collection?.data.label ?? ''}`),
 );
 
 const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
@@ -117,7 +120,7 @@ const textsTableData: ComputedRef<TextTableEntry[]> = computed(() => {
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
 
 onMounted(async (): Promise<void> => {
-  await getCollection();
+  await getData();
 
   if (isValidCollection.value) {
     await getGuidelines();
@@ -482,15 +485,85 @@ async function getCollection(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
+    const fetchedCollection: Collection = await response.json();
 
-    collectionAccessObject.value = fetchedCollectionAccessObject;
-    initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
-    isValidCollection.value = true;
-
-    console.log(collectionAccessObject.value);
+    collectionAccessObject.value.collection = fetchedCollection;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
+  }
+}
+
+async function getTexts(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/texts`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedTexts: Text[] = await response.json();
+
+    collectionAccessObject.value.texts = fetchedTexts;
+  } catch (error: unknown) {
+    console.error('Error fetching texts for collection:', error);
+  }
+}
+
+async function getAnnotations(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/annotations`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedAnnotations: AnnotationData[] = await response.json();
+
+    collectionAccessObject.value.annotations = fetchedAnnotations;
+  } catch (error: unknown) {
+    console.error('Error fetching annotations for collection:', error);
+  }
+}
+
+async function getSubCollections(): Promise<void> {
+  try {
+    // TODO: Dynamic url
+    const url: string = buildFetchUrl(
+      `/api/collections/${collectionUuid}/collections?sort=&order=asc&limit=10&skip=0&search=&nodeLabels=Letter%2CComment%2CCommentInternal%2CManuscript%2CRoot`,
+    );
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedCollections: PaginationResult<CollectionPreview[]> = await response.json();
+
+    collectionAccessObject.value.collections = fetchedCollections;
+  } catch (error: unknown) {
+    console.error('Error fetching collection:', error);
+  }
+}
+
+async function getData(): Promise<void> {
+  collectionAccessObject.value = {} as CollectionAccessObject;
+
+  try {
+    await getCollection();
+    await getSubCollections();
+    await getTexts();
+    await getAnnotations();
+
+    initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
+
+    isValidCollection.value = true;
+  } catch (error: unknown) {
+    console.error('Error fetching data:', error);
   }
 }
 

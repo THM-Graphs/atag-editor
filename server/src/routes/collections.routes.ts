@@ -1,15 +1,14 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
+import textRoutes from './text.routes.js';
 import AnnotationService from '../services/annotation.service.js';
 import CollectionService from '../services/collection.service.js';
-import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
-import { IGuidelines } from '../models/IGuidelines.js';
 import IAnnotation from '../models/IAnnotation.js';
 import {
   Annotation,
-  AnnotationData,
+  Collection,
   CollectionAccessObject,
   CollectionPostData,
   CollectionPreview,
@@ -64,18 +63,35 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const { collection, texts, collections } =
-      await collectionService.getExtendedCollectionById(uuid);
-    const annotations: AnnotationData[] = await annotationService.getAnnotations(uuid);
+    const collection: Collection = await collectionService.getCollection(uuid);
 
-    const collectionAccessObject: CollectionAccessObject = {
-      collection,
-      collections,
-      texts,
-      annotations,
-    };
+    res.status(200).json(collection);
+  } catch (error: unknown) {
+    next(error);
+  }
+});
 
-    res.status(200).json(collectionAccessObject);
+router.get('/:uuid/collections', async (req: Request, res: Response, next: NextFunction) => {
+  const parentUuid: string = req.params.uuid;
+
+  const { sort, order, limit, skip, search } = getPagination(req);
+  const nodeLabels: string[] = ((req.query.nodeLabels as string) ?? '')
+    .split(',')
+    .filter(label => label.trim() !== '');
+
+  try {
+    const collections: PaginationResult<CollectionPreview[]> =
+      await collectionService.getCollections(
+        nodeLabels,
+        sort,
+        order,
+        limit,
+        skip,
+        search,
+        parentUuid,
+      );
+
+    res.status(200).json(collections);
   } catch (error: unknown) {
     next(error);
   }
@@ -115,5 +131,6 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
 
 router.use('/:uuid/characters', characterRoutes);
 router.use('/:uuid/annotations', annotationRoutes);
+router.use('/:uuid/texts', textRoutes);
 
 export default router;
