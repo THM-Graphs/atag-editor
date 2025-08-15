@@ -8,9 +8,9 @@ const router: Router = express.Router({ mergeParams: true });
 
 const textService: TextService = new TextService();
 
-// GET /collections/:uuid/texts
+// GET /collections/:collectionUuid/texts
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const collectionUuid: string = req.params.uuid; // This is the collection UUID
+  const collectionUuid: string = req.params.collectionUuid; // This is the collection UUID
 
   try {
     const texts: Text[] = await textService.getTexts(collectionUuid);
@@ -21,7 +21,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /collections/:uuid/texts/:textUuid
+// GET /collections/:collectionUuid/texts/:textUuid
 router.get('/:textUuid', async (req: Request, res: Response, next: NextFunction) => {
   const textUuid: string = req.params.textUuid; // This is the specific text UUID
 

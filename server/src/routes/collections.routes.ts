@@ -129,8 +129,7 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-router.use('/:uuid/characters', characterRoutes);
-router.use('/:uuid/annotations', annotationRoutes);
-router.use('/:uuid/texts', textRoutes);
+router.use('/:collectionUuid/annotations', annotationRoutes);
+router.use('/:collectionUuid/texts', textRoutes);
 
 export default router;
