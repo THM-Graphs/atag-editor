@@ -8,7 +8,7 @@ const router: Router = express.Router({ mergeParams: true });
 const annotationService: AnnotationService = new AnnotationService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const textUuid: string = req.params.uuid;
+  const textUuid: string = req.params.textUuid;
 
   try {
     const annotations: AnnotationData[] = await annotationService.getAnnotations(textUuid);
@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const textUuid: string = req.params.uuid;
+  const textUuid: string = req.params.textUuid;
   const annotations = req.body;
 
   try {
