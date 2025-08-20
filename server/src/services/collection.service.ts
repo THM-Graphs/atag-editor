@@ -14,6 +14,7 @@ import {
   Text,
   Collection,
   CollectionPreview,
+  NodeAncestry,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -157,6 +158,60 @@ export default class CollectionService {
     const collection: Collection = toNativeTypes(rawCollection) as Collection;
 
     return collection;
+  }
+
+  /**
+   * Retrieves data of a specified collection node.
+   *
+   * @param {string} uuid - The UUID of the collection node to retrieve.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<NodeAncestry[]>} A promise that resolves to the retrieved collection.
+   */
+
+  /**
+   * Retrieves the ancestry nodes of the node with the given UUID, i.e. the nodes that
+   * are connected to the given node via PART_OF, HAS_ANNOTATION or
+   * REFERS_TO relationships. This is used to determine the position of a node in the Collection/Text
+   * network and create breadcrumb-like visualization and navigation in the frontend.
+   *
+   * @param {string} uuid - The UUID of the node to retrieve the ancestry for.
+   * @return {Promise<NodeAncestry[]>} A promise that resolves to an array of node ancestries. Each node ancestry
+   * is an array of node objects with their labels and properties.
+   */
+  public async getAncestry(uuid: string): Promise<NodeAncestry[]> {
+    // TODO: maxLevel 50 should be enough, but change maybe?
+    // TODO: What if circular matches happen? uniqueness should filter that
+    const query: string = `
+    MATCH (c:Collection|Annotation|Text {uuid: $uuid})
+
+    CALL apoc.path.expandConfig(c, {
+        relationshipFilter: 'PART_OF>|HAS_ANNOTATION<|REFERS_TO<',
+        labelFilter: 'Collection|Annotation|Text',
+        maxLevel: 50,
+        uniqueness: 'NODE_PATH'
+    }) YIELD path
+
+    WITH path, last(nodes(path)) AS topNode
+
+    // Keep only "longest paths" (which have Collections above the or annotations that reference it)
+    WHERE
+        NOT (topNode)-[:PART_OF]->() AND
+        NOT ()-[:REFERS_TO]->(topNode) AND 
+        NOT ()-[:HAS_ANNOTATION]->(topNode)
+
+    RETURN collect([
+        n IN reverse(tail(nodes(path))) | {
+            nodeLabels: labels(n), 
+            data: n {.*}
+        }
+    ]) as paths
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+    const ancestryPaths: NodeAncestry[] = result.records[0]?.get('paths');
+
+    // TODO: Nested array, therefore this...fix within toNativeTypes function?
+    return ancestryPaths.map(p => p.map(node => toNativeTypes(node))) as NodeAncestry[];
   }
 
   /**

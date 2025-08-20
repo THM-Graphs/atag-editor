@@ -103,6 +103,8 @@ export type Node<T extends BaseNodeData> = {
   nodeLabels: string[];
 };
 
+export type NodeAncestry = (Text | Collection | IAnnotation)[];
+
 export type PaginationData = {
   limit: number;
   order: string;

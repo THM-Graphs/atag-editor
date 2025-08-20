@@ -33,6 +33,7 @@ import {
   CollectionAccessObject,
   CollectionPostData,
   CollectionPreview,
+  NodeAncestry,
   PaginationResult,
   PropertyConfig,
   Text,
@@ -112,6 +113,7 @@ watch(collectionFetchUrl, async () => await getSubCollections());
 // ------------------------------------------------------------------------------
 
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
+const ancestryPaths = ref<NodeAncestry[]>([]);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
@@ -532,6 +534,25 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
+async function getCollectionAncestry(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/ancestry`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedAncestryPaths: NodeAncestry[] = await response.json();
+
+    ancestryPaths.value = fetchedAncestryPaths;
+    console.log(ancestryPaths.value);
+  } catch (error: unknown) {
+    console.error('Error fetching collection:', error);
+  }
+}
+
 async function getCollection(): Promise<void> {
   try {
     const url: string = buildFetchUrl(`/api/collections/${collectionUuid}`);
@@ -610,6 +631,7 @@ async function getData(): Promise<void> {
 
   try {
     await getCollection();
+    await getCollectionAncestry();
     await getSubCollections();
     await getTexts();
     await getAnnotations();
@@ -850,6 +872,31 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">
+        <div class="breadcrumbs-pane">
+          <div v-for="path in ancestryPaths">
+            <span v-for="(node, index) in path">
+              <span v-if="index !== 0"> -> </span>
+              <RouterLink
+                v-if="node.nodeLabels.includes('Collection')"
+                :to="`/collections/${node.data.uuid}`"
+                :title="`Go to Collection ${node.data.uuid}`"
+              >
+                {{ node.data.label }}
+                <i class="pi pi-external-link"></i>
+              </RouterLink>
+              <a
+                v-else-if="node.nodeLabels.includes('Text')"
+                :href="`/texts/${node.data.uuid}`"
+                :title="`Go to Text ${node.data.uuid}`"
+                target="_blank"
+              >
+                Text
+                <i class="pi pi-external-link"></i>
+              </a>
+              <span v-else> Annotation {{ node.data.type }}</span>
+            </span>
+          </div>
+        </div>
         <div class="texts-pane w-full">
           <h2 class="text-center">Texts ({{ collectionAccessObject.texts.length }})</h2>
           <div class="text-pane-content">

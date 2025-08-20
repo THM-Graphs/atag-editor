@@ -12,6 +12,7 @@ import {
   CollectionAccessObject,
   CollectionPostData,
   CollectionPreview,
+  NodeAncestry,
   PaginationResult,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
@@ -92,6 +93,18 @@ router.get('/:uuid/collections', async (req: Request, res: Response, next: NextF
       );
 
     res.status(200).json(collections);
+  } catch (error: unknown) {
+    next(error);
+  }
+});
+
+router.get('/:uuid/ancestry', async (req: Request, res: Response, next: NextFunction) => {
+  const uuid: string = req.params.uuid;
+
+  try {
+    const ancestryPaths: NodeAncestry[] = await collectionService.getAncestry(uuid);
+
+    res.status(200).json(ancestryPaths);
   } catch (error: unknown) {
     next(error);
   }
