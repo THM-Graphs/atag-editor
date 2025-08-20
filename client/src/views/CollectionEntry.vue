@@ -16,7 +16,7 @@ import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
-import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
+import CollectionTable from '../components/CollectionTable.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areSetsEqual,
@@ -970,7 +970,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             @node-labels-input-changed="handleNodeLabelsInputChanged"
           />
           <div class="collection-pane-content">
-            <OverviewCollectionTable
+            <CollectionTable
               :collections="collectionAccessObject.collections.data"
               :pagination="collectionAccessObject.collections.pagination"
               :async-operation-running="asyncOperationRunning"

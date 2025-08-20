@@ -6,7 +6,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
-import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
+import CollectionTable from '../components/CollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
@@ -158,7 +158,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       >
     </div>
 
-    <OverviewCollectionTable
+    <CollectionTable
       v-if="guidelines"
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
