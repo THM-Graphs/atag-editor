@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { refDebounced, useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import Toast from 'primevue/toast';
@@ -10,7 +10,13 @@ import CollectionTable from '../components/CollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
+import {
+  Collection,
+  CollectionPreview,
+  NodeAncestry,
+  PaginationData,
+  PaginationResult,
+} from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import { useRoute } from 'vue-router';
 
@@ -25,8 +31,10 @@ useTitle('Collection Manager');
 
 const { initializeGuidelines, guidelines } = useGuidelinesStore();
 
+const collection = ref(null);
 const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
+const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
 const asyncOperationRunning = ref<boolean>(false);
 
@@ -43,7 +51,10 @@ const sortDirection = ref<'asc' | 'desc'>('asc');
 
 const includedNodeLabels = ref<string[]>([]);
 
-const fetchUrl = computed<string>(() => {
+const collectionFetchUrl = computed<string>(() => {
+  const path: string =
+    route.params.uuid !== '' ? `${baseFetchUrl}/${route.params.uuid}/collections` : baseFetchUrl;
+
   const searchParams: URLSearchParams = new URLSearchParams();
 
   searchParams.set('sort', sortField.value);
@@ -53,20 +64,78 @@ const fetchUrl = computed<string>(() => {
   searchParams.set('search', debouncedSearchInput.value);
   searchParams.set('nodeLabels', includedNodeLabels.value.join(','));
 
-  return `${baseFetchUrl}?${searchParams.toString()}`;
+  return `${path}?${searchParams.toString()}`;
 });
 
-watch(fetchUrl, async () => await getCollections());
+watch(
+  () => route.params.uuid,
+  async (newUuid, oldUuid) => {
+    resetCollectionFetchParams();
 
-onMounted(async (): Promise<void> => {
-  await getGuidelines();
-  await getCollections();
-});
+    // Wait until url is recomputed
+    nextTick();
+
+    // Go on, fetch data
+    await getGuidelines();
+    await getCollection();
+    await getCollectionAncestry();
+    await getCollections();
+  },
+  { immediate: true },
+);
+
+watch(collectionFetchUrl, async () => await getCollections());
+
+// onMounted(async (): Promise<void> => {
+//   await getGuidelines();
+//   await getCollections();
+// });
+
+async function getCollection(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${route.params.uuid}`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedCollection: Collection = await response.json();
+
+    collection.value = fetchedCollection;
+
+    console.log(collection.value.label);
+  } catch (error: unknown) {
+    console.error('Error fetching collection:', error);
+  }
+}
+
+async function getCollectionAncestry(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${route.params.uuid}/ancestry`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedAncestryPaths: NodeAncestry[] = await response.json();
+
+    ancestryPaths.value = fetchedAncestryPaths;
+    console.log(ancestryPaths.value);
+  } catch (error: unknown) {
+    console.error('Error fetching collection:', error);
+  }
+}
 
 async function getCollections(): Promise<void> {
   try {
     asyncOperationRunning.value = true;
-    const url: string = buildFetchUrl(fetchUrl.value);
+    const url: string = buildFetchUrl(collectionFetchUrl.value);
+
+    console.trace(url);
 
     const response: Response = await fetch(url);
 
@@ -116,6 +185,14 @@ function handleSearchInputChange(newInput: string): void {
   searchInput.value = newInput;
 }
 
+function resetCollectionFetchParams() {
+  searchInput.value = '';
+  offset.value = 0;
+  rowCount.value = 10;
+  sortField.value = '';
+  sortDirection.value = 'asc';
+}
+
 function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
   // TODO: Fix this, looks ugly
   sortField.value = (event.sortField as string | null) || '';
@@ -146,9 +223,40 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
 
-    <h1 class="text-center text-5xl line-height-2">
-      Collection Manager for uuid {{ route.params.uuid ?? 'null' }}
-    </h1>
+    <h2 class="text-center text-5xl line-height-2">
+      Collection Manager for {{ route.params.uuid ? collection?.data.label : '' }}
+    </h2>
+
+    <div class="breadcrumbs-pane">
+      <div v-for="path in ancestryPaths">
+        <span>
+          <RouterLink to="/collection-manager" :title="`Go to Collection Manager Overview`">
+            <i class="pi pi-home"></i>
+          </RouterLink>
+        </span>
+        <span v-for="node in path">
+          <span> -> </span>
+          <RouterLink
+            v-if="node.nodeLabels.includes('Collection')"
+            :to="`/collection-manager/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
+          >
+            {{ node.data.label }}
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <a
+            v-else-if="node.nodeLabels.includes('Text')"
+            :href="`/texts/${node.data.uuid}`"
+            :title="`Go to Text ${node.data.uuid}`"
+            target="_blank"
+          >
+            Text
+            <i class="pi pi-external-link"></i>
+          </a>
+          <span v-else> Annotation {{ node.data.type }}</span>
+        </span>
+      </div>
+    </div>
 
     <OverviewToolbar
       v-if="guidelines"
