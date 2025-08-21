@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
-import { refDebounced, useTitle } from '@vueuse/core';
+import { ref, onMounted, watch } from 'vue';
+import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
@@ -10,17 +10,21 @@ import CollectionTable from '../components/CollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
+import {
+  CollectionPreview,
+  CollectionSearchParams,
+  PaginationData,
+  PaginationResult,
+} from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
-
-const INPUT_DELAY: number = 300;
-const baseFetchUrl: string = '/api/collections';
+import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
 const { initializeGuidelines, guidelines } = useGuidelinesStore();
+const { fetchUrl, updateSearchParams } = useCollectionSearch();
 
 const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
@@ -28,30 +32,6 @@ const pagination = ref<PaginationData | null>(null);
 const asyncOperationRunning = ref<boolean>(false);
 
 // Refs for fetch url params to re-fetch collections on change
-
-const searchInput = ref<string>('');
-// This ref is used to prevent too many fetches when rapid typing
-const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
-const offset = ref<number>(0);
-// TODO: Make dynamically
-const rowCount = ref<number>(10);
-const sortField = ref<string>('');
-const sortDirection = ref<'asc' | 'desc'>('asc');
-
-const includedNodeLabels = ref<string[]>([]);
-
-const fetchUrl = computed<string>(() => {
-  const searchParams: URLSearchParams = new URLSearchParams();
-
-  searchParams.set('sort', sortField.value);
-  searchParams.set('order', sortDirection.value);
-  searchParams.set('limit', rowCount.value.toString());
-  searchParams.set('skip', offset.value.toString());
-  searchParams.set('search', debouncedSearchInput.value);
-  searchParams.set('nodeLabels', includedNodeLabels.value.join(','));
-
-  return `${baseFetchUrl}?${searchParams.toString()}`;
-});
 
 watch(fetchUrl, async () => await getCollections());
 
@@ -106,19 +86,30 @@ function handleCollectionCreation(newCollection: ICollection): void {
 }
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
-  includedNodeLabels.value = selectedLabels;
+  const data: CollectionSearchParams = {
+    nodeLabels: selectedLabels,
+  };
+
+  updateSearchParams(data);
 }
 
 function handleSearchInputChange(newInput: string): void {
-  searchInput.value = newInput;
+  const data: CollectionSearchParams = {
+    searchInput: newInput,
+  };
+
+  updateSearchParams(data);
 }
 
 function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
-  // TODO: Fix this, looks ugly
-  sortField.value = (event.sortField as string | null) || '';
-  sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
-  rowCount.value = event.rows || 5;
-  offset.value = event.first || 0;
+  const data: CollectionSearchParams = {
+    sortField: (event.sortField as string | null) || '',
+    sortDirection: event.sortOrder === -1 ? 'desc' : 'asc',
+    rowCount: event.rows || 5,
+    offset: event.first || 0,
+  };
+
+  updateSearchParams(data);
 }
 
 function handleSortChange(event: DataTableSortEvent): void {

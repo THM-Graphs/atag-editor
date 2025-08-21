@@ -33,6 +33,7 @@ import {
   CollectionAccessObject,
   CollectionPostData,
   CollectionPreview,
+  CollectionSearchParams,
   NodeAncestry,
   PaginationResult,
   PropertyConfig,
@@ -54,6 +55,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { refDebounced, useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
+import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 type TextTableEntry = {
   labels: string[];
@@ -78,35 +80,9 @@ const {
   initializeGuidelines,
 } = useGuidelinesStore();
 
+const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch();
+
 const collectionUuid: string = route.params.uuid as string;
-
-// --------------- For paginating collection table --------------------------------
-const INPUT_DELAY: number = 300;
-const baseFetchUrl: string = `/api/collections/${collectionUuid}`;
-
-const searchInput = ref<string>('');
-// This ref is used to prevent too many fetches when rapid typing
-const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
-const offset = ref<number>(0);
-// TODO: Make dynamically
-const rowCount = ref<number>(10);
-const sortField = ref<string>('');
-const sortDirection = ref<'asc' | 'desc'>('asc');
-
-const includedNodeLabels = ref<string[]>([]);
-
-const collectionFetchUrl = computed<string>(() => {
-  const searchParams: URLSearchParams = new URLSearchParams();
-
-  searchParams.set('sort', sortField.value);
-  searchParams.set('order', sortDirection.value);
-  searchParams.set('limit', rowCount.value.toString());
-  searchParams.set('skip', offset.value.toString());
-  searchParams.set('search', debouncedSearchInput.value);
-  searchParams.set('nodeLabels', includedNodeLabels.value.join(','));
-
-  return `${baseFetchUrl}/collections?${searchParams.toString()}`;
-});
 
 watch(collectionFetchUrl, async () => await getSubCollections());
 
@@ -326,11 +302,30 @@ async function handleSaveChanges(): Promise<void> {
 }
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
-  includedNodeLabels.value = selectedLabels;
+  const data: CollectionSearchParams = {
+    nodeLabels: selectedLabels,
+  };
+
+  updateSearchParams(data);
 }
 
 function handleSearchInputChange(newInput: string): void {
-  searchInput.value = newInput;
+  const data: CollectionSearchParams = {
+    searchInput: newInput,
+  };
+
+  updateSearchParams(data);
+}
+
+function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
+  const data: CollectionSearchParams = {
+    sortField: (event.sortField as string | null) || '',
+    sortDirection: event.sortOrder === -1 ? 'desc' : 'asc',
+    rowCount: event.rows || 5,
+    offset: event.first || 0,
+  };
+
+  updateSearchParams(data);
 }
 
 function handleSortChange(event: DataTableSortEvent): void {
@@ -339,14 +334,6 @@ function handleSortChange(event: DataTableSortEvent): void {
 
 function handlePaginationChange(event: DataTablePageEvent): void {
   updateTableUrlParams(event);
-}
-
-function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
-  // TODO: Fix this, looks ugly
-  sortField.value = (event.sortField as string | null) || '';
-  sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
-  rowCount.value = event.rows || 5;
-  offset.value = event.first || 0;
 }
 
 function hasUnsavedChanges(): boolean {

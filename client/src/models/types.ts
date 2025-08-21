@@ -93,6 +93,15 @@ export type CollectionPreview = {
   };
 };
 
+export type CollectionSearchParams = {
+  searchInput?: string;
+  nodeLabels?: string[];
+  offset?: number;
+  rowCount?: number;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+};
+
 export type Command = {
   command: CommandType;
   data: CommandData;
