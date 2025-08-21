@@ -1021,6 +1021,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :collections="collectionAccessObject.collections.data"
               :pagination="collectionAccessObject.collections.pagination"
               :async-operation-running="asyncOperationRunning"
+              mode="view"
               @sort-changed="handleSortChange"
               @pagination-changed="handlePaginationChange"
             />

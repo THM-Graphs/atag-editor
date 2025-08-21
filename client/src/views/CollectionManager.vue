@@ -12,13 +12,16 @@ import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+import { useRoute } from 'vue-router';
 
 const INPUT_DELAY: number = 300;
 const baseFetchUrl: string = '/api/collections';
 
 const toast: ToastServiceMethods = useToast();
 
-useTitle('ATAG Editor');
+const route = useRoute();
+
+useTitle('Collection Manager');
 
 const { initializeGuidelines, guidelines } = useGuidelinesStore();
 
@@ -143,7 +146,9 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
 
-    <h1 class="text-center text-5xl line-height-2">Collections</h1>
+    <h1 class="text-center text-5xl line-height-2">
+      Collection Manager for uuid {{ route.params.uuid ?? 'null' }}
+    </h1>
 
     <OverviewToolbar
       v-if="guidelines"
@@ -165,7 +170,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       :collections="collections"
       :pagination="pagination"
       :async-operation-running="asyncOperationRunning"
-      mode="view"
+      mode="edit"
     />
   </div>
 </template>

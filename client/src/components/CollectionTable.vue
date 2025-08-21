@@ -2,15 +2,18 @@
 import { RouterLink } from 'vue-router';
 import LoadingSpinner from './LoadingSpinner.vue';
 import { capitalize } from '../utils/helper/helper';
+import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
 import { PaginationData, CollectionPreview } from '../models/types';
+import { ref } from 'vue';
 
 type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
 
 const props = defineProps<{
   collections: CollectionPreview[] | null;
+  mode: 'view' | 'edit';
   pagination: PaginationData | null;
   asyncOperationRunning: boolean;
 }>();
@@ -24,6 +27,8 @@ const COLUMN_CONFIG = {
   annotations: { width: 'auto', sortable: true },
   collections: { width: 'auto', sortable: true },
 } as const;
+
+const selectedRows = ref<CollectionPreview[]>([]);
 
 /**
  * Returns PrimeVue DataTable Column properties based on the given column name.
@@ -61,78 +66,114 @@ function handlePagination(event: DataTablePageEvent): void {
 <template>
   <div class="flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!props.collections" />
-    <DataTable
-      v-else
-      scrollable
-      scrollHeight="flex"
-      :value="props.collections"
-      paginator
-      lazy
-      :rows="pagination?.limit || 0"
-      :totalRecords="pagination?.totalRecords || 0"
-      :rowsPerPageOptions="[5, 10, 20, 50, 100]"
-      removableSort
-      resizableColumns
-      rowHover
-      tableStyle="table-layout: fixed;"
-      paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
-      currentPageReportTemplate="{first} to {last} of {totalRecords}"
-      size="small"
-      @sort="handleSort"
-      @page="handlePagination"
-      :pt="{
-        tbody: {
-          style: {
-            opacity: asyncOperationRunning ? 0.5 : 'unset',
+    <template v-else>
+      <span v-if="mode === 'edit'"> {{ selectedRows.length }} rows selected </span>
+      <DataTable
+        scrollable
+        scrollHeight="flex"
+        :value="props.collections"
+        v-model:selection="selectedRows"
+        dataKey="collection.data.uuid"
+        paginator
+        lazy
+        :rows="pagination?.limit || 0"
+        :totalRecords="pagination?.totalRecords || 0"
+        :rowsPerPageOptions="[5, 10, 20, 50, 100]"
+        removableSort
+        resizableColumns
+        rowHover
+        tableStyle="table-layout: fixed;"
+        paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks  NextPageLink LastPageLink CurrentPageReport"
+        currentPageReportTemplate="{first} to {last} of {totalRecords}"
+        size="small"
+        @sort="handleSort"
+        @page="handlePagination"
+        :pt="{
+          tbody: {
+            style: {
+              opacity: asyncOperationRunning ? 0.5 : 'unset',
+            },
           },
-        },
-      }"
-    >
-      <Column v-bind="getColumnProps('nodeLabels')">
-        <template #body="{ data: row }: { data: CollectionPreview }">
-          <span class="cell-info">
-            <div class="box flex" style="flex-wrap: wrap">
-              <Tag
-                v-for="label in row.collection.nodeLabels"
-                :value="label"
-                severity="contrast"
-                class="mr-1 mb-1 mt-1 inline-block"
-              />
-            </div>
-          </span>
-        </template>
-      </Column>
+        }"
+      >
+        <!-- Checkbox column, only visible in edit mode -->
 
-      <Column v-bind="getColumnProps('label')">
-        <template #body="{ data: row }: { data: CollectionPreview }">
-          <RouterLink
-            class="cell-link"
-            :to="`/collections/${row.collection.data.uuid}`"
-            v-tooltip.hover.top="{ value: row.collection.data.label, showDelay: 0 }"
-          >
-            {{ row.collection.data.label }}
-          </RouterLink>
-        </template>
-      </Column>
+        <Column v-if="mode === 'edit'" selectionMode="multiple" headerStyle="width: 3rem"></Column>
 
-      <Column v-bind="getColumnProps('collections')">
-        <template #body="{ data: row }: { data: CollectionPreview }">
-          <span class="cell-info">{{ row.nodeCounts.collections }}</span>
-        </template>
-      </Column>
+        <!-- Data columns -->
 
-      <Column v-bind="getColumnProps('texts')">
-        <template #body="{ data: row }: { data: CollectionPreview }">
-          <span class="cell-info">{{ row.nodeCounts.texts }}</span>
-        </template>
-      </Column>
+        <Column v-bind="getColumnProps('nodeLabels')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <span class="cell-info">
+              <div class="box flex" style="flex-wrap: wrap">
+                <Tag
+                  v-for="label in row.collection.nodeLabels"
+                  :value="label"
+                  severity="contrast"
+                  class="mr-1 mb-1 mt-1 inline-block"
+                />
+              </div>
+            </span>
+          </template>
+        </Column>
 
-      <Column v-bind="getColumnProps('annotations')">
-        <template #body="{ data: row }: { data: CollectionPreview }">
-          <span class="cell-info">{{ row.nodeCounts.annotations }}</span>
-        </template>
-      </Column>
-    </DataTable>
+        <Column v-bind="getColumnProps('label')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <RouterLink
+              class="cell-link"
+              :to="`/collections/${row.collection.data.uuid}`"
+              v-tooltip.hover.top="{ value: row.collection.data.label, showDelay: 0 }"
+            >
+              {{ row.collection.data.label }}
+            </RouterLink>
+          </template>
+        </Column>
+
+        <Column v-bind="getColumnProps('collections')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <span class="cell-info">{{ row.nodeCounts.collections }}</span>
+          </template>
+        </Column>
+
+        <Column v-bind="getColumnProps('texts')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <span class="cell-info">{{ row.nodeCounts.texts }}</span>
+          </template>
+        </Column>
+
+        <Column v-bind="getColumnProps('annotations')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <span class="cell-info">{{ row.nodeCounts.annotations }}</span>
+          </template>
+        </Column>
+
+        <!-- Action columns -->
+
+        <Column field="actions" , header="Actions" class="flex gap-1">
+          <template #body="{ data: row }: { data: CollectionPreview }" class="flex gap-1">
+            <RouterLink :to="`/collections/${row.collection.data.uuid}`">
+              <Button
+                icon="pi pi-pen-to-square"
+                severity="secondary"
+                class="w-2rem h-2rem"
+                title="Open in Collection editor"
+                aria-label="Open in Collection editor"
+              ></Button>
+            </RouterLink>
+
+            <RouterLink :to="`/collection-manager/${row.collection.data.uuid}`">
+              <Button
+                icon="pi pi-sitemap"
+                severity="secondary"
+                class="w-2rem h-2rem"
+                title="Open in Collection manager"
+                aria-label="Open in Collection manager"
+              ></Button>
+            </RouterLink>
+          </template>
+        </Column>
+      </DataTable>
+    </template>
   </div>
 </template>
 
