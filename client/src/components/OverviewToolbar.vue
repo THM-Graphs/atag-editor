@@ -20,7 +20,13 @@ import {
 import ICollection from '../models/ICollection';
 import { CollectionAccessObject, PropertyConfig } from '../models/types';
 
-const emit = defineEmits(['collectionCreated', 'nodeLabelsInputChanged', 'searchInputChanged']);
+// Accept the composable's refs as props
+const props = defineProps<{
+  searchInputValue?: string;
+  nodeLabelsValue?: string[];
+}>();
+
+const emit = defineEmits(['collectionCreated', 'searchInputChanged', 'nodeLabelsInputChanged']);
 
 const {
   availableCollectionLabels,
@@ -29,20 +35,14 @@ const {
   getCollectionConfigFields,
 } = useGuidelinesStore();
 
-const searchInput = ref<string>('');
 const newCollectionData = ref<CollectionAccessObject>(null);
-
 const dialogIsVisible = ref<boolean>(false);
 const asyncOperationRunning = ref<boolean>(false);
-
-const includedNodeLabels = ref<string[]>([]);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.collection.nodeLabels),
 );
 
-// TODO: replace this with general form handling in the future
-// Used for enabling/disabling buttons when form inputs don't satisfy requirements
 const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   const selectedLabelsAreValid: boolean =
     availableCollectionLabels.value.length === 0 ||
@@ -60,22 +60,11 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   return selectedLabelsAreValid && requiredFieldsAreValid;
 });
 
-/**
- * Called before saving the collection to remove any data entries that are not configured
- * according to the current node labels of the collection.
- *
- * This is necessary since on dialog showing the data object was filled with empty data entries temporarily
- * to form a data pool for the dynamically rendered input fields.
- *
- * @returns {void} This function does not return any value.
- */
 function removeUnnecessaryDataBeforeSave(): void {
-  // Get configured field names that are allowed to be saved
   const configuredFieldNames: string[] = getCollectionConfigFields(
     newCollectionData.value.collection.nodeLabels,
   ).map(f => f.name);
 
-  // Remove data entries that are not configured
   Object.keys(newCollectionData.value.collection.data).forEach(key => {
     if (!configuredFieldNames.includes(key) && key !== 'uuid') {
       delete newCollectionData.value.collection.data[key];
@@ -83,16 +72,14 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-// Set initial node labels and emit event explicitly to trigger fetch in parent. This is because of timing issues:
-// The parent fetches data when the this component is not ready, and the initial data setting in the Multiselect
-// does not trigger a "change" event. Therefore, no update and no refetch.
+// No longer needed since we sync with props
 onMounted(() => {
-  includedNodeLabels.value = availableCollectionLabels.value;
-  handleNodeLabelsInput();
+  // Initial emit in case parent needs the default values
+  if (!props.nodeLabelsValue) {
+    emit('nodeLabelsInputChanged', availableCollectionLabels.value);
+  }
 });
 
-// TODO: Add information about creation status for message in Overview.vue (success/fail, new label etc.)
-// TODO: Add error message to dialog if collection could not be created
 async function createNewCollection(): Promise<void> {
   removeUnnecessaryDataBeforeSave();
 
@@ -134,7 +121,6 @@ async function createNewCollection(): Promise<void> {
 async function showDialog(): Promise<void> {
   dialogIsVisible.value = true;
 
-  // Initialize newCollectionData that will be used in the form
   newCollectionData.value = {
     collection: {
       data: Object.fromEntries(
@@ -153,17 +139,17 @@ async function showDialog(): Promise<void> {
   } as CollectionAccessObject;
 }
 
+function handleSearchInputChange(value: string) {
+  emit('searchInputChanged', value);
+}
+
+function handleNodeLabelsChange(value: string[]) {
+  emit('nodeLabelsInputChanged', value);
+}
+
 async function hideDialog(): Promise<void> {
   newCollectionData.value = null;
   dialogIsVisible.value = false;
-}
-
-function handleNodeLabelsInput(): void {
-  emit('nodeLabelsInputChanged', includedNodeLabels.value);
-}
-
-function handleSearchInput(): void {
-  emit('searchInputChanged', searchInput.value.toLowerCase());
 }
 </script>
 
@@ -171,7 +157,7 @@ function handleSearchInput(): void {
   <Toolbar class="toolbar w-full m-auto">
     <template #start>
       <MultiSelect
-        v-model="includedNodeLabels"
+        :modelValue="props.nodeLabelsValue"
         :options="availableCollectionLabels"
         display="chip"
         placeholder="Collection node labels"
@@ -182,7 +168,7 @@ function handleSearchInput(): void {
             title: `Select Collection Node labels`,
           },
         }"
-        @change="handleNodeLabelsInput"
+        @update:modelValue="handleNodeLabelsChange"
       >
         <template #chip="{ value }">
           <Tag :value="value" severity="contrast" class="mr-1" />
@@ -198,8 +184,8 @@ function handleSearchInput(): void {
         <InputText
           spellcheck="false"
           placeholder="Filter Collections by label"
-          v-model="searchInput"
-          @input="handleSearchInput"
+          :modelValue="props.searchInputValue"
+          @update:model-value="handleSearchInputChange"
         />
       </IconField>
     </template>
@@ -214,6 +200,7 @@ function handleSearchInput(): void {
       />
     </template>
   </Toolbar>
+
   <Dialog
     v-model:visible="dialogIsVisible"
     modal

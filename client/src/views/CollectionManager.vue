@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -34,6 +34,8 @@ const {
   fetchUrl: collectionFetchUrl,
   resetSearchParams: resetCollectionSearchParams,
   updateSearchParams,
+  searchParams,
+  updateUuid,
 } = useCollectionSearch();
 
 const collection = ref(null);
@@ -41,31 +43,55 @@ const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
+// Initial pageload
+const isLoading = ref<boolean>(false);
+// For other async operations
 const asyncOperationRunning = ref<boolean>(false);
 
 watch(
   () => route.params.uuid,
   async (newUuid, oldUuid) => {
+    isLoading.value = true;
+
+    // console.log('uuid change detected: ', newUuid);
+
+    await getGuidelines();
+
+    // Collection filter params need to be reset
     resetCollectionSearchParams();
 
-    // Wait until url is recomputed
-    nextTick();
+    // Explicitly update the composable's uuid
+    if (typeof newUuid === 'string') {
+      updateUuid(newUuid || undefined);
+    } else if (Array.isArray(newUuid)) {
+      updateUuid(newUuid[0] || undefined);
+    } else {
+      updateUuid(undefined);
+    }
 
-    // Go on, fetch data
-    await getGuidelines();
-    await getCollection();
-    await getCollectionAncestry();
+    // Fetch parent collection details and ancestry only if a UUID is present
+    if (newUuid) {
+      await getCollection();
+      await getCollectionAncestry();
+    }
+
     await getCollections();
+
+    isLoading.value = false;
   },
   { immediate: true },
 );
 
-watch(collectionFetchUrl, async () => await getCollections());
+// This watcher remains the same, as it now correctly handles all changes
+// to the composable's internal state
+watch(collectionFetchUrl, async () => {
+  // console.log('fetch after URL change');
+  if (isLoading.value === true) {
+    return;
+  }
 
-// onMounted(async (): Promise<void> => {
-//   await getGuidelines();
-//   await getCollections();
-// });
+  await getCollections();
+});
 
 async function getCollection(): Promise<void> {
   try {
@@ -80,8 +106,6 @@ async function getCollection(): Promise<void> {
     const fetchedCollection: Collection = await response.json();
 
     collection.value = fetchedCollection;
-
-    console.log(collection.value.label);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -100,7 +124,6 @@ async function getCollectionAncestry(): Promise<void> {
     const fetchedAncestryPaths: NodeAncestry[] = await response.json();
 
     ancestryPaths.value = fetchedAncestryPaths;
-    console.log(ancestryPaths.value);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }
@@ -110,8 +133,6 @@ async function getCollections(): Promise<void> {
   try {
     asyncOperationRunning.value = true;
     const url: string = buildFetchUrl(collectionFetchUrl.value);
-
-    console.trace(url);
 
     const response: Response = await fetch(url);
 
@@ -239,6 +260,8 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 
     <OverviewToolbar
       v-if="guidelines"
+      :searchInputValue="searchParams.searchInput"
+      :nodeLabelsValue="searchParams.nodeLabels as string[]"
       @collection-created="handleCollectionCreation"
       @search-input-changed="handleSearchInputChange"
       @node-labels-input-changed="handleNodeLabelsInputChanged"

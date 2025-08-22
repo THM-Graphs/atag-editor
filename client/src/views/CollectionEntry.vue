@@ -53,7 +53,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import { refDebounced, useTitle } from '@vueuse/core';
+import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 
@@ -534,7 +534,6 @@ async function getCollectionAncestry(): Promise<void> {
     const fetchedAncestryPaths: NodeAncestry[] = await response.json();
 
     ancestryPaths.value = fetchedAncestryPaths;
-    console.log(ancestryPaths.value);
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
   }

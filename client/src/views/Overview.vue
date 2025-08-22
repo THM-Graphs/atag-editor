@@ -23,20 +23,25 @@ const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
-const { initializeGuidelines, guidelines } = useGuidelinesStore();
-const { fetchUrl, updateSearchParams } = useCollectionSearch();
+const { guidelines, availableCollectionLabels, initializeGuidelines } = useGuidelinesStore();
+const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch();
 
 const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 
 const asyncOperationRunning = ref<boolean>(false);
 
-// Refs for fetch url params to re-fetch collections on change
-
 watch(fetchUrl, async () => await getCollections());
 
 onMounted(async (): Promise<void> => {
   await getGuidelines();
+
+  // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
+  // is initialized with an empty array
+  updateSearchParams({
+    nodeLabels: availableCollectionLabels.value,
+  });
+
   await getCollections();
 });
 
@@ -138,6 +143,8 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 
     <OverviewToolbar
       v-if="guidelines"
+      :searchInputValue="searchParams.searchInput"
+      :nodeLabelsValue="searchParams.nodeLabels as string[]"
       @collection-created="handleCollectionCreation"
       @search-input-changed="handleSearchInputChange"
       @node-labels-input-changed="handleNodeLabelsInputChanged"
