@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
+import CollectionCreationButton from '../components/CollectionCreationButton.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import Toast from 'primevue/toast';
@@ -262,14 +263,18 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
         </div>
       </div>
 
-      <OverviewToolbar
-        v-if="guidelines"
-        :searchInputValue="searchParams.searchInput"
-        :nodeLabelsValue="searchParams.nodeLabels as string[]"
-        @collection-created="handleCollectionCreation"
-        @search-input-changed="handleSearchInputChange"
-        @node-labels-input-changed="handleNodeLabelsInputChanged"
-      />
+      <div class="flex gap-2">
+        <OverviewToolbar
+          v-if="guidelines"
+          :searchInputValue="searchParams.searchInput"
+          :nodeLabelsValue="searchParams.nodeLabels as string[]"
+          @collection-created="handleCollectionCreation"
+          @search-input-changed="handleSearchInputChange"
+          @node-labels-input-changed="handleNodeLabelsInputChanged"
+        />
+
+        <CollectionCreationButton />
+      </div>
 
       <div class="counter text-right pt-2 pb-3">
         <strong class="text-base"

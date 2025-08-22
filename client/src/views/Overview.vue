@@ -6,6 +6,7 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
+import CollectionCreationButton from '../components/CollectionCreationButton.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
@@ -141,14 +142,18 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
 
-    <OverviewToolbar
-      v-if="guidelines"
-      :searchInputValue="searchParams.searchInput"
-      :nodeLabelsValue="searchParams.nodeLabels as string[]"
-      @collection-created="handleCollectionCreation"
-      @search-input-changed="handleSearchInputChange"
-      @node-labels-input-changed="handleNodeLabelsInputChanged"
-    />
+    <div class="flex gap-2">
+      <OverviewToolbar
+        v-if="guidelines"
+        :searchInputValue="searchParams.searchInput"
+        :nodeLabelsValue="searchParams.nodeLabels as string[]"
+        @collection-created="handleCollectionCreation"
+        @search-input-changed="handleSearchInputChange"
+        @node-labels-input-changed="handleNodeLabelsInputChanged"
+      />
+
+      <CollectionCreationButton />
+    </div>
 
     <div class="counter text-right pt-2 pb-3">
       <strong class="text-base"
