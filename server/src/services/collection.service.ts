@@ -15,6 +15,7 @@ import {
   Collection,
   CollectionPreview,
   NodeAncestry,
+  CollectionCreationData,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -274,16 +275,16 @@ export default class CollectionService {
   }
 
   /**
-   * Creates a new collection node with the given data.
+   * Creates a new collection node with the given data and attaches it to a parent collection (optionally).
    *
    * While node labels and data of the collection node are mandatory, "texts" will always be an empty array
    * (not possibility to create on collection creation process) and "annotations" can be empty as well as with items.
    *
-   * @param {CollectionAccessObject} data - The data to set for the collection node.
+   * @param {CollectionCreationData} data - The data to set for the collection node.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
    * @return {Promise<ICollection>} A promise that resolves to the created collection node.
    */
-  public async createNewCollection(data: CollectionAccessObject): Promise<ICollection> {
+  public async createNewCollection(data: CollectionCreationData): Promise<ICollection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
@@ -300,16 +301,28 @@ export default class CollectionService {
       },
     } as Collection;
 
-    const query: string = `
-    CALL apoc.create.node($collection.nodeLabels, $collection.data) YIELD node as c
+    const parentUuid: string | null = data.parentCollection?.data.uuid ?? null;
 
+    let query: string = `
+    CALL apoc.create.node($collection.nodeLabels, $collection.data) YIELD node as c
+    `;
+
+    // Connect it to the parent collection if it should
+    if (data.parentCollection) {
+      query += `
+      MATCH (parent:Collection {uuid: $parentUuid})
+      CREATE (c)-[:PART_OF]->(parent)
+      `;
+    }
+
+    query += `
     RETURN {
         nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
         data: c {.*}
     } AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, { collection });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { collection, parentUuid });
 
     return result.records[0]?.get('collection');
   }

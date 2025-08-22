@@ -1,5 +1,4 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
-import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
 import textRoutes from './text.routes.js';
 import AnnotationService from '../services/annotation.service.js';
@@ -10,6 +9,7 @@ import {
   Annotation,
   Collection,
   CollectionAccessObject,
+  CollectionCreationData,
   CollectionPostData,
   CollectionPreview,
   NodeAncestry,
@@ -49,7 +49,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const data: CollectionAccessObject = req.body;
+  const data: CollectionCreationData = req.body;
 
   try {
     const newCollection: ICollection = await collectionService.createNewCollection(data);

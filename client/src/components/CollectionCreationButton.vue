@@ -4,6 +4,7 @@ import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
 import Button from 'primevue/button';
+import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
@@ -14,9 +15,18 @@ import {
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
-import { CollectionAccessObject, PropertyConfig } from '../models/types';
+import {
+  Collection,
+  CollectionAccessObject,
+  CollectionCreationData,
+  PropertyConfig,
+} from '../models/types';
 
 const emit = defineEmits(['collectionCreated']);
+
+const props = defineProps<{
+  parentCollection?: Collection;
+}>();
 
 const {
   availableCollectionLabels,
@@ -65,12 +75,17 @@ function removeUnnecessaryDataBeforeSave(): void {
 async function createNewCollection(): Promise<void> {
   removeUnnecessaryDataBeforeSave();
 
-  console.log(cloneDeep(newCollectionData.value));
-
   asyncOperationRunning.value = true;
 
   try {
     const url: string = buildFetchUrl('/api/collections');
+
+    const postData: CollectionCreationData = {
+      ...newCollectionData.value,
+      parentCollection: props.parentCollection ?? null,
+    };
+
+    console.log(postData);
 
     const response: Response = await fetch(url, {
       method: 'POST',
@@ -80,7 +95,7 @@ async function createNewCollection(): Promise<void> {
         'Content-Type': 'application/json',
       },
       referrerPolicy: 'no-referrer',
-      body: JSON.stringify(newCollectionData.value),
+      body: JSON.stringify(postData),
     });
 
     if (!response.ok) {
@@ -147,9 +162,38 @@ async function hideDialog(): Promise<void> {
     <template #header>
       <h2 class="w-full text-center m-0">Add new Collection</h2>
     </template>
+
     <form @submit.prevent="createNewCollection">
+      <div class="select-parents-container flex flex-column align-items-center">
+        <div class="flex align-items-center gap-2 mt-0">
+          <h4>Parent of the new collection</h4>
+          <span
+            class="pi pi-question-circle"
+            v-tooltip.hover.top="{
+              value: 'The new collection will be attached to the parent of the current collection ',
+              showDelay: 50,
+            }"
+          ></span>
+        </div>
+
+        <Card v-if="props?.parentCollection">
+          <template #content>
+            <div class="flex gap-2">
+              <Tag
+                v-for="nodeLabel in props.parentCollection.nodeLabels"
+                :value="nodeLabel"
+                severity="contrast"
+                class="mr-1"
+              />
+              <div>{{ parentCollection.data.label }}</div>
+            </div>
+          </template>
+        </Card>
+
+        <span v-else class="font-italic"> No parent collection exists </span>
+      </div>
       <div class="select-label-container flex flex-column align-items-center">
-        <h4 class="mt-0">Select labels</h4>
+        <h4>Select labels</h4>
         <MultiSelect
           v-model="newCollectionData.collection.nodeLabels"
           :options="availableCollectionLabels"

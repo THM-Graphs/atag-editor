@@ -273,7 +273,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
           @node-labels-input-changed="handleNodeLabelsInputChanged"
         />
 
-        <CollectionCreationButton />
+        <CollectionCreationButton :parent-collection="collection" />
       </div>
 
       <div class="counter text-right pt-2 pb-3">
@@ -296,13 +296,19 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     <div class="collection-data text-center">
       <div>Data of current collection</div>
       <br />
-      <div>
-        {{ collection?.nodeLabels }}
-      </div>
-      <br />
-      <div>
-        {{ collection?.data }}
-      </div>
+
+      <template v-if="collection">
+        <div>
+          {{ collection?.nodeLabels }}
+        </div>
+        <br />
+        <div>
+          {{ collection?.data }}
+        </div>
+      </template>
+      <template v-else>
+        <span class="font-italic"> No collection selected </span>
+      </template>
     </div>
   </div>
 </template>

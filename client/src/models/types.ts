@@ -79,6 +79,10 @@ export type CollectionAccessObject = {
   texts: Text[];
 };
 
+export type CollectionCreationData = CollectionAccessObject & {
+  parentCollection: Collection | null;
+};
+
 export type CollectionPostData = {
   data: CollectionAccessObject;
   initialData: CollectionAccessObject;
