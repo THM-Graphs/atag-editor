@@ -12,7 +12,6 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import { buildFetchUrl } from '../utils/helper/helper';
-import ICollection from '../models/ICollection';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   Collection,
@@ -170,8 +169,8 @@ async function getGuidelines(): Promise<void> {
   }
 }
 
-function handleCollectionCreation(newCollection: ICollection): void {
-  showMessage('created', `"${newCollection.label}"`);
+function handleCollectionCreation(newCollection: Collection): void {
+  showMessage('created', `"${newCollection.data.label}"`);
   getCollections();
 }
 
@@ -213,7 +212,7 @@ function handlePaginationChange(event: DataTablePageEvent): void {
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   toast.add({
     severity: 'success',
-    summary: operation === 'created' ? 'New text created' : 'Text deleted',
+    summary: operation === 'created' ? 'New collection created' : 'Collection deleted',
     detail: detail,
     life: 2000,
   });
@@ -268,12 +267,14 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
           v-if="guidelines"
           :searchInputValue="searchParams.searchInput"
           :nodeLabelsValue="searchParams.nodeLabels as string[]"
-          @collection-created="handleCollectionCreation"
           @search-input-changed="handleSearchInputChange"
           @node-labels-input-changed="handleNodeLabelsInputChanged"
         />
 
-        <CollectionCreationButton :parent-collection="collection" />
+        <CollectionCreationButton
+          :parent-collection="collection"
+          @collection-created="handleCollectionCreation"
+        />
       </div>
 
       <div class="counter text-right pt-2 pb-3">

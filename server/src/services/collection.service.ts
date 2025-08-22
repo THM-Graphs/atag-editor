@@ -282,9 +282,9 @@ export default class CollectionService {
    *
    * @param {CollectionCreationData} data - The data to set for the collection node.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the created collection node.
+   * @return {Promise<Collection>} A promise that resolves to the created collection node.
    */
-  public async createNewCollection(data: CollectionCreationData): Promise<ICollection> {
+  public async createNewCollection(data: CollectionCreationData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 

@@ -52,7 +52,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const data: CollectionCreationData = req.body;
 
   try {
-    const newCollection: ICollection = await collectionService.createNewCollection(data);
+    const newCollection: Collection = await collectionService.createNewCollection(data);
 
     res.status(201).json(newCollection);
   } catch (error: unknown) {

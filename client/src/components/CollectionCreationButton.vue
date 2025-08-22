@@ -8,12 +8,7 @@ import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
-import {
-  buildFetchUrl,
-  capitalize,
-  cloneDeep,
-  getDefaultValueForProperty,
-} from '../utils/helper/helper';
+import { buildFetchUrl, capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import {
   Collection,
@@ -85,8 +80,6 @@ async function createNewCollection(): Promise<void> {
       parentCollection: props.parentCollection ?? null,
     };
 
-    console.log(postData);
-
     const response: Response = await fetch(url, {
       method: 'POST',
       cache: 'no-cache',
@@ -102,7 +95,7 @@ async function createNewCollection(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const createdCollection: ICollection = await response.json();
+    const createdCollection: Collection = await response.json();
 
     newCollectionData.value = {} as CollectionAccessObject;
     dialogIsVisible.value = false;
