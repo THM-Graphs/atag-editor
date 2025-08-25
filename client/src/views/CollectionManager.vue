@@ -56,6 +56,9 @@ watch(
 
     await getGuidelines();
 
+    // Reset ancestry - If no uuid param is set, needs to be cleanded anyway
+    ancestryPaths.value = [];
+
     // Fetch parent collection details and ancestry only if a UUID is present
     if (newUuid) {
       await getCollection();
@@ -78,13 +81,7 @@ watch(
 );
 
 // This watcher handles ALL collection fetching
-watch(collectionFetchUrl, async () => {
-  if (isLoading.value === true) {
-    return;
-  }
-
-  await getCollections();
-});
+watch(collectionFetchUrl, async () => await getCollections());
 
 async function getCollection(): Promise<void> {
   try {
