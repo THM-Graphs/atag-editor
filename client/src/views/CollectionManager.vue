@@ -50,24 +50,10 @@ const asyncOperationRunning = ref<boolean>(false);
 
 watch(
   () => route.params.uuid,
-  async (newUuid, oldUuid) => {
+  async (newUuid: string) => {
     isLoading.value = true;
 
-    // console.log('uuid change detected: ', newUuid);
-
     await getGuidelines();
-
-    // Collection filter params need to be reset
-    resetCollectionSearchParams();
-
-    // Explicitly update the composable's uuid
-    if (typeof newUuid === 'string') {
-      updateUuid(newUuid || undefined);
-    } else if (Array.isArray(newUuid)) {
-      updateUuid(newUuid[0] || undefined);
-    } else {
-      updateUuid(undefined);
-    }
 
     // Fetch parent collection details and ancestry only if a UUID is present
     if (newUuid) {
@@ -75,17 +61,23 @@ watch(
       await getCollectionAncestry();
     }
 
-    await getCollections();
+    // Collection filter params need to be reset
+    resetCollectionSearchParams();
+
+    // Explicitly update the composable's uuid
+    updateUuid(newUuid || undefined);
+
+    // Collections are fetched via watcher
 
     isLoading.value = false;
   },
-  { immediate: true },
+  {
+    immediate: true,
+  },
 );
 
-// This watcher remains the same, as it now correctly handles all changes
-// to the composable's internal state
+// This watcher handles ALL collection fetching
 watch(collectionFetchUrl, async () => {
-  // console.log('fetch after URL change');
   if (isLoading.value === true) {
     return;
   }

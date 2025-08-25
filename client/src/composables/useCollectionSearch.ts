@@ -1,5 +1,5 @@
-import { computed, readonly, Ref, ref, toRef } from 'vue';
-import { refDebounced } from '@vueuse/core';
+import { computed, readonly, ref } from 'vue';
+import { watchDebounced } from '@vueuse/core';
 import { CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
@@ -31,7 +31,8 @@ export function useCollectionSearch() {
 
   const { availableCollectionLabels } = useGuidelinesStore();
 
-  const uuid = ref<string>('');
+  // UUID of the parent collection (if there is one)
+  const parentUuid = ref<string>('');
 
   const searchParams = ref<CollectionSearchParams>({
     searchInput: '',
@@ -42,15 +43,14 @@ export function useCollectionSearch() {
     sortDirection: 'asc' as 'asc' | 'desc',
   });
 
-  const debouncedSearchInput = refDebounced<string>(
-    toRef(() => searchParams.value.searchInput),
-    INPUT_DELAY,
-  );
+  // Separate ref for the debounced search. Can be manipulated directly on search params reset
+  const debouncedSearchInput = ref<string>('');
 
   const fetchUrl = computed<string>(() => {
-    const path = !!uuid.value ? `${BASE_FETCH_URL}/${uuid.value}/collections` : BASE_FETCH_URL;
+    const path = parentUuid.value
+      ? `${BASE_FETCH_URL}/${parentUuid.value}/collections`
+      : BASE_FETCH_URL;
 
-    // console.log('recalculation: uuid is ' + uuid?.value);
     const urlParams: URLSearchParams = new URLSearchParams();
 
     urlParams.set('sort', searchParams.value.sortField);
@@ -61,6 +61,13 @@ export function useCollectionSearch() {
     urlParams.set('nodeLabels', searchParams.value.nodeLabels.join(','));
 
     return `${path}?${urlParams.toString()}`;
+  });
+
+  // Watch searchInput and debounce it manually. This is a workaround to prevent double fetching - before,
+  // the input was debounced directly with refDebounced, but since data fetching happens directly after resetting,
+  // the old search input was used and after the debounced update another fetch was triggered.
+  watchDebounced(() => searchParams.value.searchInput, updateDebouncedSearchInput, {
+    debounce: INPUT_DELAY,
   });
 
   /**
@@ -78,6 +85,13 @@ export function useCollectionSearch() {
       sortField: '',
       sortDirection: 'asc',
     };
+
+    // Immediately reset the debounced value to prevent double fetching
+    debouncedSearchInput.value = '';
+  }
+
+  function updateDebouncedSearchInput(newValue: string) {
+    debouncedSearchInput.value = newValue;
   }
 
   /**
@@ -95,11 +109,11 @@ export function useCollectionSearch() {
   }
 
   function updateUuid(newUuid: string | undefined): void {
-    uuid.value = newUuid;
+    parentUuid.value = newUuid;
   }
 
   return {
-    fetchUrl,
+    fetchUrl: readonly(fetchUrl),
     searchParams: readonly(searchParams),
     resetSearchParams,
     updateSearchParams,
