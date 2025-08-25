@@ -121,7 +121,7 @@ function handlePagination(event: DataTablePageEvent): void {
           <template #body="{ data: row }: { data: CollectionPreview }">
             <RouterLink
               class="cell-link"
-              :to="`/collections/${row.collection.data.uuid}`"
+              :to="`/collection-manager/${row.collection.data.uuid}`"
               v-tooltip.hover.top="{ value: row.collection.data.label, showDelay: 0 }"
             >
               {{ row.collection.data.label }}

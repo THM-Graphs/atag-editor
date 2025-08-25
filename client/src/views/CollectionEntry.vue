@@ -657,7 +657,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     </div>
     <Toast />
     <ConfirmPopup />
-    <div class="header-buttons flex justify-content-between mb-2 pl-2 pt-2">
+    <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
       <RouterLink to="/">
         <Button
           icon="pi pi-home"
@@ -666,6 +666,17 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           title="Go to overview"
         ></Button>
       </RouterLink>
+      <div class="flex">
+        <RouterLink :to="`/collection-manager/${collectionAccessObject.collection.data.uuid}`">
+          <Button
+            icon="pi pi-sitemap"
+            severity="secondary"
+            title="Open this collection in Collection Manager"
+            label="Manage collection network"
+            aria-label="Open this collection in Collection Manager"
+          ></Button>
+        </RouterLink>
+      </div>
     </div>
     <div class="header flex align-items-center justify-content-center gap-3">
       <h2 class="info mt-0">

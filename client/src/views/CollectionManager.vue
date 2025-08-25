@@ -7,6 +7,7 @@ import { useCollectionSearch } from '../composables/useCollectionSearch';
 import CollectionCreationButton from '../components/CollectionCreationButton.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
+import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -214,6 +215,27 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 <template>
   <Toast />
 
+  <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
+    <RouterLink to="/">
+      <Button
+        icon="pi pi-home"
+        aria-label="Home"
+        class="w-2rem h-2rem"
+        title="Go to overview"
+      ></Button>
+    </RouterLink>
+    <div class="flex">
+      <RouterLink :to="`/collections/${collection?.data.uuid}`">
+        <Button
+          icon="pi pi-pen-to-square"
+          label="Edit collection data"
+          severity="secondary"
+          aria-label="Open this collection in Collection editor"
+          title="Open this collection in Collection editor"
+        ></Button>
+      </RouterLink>
+    </div>
+  </div>
   <h2 class="text-center text-5xl line-height-2">
     Collection Manager for {{ route.params.uuid ? collection?.data.label : '' }}
   </h2>
