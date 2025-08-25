@@ -65,7 +65,7 @@ watch(
     ancestryPaths.value = [];
 
     // Fetch parent collection details and ancestry only if a UUID is present
-    if (isValidCollection.value) {
+    if (isValidCollection.value && newUuid !== '') {
       await getCollectionAncestry();
     }
 

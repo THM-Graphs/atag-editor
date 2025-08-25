@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import {
   onBeforeRouteLeave,
   RouteLocationNormalizedLoaded,
@@ -80,14 +80,19 @@ const {
   initializeGuidelines,
 } = useGuidelinesStore();
 
-const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch();
+const collectionUuid = computed(() => route.params.uuid as string);
 
-const collectionUuid: string = route.params.uuid as string;
-
-watch(collectionFetchUrl, async () => await getSubCollections());
+const {
+  fetchUrl: collectionFetchUrl,
+  resetSearchParams: resetCollectionSearchParams,
+  searchParams,
+  updateSearchParams,
+  updateUuid,
+} = useCollectionSearch();
 
 // ------------------------------------------------------------------------------
 
+// TODO: Split this up into smaller refs
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const ancestryPaths = ref<NodeAncestry[]>([]);
 const isValidCollection = ref<boolean>(false);
@@ -128,19 +133,55 @@ const textsTableData: ComputedRef<TextTableEntry[]> = computed(() => {
   });
 });
 
+watch(
+  () => route.params.uuid,
+  async (newUuid: string): Promise<void> => {
+    isLoading.value = true;
+
+    collectionAccessObject.value = {} as CollectionAccessObject;
+
+    // Fetch parent collection details and ancestry only if a UUID is present
+    if (newUuid) {
+      await getCollection();
+    }
+
+    // Reset ancestry - If no uuid param is set, needs to be cleanded anyway
+    ancestryPaths.value = [];
+
+    // Fetch parent collection details and ancestry only if a UUID is present
+    if (isValidCollection.value && newUuid !== '') {
+      await getCollectionAncestry();
+    }
+
+    if (isValidCollection.value || newUuid === '') {
+      await getGuidelines();
+      await getTexts();
+      await getAnnotations();
+      await getAnnotationStyles();
+
+      // Collection filter params need to be reset
+      resetCollectionSearchParams();
+
+      // Explicitly update the composable's uuid
+      updateUuid(newUuid || undefined);
+
+      // Collections are fetched via watcher
+
+      initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
+    isLoading.value = false;
+  },
+  {
+    immediate: true,
+  },
+);
+
+watch(collectionFetchUrl, async () => await getSubCollections());
+
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
-
-onMounted(async (): Promise<void> => {
-  await getData();
-
-  if (isValidCollection.value) {
-    await getGuidelines();
-    await getAnnotationStyles();
-    window.addEventListener('beforeunload', handleBeforeUnload);
-  }
-
-  isLoading.value = false;
-});
 
 function deleteAnnotation(uuid: string): void {
   collectionAccessObject.value.annotations = collectionAccessObject.value.annotations.filter(
@@ -523,7 +564,7 @@ function removeUnnecessaryDataBeforeSave(): void {
 
 async function getCollectionAncestry(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/ancestry`);
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/ancestry`);
 
     const response: Response = await fetch(url);
 
@@ -541,7 +582,7 @@ async function getCollectionAncestry(): Promise<void> {
 
 async function getCollection(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}`);
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}`);
 
     const response: Response = await fetch(url);
 
@@ -551,6 +592,7 @@ async function getCollection(): Promise<void> {
 
     const fetchedCollection: Collection = await response.json();
 
+    isValidCollection.value = true;
     collectionAccessObject.value.collection = fetchedCollection;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
@@ -559,7 +601,7 @@ async function getCollection(): Promise<void> {
 
 async function getTexts(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/texts`);
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/texts`);
 
     const response: Response = await fetch(url);
 
@@ -577,7 +619,7 @@ async function getTexts(): Promise<void> {
 
 async function getAnnotations(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}/annotations`);
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/annotations`);
 
     const response: Response = await fetch(url);
 
@@ -609,24 +651,6 @@ async function getSubCollections(): Promise<void> {
     collectionAccessObject.value.collections = fetchedCollections;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
-  }
-}
-
-async function getData(): Promise<void> {
-  collectionAccessObject.value = {} as CollectionAccessObject;
-
-  try {
-    await getCollection();
-    await getCollectionAncestry();
-    await getSubCollections();
-    await getTexts();
-    await getAnnotations();
-
-    initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
-
-    isValidCollection.value = true;
-  } catch (error: unknown) {
-    console.error('Error fetching data:', error);
   }
 }
 
@@ -1006,17 +1030,19 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
         </div>
         <div class="collections-pane w-full">
           <h2 class="text-center">
-            Collections ({{ collectionAccessObject.collections.pagination.totalRecords }})
+            Collections ({{ collectionAccessObject?.collections?.pagination.totalRecords }})
           </h2>
           <OverviewToolbar
             v-if="guidelines"
+            :searchInputValue="searchParams.searchInput"
+            :nodeLabelsValue="searchParams.nodeLabels as string[]"
             @search-input-changed="handleSearchInputChange"
             @node-labels-input-changed="handleNodeLabelsInputChanged"
           />
           <div class="collection-pane-content">
             <CollectionTable
-              :collections="collectionAccessObject.collections.data"
-              :pagination="collectionAccessObject.collections.pagination"
+              :collections="collectionAccessObject?.collections?.data ?? null"
+              :pagination="collectionAccessObject?.collections?.pagination ?? null"
               :async-operation-running="asyncOperationRunning"
               mode="view"
               @sort-changed="handleSortChange"
