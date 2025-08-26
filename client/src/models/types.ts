@@ -83,6 +83,8 @@ export type CollectionCreationData = CollectionAccessObject & {
   parentCollection: Collection | null;
 };
 
+export type CollectionNetworkActionType = 'move' | 'connect' | 'dereference' | 'delete';
+
 export type CollectionPostData = {
   data: CollectionAccessObject;
   initialData: CollectionAccessObject;

@@ -18,12 +18,14 @@ import { buildFetchUrl } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   Collection,
+  CollectionNetworkActionType,
   CollectionPreview,
   CollectionSearchParams,
   NodeAncestry,
   PaginationData,
   PaginationResult,
 } from '../models/types';
+import CollectionEditModal from '../components/CollectionEditModal.vue';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -51,6 +53,13 @@ const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 // For other async operations
 const asyncOperationRunning = ref<boolean>(false);
+
+type Action = {
+  type: CollectionNetworkActionType;
+  data: Collection[];
+};
+const currentAction = ref<Action>(null);
+const actionDialogIsVisible = ref<boolean>(false);
 
 watch(
   () => route.params.uuid,
@@ -200,6 +209,32 @@ function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): v
   updateSearchParams(data);
 }
 
+function handleActionSelection(event: Action): void {
+  actionDialogIsVisible.value = true;
+  currentAction.value = {
+    type: event.type,
+    data: event.data,
+  };
+
+  console.log(event);
+}
+
+function handleActionCanceled(): void {
+  actionDialogIsVisible.value = false;
+}
+
+function handleActionDone(event: Action): void {
+  actionDialogIsVisible.value = false;
+  currentAction.value = null;
+
+  toast.add({
+    severity: 'success',
+    summary: 'Network updated',
+    detail: event.data.length + ' collections updated',
+    life: 3000,
+  });
+}
+
 function handleSortChange(event: DataTableSortEvent): void {
   updateTableUrlParams(event);
 }
@@ -228,6 +263,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   />
 
   <template v-else>
+    {{ actionDialogIsVisible }}
     <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
       <RouterLink to="/">
         <Button
@@ -310,8 +346,19 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
           >
         </div>
 
+        {{ currentAction }}
+
+        <CollectionEditModal
+          :isVisible="actionDialogIsVisible"
+          :action="currentAction?.type"
+          :collections="currentAction?.data"
+          @action-done="handleActionDone"
+          @action-canceled="handleActionCanceled"
+        />
+
         <CollectionTable
           v-if="guidelines"
+          @action-selected="handleActionSelection"
           @sort-changed="handleSortChange"
           @pagination-changed="handlePaginationChange"
           :collections="collections"

@@ -5,9 +5,12 @@ import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
-import { Tag } from 'primevue';
-import { PaginationData, CollectionPreview } from '../models/types';
+import { Menu, Tag } from 'primevue';
+import { useToast } from 'primevue/usetoast';
+
+import { PaginationData, CollectionPreview, CollectionNetworkActionType } from '../models/types';
 import { ref } from 'vue';
+import { MenuItem, MenuItemCommandEvent } from 'primevue/menuitem';
 
 type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
 
@@ -18,7 +21,9 @@ const props = defineProps<{
   asyncOperationRunning: boolean;
 }>();
 
-const emit = defineEmits(['paginationChanged', 'sortChanged']);
+const emit = defineEmits(['actionSelected', 'paginationChanged', 'sortChanged']);
+
+const toast = useToast();
 
 const COLUMN_CONFIG = {
   nodeLabels: { width: '8rem', sortable: false },
@@ -27,6 +32,59 @@ const COLUMN_CONFIG = {
   annotations: { width: 'auto', sortable: true },
   collections: { width: 'auto', sortable: true },
 } as const;
+
+// Row from which the menu is opened
+const currentRow = ref<CollectionPreview | null>(null); // Store the current row
+
+// --------------------------------- MENU -------------------------------------
+
+const menu = ref();
+
+// Menu items for the three-dot menu
+const menuItems: MenuItem[] = [
+  {
+    label: 'Move',
+    icon: 'pi pi-arrow-circle-left',
+    command: (e: MenuItemCommandEvent) => {
+      handleActionSelection('move');
+    },
+  },
+  {
+    label: 'Connect',
+    icon: 'pi pi-link',
+    command: (e: MenuItemCommandEvent) => {
+      handleActionSelection('connect');
+    },
+  },
+  {
+    separator: true,
+  },
+  {
+    label: 'De-reference',
+    icon: 'pi pi-minus-circle ',
+    command: (e: MenuItemCommandEvent) => {
+      handleActionSelection('dereference');
+      // window.location.href = 'https://vuejs.org/';
+    },
+  },
+  {
+    label: 'Delete',
+    icon: 'pi pi-trash',
+    command: (e: MenuItemCommandEvent) => {
+      handleActionSelection('delete');
+      // window.location.href = 'https://vuejs.org/';
+    },
+  },
+];
+
+// Function to toggle menu for a specific row
+function toggleMenu(event: Event, row: CollectionPreview): void {
+  currentRow.value = row; // Store the row data
+
+  menu.value.toggle(event);
+}
+
+// --------------------------------- MENU -------------------------------------
 
 const selectedRows = ref<CollectionPreview[]>([]);
 
@@ -60,6 +118,13 @@ function handleSort(event: DataTableSortEvent): void {
 
 function handlePagination(event: DataTablePageEvent): void {
   emit('paginationChanged', event);
+}
+
+function handleActionSelection(type: CollectionNetworkActionType): void {
+  emit('actionSelected', {
+    type,
+    data: [currentRow.value.collection],
+  });
 }
 </script>
 
@@ -170,6 +235,18 @@ function handlePagination(event: DataTablePageEvent): void {
                 aria-label="Open in Collection manager"
               ></Button>
             </RouterLink>
+
+            <Button
+              v-if="props.mode === 'edit'"
+              icon="pi pi-ellipsis-v"
+              rounded
+              severity="secondary"
+              class="w-2rem h-2rem"
+              title="More actions"
+              aria-label="More actions"
+              @click="toggleMenu($event, row)"
+            />
+            <Menu ref="menu" :model="menuItems" popup />
           </template>
         </Column>
       </DataTable>
