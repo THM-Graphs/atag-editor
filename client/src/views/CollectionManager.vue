@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -10,6 +10,8 @@ import LoadingSpinner from '../components/LoadingSpinner.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import Button from 'primevue/button';
+import Menu from 'primevue/menu';
+import { MenuItem } from 'primevue/menuitem';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -26,6 +28,7 @@ import {
   PaginationResult,
 } from '../models/types';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
+import { useCollectionManagerStore } from '../store/collectionManager';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -36,6 +39,19 @@ useTitle('Collection Manager');
 const { initializeGuidelines, guidelines } = useGuidelinesStore();
 
 const {
+  tableSelection,
+  isActionModalVisible,
+  currentActionType,
+  actionTargetCollections,
+  parentCollection,
+  closeActionModal,
+  reset: resetCollectionManager,
+  setParentCollection,
+  setSelection,
+  openBulkAction,
+} = useCollectionManagerStore();
+
+const {
   fetchUrl: collectionFetchUrl,
   resetSearchParams: resetCollectionSearchParams,
   updateSearchParams,
@@ -43,7 +59,7 @@ const {
   updateUuid,
 } = useCollectionSearch();
 
-const collection = ref(null);
+const collection = ref<Collection>(null);
 const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
@@ -58,8 +74,36 @@ type Action = {
   type: CollectionNetworkActionType;
   data: Collection[];
 };
-const currentAction = ref<Action>(null);
-const actionDialogIsVisible = ref<boolean>(false);
+
+const menu = ref();
+const tableRef = useTemplateRef('tableRef');
+
+// Menu items for the three-dot menu
+const menuItems: MenuItem[] = [
+  {
+    label: 'Move',
+    icon: 'pi pi-arrow-circle-left',
+    command: () => openBulkAction('move'),
+  },
+  {
+    label: 'Copy',
+    icon: 'pi pi-link',
+    command: () => openBulkAction('copy'),
+  },
+  {
+    separator: true,
+  },
+  {
+    label: 'De-reference',
+    icon: 'pi pi-minus-circle ',
+    command: () => openBulkAction('dereference'),
+  },
+  {
+    label: 'Delete',
+    icon: 'pi pi-trash',
+    command: () => openBulkAction('delete'),
+  },
+];
 
 watch(
   () => route.params.uuid,
@@ -89,6 +133,8 @@ watch(
 
       // Collections are fetched via watcher
     }
+
+    setParentCollection(collection.value);
 
     isLoading.value = false;
   },
@@ -209,23 +255,21 @@ function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): v
   updateSearchParams(data);
 }
 
-function handleActionSelection(event: Action): void {
-  actionDialogIsVisible.value = true;
-  currentAction.value = {
-    type: event.type,
-    data: event.data,
-  };
-
-  console.log(event);
+function handleSelectionChange(newSelection: CollectionPreview[]): void {
+  setSelection(newSelection.map(c => c.collection));
 }
 
 function handleActionCanceled(): void {
-  actionDialogIsVisible.value = false;
+  closeActionModal();
+  resetCollectionManager();
 }
 
 function handleActionDone(event: Action): void {
-  actionDialogIsVisible.value = false;
-  currentAction.value = null;
+  closeActionModal();
+
+  resetCollectionManager();
+
+  tableRef.value.resetSelection();
 
   toast.add({
     severity: 'success',
@@ -251,6 +295,10 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
     life: 2000,
   });
 }
+
+function toggleMenu(event: Event): void {
+  menu.value.toggle(event);
+}
 </script>
 
 <template>
@@ -263,7 +311,6 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   />
 
   <template v-else>
-    {{ actionDialogIsVisible }}
     <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
       <RouterLink to="/">
         <Button
@@ -274,7 +321,7 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
         ></Button>
       </RouterLink>
       <div class="flex">
-        <RouterLink :to="`/collections/${collection?.data.uuid}`">
+        <RouterLink v-if="route.params.uuid" :to="`/collections/${collection?.data.uuid}`">
           <Button
             icon="pi pi-pen-to-square"
             label="Edit collection data"
@@ -346,25 +393,41 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
           >
         </div>
 
-        {{ currentAction }}
+        <div class="action-bar pb-2">
+          <span> {{ tableSelection.length }} rows selected </span>
+
+          <Button
+            icon="pi pi-ellipsis-v"
+            rounded
+            severity="secondary"
+            class="w-2rem h-2rem"
+            title="More actions"
+            aria-label="More actions"
+            :disabled="tableSelection.length === 0"
+            @click="toggleMenu($event)"
+          />
+          <Menu ref="menu" :model="menuItems" popup />
+        </div>
 
         <CollectionEditModal
-          :isVisible="actionDialogIsVisible"
-          :action="currentAction?.type"
-          :collections="currentAction?.data"
+          :isVisible="isActionModalVisible"
+          :action="currentActionType"
+          :collections="actionTargetCollections"
+          :parent="parentCollection"
           @action-done="handleActionDone"
           @action-canceled="handleActionCanceled"
         />
 
         <CollectionTable
           v-if="guidelines"
-          @action-selected="handleActionSelection"
-          @sort-changed="handleSortChange"
-          @pagination-changed="handlePaginationChange"
+          ref="tableRef"
           :collections="collections"
           :pagination="pagination"
           :async-operation-running="asyncOperationRunning"
           mode="edit"
+          @selection-changed="handleSelectionChange"
+          @sort-changed="handleSortChange"
+          @pagination-changed="handlePaginationChange"
         />
       </div>
 

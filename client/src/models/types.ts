@@ -83,7 +83,7 @@ export type CollectionCreationData = CollectionAccessObject & {
   parentCollection: Collection | null;
 };
 
-export type CollectionNetworkActionType = 'move' | 'connect' | 'dereference' | 'delete';
+export type CollectionNetworkActionType = 'move' | 'copy' | 'dereference' | 'delete';
 
 export type CollectionPostData = {
   data: CollectionAccessObject;
@@ -150,6 +150,13 @@ export type HistoryRecord = {
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;
+};
+
+export type NetworkPostData = {
+  type: CollectionNetworkActionType;
+  nodes: (Collection | Text)[];
+  origin: Collection | null;
+  target: Collection | null;
 };
 
 export type Node<T extends BaseNodeData> = {

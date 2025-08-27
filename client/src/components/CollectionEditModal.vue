@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import { computed, ComputedRef } from 'vue';
+import { computed, ComputedRef, ref } from 'vue';
 import Search from './Search.vue';
 import { useEditCollectionNetwork } from '../../src/composables/useEditCollectionNetwork';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import { Collection, CollectionNetworkActionType } from '../models/types';
+import { Collection, CollectionNetworkActionType, NetworkPostData, Text } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 
+// TODO: Or use store directly...?
 const props = defineProps<{
   isVisible: boolean;
   action?: CollectionNetworkActionType;
   collections?: Collection[];
+  parent: Collection | null;
 }>();
 
 const emit = defineEmits(['actionDone', 'actionCanceled']);
+
+// This is the Collection node the selected collections/texts will be attached to.
+const actionTarget = ref<Collection | null>(null);
 
 const title: ComputedRef<string> = computed(() => {
   return capitalize(props.action) + ' collections';
@@ -26,7 +31,14 @@ const actionLabel: ComputedRef<string> = computed(() => {
 const { isSaving, executeAction } = useEditCollectionNetwork();
 
 async function finishAction(): Promise<void> {
-  executeAction(props.action);
+  const data: NetworkPostData = {
+    type: props.action,
+    nodes: props.collections ?? [],
+    origin: props.parent ?? null,
+    target: actionTarget.value ?? null,
+  };
+
+  executeAction(data);
 
   emit('actionDone', {
     type: props.action,
@@ -67,7 +79,7 @@ async function hideDialog(): Promise<void> {
         </ul>
       </div>
 
-      <div v-if="['move', 'connect'].includes(props.action)">
+      <div v-if="['move', 'copy'].includes(props.action)">
         Choose your target
 
         <Search />

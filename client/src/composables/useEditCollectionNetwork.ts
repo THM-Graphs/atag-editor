@@ -1,15 +1,16 @@
 import { ref } from 'vue';
-import { CollectionNetworkActionType } from '../models/types';
+import { NetworkPostData } from '../models/types';
 
 export function useEditCollectionNetwork() {
   const isSaving = ref<boolean>(false);
   const isDone = ref<boolean>(false);
   const error = ref(null);
 
-  const BASE_FETCH_URL: string = '/api/collection-network';
+  const BASE_FETCH_URL: string = '/api/network';
 
-  function executeAction(type: CollectionNetworkActionType) {
-    console.log('execute ', type + ' action');
+  function executeAction(data: NetworkPostData) {
+    console.log('execute ', data.type + ' action');
+    console.log(data);
   }
 
   return {

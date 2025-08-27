@@ -79,6 +79,8 @@ export type CollectionAccessObject = {
   texts: Text[];
 };
 
+export type CollectionNetworkActionType = 'move' | 'copy' | 'dereference' | 'delete';
+
 export type CollectionCreationData = CollectionAccessObject & {
   parentCollection: Collection | null;
 };
@@ -105,6 +107,13 @@ export type MalformedAnnotation = {
 export type Node<T extends BaseNodeData> = {
   data: T;
   nodeLabels: string[];
+};
+
+export type NetworkPostData = {
+  type: CollectionNetworkActionType;
+  nodes: (Collection | Text)[];
+  origin: Collection | null;
+  target: Collection | null;
 };
 
 export type NodeAncestry = (Text | Collection | IAnnotation)[];

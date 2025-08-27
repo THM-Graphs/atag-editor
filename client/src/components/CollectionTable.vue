@@ -6,11 +6,10 @@ import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Menu, Tag } from 'primevue';
-import { useToast } from 'primevue/usetoast';
-
 import { PaginationData, CollectionPreview, CollectionNetworkActionType } from '../models/types';
-import { ref } from 'vue';
-import { MenuItem, MenuItemCommandEvent } from 'primevue/menuitem';
+import { ref, watch } from 'vue';
+import { MenuItem } from 'primevue/menuitem';
+import { useCollectionManagerStore } from '../store/collectionManager';
 
 type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
 
@@ -21,9 +20,13 @@ const props = defineProps<{
   asyncOperationRunning: boolean;
 }>();
 
-const emit = defineEmits(['actionSelected', 'paginationChanged', 'sortChanged']);
+const selectedRows = ref<CollectionPreview[]>([]);
 
-const toast = useToast();
+const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
+
+defineExpose({ resetSelection });
+
+const { openRowAction } = useCollectionManagerStore();
 
 const COLUMN_CONFIG = {
   nodeLabels: { width: '8rem', sortable: false },
@@ -45,16 +48,12 @@ const menuItems: MenuItem[] = [
   {
     label: 'Move',
     icon: 'pi pi-arrow-circle-left',
-    command: (e: MenuItemCommandEvent) => {
-      handleActionSelection('move');
-    },
+    command: () => handleActionSelection('move'),
   },
   {
-    label: 'Connect',
+    label: 'Copy',
     icon: 'pi pi-link',
-    command: (e: MenuItemCommandEvent) => {
-      handleActionSelection('connect');
-    },
+    command: () => handleActionSelection('copy'),
   },
   {
     separator: true,
@@ -62,20 +61,26 @@ const menuItems: MenuItem[] = [
   {
     label: 'De-reference',
     icon: 'pi pi-minus-circle ',
-    command: (e: MenuItemCommandEvent) => {
-      handleActionSelection('dereference');
-      // window.location.href = 'https://vuejs.org/';
-    },
+    command: () => handleActionSelection('dereference'),
   },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
-    command: (e: MenuItemCommandEvent) => {
-      handleActionSelection('delete');
-      // window.location.href = 'https://vuejs.org/';
-    },
+    command: () => handleActionSelection('delete'),
   },
 ];
+
+watch(
+  selectedRows,
+  newSelection => {
+    handleSelectionChange(newSelection);
+  },
+  { deep: true },
+);
+
+function resetSelection() {
+  selectedRows.value = [];
+}
 
 // Function to toggle menu for a specific row
 function toggleMenu(event: Event, row: CollectionPreview): void {
@@ -85,8 +90,6 @@ function toggleMenu(event: Event, row: CollectionPreview): void {
 }
 
 // --------------------------------- MENU -------------------------------------
-
-const selectedRows = ref<CollectionPreview[]>([]);
 
 /**
  * Returns PrimeVue DataTable Column properties based on the given column name.
@@ -112,6 +115,11 @@ function getColumnProps(columnName: ColumnName): Partial<ColumnProps> {
   };
 }
 
+function handleSelectionChange(newSelection: CollectionPreview[]) {
+  // v-model already updated selectedRows, so just emit to parent
+  emit('selectionChanged', newSelection);
+}
+
 function handleSort(event: DataTableSortEvent): void {
   emit('sortChanged', event);
 }
@@ -121,10 +129,7 @@ function handlePagination(event: DataTablePageEvent): void {
 }
 
 function handleActionSelection(type: CollectionNetworkActionType): void {
-  emit('actionSelected', {
-    type,
-    data: [currentRow.value.collection],
-  });
+  openRowAction(type, currentRow.value.collection);
 }
 </script>
 
@@ -132,7 +137,6 @@ function handleActionSelection(type: CollectionNetworkActionType): void {
   <div class="flex-grow-1 overflow-y-auto">
     <LoadingSpinner v-if="!props.collections" />
     <template v-else>
-      <span v-if="mode === 'edit'"> {{ selectedRows.length }} rows selected </span>
       <DataTable
         scrollable
         scrollHeight="flex"
@@ -153,6 +157,7 @@ function handleActionSelection(type: CollectionNetworkActionType): void {
         size="small"
         @sort="handleSort"
         @page="handlePagination"
+        @update:selection="handleSelectionChange"
         :pt="{
           tbody: {
             style: {
