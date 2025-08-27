@@ -1,63 +1,33 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, nextTick, ref, useTemplateRef } from 'vue';
+import { ref, watch } from 'vue';
 import AutoComplete from 'primevue/autocomplete';
-import { useAnnotationStore } from '../store/annotations';
-import { useCharactersStore } from '../store/characters';
-import { useEditorStore } from '../store/editor';
+import MultiSelect from 'primevue/multiselect';
 import InputGroup from 'primevue/inputgroup';
-import Button from 'primevue/button';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-import { CollectionPreview, PaginationResult } from '../models/types';
+import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
+import Tag from 'primevue/tag';
 
-/**
- *  Enriches Search with an html key that contains the formatted search result
- */
-type SearchResult = {
-  index: number;
-  match: string;
-  startIndex: number;
-  endIndex: number;
-  html: string;
-};
+const emit = defineEmits(['collectionSelected']);
 
-/**
- * Interface for relevant state information about the text search
- */
-interface TextSearchObject {
-  fetchedItems: SearchResult[];
-  searchStr: string | null;
-  mode: 'edit' | 'view';
-  elm: ReturnType<typeof useTemplateRef<ComponentPublicInstance>>;
-}
+const pagination = ref<PaginationData>(null);
 
-const collections = ref([]);
-const pagination = ref(null);
+const { availableCollectionLabels } = useGuidelinesStore();
+const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch();
 
-const PREVIEW_CHARACTER_SIZE: number = 25;
-
-const { createFullTextFromCharacters, jumpToSnippetByIndex, totalCharacters } =
-  useCharactersStore();
-const { extractSnippetAnnotations, updateTruncationStatus } = useAnnotationStore();
-const { hasUnsavedChanges, setNewRangeAnchorUuid, initializeHistory } = useEditorStore();
-
-const { guidelines, availableCollectionLabels } = useGuidelinesStore();
-
-const { fetchUrl: collectionFetchUrl, searchParams, updateSearchParams } = useCollectionSearch();
-
+const selectedCollectionLabels = ref(availableCollectionLabels.value);
 const isSearchActive = ref<boolean>(false);
 
-const textSearchObject = ref<TextSearchObject>({
-  fetchedItems: [],
-  searchStr: '',
-  mode: 'view',
-  elm: useTemplateRef<ComponentPublicInstance>('searchbar'),
-});
+// State of search
+const fetchedItems = ref<CollectionPreview[]>([]);
+const searchInput = ref<string>('');
+
+watch(collectionFetchUrl, async () => await getCollections());
 
 function resetSearch(): void {
-  textSearchObject.value.searchStr = '';
-  textSearchObject.value.fetchedItems = [];
+  searchInput.value = '';
+  fetchedItems.value = [];
 
   setIsSearchActive(false);
 }
@@ -65,7 +35,6 @@ function resetSearch(): void {
 async function getCollections(): Promise<void> {
   try {
     const url: string = buildFetchUrl(collectionFetchUrl.value);
-
     const response: Response = await fetch(url);
 
     if (!response.ok) {
@@ -74,42 +43,19 @@ async function getCollections(): Promise<void> {
 
     const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
 
-    collections.value = paginationResult.data;
-    console.log(collections.value);
+    fetchedItems.value = paginationResult.data;
     pagination.value = paginationResult.pagination;
   } catch (error: unknown) {
     console.error('Error fetching collections:', error);
-  } finally {
   }
 }
 
-async function searchTextMatches(searchString: string): Promise<void> {
-  const searchResults: SearchResult[] = [];
-
-  updateSearchParams({ searchInput: searchString, nodeLabels: availableCollectionLabels.value });
-
-  await getCollections();
-
-  try {
-    // Escape special regex characters in the search string to treat it as literal text
-    // collections.value.forEach(match => {
-    //   searchResults.push({
-    //     index: match.index,
-    //     match: match[0],
-    //     startIndex: match.index,
-    //     endIndex: match.index + match[0].length - 1,
-    //     // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-    //     html: renderHtml(match),
-    //   });
-    // });
-  } catch (error) {
-    console.error('Error during regex search:', error);
-    textSearchObject.value.fetchedItems = [];
-
-    return;
-  }
-
-  textSearchObject.value.fetchedItems = searchResults;
+async function search(searchString: string): Promise<void> {
+  // Use the selected collection labels or all if none selected
+  updateSearchParams({
+    searchInput: searchString,
+    nodeLabels: selectedCollectionLabels.value,
+  });
 }
 
 function setIsSearchActive(mode: boolean): void {
@@ -118,107 +64,69 @@ function setIsSearchActive(mode: boolean): void {
   if (mode === false) {
     return;
   }
-
-  nextTick(() => {
-    const inputElm: HTMLInputElement = textSearchObject.value.elm?.$el?.querySelector('input');
-
-    inputElm?.focus();
-  });
 }
 
-/**
- * Generates an HTML string with the matched text highlighted and surrounding context preview.
- *
- * The function takes a RegExp match result and constructs an HTML snippet
- * that highlights the matched portion of the text, showing a preview of
- * characters before and after the match.
- *
- * Called for each search result of a fulltext search operation.
- *
- * @param {RegExpExecArray} match - The regex match result containing details of the match.
- * @returns {string} HTML string with the matched text highlighted and context preview.
- */
+function handleResultItemSelect(collection: CollectionPreview): void {
+  // Emit the selected collection
+  emit('collectionSelected', collection.collection);
 
-function renderHtml(match: RegExpExecArray): string {
-  const textToSearch: string = match.input;
-
-  const startIndex: number = match.index;
-  const endIndex: number = startIndex + match[0].length - 1;
-
-  const prevText: string = textToSearch.slice(startIndex - PREVIEW_CHARACTER_SIZE, startIndex);
-  const nextText: string = textToSearch.slice(endIndex + 1, endIndex + 1 + PREVIEW_CHARACTER_SIZE);
-
-  const hasMoreBefore: boolean = startIndex - PREVIEW_CHARACTER_SIZE > 0;
-  const hasMoreAfter: boolean = endIndex + 1 + PREVIEW_CHARACTER_SIZE < textToSearch.length;
-
-  const ellipsesBefore: string = hasMoreBefore ? '...' : '';
-  const ellipsesAfter: string = hasMoreAfter ? '...' : '';
-
-  return `<small>${ellipsesBefore}${prevText}<b>${match[0]}</b>${nextText}${ellipsesAfter}</small>`;
-}
-
-function handleResultItemSelect(item: SearchResult): void {
-  if (hasUnsavedChanges()) {
-    const answer: boolean = window.confirm(
-      'Save your changes before jumping to a new snippet. Be aware that if you have unsaved changes and still decide to jump to the snippet, the result might not be correct',
-    );
-
-    if (!answer) {
-      // Next tick necessary to prevent race conditions between state updates of this component and
-      // PrimeVue's component
-      nextTick(() => {
-        textSearchObject.value.searchStr = item.match;
-      });
-      return;
-    }
-  }
-
-  jumpToSnippetByIndex(item.startIndex);
-
-  extractSnippetAnnotations();
-  updateTruncationStatus();
-
-  // TODO: This works when the user decides to jump to a new snippet despite the confirmation windows
-  // warns him not to (since he/she has unsaved changes). Maybe find a more elegant way, but currently
-  // this is the best solution
-  setNewRangeAnchorUuid(totalCharacters.value[item.endIndex].data.uuid);
-
-  initializeHistory();
-
+  // Reset search after selection
   resetSearch();
+}
 
-  // Necessary since caret placement in EditorText.vue's onUpdated hook is overriden afterwards
-  // by PrimeVue's focus and selection management. The emitted event is registered by an event listener
-  // in EditorText.vue. Bit hacky, but it works. 100ms is currently enough, but might be adapted later...
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent('forceCaretPlacement'));
-  }, 100);
+// Handle collection label selection changes
+function handleCollectionLabelChange(): void {
+  // If there's an active search, re-run it with new filters
+  if (searchInput.value && searchInput.value.trim()) {
+    search(searchInput.value);
+  }
 }
 </script>
 
 <template>
-  <AutoComplete
-    v-model="textSearchObject.searchStr"
-    :placeholder="`Search for text`"
-    :suggestions="collections"
-    class="searchbar h-2rem"
-    variant="filled"
-    ref="searchbar"
-    title="Enter search term"
-    @complete="searchTextMatches($event.query)"
-    @option-select="handleResultItemSelect($event.value)"
-    @blur="isSearchActive = textSearchObject.searchStr === '' ? false : true"
-  >
-    <template #header v-if="textSearchObject.fetchedItems.length > 0">
-      <div class="font-medium px-3 py-2">{{ textSearchObject.fetchedItems.length }} Results</div>
-    </template>
-    <template #option="slotProps">
-      <div>
-        <span> {{ slotProps.option.collection.nodeLabels }}</span>
-        <span v-html="slotProps.option.collection.data.label"></span>
-      </div>
-    </template>
-  </AutoComplete>
+  <div class="search-container">
+    <InputGroup>
+      <MultiSelect
+        v-model="selectedCollectionLabels"
+        :options="availableCollectionLabels"
+        :display="'chip'"
+        class="collection-filter"
+        title="Filter by collection labels"
+        @change="handleCollectionLabelChange"
+      >
+        <template #chip="{ value }">
+          <Tag :value="value" severity="contrast" class="mr-1" />
+        </template>
+      </MultiSelect>
+      <AutoComplete
+        v-model="searchInput"
+        :placeholder="`Search for collection`"
+        :suggestions="fetchedItems"
+        class="searchbar"
+        variant="filled"
+        ref="searchbar"
+        title="Enter search term"
+        @complete="search($event.query)"
+        @option-select="handleResultItemSelect($event.value)"
+        @blur="isSearchActive = searchInput === '' ? false : true"
+      >
+        <template #header v-if="fetchedItems.length > 0">
+          <div class="font-medium px-3 py-2">{{ fetchedItems.length }} Results</div>
+        </template>
+        <template #option="slotProps">
+          <div class="flex flex-column gap-1 p-2">
+            <Tag
+              v-for="label in slotProps.option.collection.nodeLabels"
+              :value="label"
+              severity="contrast"
+              class="mr-1"
+            />
+            <div class="font-medium">{{ slotProps.option.collection.data.label }}</div>
+          </div>
+        </template>
+      </AutoComplete>
+    </InputGroup>
+  </div>
 </template>
 
 <style scoped></style>

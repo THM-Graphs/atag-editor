@@ -3,7 +3,9 @@ import { computed, ComputedRef, ref } from 'vue';
 import Search from './Search.vue';
 import { useEditCollectionNetwork } from '../../src/composables/useEditCollectionNetwork';
 import Button from 'primevue/button';
+import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
+import { Tag } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData, Text } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 
@@ -14,6 +16,14 @@ const props = defineProps<{
   collections?: Collection[];
   parent: Collection | null;
 }>();
+
+const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
+  if (['copy', 'move'].includes(props.action) && !actionTarget.value) {
+    return false;
+  }
+
+  return true;
+});
 
 const emit = defineEmits(['actionDone', 'actionCanceled']);
 
@@ -46,8 +56,18 @@ async function finishAction(): Promise<void> {
   });
 }
 
+// TODO: Check if collection is valid...
+
+function handleSearchSelected(collection: Collection): void {
+  actionTarget.value = collection;
+}
+
 async function hideDialog(): Promise<void> {
   emit('actionCanceled');
+}
+
+function removeActionTarget(): void {
+  actionTarget.value = null;
 }
 </script>
 
@@ -63,10 +83,9 @@ async function hideDialog(): Promise<void> {
       <h2 class="w-full text-center m-0">{{ title }}</h2>
     </template>
 
-    <div class="content-container">
-      <div>Action: {{ props.action }}</div>
-
-      <div class="collections">
+    <div class="content text-center mb-2">
+      <div class="updates-container">
+        <h4>Collections to be updated</h4>
         <ul>
           <li v-for="collection in props.collections" :key="collection.data.uuid">
             <span>
@@ -79,10 +98,35 @@ async function hideDialog(): Promise<void> {
         </ul>
       </div>
 
-      <div v-if="['move', 'copy'].includes(props.action)">
-        Choose your target
+      <div class="target-container">
+        <h4>Attach to new collection:</h4>
 
-        <Search />
+        <div v-if="actionTarget" class="flex justify-content-between align-items-center gap-2">
+          <Card>
+            <template #content>
+              <div class="flex gap-2">
+                <Tag
+                  v-for="nodeLabel in actionTarget.nodeLabels"
+                  :value="nodeLabel"
+                  severity="contrast"
+                  class="mr-1"
+                />
+                <div>{{ actionTarget.data.label }}</div>
+              </div>
+            </template>
+          </Card>
+          <Button
+            icon="pi pi-times"
+            size="small"
+            class="w-2rem h-2rem"
+            severity="danger"
+            title="Remove selected collection"
+            aria-label="Remove selected collection"
+            @click="removeActionTarget"
+          ></Button>
+        </div>
+
+        <Search v-if="!actionTarget" @collection-selected="handleSearchSelected" />
       </div>
     </div>
 
@@ -97,8 +141,9 @@ async function hideDialog(): Promise<void> {
       <Button
         type="submit"
         :label="actionLabel"
-        title="Create new text"
+        :title="title"
         :loading="isSaving"
+        :disabled="!inputIsValid"
         @click="finishAction"
       ></Button>
     </div>
