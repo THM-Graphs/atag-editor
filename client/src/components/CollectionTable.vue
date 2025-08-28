@@ -49,6 +49,7 @@ const menuItems: MenuItem[] = [
     label: 'Move',
     icon: 'pi pi-arrow-circle-left',
     command: () => handleActionSelection('move'),
+    disabled: () => !parentCollection.value,
   },
   {
     label: 'Copy',

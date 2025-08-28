@@ -84,11 +84,13 @@ const menuItems: MenuItem[] = [
     label: 'Move',
     icon: 'pi pi-arrow-circle-left',
     command: () => openBulkAction('move'),
+    disabled: () => !parentCollection.value,
   },
   {
     label: 'Copy',
     icon: 'pi pi-link',
     command: () => openBulkAction('copy'),
+    disabled: () => !parentCollection.value,
   },
   {
     separator: true,
@@ -114,6 +116,11 @@ watch(
 
     if (newUuid) {
       await getCollection();
+    } else {
+      // TODO: This is hacky: collection.value is the component's collection ref
+      // At the end, the parentCollection ref of the store is set to this value. So currently,
+      // this is kept, but should be overhauled...
+      collection.value = null;
     }
 
     // Reset ancestry - If no uuid param is set, needs to be cleanded anyway
@@ -396,7 +403,7 @@ function toggleMenu(event: Event): void {
         </div>
 
         <div class="action-bar pb-2">
-          <span> {{ tableSelection.length }} rows selected </span>
+          <span span> {{ tableSelection.length }} rows selected </span>
 
           <Button
             icon="pi pi-ellipsis-v"
