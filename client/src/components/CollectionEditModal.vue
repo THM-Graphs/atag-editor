@@ -6,7 +6,7 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
-import { Tag } from 'primevue';
+import { Tag, ToastServiceMethods, useToast } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
@@ -18,6 +18,8 @@ const props = defineProps<{
   collections?: Collection[];
   parent: Collection | null;
 }>();
+
+const toast: ToastServiceMethods = useToast();
 
 const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
   const moveActions: CollectionNetworkActionType[] = ['copy', 'move'];
@@ -65,7 +67,7 @@ const actionLabel: ComputedRef<string> = computed(() => {
   return capitalize(props.action);
 });
 
-const { isFetching, executeAction, isDone } = useEditCollectionNetwork();
+const { isFetching, executeAction } = useEditCollectionNetwork();
 
 async function finishAction(): Promise<void> {
   const data: NetworkPostData = {
@@ -75,12 +77,16 @@ async function finishAction(): Promise<void> {
     target: actionTarget.value ?? null,
   };
 
-  await executeAction(data);
+  try {
+    await executeAction(data);
 
-  emit('actionDone', {
-    type: props.action,
-    data: props.collections,
-  });
+    emit('actionDone', {
+      type: props.action,
+      data: props.collections,
+    });
+  } catch (error: unknown) {
+    showMessage('error', error as Error);
+  }
 }
 
 function handleSearchItemSelected(collection: Collection): void {
@@ -126,6 +132,15 @@ function addErrorMessage(error: InvalidCollectionTargetError | unknown): void {
 function clearErrorMessages(): void {
   errorMessageCount.value = 0;
   errorMessages.value = [];
+}
+
+function showMessage(result: 'success' | 'error', error?: Error) {
+  toast.add({
+    severity: result,
+    summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
+    detail: error?.message ?? '',
+    life: 2000,
+  });
 }
 
 async function hideDialog(): Promise<void> {

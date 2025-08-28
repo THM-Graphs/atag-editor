@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
