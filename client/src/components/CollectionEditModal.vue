@@ -6,7 +6,7 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import { Tag } from 'primevue';
-import { Collection, CollectionNetworkActionType, NetworkPostData, Text } from '../models/types';
+import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 
 // TODO: Or use store directly...?
@@ -17,8 +17,14 @@ const props = defineProps<{
   parent: Collection | null;
 }>();
 
+const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
+  const moveActions: CollectionNetworkActionType[] = ['copy', 'move'];
+
+  return moveActions.includes(props.action);
+});
+
 const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
-  if (['copy', 'move'].includes(props.action) && !actionTarget.value) {
+  if (isMoveAction.value && !actionTarget.value) {
     return false;
   }
 
@@ -34,11 +40,27 @@ const title: ComputedRef<string> = computed(() => {
   return capitalize(props.action) + ' collections';
 });
 
+const message: ComputedRef<string> = computed(() => {
+  const collectionCount: number = props.collections?.length ?? 0;
+  const base: string = `${collectionCount} collection${collectionCount > 1 ? 's' : ''} ${collectionCount > 1 ? 'are' : 'is'} about to be`;
+
+  switch (props.action) {
+    case 'copy':
+      return `${base} copied to another parent`;
+    case 'move':
+      return `${base} moved to another parent`;
+    case 'dereference':
+      return `${base} detached from this collection`;
+    case 'delete':
+      return `${base} removed completely`;
+  }
+});
+
 const actionLabel: ComputedRef<string> = computed(() => {
   return capitalize(props.action);
 });
 
-const { isSaving, executeAction } = useEditCollectionNetwork();
+const { isFetching, executeAction, isDone } = useEditCollectionNetwork();
 
 async function finishAction(): Promise<void> {
   const data: NetworkPostData = {
@@ -48,7 +70,7 @@ async function finishAction(): Promise<void> {
     target: actionTarget.value ?? null,
   };
 
-  executeAction(data);
+  await executeAction(data);
 
   emit('actionDone', {
     type: props.action,
@@ -85,20 +107,10 @@ function removeActionTarget(): void {
 
     <div class="content text-center mb-2">
       <div class="updates-container">
-        <h4>Collections to be updated</h4>
-        <ul>
-          <li v-for="collection in props.collections" :key="collection.data.uuid">
-            <span>
-              {{ collection.nodeLabels }}
-            </span>
-            <span>
-              {{ collection.data.label }}
-            </span>
-          </li>
-        </ul>
+        <h4>{{ message }}</h4>
       </div>
 
-      <div class="target-container">
+      <div v-if="isMoveAction" class="target-container">
         <h4>Attach to new collection:</h4>
 
         <div v-if="actionTarget" class="flex justify-content-between align-items-center gap-2">
@@ -142,8 +154,8 @@ function removeActionTarget(): void {
         type="submit"
         :label="actionLabel"
         :title="title"
-        :loading="isSaving"
-        :disabled="!inputIsValid"
+        :loading="isFetching"
+        :disabled="!inputIsValid && isFetching"
         @click="finishAction"
       ></Button>
     </div>

@@ -97,11 +97,13 @@ const menuItems: MenuItem[] = [
     label: 'De-reference',
     icon: 'pi pi-minus-circle ',
     command: () => openBulkAction('dereference'),
+    disabled: () => !parentCollection.value,
   },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
     command: () => openBulkAction('delete'),
+    disabled: true,
   },
 ];
 
@@ -410,6 +412,7 @@ function toggleMenu(event: Event): void {
         </div>
 
         <CollectionEditModal
+          v-if="isActionModalVisible"
           :isVisible="isActionModalVisible"
           :action="currentActionType"
           :collections="actionTargetCollections"

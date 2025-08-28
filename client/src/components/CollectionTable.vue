@@ -26,7 +26,7 @@ const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged'
 
 defineExpose({ resetSelection });
 
-const { openRowAction } = useCollectionManagerStore();
+const { openRowAction, parentCollection } = useCollectionManagerStore();
 
 const COLUMN_CONFIG = {
   nodeLabels: { width: '8rem', sortable: false },
@@ -62,20 +62,31 @@ const menuItems: MenuItem[] = [
     label: 'De-reference',
     icon: 'pi pi-minus-circle ',
     command: () => handleActionSelection('dereference'),
+    disabled: () => !parentCollection.value,
   },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
     command: () => handleActionSelection('delete'),
+    disabled: true,
   },
 ];
 
+// Whenever the selection changes, the parent must be updated to adapt the bulk action behaviour
 watch(
   selectedRows,
   newSelection => {
     handleSelectionChange(newSelection);
   },
   { deep: true },
+);
+
+// Reset selected rows whenever something in the table changes (after pagination, sorting, filtering etc.)
+watch(
+  () => props.collections,
+  () => {
+    resetSelection();
+  },
 );
 
 function resetSelection() {

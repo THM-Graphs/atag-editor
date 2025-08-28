@@ -114,12 +114,13 @@ function handleCollectionLabelChange(): void {
           <div class="font-medium px-3 py-2">{{ fetchedItems.length }} Results</div>
         </template>
         <template #option="slotProps">
-          <div class="flex flex-column gap-1 p-2">
+          <div class="flex gap-1 p-2">
             <Tag
               v-for="label in slotProps.option.collection.nodeLabels"
               :value="label"
               severity="contrast"
               class="mr-1"
+              siz
             />
             <div class="font-medium">{{ slotProps.option.collection.data.label }}</div>
           </div>
