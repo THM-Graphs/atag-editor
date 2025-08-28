@@ -5,9 +5,11 @@ import { useEditCollectionNetwork } from '../../src/composables/useEditCollectio
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
+import Message from 'primevue/message';
 import { Tag } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
+import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
 
 // TODO: Or use store directly...?
 const props = defineProps<{
@@ -56,6 +58,9 @@ const message: ComputedRef<string> = computed(() => {
   }
 });
 
+const errorMessages = ref([]);
+const errorMessageCount = ref(0);
+
 const actionLabel: ComputedRef<string> = computed(() => {
   return capitalize(props.action);
 });
@@ -78,10 +83,49 @@ async function finishAction(): Promise<void> {
   });
 }
 
-// TODO: Check if collection is valid...
+function handleSearchItemSelected(collection: Collection): void {
+  const uuids: string[] = props.collections.map(c => c.data.uuid);
 
-function handleSearchSelected(collection: Collection): void {
-  actionTarget.value = collection;
+  clearErrorMessages();
+
+  try {
+    if (uuids.includes(collection.data.uuid)) {
+      throw new InvalidCollectionTargetError(
+        'Collection can not be used as target since it is included in the ongoing action',
+      );
+    }
+
+    if (props.parent?.data.uuid === collection.data.uuid) {
+      throw new InvalidCollectionTargetError(
+        'Collection can not be used as target they are already connected to it',
+      );
+    }
+
+    actionTarget.value = collection;
+  } catch (error: unknown) {
+    addErrorMessage(error);
+  }
+}
+
+function addErrorMessage(error: InvalidCollectionTargetError | unknown): void {
+  if (error instanceof InvalidCollectionTargetError) {
+    errorMessages.value.push({
+      severity: error.severity,
+      content: error.message,
+      id: errorMessageCount.value++,
+    });
+  } else {
+    errorMessages.value.push({
+      severity: 'error',
+      content: 'An unknown error occurred.',
+      id: errorMessageCount.value++,
+    });
+  }
+}
+
+function clearErrorMessages(): void {
+  errorMessageCount.value = 0;
+  errorMessages.value = [];
 }
 
 async function hideDialog(): Promise<void> {
@@ -138,7 +182,10 @@ function removeActionTarget(): void {
           ></Button>
         </div>
 
-        <Search v-if="!actionTarget" @collection-selected="handleSearchSelected" />
+        <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closable>{{
+          msg.content
+        }}</Message>
+        <Search v-if="!actionTarget" @item-selected="handleSearchItemSelected" />
       </div>
     </div>
 
@@ -155,7 +202,7 @@ function removeActionTarget(): void {
         :label="actionLabel"
         :title="title"
         :loading="isFetching"
-        :disabled="!inputIsValid && isFetching"
+        :disabled="!inputIsValid || isFetching"
         @click="finishAction"
       ></Button>
     </div>

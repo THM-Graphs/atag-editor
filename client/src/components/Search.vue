@@ -9,7 +9,7 @@ import { buildFetchUrl } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import Tag from 'primevue/tag';
 
-const emit = defineEmits(['collectionSelected']);
+const emit = defineEmits(['itemSelected']);
 
 const pagination = ref<PaginationData>(null);
 
@@ -68,7 +68,7 @@ function setIsSearchActive(mode: boolean): void {
 
 function handleResultItemSelect(collection: CollectionPreview): void {
   // Emit the selected collection
-  emit('collectionSelected', collection.collection);
+  emit('itemSelected', collection.collection);
 
   // Reset search after selection
   resetSearch();
