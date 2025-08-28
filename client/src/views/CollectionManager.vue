@@ -76,7 +76,6 @@ type Action = {
 };
 
 const menu = ref();
-const tableRef = useTemplateRef('tableRef');
 
 // Menu items for the three-dot menu
 const menuItems: MenuItem[] = [
@@ -273,12 +272,10 @@ function handleActionCanceled(): void {
   resetCollectionManager();
 }
 
-function handleActionDone(event: Action): void {
+async function handleActionDone(event: Action): Promise<void> {
   closeActionModal();
 
-  resetCollectionManager();
-
-  tableRef.value.resetSelection();
+  await getCollections();
 
   toast.add({
     severity: 'success',
@@ -401,7 +398,6 @@ function toggleMenu(event: Event): void {
             >{{ pagination ? pagination.totalRecords : 0 }} Collections in total</strong
           >
         </div>
-
         <div class="action-bar pb-2">
           <span span> {{ tableSelection.length }} rows selected </span>
 
@@ -430,7 +426,6 @@ function toggleMenu(event: Event): void {
 
         <CollectionTable
           v-if="guidelines"
-          ref="tableRef"
           :collections="collections"
           :pagination="pagination"
           :async-operation-running="asyncOperationRunning"

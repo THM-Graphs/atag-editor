@@ -24,8 +24,6 @@ const selectedRows = ref<CollectionPreview[]>([]);
 
 const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
 
-defineExpose({ resetSelection });
-
 const { openRowAction, parentCollection } = useCollectionManagerStore();
 
 const COLUMN_CONFIG = {

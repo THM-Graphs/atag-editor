@@ -55,8 +55,6 @@ export function useCollectionManagerStore() {
     currentActionInitiator.value = null;
     isActionModalVisible.value = false;
     actionTargetCollections.value = [];
-
-    setParentCollection(null);
   }
 
   return {
