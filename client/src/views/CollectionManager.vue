@@ -12,12 +12,17 @@ import CollectionTable from '../components/CollectionTable.vue';
 import Button from 'primevue/button';
 import Menu from 'primevue/menu';
 import { MenuItem } from 'primevue/menuitem';
+import Splitter from 'primevue/splitter';
+import SplitterPanel from 'primevue/splitterpanel';
+
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+import Tag from 'primevue/tag';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { IGuidelines } from '../models/IGuidelines';
+import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import {
   Collection,
   CollectionNetworkActionType,
@@ -26,6 +31,7 @@ import {
   NodeAncestry,
   PaginationData,
   PaginationResult,
+  PropertyConfig,
 } from '../models/types';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
@@ -36,7 +42,7 @@ const route = useRoute();
 
 useTitle('Collection Manager');
 
-const { initializeGuidelines, guidelines } = useGuidelinesStore();
+const { initializeGuidelines, guidelines, getCollectionConfigFields } = useGuidelinesStore();
 
 const {
   tableSelection,
@@ -69,6 +75,10 @@ const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 // For other async operations
 const asyncOperationRunning = ref<boolean>(false);
+
+const collectionFields = computed<PropertyConfig[]>(() => {
+  return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
+});
 
 const title = computed<string>(() => {
   if (route.params.uuid) {
@@ -352,119 +362,150 @@ function toggleMenu(event: Event): void {
     >
       {{ title }}
     </h2>
-    <div class="flex">
-      <div class="container flex flex-column h-screen m-auto">
-        <div class="breadcrumbs-pane">
-          <div v-for="path in ancestryPaths">
-            <span>
-              <RouterLink to="/collection-manager" :title="`Go to Collection Manager Overview`">
-                <i class="pi pi-home"></i>
-              </RouterLink>
-            </span>
-            <span v-for="node in path">
-              <span> -> </span>
-              <RouterLink
-                v-if="node.nodeLabels.includes('Collection')"
-                :to="`/collection-manager/${node.data.uuid}`"
-                :title="`Go to Collection ${node.data.uuid}`"
-              >
-                {{ node.data.label }}
-                <i class="pi pi-external-link"></i>
-              </RouterLink>
-              <a
-                v-else-if="node.nodeLabels.includes('Text')"
-                :href="`/texts/${node.data.uuid}`"
-                :title="`Go to Text ${node.data.uuid}`"
-                target="_blank"
-              >
-                Text
-                <i class="pi pi-external-link"></i>
-              </a>
-              <span v-else> Annotation {{ node.data.type }}</span>
-            </span>
-            <span>
-              <span>-></span>
-              <span class="font-bold font-italic">{{ collection.data.label }}</span>
-            </span>
-          </div>
-        </div>
 
-        <div class="flex gap-2">
-          <OverviewToolbar
-            v-if="guidelines"
-            :searchInputValue="searchParams.searchInput"
-            :nodeLabelsValue="searchParams.nodeLabels as string[]"
-            @search-input-changed="handleSearchInputChange"
-            @node-labels-input-changed="handleNodeLabelsInputChanged"
-          />
-
-          <CollectionCreationButton
-            :parent-collection="collection"
-            @collection-created="handleCollectionCreation"
-          />
-        </div>
-
-        <div class="counter text-right pt-2 pb-3">
-          <strong class="text-base"
-            >{{ pagination ? pagination.totalRecords : 0 }} Collections in total</strong
+    <div class="breadcrumbs-pane text-center mb-4">
+      <div v-for="path in ancestryPaths">
+        <span>
+          <RouterLink to="/collection-manager" :title="`Go to Collection Manager Overview`">
+            <i class="pi pi-home"></i>
+          </RouterLink>
+        </span>
+        <span v-for="node in path">
+          <span> -> </span>
+          <RouterLink
+            v-if="node.nodeLabels.includes('Collection')"
+            :to="`/collection-manager/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
           >
-        </div>
-        <div class="action-bar pb-2">
-          <span span> {{ tableSelection.length }} rows selected </span>
-
-          <Button
-            icon="pi pi-ellipsis-v"
-            rounded
-            severity="secondary"
-            class="w-2rem h-2rem"
-            title="More actions"
-            aria-label="More actions"
-            :disabled="tableSelection.length === 0"
-            @click="toggleMenu($event)"
-          />
-          <Menu ref="menu" :model="menuItems" popup />
-        </div>
-
-        <CollectionEditModal
-          v-if="isActionModalVisible"
-          :isVisible="isActionModalVisible"
-          :action="currentActionType"
-          :collections="actionTargetCollections"
-          :parent="parentCollection"
-          @action-done="handleActionDone"
-          @action-canceled="handleActionCanceled"
-        />
-
-        <CollectionTable
-          v-if="guidelines"
-          :collections="collections"
-          :pagination="pagination"
-          :async-operation-running="asyncOperationRunning"
-          mode="edit"
-          @selection-changed="handleSelectionChange"
-          @sort-changed="handleSortChange"
-          @pagination-changed="handlePaginationChange"
-        />
-      </div>
-
-      <div class="collection-data text-center">
-        <div>Data of current collection</div>
-        <br />
-
-        <template v-if="collection">
-          <div>
-            {{ collection?.nodeLabels }}
-          </div>
-          <br />
-          <div>
-            {{ collection?.data }}
-          </div>
-        </template>
-        <template v-else>
-          <span class="font-italic"> No collection selected </span>
-        </template>
+            {{ node.data.label }}
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <a
+            v-else-if="node.nodeLabels.includes('Text')"
+            :href="`/texts/${node.data.uuid}`"
+            :title="`Go to Text ${node.data.uuid}`"
+            target="_blank"
+          >
+            Text
+            <i class="pi pi-external-link"></i>
+          </a>
+          <span v-else> Annotation {{ node.data.type }}</span>
+        </span>
+        <span>
+          <span>-></span>
+          <span class="font-bold font-italic">{{ collection.data.label }}</span>
+        </span>
       </div>
     </div>
+
+    <Splitter
+      class="flex-grow-1 overflow-y-auto gap-2"
+      :pt="{
+        gutter: {
+          style: {
+            width: '4px',
+          },
+        },
+        gutterHandle: {
+          style: {
+            width: '6px',
+            position: 'absolute',
+            backgroundColor: 'darkgray',
+            height: '40px',
+          },
+        },
+      }"
+    >
+      <SplitterPanel class="overflow-y-auto">
+        <div class="container flex flex-column h-screen m-auto pt-2">
+          <div class="flex gap-2">
+            <OverviewToolbar
+              v-if="guidelines"
+              :searchInputValue="searchParams.searchInput"
+              :nodeLabelsValue="searchParams.nodeLabels as string[]"
+              @search-input-changed="handleSearchInputChange"
+              @node-labels-input-changed="handleNodeLabelsInputChanged"
+            />
+
+            <CollectionCreationButton
+              :parent-collection="collection"
+              @collection-created="handleCollectionCreation"
+            />
+          </div>
+
+          <div class="counter text-right pt-2 pb-3">
+            <strong class="text-base"
+              >{{ pagination ? pagination.totalRecords : 0 }} Collections in total</strong
+            >
+          </div>
+          <div class="action-bar pb-2">
+            <span span> {{ tableSelection.length }} rows selected </span>
+
+            <Button
+              icon="pi pi-ellipsis-v"
+              rounded
+              severity="secondary"
+              class="w-2rem h-2rem"
+              title="More actions"
+              aria-label="More actions"
+              :disabled="tableSelection.length === 0"
+              @click="toggleMenu($event)"
+            />
+            <Menu ref="menu" :model="menuItems" popup />
+          </div>
+
+          <CollectionEditModal
+            v-if="isActionModalVisible"
+            :isVisible="isActionModalVisible"
+            :action="currentActionType"
+            :collections="actionTargetCollections"
+            :parent="parentCollection"
+            @action-done="handleActionDone"
+            @action-canceled="handleActionCanceled"
+          />
+
+          <CollectionTable
+            v-if="guidelines"
+            :collections="collections"
+            :pagination="pagination"
+            :async-operation-running="asyncOperationRunning"
+            mode="edit"
+            @selection-changed="handleSelectionChange"
+            @sort-changed="handleSortChange"
+            @pagination-changed="handlePaginationChange"
+          />
+        </div>
+      </SplitterPanel>
+
+      <SplitterPanel :size="4" class="overflow-y-auto pt-2">
+        <div class="collection-data text-center">
+          <div>Data of current collection</div>
+          <br />
+
+          <template v-if="collection">
+            <div>
+              <Tag
+                v-for="label in collection.nodeLabels"
+                :value="label"
+                severity="contrast"
+                class="mr-1 mb-1 mt-1 inline-block"
+              />
+            </div>
+            <br />
+            <div>
+              <FormPropertiesSection
+                v-model="collection.data"
+                :fields="collectionFields"
+                mode="view"
+              />
+            </div>
+          </template>
+          <template v-else>
+            <span class="font-italic"> No collection selected </span>
+          </template>
+        </div>
+      </SplitterPanel>
+    </Splitter>
   </template>
 </template>
 
