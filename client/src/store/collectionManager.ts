@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Collection, CollectionNetworkActionType } from '../models/types';
 
 // This is only a mirror of the selectedRows ref from the PrimeVue table component
@@ -11,6 +11,21 @@ const actionTargetCollections = ref<Collection[]>([]);
 const isActionModalVisible = ref(false);
 const currentActionType = ref<CollectionNetworkActionType | null>(null);
 const currentActionInitiator = ref<'row' | 'toolbar'>(null);
+
+// These are the collection manage operations which are allowed in the current scope.
+// "dereference" and "move" for example can only be executed when the selected collections
+// have a parent collection from which they can be detached.
+const allowedEditOperations = computed<CollectionNetworkActionType[]>(() => {
+  const alwaysAllowed: CollectionNetworkActionType[] = ['copy'];
+
+  const allowed: CollectionNetworkActionType[] = [...alwaysAllowed];
+
+  if (parentCollection.value) {
+    allowed.push('dereference', 'move');
+  }
+
+  return allowed;
+});
 
 export function useCollectionManagerStore() {
   function setSelection(collections: Collection[]) {
@@ -59,6 +74,7 @@ export function useCollectionManagerStore() {
 
   return {
     actionTargetCollections,
+    allowedEditOperations,
     currentActionType,
     isActionModalVisible,
     parentCollection,

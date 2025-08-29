@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -10,8 +10,6 @@ import LoadingSpinner from '../components/LoadingSpinner.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import Button from 'primevue/button';
-import Menu from 'primevue/menu';
-import { MenuItem } from 'primevue/menuitem';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
 
@@ -35,6 +33,7 @@ import {
 } from '../models/types';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
+import ActionMenu from '../components/ActionMenu.vue';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -45,6 +44,7 @@ useTitle('Collection Manager');
 const { initializeGuidelines, guidelines, getCollectionConfigFields } = useGuidelinesStore();
 
 const {
+  allowedEditOperations,
   tableSelection,
   isActionModalVisible,
   currentActionType,
@@ -54,7 +54,6 @@ const {
   reset: resetCollectionManager,
   setParentCollection,
   setSelection,
-  openBulkAction,
 } = useCollectionManagerStore();
 
 const {
@@ -93,38 +92,7 @@ type Action = {
   data: Collection[];
 };
 
-const menu = ref();
-
-// Menu items for the three-dot menu
-const menuItems: MenuItem[] = [
-  {
-    label: 'Move',
-    icon: 'pi pi-arrow-circle-left',
-    command: () => openBulkAction('move'),
-    disabled: () => !parentCollection.value,
-  },
-  {
-    label: 'Copy',
-    icon: 'pi pi-link',
-    command: () => openBulkAction('copy'),
-    disabled: () => !parentCollection.value,
-  },
-  {
-    separator: true,
-  },
-  {
-    label: 'De-reference',
-    icon: 'pi pi-minus-circle ',
-    command: () => openBulkAction('dereference'),
-    disabled: () => !parentCollection.value,
-  },
-  {
-    label: 'Delete',
-    icon: 'pi pi-trash',
-    command: () => openBulkAction('delete'),
-    disabled: true,
-  },
-];
+const actionMenu = useTemplateRef('actionMenu');
 
 watch(
   () => route.params.uuid,
@@ -320,8 +288,8 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   });
 }
 
-function toggleMenu(event: Event): void {
-  menu.value.toggle(event);
+function toggleActionMenu(event: Event): void {
+  actionMenu.value.toggle(event);
 }
 </script>
 
@@ -449,9 +417,13 @@ function toggleMenu(event: Event): void {
               title="More actions"
               aria-label="More actions"
               :disabled="tableSelection.length === 0"
-              @click="toggleMenu($event)"
+              @click="toggleActionMenu($event)"
             />
-            <Menu ref="menu" :model="menuItems" popup />
+            <ActionMenu
+              ref="actionMenu"
+              target="bulk"
+              :allowed-operations="allowedEditOperations"
+            />
           </div>
 
           <CollectionEditModal

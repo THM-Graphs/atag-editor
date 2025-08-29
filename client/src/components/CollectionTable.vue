@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
 import LoadingSpinner from './LoadingSpinner.vue';
+import ActionMenu from './ActionMenu.vue';
 import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
-import { Menu, Tag } from 'primevue';
-import { PaginationData, CollectionPreview, CollectionNetworkActionType } from '../models/types';
-import { ref, watch } from 'vue';
-import { MenuItem } from 'primevue/menuitem';
+import { Tag } from 'primevue';
+import { PaginationData, CollectionPreview } from '../models/types';
+import { ref, useTemplateRef, watch } from 'vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 
 type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
@@ -24,7 +24,7 @@ const selectedRows = ref<CollectionPreview[]>([]);
 
 const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
 
-const { openRowAction, parentCollection } = useCollectionManagerStore();
+const { allowedEditOperations } = useCollectionManagerStore();
 
 const COLUMN_CONFIG = {
   nodeLabels: { width: '8rem', sortable: false },
@@ -34,42 +34,7 @@ const COLUMN_CONFIG = {
   collections: { width: 'auto', sortable: true },
 } as const;
 
-// Row from which the menu is opened
-const currentRow = ref<CollectionPreview | null>(null); // Store the current row
-
-// --------------------------------- MENU -------------------------------------
-
-const menu = ref();
-
-// Menu items for the three-dot menu
-const menuItems: MenuItem[] = [
-  {
-    label: 'Move',
-    icon: 'pi pi-arrow-circle-left',
-    command: () => handleActionSelection('move'),
-    disabled: () => !parentCollection.value,
-  },
-  {
-    label: 'Copy',
-    icon: 'pi pi-link',
-    command: () => handleActionSelection('copy'),
-  },
-  {
-    separator: true,
-  },
-  {
-    label: 'De-reference',
-    icon: 'pi pi-minus-circle ',
-    command: () => handleActionSelection('dereference'),
-    disabled: () => !parentCollection.value,
-  },
-  {
-    label: 'Delete',
-    icon: 'pi pi-trash',
-    command: () => handleActionSelection('delete'),
-    disabled: true,
-  },
-];
+const actionMenu = useTemplateRef('actionMenu');
 
 // Whenever the selection changes, the parent must be updated to adapt the bulk action behaviour
 watch(
@@ -93,13 +58,9 @@ function resetSelection() {
 }
 
 // Function to toggle menu for a specific row
-function toggleMenu(event: Event, row: CollectionPreview): void {
-  currentRow.value = row; // Store the row data
-
-  menu.value.toggle(event);
+function toggleMenu(event: Event): void {
+  actionMenu.value.toggle(event);
 }
-
-// --------------------------------- MENU -------------------------------------
 
 /**
  * Returns PrimeVue DataTable Column properties based on the given column name.
@@ -136,10 +97,6 @@ function handleSort(event: DataTableSortEvent): void {
 
 function handlePagination(event: DataTablePageEvent): void {
   emit('paginationChanged', event);
-}
-
-function handleActionSelection(type: CollectionNetworkActionType): void {
-  openRowAction(type, currentRow.value.collection);
 }
 </script>
 
@@ -259,9 +216,14 @@ function handleActionSelection(type: CollectionNetworkActionType): void {
               class="w-2rem h-2rem"
               title="More actions"
               aria-label="More actions"
-              @click="toggleMenu($event, row)"
+              @click="toggleMenu($event)"
             />
-            <Menu ref="menu" :model="menuItems" popup />
+            <ActionMenu
+              ref="actionMenu"
+              target="single"
+              :current-row="row.collection"
+              :allowed-operations="allowedEditOperations"
+            />
           </template>
         </Column>
       </DataTable>
