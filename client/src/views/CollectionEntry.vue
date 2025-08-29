@@ -88,7 +88,7 @@ const {
   searchParams,
   updateSearchParams,
   updateUuid,
-} = useCollectionSearch();
+} = useCollectionSearch(10);
 
 // ------------------------------------------------------------------------------
 

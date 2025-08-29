@@ -57,7 +57,7 @@ const {
   updateSearchParams,
   searchParams,
   updateUuid,
-} = useCollectionSearch();
+} = useCollectionSearch(10);
 
 const collection = ref<Collection>(null);
 const collections = ref<CollectionPreview[] | null>(null);

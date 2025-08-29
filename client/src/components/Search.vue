@@ -4,17 +4,24 @@ import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
 import InputGroup from 'primevue/inputgroup';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-import { CollectionPreview, PaginationData, PaginationResult } from '../models/types';
+import {
+  CollectionPreview,
+  CollectionSearchParams,
+  PaginationData,
+  PaginationResult,
+} from '../models/types';
 import { buildFetchUrl } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import Tag from 'primevue/tag';
+import Paginator from 'primevue/paginator';
+import { DataTablePageEvent } from 'primevue';
 
 const emit = defineEmits(['itemSelected']);
 
 const pagination = ref<PaginationData>(null);
 
 const { availableCollectionLabels } = useGuidelinesStore();
-const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch();
+const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch(50);
 
 const selectedCollectionLabels = ref(availableCollectionLabels.value);
 const isSearchActive = ref<boolean>(false);
@@ -81,6 +88,17 @@ function handleCollectionLabelChange(): void {
     search(searchInput.value);
   }
 }
+
+function handlePagination(event: DataTablePageEvent): void {
+  const data: CollectionSearchParams = {
+    sortField: (event.sortField as string | null) || '',
+    sortDirection: event.sortOrder === -1 ? 'desc' : 'asc',
+    rowCount: event.rows || 5,
+    offset: event.first || 0,
+  };
+
+  updateSearchParams(data);
+}
 </script>
 
 <template>
@@ -114,16 +132,23 @@ function handleCollectionLabelChange(): void {
           <div class="font-medium px-3 py-2">{{ fetchedItems.length }} Results</div>
         </template>
         <template #option="slotProps">
-          <div class="flex gap-1 p-2">
+          <div class="flex gap-2">
             <Tag
               v-for="label in slotProps.option.collection.nodeLabels"
               :value="label"
               severity="contrast"
-              class="mr-1"
-              siz
             />
             <div class="font-medium">{{ slotProps.option.collection.data.label }}</div>
           </div>
+        </template>
+
+        <template #footer>
+          <Paginator
+            :rows="fetchedItems.length"
+            :totalRecords="pagination.totalRecords"
+            :rowsPerPageOptions="[10, 20, 50, 100]"
+            @page="handlePagination"
+          ></Paginator>
         </template>
       </AutoComplete>
     </InputGroup>

@@ -23,11 +23,13 @@ import { useGuidelinesStore } from '../store/guidelines';
  * - `resetSearchParams`: A function that resets the search parameters to their default values.
  * - `updateSearchParams`: A function that updates the search parameters with given data. These are partials, so not all parameters will be updated.
  *
+ * @param {number} rowCount - The number of rows to fetch per page (optional).
  * @returns {Object} An object with reactive properties for performing a search query on the backend.
  */
-export function useCollectionSearch() {
+export function useCollectionSearch(rowCount?: number) {
   const BASE_FETCH_URL: string = '/api/collections';
-  const INPUT_DELAY: number = 300;
+  const INPUT_DELAY: number = 300; /* delay after input change in ms */
+  const DEFAULT_ROW_COUNT: number | null = rowCount ?? null;
 
   const { availableCollectionLabels } = useGuidelinesStore();
 
@@ -38,7 +40,7 @@ export function useCollectionSearch() {
     searchInput: '',
     nodeLabels: availableCollectionLabels.value,
     offset: 0,
-    rowCount: 10,
+    rowCount: DEFAULT_ROW_COUNT,
     sortField: '',
     sortDirection: 'asc' as 'asc' | 'desc',
   });
@@ -55,10 +57,14 @@ export function useCollectionSearch() {
 
     urlParams.set('sort', searchParams.value.sortField);
     urlParams.set('order', searchParams.value.sortDirection);
-    urlParams.set('limit', searchParams.value.rowCount.toString());
     urlParams.set('skip', searchParams.value.offset.toString());
     urlParams.set('search', debouncedSearchInput.value);
     urlParams.set('nodeLabels', searchParams.value.nodeLabels.join(','));
+
+    // Optional parameter - only set if it is not null
+    if (searchParams.value.rowCount !== null) {
+      urlParams.set('limit', searchParams.value.rowCount.toString());
+    }
 
     return `${path}?${urlParams.toString()}`;
   });
@@ -81,7 +87,7 @@ export function useCollectionSearch() {
       searchInput: '',
       nodeLabels: availableCollectionLabels.value,
       offset: 0,
-      rowCount: 10,
+      rowCount: DEFAULT_ROW_COUNT,
       sortField: '',
       sortDirection: 'asc',
     };

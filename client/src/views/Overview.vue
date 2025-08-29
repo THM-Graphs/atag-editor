@@ -25,7 +25,7 @@ const toast: ToastServiceMethods = useToast();
 useTitle('ATAG Editor');
 
 const { guidelines, availableCollectionLabels, initializeGuidelines } = useGuidelinesStore();
-const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch();
+const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
 const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);

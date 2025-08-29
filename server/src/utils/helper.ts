@@ -44,6 +44,9 @@ export function getPagination(req: Request): Record<string, any> {
   const ORDER_ASC: string = 'ASC';
   const ORDER_DESC: string = 'DESC';
   const ORDERS: string[] = [ORDER_ASC, ORDER_DESC];
+  // TODO: This is a temporary solution until a better endless
+  // pagination solution in the frontend is implemented
+  const MAX_ROW_COUNT: number = 1000;
 
   // Set default values
   sort ||= 'label';
@@ -58,7 +61,7 @@ export function getPagination(req: Request): Record<string, any> {
     search,
     sort,
     order,
-    limit: parseInt(limit as string) || 100,
+    limit: parseInt(limit as string) || MAX_ROW_COUNT,
     skip: parseInt(skip as string) || 0,
   };
 }
