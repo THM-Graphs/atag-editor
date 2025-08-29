@@ -14,9 +14,7 @@ import CollectionAnnotationButton from '../components/CollectionAnnotationButton
 import CollectionError from '../components/CollectionError.vue';
 import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
-import OverviewToolbar from '../components/OverviewToolbar.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
-import CollectionTable from '../components/CollectionTable.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areSetsEqual,
@@ -32,17 +30,14 @@ import {
   Collection,
   CollectionAccessObject,
   CollectionPostData,
-  CollectionPreview,
-  CollectionSearchParams,
   NodeAncestry,
-  PaginationResult,
   PropertyConfig,
   Text,
 } from '../models/types';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
-import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
+import DataTable from 'primevue/datatable';
 import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
@@ -55,7 +50,6 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
-import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 type TextTableEntry = {
   labels: string[];
@@ -81,14 +75,6 @@ const {
 } = useGuidelinesStore();
 
 const collectionUuid = computed(() => route.params.uuid as string);
-
-const {
-  fetchUrl: collectionFetchUrl,
-  resetSearchParams: resetCollectionSearchParams,
-  searchParams,
-  updateSearchParams,
-  updateUuid,
-} = useCollectionSearch(10);
 
 // ------------------------------------------------------------------------------
 
@@ -159,14 +145,6 @@ watch(
       await getAnnotations();
       await getAnnotationStyles();
 
-      // Collection filter params need to be reset
-      resetCollectionSearchParams();
-
-      // Explicitly update the composable's uuid
-      updateUuid(newUuid || undefined);
-
-      // Collections are fetched via watcher
-
       initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
 
       window.addEventListener('beforeunload', handleBeforeUnload);
@@ -178,8 +156,6 @@ watch(
     immediate: true,
   },
 );
-
-watch(collectionFetchUrl, async () => await getSubCollections());
 
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
 
@@ -340,41 +316,6 @@ async function handleSaveChanges(): Promise<void> {
   } finally {
     asyncOperationRunning.value = false;
   }
-}
-
-function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
-  const data: CollectionSearchParams = {
-    nodeLabels: selectedLabels,
-  };
-
-  updateSearchParams(data);
-}
-
-function handleSearchInputChange(newInput: string): void {
-  const data: CollectionSearchParams = {
-    searchInput: newInput,
-  };
-
-  updateSearchParams(data);
-}
-
-function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
-  const data: CollectionSearchParams = {
-    sortField: (event.sortField as string | null) || '',
-    sortDirection: event.sortOrder === -1 ? 'desc' : 'asc',
-    rowCount: event.rows || 5,
-    offset: event.first || 0,
-  };
-
-  updateSearchParams(data);
-}
-
-function handleSortChange(event: DataTableSortEvent): void {
-  updateTableUrlParams(event);
-}
-
-function handlePaginationChange(event: DataTablePageEvent): void {
-  updateTableUrlParams(event);
 }
 
 function hasUnsavedChanges(): boolean {
@@ -632,25 +573,6 @@ async function getAnnotations(): Promise<void> {
     collectionAccessObject.value.annotations = fetchedAnnotations;
   } catch (error: unknown) {
     console.error('Error fetching annotations for collection:', error);
-  }
-}
-
-async function getSubCollections(): Promise<void> {
-  try {
-    // TODO: Dynamic url
-    const url: string = buildFetchUrl(collectionFetchUrl.value);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCollections: PaginationResult<CollectionPreview[]> = await response.json();
-
-    collectionAccessObject.value.collections = fetchedCollections;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
   }
 }
 
@@ -1026,28 +948,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               style="display: block; margin: 1rem auto"
               @click="handleAddNewText"
             ></Button>
-          </div>
-        </div>
-        <div class="collections-pane w-full">
-          <h2 class="text-center">
-            Collections ({{ collectionAccessObject?.collections?.pagination.totalRecords }})
-          </h2>
-          <OverviewToolbar
-            v-if="guidelines"
-            :searchInputValue="searchParams.searchInput"
-            :nodeLabelsValue="searchParams.nodeLabels as string[]"
-            @search-input-changed="handleSearchInputChange"
-            @node-labels-input-changed="handleNodeLabelsInputChanged"
-          />
-          <div class="collection-pane-content">
-            <CollectionTable
-              :collections="collectionAccessObject?.collections?.data ?? null"
-              :pagination="collectionAccessObject?.collections?.pagination ?? null"
-              :async-operation-running="asyncOperationRunning"
-              mode="view"
-              @sort-changed="handleSortChange"
-              @pagination-changed="handlePaginationChange"
-            />
           </div>
         </div>
       </SplitterPanel>
