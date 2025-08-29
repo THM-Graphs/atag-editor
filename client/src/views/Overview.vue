@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
+import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -139,6 +140,20 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
 <template>
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
+
+    <div class="header-buttons flex justify-content-end mx-2 pl-2 pt-2">
+      <div class="flex">
+        <RouterLink :to="`/collection-manager`">
+          <Button
+            icon="pi pi-sitemap"
+            severity="secondary"
+            title="Go to Collection manager page to edit collection network"
+            label="Go to Collection manager"
+            aria-label="Go to Collection manager"
+          ></Button>
+        </RouterLink>
+      </div>
+    </div>
 
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
 

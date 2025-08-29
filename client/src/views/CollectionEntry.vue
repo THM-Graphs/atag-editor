@@ -618,16 +618,39 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             icon="pi pi-sitemap"
             severity="secondary"
             title="Open this collection in Collection Manager"
-            label="Manage collection network"
+            label="Open in collection manager"
             aria-label="Open this collection in Collection Manager"
           ></Button>
         </RouterLink>
       </div>
     </div>
-    <div class="header flex align-items-center justify-content-center gap-3">
-      <h2 class="info mt-0">
-        {{ collectionAccessObject?.collection.data.label }}
-      </h2>
+    <h2 class="text-center">
+      {{ collectionAccessObject?.collection.data.label }}
+    </h2>
+    <div class="breadcrumbs-pane">
+      <div v-for="path in ancestryPaths">
+        <span v-for="(node, index) in path">
+          <span v-if="index !== 0"> -> </span>
+          <RouterLink
+            v-if="node.nodeLabels.includes('Collection')"
+            :to="`/collections/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
+          >
+            {{ node.data.label }}
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <a
+            v-else-if="node.nodeLabels.includes('Text')"
+            :href="`/texts/${node.data.uuid}`"
+            :title="`Go to Text ${node.data.uuid}`"
+            target="_blank"
+          >
+            Text
+            <i class="pi pi-external-link"></i>
+          </a>
+          <span v-else> Annotation {{ node.data.type }}</span>
+        </span>
+      </div>
     </div>
     <Splitter
       class="flex-grow-1 overflow-y-auto gap-2"
@@ -815,31 +838,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
         </div>
       </SplitterPanel>
       <SplitterPanel class="overflow-y-auto">
-        <div class="breadcrumbs-pane">
-          <div v-for="path in ancestryPaths">
-            <span v-for="(node, index) in path">
-              <span v-if="index !== 0"> -> </span>
-              <RouterLink
-                v-if="node.nodeLabels.includes('Collection')"
-                :to="`/collections/${node.data.uuid}`"
-                :title="`Go to Collection ${node.data.uuid}`"
-              >
-                {{ node.data.label }}
-                <i class="pi pi-external-link"></i>
-              </RouterLink>
-              <a
-                v-else-if="node.nodeLabels.includes('Text')"
-                :href="`/texts/${node.data.uuid}`"
-                :title="`Go to Text ${node.data.uuid}`"
-                target="_blank"
-              >
-                Text
-                <i class="pi pi-external-link"></i>
-              </a>
-              <span v-else> Annotation {{ node.data.type }}</span>
-            </span>
-          </div>
-        </div>
         <div class="texts-pane w-full">
           <h2 class="text-center">Texts ({{ collectionAccessObject.texts.length }})</h2>
           <div class="text-pane-content">

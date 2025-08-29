@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -69,6 +69,14 @@ const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 // For other async operations
 const asyncOperationRunning = ref<boolean>(false);
+
+const title = computed<string>(() => {
+  if (route.params.uuid) {
+    return `${collection.value?.data.label || 'no label provided'}`;
+  } else {
+    return 'Collection Manager';
+  }
+});
 
 type Action = {
   type: CollectionNetworkActionType;
@@ -152,7 +160,7 @@ watch(
 );
 
 // This watcher handles ALL collection fetching
-watch(collectionFetchUrl, async () => await getCollections());
+watch(collectionFetchUrl, async () => await getCollections(), { immediate: true });
 
 async function getCollection(): Promise<void> {
   try {
@@ -330,7 +338,7 @@ function toggleMenu(event: Event): void {
         <RouterLink v-if="route.params.uuid" :to="`/collections/${collection?.data.uuid}`">
           <Button
             icon="pi pi-pen-to-square"
-            label="Edit collection data"
+            label="Open in details page"
             severity="secondary"
             aria-label="Open this collection in Collection editor"
             title="Open this collection in Collection editor"
@@ -338,8 +346,11 @@ function toggleMenu(event: Event): void {
         </RouterLink>
       </div>
     </div>
-    <h2 class="text-center text-5xl line-height-2">
-      Collection Manager for {{ route.params.uuid ? collection?.data.label : '' }}
+    <h2
+      class="text-center"
+      :class="collection?.data.label && collection.data.label !== '' ? '' : 'font-italic'"
+    >
+      {{ title }}
     </h2>
     <div class="flex">
       <div class="container flex flex-column h-screen m-auto">

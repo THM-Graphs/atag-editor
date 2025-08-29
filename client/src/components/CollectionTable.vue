@@ -144,7 +144,7 @@ function handleActionSelection(type: CollectionNetworkActionType): void {
 </script>
 
 <template>
-  <div class="flex-grow-1 overflow-y-auto">
+  <div class="overflow-y-auto">
     <LoadingSpinner v-if="!props.collections" />
     <template v-else>
       <DataTable
