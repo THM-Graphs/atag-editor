@@ -7,7 +7,7 @@ import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { Tag } from 'primevue';
-import { PaginationData, CollectionPreview } from '../models/types';
+import { PaginationData, CollectionPreview, Collection } from '../models/types';
 import { ref, useTemplateRef, watch } from 'vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 
@@ -21,6 +21,8 @@ const props = defineProps<{
 }>();
 
 const selectedRows = ref<CollectionPreview[]>([]);
+// Row from where the action menu is called
+const currentRow = ref<Collection | null>(null);
 
 const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
 
@@ -58,7 +60,9 @@ function resetSelection() {
 }
 
 // Function to toggle menu for a specific row
-function toggleMenu(event: Event): void {
+function toggleMenu(event: Event, row: CollectionPreview): void {
+  currentRow.value = row.collection;
+
   actionMenu.value.toggle(event);
 }
 
@@ -216,12 +220,12 @@ function handlePagination(event: DataTablePageEvent): void {
               class="w-2rem h-2rem"
               title="More actions"
               aria-label="More actions"
-              @click="toggleMenu($event)"
+              @click="toggleMenu($event, row)"
             />
             <ActionMenu
               ref="actionMenu"
               target="single"
-              :current-row="row.collection"
+              :current-row="currentRow"
               :allowed-operations="allowedEditOperations"
             />
           </template>
