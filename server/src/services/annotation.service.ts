@@ -298,19 +298,9 @@ export default class AnnotationService {
         WITH delAnnotation
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
-        WITH a
 
-        // Match subgraph
-        CALL apoc.path.subgraphNodes(a, {
-            relationshipFilter: 'REFERS_TO>|<PART_OF|HAS_ANNOTATION>',
-            labelFilter: 'Collection|Text|Annotation'
-        }) YIELD node
-
-        WITH node, a
-
-        OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
-
-        DETACH DELETE a, node, ch
+        // Delete only Annotation node - additional texts (Collection-Text) are kept for now
+        DETACH DELETE a
     }
 
     WITH allAnnotations
@@ -355,19 +345,10 @@ export default class AnnotationService {
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
         // Match Collection node that is the entry point into subgraph
-        OPTIONAL MATCH (a)-[:REFERS_TO]->(c:Collection {uuid: textToDelete.collection.data.uuid})
-        
-        // Match subgraph
-        CALL apoc.path.subgraphNodes(c, {
-            relationshipFilter: '<PART_OF|HAS_ANNOTATION>|REFERS_TO>',
-            labelFilter: 'Collection|Text|Annotation'
-        }) YIELD node
+        OPTIONAL MATCH (a)-[r:REFERS_TO]->(c:Collection {uuid: textToDelete.collection.data.uuid})
 
-        WITH c, node, a
-
-        OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
-        
-        DETACH DELETE c, node, ch
+        // Detach Collection node, but keep it in the database for now.
+        DELETE r
     }
 
     // Create additional text nodes

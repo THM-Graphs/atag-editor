@@ -389,17 +389,11 @@ export default class CollectionService {
       UNWIND $texts.deleted as textToDelete
       MATCH (t:Text {uuid: textToDelete.data.uuid})
       
-      // Match subgraph
-      CALL apoc.path.subgraphNodes(t, {
-          relationshipFilter: 'HAS_ANNOTATION>|REFERS_TO>|<PART_OF',
-          labelFilter: 'Collection|Text|Annotation'
-      }) YIELD node
+      // Match subgraph (annotations and characters - leave the rest alone for now)
+      OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+      OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
 
-      WITH t, node
-
-      OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
-
-      DETACH DELETE t, node, ch
+      DETACH DELETE t, a, ch
     }
 
     // Create Text nodes

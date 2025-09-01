@@ -74,7 +74,7 @@ export type Collection = Node<ICollection>;
 
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
-  collections: PaginationResult<CollectionPreview[]>;
+  collection: Collection;
   texts: Text[];
 };
 
