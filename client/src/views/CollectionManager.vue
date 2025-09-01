@@ -72,6 +72,7 @@ const ancestryPaths = ref<NodeAncestry[] | null>(null);
 // Initial pageload
 const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
+const isFirstPageLoad = ref<boolean>(true);
 // For other async operations
 const asyncOperationRunning = ref<boolean>(false);
 
@@ -125,7 +126,11 @@ watch(
       // Explicitly update the composable's uuid
       updateUuid(newUuid || undefined);
 
-      // Collections are fetched via watcher
+      // If this is the first page load, load collections here
+      if (isFirstPageLoad.value) {
+        await getCollections();
+        isFirstPageLoad.value = false;
+      }
     }
 
     setParentCollection(collection.value);
@@ -137,8 +142,15 @@ watch(
   },
 );
 
-// This watcher handles ALL collection fetching
-watch(collectionFetchUrl, async () => await getCollections(), { immediate: true });
+// This watcher handles collection fetching EXCEPT on first page load. Before, this was also done here with the
+// `immeditate: true` flage so that data were also fetched when the route was matched for the very first time.
+// Problem with that approach: When the route was reloaded or hit without coming from router link, double fetch occured
+// since the component was recreated the watcher is therefore triggered.
+watch(collectionFetchUrl, async () => {
+  if (!isFirstPageLoad.value) {
+    await getCollections();
+  }
+});
 
 async function getCollection(): Promise<void> {
   try {
