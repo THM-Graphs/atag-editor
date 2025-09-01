@@ -100,6 +100,8 @@ watch(
   async (newUuid: string) => {
     isLoading.value = true;
 
+    closeActionModal();
+
     if (newUuid) {
       await getCollection();
     } else {
