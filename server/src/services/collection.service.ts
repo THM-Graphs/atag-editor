@@ -13,6 +13,9 @@ import {
   PropertyConfig,
   Text,
   Collection,
+  CollectionPreview,
+  NodeAncestry,
+  CollectionCreationData,
 } from '../models/types.js';
 
 type CollectionTextObject = {
@@ -23,66 +26,86 @@ type CollectionTextObject = {
 
 export default class CollectionService {
   /**
-   * Retrieves paginated collection nodes together with connected text nodes. Additional node labels for the collection node
-   * as well as pagination parameters are provided.
+   * Retrieves a paginated list of collection preview objects. These objects include the properties and labels of
+   * the `Collection` node as well as counts of connected `Annotation`, `Text`, and `Collection` nodes. Be aware that only Sub-Collections are included in the
+   * collection count (= incoming `PART_OF` relationships).
    *
-   * @param {string} additionalLabel - The additional label to match in the query, e.g., "Letter".
+   *
+   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection.
+   * Additional labels for the collection nodes can be specified to filter the results. Pagination parameters such as sort order,
+   * limit, skip, and search string are also taken into account.
+   *
+   * @param {string[]} additionalLabels - The additional labels to match in the query, e.g., "Letter".
    * @param {string} sort - The field by which to sort the collections.
    * @param {string} order - The order in which to sort the collections (ascending or descending).
    * @param {number} limit - The maximum number of collections to return.
    * @param {number} skip - The number of collections to skip before starting to collect the result set.
    * @param {string} search - The search string to filter collections by their label.
-   * @return {Promise<PaginationResult<CollectionAccessObject[]>>} A promise that resolves to a paginated result of collection access objects.
+   * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
+   *
+   * @return {Promise<PaginationResult<CollectionPreview[]>>} A promise that resolves to a paginated result of Collection preview objects.
    */
   public async getCollections(
-    additionalLabel: string,
+    additionalLabels: string[],
     sort: string,
     order: string,
     limit: number,
     skip: number,
     search: string,
-  ): Promise<PaginationResult<CollectionAccessObject[]>> {
-    const countQuery: string = `
-    MATCH (c:Collection:${additionalLabel})
-    WHERE c.label CONTAINS $search
-    RETURN count(c) AS totalRecords
-    `;
+    parentUuid: string | null,
+  ): Promise<PaginationResult<CollectionPreview[]>> {
+    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch everything
+    const baseCollectionSnippet = parentUuid
+      ? `MATCH (parent:Collection {uuid: '${parentUuid}'})<-[:PART_OF]-(c:Collection)`
+      : `MATCH (c:Collection)`;
 
-    // TODO: Should Annotations be included here?
-    const dataQuery: string = `
-    MATCH (c:Collection:${additionalLabel})
-    WHERE toLower(c.label) CONTAINS $search
+    const baseQuery: string =
+      baseCollectionSnippet +
+      `
+      WHERE
+          CASE
+              WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
+              ELSE apoc.coll.intersection($additionalLabels, labels(c))
+          END
+          AND
+          toLower(c.label) CONTAINS $search
+      `;
 
-    WITH c
-    ORDER BY c.${sort} ${order}
-    SKIP ${skip}
-    LIMIT ${limit}
+    const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;
 
-    // Match optional Text node chain
-    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-    WHERE NOT ()-[:NEXT]->(tStart)
-    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+    const dataQuery: string =
+      baseQuery +
+      `
+      // TODO: Fix sorting. Can be numbers, too (text count, annotation count etc.)
+      WITH c
+      ORDER BY c.${sort} ${order}
+      SKIP ${skip}
+      LIMIT ${limit}
 
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts
+      // Get counts of connected nodes
+      WITH
+          c,
+          size([(c)<-[:PART_OF]-(sub:Collection) | sub]) as collectionCount,
+          size([(c)<-[:PART_OF]-(sub:Text) | sub]) as textCount,
+          size([(c)-[:HAS_ANNOTATION]-(a:Annotation) | a]) as annotationCount
 
-    RETURN collect({
-        collection: {
-            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-            data: c {.*}
-        }, 
-        texts: [
-            t IN texts | {
-                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
-                data: t {.*}
-            }
-        ]
-    }) AS collections
-    `;
+      RETURN collect({
+          collection: {
+              nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+              data: c {.*}
+          }, 
+          nodeCounts: {
+              collections: collectionCount,
+              texts: textCount,
+              annotations: annotationCount
+          }
+      }) AS collections
+      `;
 
     const [countResult, dataResult] = await Promise.all([
-      Neo4jDriver.runQuery(countQuery, { search }),
+      Neo4jDriver.runQuery(countQuery, { additionalLabels, search }),
       Neo4jDriver.runQuery(dataQuery, {
+        additionalLabels,
         skip: int(skip),
         limit: int(limit),
         sort: int(sort),
@@ -92,11 +115,9 @@ export default class CollectionService {
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const rawData: CollectionAccessObject[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: CollectionPreview[] = dataResult.records[0]?.get('collections') || [];
 
-    const data: CollectionAccessObject[] = rawData.map(cao =>
-      toNativeTypes(cao),
-    ) as CollectionAccessObject[];
+    const data: CollectionPreview[] = rawData.map(cao => toNativeTypes(cao)) as CollectionPreview[];
 
     return {
       data,
@@ -116,22 +137,82 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the retrieved collection.
+   * @return {Promise<Collection>} A promise that resolves to the retrieved collection.
    */
-  public async getCollectionById(uuid: string): Promise<ICollection> {
+  public async getCollection(uuid: string): Promise<Collection> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
-    RETURN c {.*} AS collection
+
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const collection: ICollection = result.records[0]?.get('collection');
+    const rawCollection: Collection = result.records[0]?.get('collection');
 
-    if (!collection) {
+    if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
+    const collection: Collection = toNativeTypes(rawCollection) as Collection;
+
     return collection;
+  }
+
+  /**
+   * Retrieves data of a specified collection node.
+   *
+   * @param {string} uuid - The UUID of the collection node to retrieve.
+   * @throws {NotFoundError} If the collection with the specified UUID is not found.
+   * @return {Promise<NodeAncestry[]>} A promise that resolves to the retrieved collection.
+   */
+
+  /**
+   * Retrieves the ancestry nodes of the node with the given UUID, i.e. the nodes that
+   * are connected to the given node via PART_OF, HAS_ANNOTATION or
+   * REFERS_TO relationships. This is used to determine the position of a node in the Collection/Text
+   * network and create breadcrumb-like visualization and navigation in the frontend.
+   *
+   * @param {string} uuid - The UUID of the node to retrieve the ancestry for.
+   * @return {Promise<NodeAncestry[]>} A promise that resolves to an array of node ancestries. Each node ancestry
+   * is an array of node objects with their labels and properties.
+   */
+  public async getAncestry(uuid: string): Promise<NodeAncestry[]> {
+    // TODO: maxLevel 50 should be enough, but change maybe?
+    // TODO: What if circular matches happen? uniqueness should filter that
+    const query: string = `
+    MATCH (c:Collection|Annotation|Text {uuid: $uuid})
+
+    CALL apoc.path.expandConfig(c, {
+        relationshipFilter: 'PART_OF>|HAS_ANNOTATION<|REFERS_TO<',
+        labelFilter: 'Collection|Annotation|Text',
+        maxLevel: 50,
+        uniqueness: 'NODE_PATH'
+    }) YIELD path
+
+    WITH path, last(nodes(path)) AS topNode
+
+    // Keep only "longest paths" (which have Collections above the or annotations that reference it)
+    WHERE
+        NOT (topNode)-[:PART_OF]->() AND
+        NOT ()-[:REFERS_TO]->(topNode) AND 
+        NOT ()-[:HAS_ANNOTATION]->(topNode)
+
+    RETURN collect([
+        n IN reverse(tail(nodes(path))) | {
+            nodeLabels: labels(n), 
+            data: n {.*}
+        }
+    ]) as paths
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
+    const ancestryPaths: NodeAncestry[] = result.records[0]?.get('paths');
+
+    // TODO: Nested array, therefore this...fix within toNativeTypes function?
+    return ancestryPaths.map(p => p.map(node => toNativeTypes(node))) as NodeAncestry[];
   }
 
   /**
@@ -140,22 +221,28 @@ export default class CollectionService {
   
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Omit<CollectionAccessObject, 'annotations'>>} A promise that resolves to the retrieved collection and text nodes, but not the annotations nodes.
+   * @return {Promise<Omit<CollectionAccessObject, 'annotations' | 'collections'>>} A promise that resolves to the retrieved collection and text nodes, but not the annotations nodes.
    */
   public async getExtendedCollectionById(
     uuid: string,
-  ): Promise<Omit<CollectionAccessObject, 'annotations'>> {
-    // TODO: This query is not working with more than one additional node label. Considerate
+  ): Promise<Omit<CollectionAccessObject, 'annotations' | 'collections'>> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
     // Match optional Text node chain
-    OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-    WHERE NOT ()-[:NEXT]->(tStart)
-    OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
+    CALL {
+        WITH c
+  
+        OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
+        WHERE NOT ()-[:NEXT]->(tStart)
+        OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
 
-    WITH c, tStart, collect(t) AS nextTexts
-    WITH c, coalesce(tStart, []) + nextTexts AS texts    
+        WITH tStart, collect(t) AS nextTexts
+        WITH coalesce(tStart, []) + nextTexts AS texts
+
+        RETURN texts as texts
+    }
+
     WITH c, texts
 
     RETURN {
@@ -173,153 +260,69 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const rawCollection: Omit<CollectionAccessObject, 'annotations'> =
+    const rawCollection: Omit<CollectionAccessObject, 'annotations' | 'collections'> =
       result.records[0]?.get('collection');
 
     if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    const collection: Omit<CollectionAccessObject, 'annotations'> = toNativeTypes(
+    const collection: Omit<CollectionAccessObject, 'annotations' | 'collections'> = toNativeTypes(
       rawCollection,
-    ) as Omit<CollectionAccessObject, 'annotations'>;
+    ) as Omit<CollectionAccessObject, 'annotations' | 'collections'>;
 
     return collection;
   }
 
   /**
-   * Creates a new collection node with the given data.
+   * Creates a new collection node with the given data and attaches it to a parent collection (optionally).
    *
    * While node labels and data of the collection node are mandatory, "texts" will always be an empty array
    * (not possibility to create on collection creation process) and "annotations" can be empty as well as with items.
    *
-   * @param {CollectionAccessObject} data - The data to set for the collection node.
+   * @param {CollectionCreationData} data - The data to set for the collection node.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the created collection node.
+   * @return {Promise<Collection>} A promise that resolves to the created collection node.
    */
-  public async createNewCollection(data: CollectionAccessObject): Promise<ICollection> {
+  public async createNewCollection(data: CollectionCreationData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
-    const collectionFields: PropertyConfig[] =
-      guidelineService.getCollectionConfigFieldsFromGuidelines(
-        guidelines,
-        data.collection.nodeLabels,
-      );
+    const fields: PropertyConfig[] = guidelineService.getCollectionConfigFieldsFromGuidelines(
+      guidelines,
+      data.collection.nodeLabels,
+    );
 
     const collection: Collection = {
       nodeLabels: [...data.collection.nodeLabels, 'Collection'],
       data: {
-        ...toNeo4jTypes(data.collection.data, collectionFields),
+        ...toNeo4jTypes(data.collection.data, fields),
         uuid: crypto.randomUUID(),
-      } as ICollection,
-    };
+      },
+    } as Collection;
 
-    // TODO: Improve this (own type?)
-    const annotations: any = data.annotations.map(a => {
-      const annotationConfigFields: PropertyConfig[] =
-        guidelineService.getAnnotationConfigFieldsFromGuidelines(guidelines, a.properties.type);
+    const parentUuid: string | null = data.parentCollection?.data.uuid ?? null;
 
-      return {
-        properties: toNeo4jTypes(a.properties, annotationConfigFields) as IAnnotation,
-        entities: Object.values(a.entities)
-          .flat()
-          .map(i => i.uuid),
-        additionalTexts: a.additionalTexts.map(additionalText => {
-          const collectionConfigFields: PropertyConfig[] =
-            guidelineService.getCollectionConfigFieldsFromGuidelines(
-              guidelines,
-              additionalText.collection.nodeLabels,
-            );
-
-          return {
-            collection: {
-              nodeLabels: additionalText.collection.nodeLabels,
-              data: toNeo4jTypes(
-                additionalText.collection.data,
-                collectionConfigFields,
-              ) as ICollection,
-            },
-            text: {
-              nodeLabels: additionalText.text.nodeLabels,
-              data: additionalText.text.data,
-              characters: additionalText.text.data.text.split('').map(c => {
-                return {
-                  uuid: crypto.randomUUID(),
-                  text: c,
-                };
-              }),
-            },
-          };
-        }),
-      };
-    });
-
-    const query: string = `
+    let query: string = `
     CALL apoc.create.node($collection.nodeLabels, $collection.data) YIELD node as c
-
-    CALL {
-        WITH c
-
-        UNWIND $annotations AS ann
-
-        WITH ann, c
-
-        // Create new annotation node
-        MERGE (a:Annotation {uuid: ann.properties.uuid})
-
-        // Set data
-        SET a = ann.properties
-
-        // Create edge to collection node
-        MERGE (t)-[:HAS_ANNOTATION]->(a)
-
-        // Remove edges to nodes that are not longer part of the annotation data
-        WITH ann, a, c
-
-        // Create edges to Entity nodes
-        CALL {
-            WITH ann, a
-            UNWIND ann.entities AS createdUuid
-            MATCH (e:Entity {uuid: createdUuid})
-            MERGE (a)-[r:REFERS_TO]->(e)
-        }
-
-        // Create additional text nodes
-        CALL {
-            WITH ann, a
-            UNWIND ann.additionalTexts as textToCreate
-            
-            CREATE (a)-[:REFERS_TO]->(c:Collection)<-[:PART_OF]-(t:Text)
-
-            WITH textToCreate, a, c, t
-
-            CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node
-            SET c += textToCreate.collection.data
-            SET t += textToCreate.text.data
-
-            WITH textToCreate, a, c, t
-
-            CALL atag.chains.update(t.uuid, null, null, textToCreate.text.characters, {
-              textLabel: "Text",
-              elementLabel: "Character",
-              relationshipType: "NEXT_CHARACTER"
-            }) YIELD path
-
-            RETURN collect(textToCreate) as createdText
-        }
-
-        RETURN collect(a) as createdAnnotations
-    }
-
-    RETURN c {.*} AS collection
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      data,
-      collection,
-      annotations,
-    });
+    // Connect it to the parent collection if it should
+    if (data.parentCollection) {
+      query += `
+      MATCH (parent:Collection {uuid: $parentUuid})
+      CREATE (c)-[:PART_OF]->(parent)
+      `;
+    }
+
+    query += `
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { collection, parentUuid });
 
     return result.records[0]?.get('collection');
   }
@@ -386,17 +389,11 @@ export default class CollectionService {
       UNWIND $texts.deleted as textToDelete
       MATCH (t:Text {uuid: textToDelete.data.uuid})
       
-      // Match subgraph
-      CALL apoc.path.subgraphNodes(t, {
-          relationshipFilter: 'HAS_ANNOTATION>|REFERS_TO>|<PART_OF',
-          labelFilter: 'Collection|Text|Annotation'
-      }) YIELD node
+      // Match subgraph (annotations and characters - leave the rest alone for now)
+      OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+      OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
 
-      WITH t, node
-
-      OPTIONAL MATCH (node)-[:NEXT_CHARACTER*]->(ch:Character)
-
-      DETACH DELETE t, node, ch
+      DETACH DELETE t, a, ch
     }
 
     // Create Text nodes

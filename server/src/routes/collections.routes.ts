@@ -1,18 +1,18 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
-import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
+import textRoutes from './text.routes.js';
 import AnnotationService from '../services/annotation.service.js';
 import CollectionService from '../services/collection.service.js';
-import GuidelinesService from '../services/guidelines.service.js';
 import ICollection from '../models/ICollection.js';
-import { IGuidelines } from '../models/IGuidelines.js';
 import IAnnotation from '../models/IAnnotation.js';
 import {
   Annotation,
-  AnnotationData,
   Collection,
   CollectionAccessObject,
+  CollectionCreationData,
   CollectionPostData,
+  CollectionPreview,
+  NodeAncestry,
   PaginationResult,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
@@ -21,29 +21,25 @@ const router: Router = express.Router({ mergeParams: true });
 
 const collectionService: CollectionService = new CollectionService();
 const annotationService: AnnotationService = new AnnotationService();
-const guidelineService: GuidelinesService = new GuidelinesService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const guidelines: IGuidelines = await guidelineService.getGuidelines();
-
-    // Get Collection type that is shown in the table and does not only exist as anchor to additional text
-    // Needs to be overhauled anyway when whole hierarchies should be handled in the future
-    // Careful, a collection with level "primary" MUST exist in the guidelines with this solution
-    const primaryCollectionLabel = guidelines.collections.types.find(
-      t => t.level === 'primary',
-    )!.additionalLabel;
-
     const { sort, order, limit, skip, search } = getPagination(req);
+    const nodeLabels: string[] = (req.query.nodeLabels as string)
+      .split(',')
+      .filter(label => label.trim() !== '');
 
-    const collections: PaginationResult<CollectionAccessObject[]> =
+    const parentUuid: string | null = req.query.parentUuid as string | null;
+
+    const collections: PaginationResult<CollectionPreview[]> =
       await collectionService.getCollections(
-        primaryCollectionLabel,
+        nodeLabels,
         sort,
         order,
         limit,
         skip,
         search,
+        parentUuid,
       );
 
     res.status(200).json(collections);
@@ -53,10 +49,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const data: CollectionAccessObject = req.body;
+  const data: CollectionCreationData = req.body;
 
   try {
-    const newCollection: ICollection = await collectionService.createNewCollection(data);
+    const newCollection: Collection = await collectionService.createNewCollection(data);
 
     res.status(201).json(newCollection);
   } catch (error: unknown) {
@@ -68,16 +64,47 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const { collection, texts } = await collectionService.getExtendedCollectionById(uuid);
-    const annotations: AnnotationData[] = await annotationService.getAnnotations(uuid);
+    const collection: Collection = await collectionService.getCollection(uuid);
 
-    const collectionAccessObject: CollectionAccessObject = {
-      collection,
-      texts,
-      annotations,
-    };
+    res.status(200).json(collection);
+  } catch (error: unknown) {
+    next(error);
+  }
+});
 
-    res.status(200).json(collectionAccessObject);
+router.get('/:uuid/collections', async (req: Request, res: Response, next: NextFunction) => {
+  const parentUuid: string = req.params.uuid;
+
+  const { sort, order, limit, skip, search } = getPagination(req);
+  const nodeLabels: string[] = ((req.query.nodeLabels as string) ?? '')
+    .split(',')
+    .filter(label => label.trim() !== '');
+
+  try {
+    const collections: PaginationResult<CollectionPreview[]> =
+      await collectionService.getCollections(
+        nodeLabels,
+        sort,
+        order,
+        limit,
+        skip,
+        search,
+        parentUuid,
+      );
+
+    res.status(200).json(collections);
+  } catch (error: unknown) {
+    next(error);
+  }
+});
+
+router.get('/:uuid/ancestry', async (req: Request, res: Response, next: NextFunction) => {
+  const uuid: string = req.params.uuid;
+
+  try {
+    const ancestryPaths: NodeAncestry[] = await collectionService.getAncestry(uuid);
+
+    res.status(200).json(ancestryPaths);
   } catch (error: unknown) {
     next(error);
   }
@@ -115,7 +142,7 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-router.use('/:uuid/characters', characterRoutes);
-router.use('/:uuid/annotations', annotationRoutes);
+router.use('/:collectionUuid/annotations', annotationRoutes);
+router.use('/:collectionUuid/texts', textRoutes);
 
 export default router;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, ref } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import {
   onBeforeRouteLeave,
   RouteLocationNormalizedLoaded,
@@ -27,8 +27,10 @@ import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
   AnnotationType,
+  Collection,
   CollectionAccessObject,
   CollectionPostData,
+  NodeAncestry,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -72,9 +74,13 @@ const {
   initializeGuidelines,
 } = useGuidelinesStore();
 
-const collectionUuid: string = route.params.uuid as string;
+const collectionUuid = computed(() => route.params.uuid as string);
 
+// ------------------------------------------------------------------------------
+
+// TODO: Split this up into smaller refs
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
+const ancestryPaths = ref<NodeAncestry[]>([]);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
@@ -89,7 +95,7 @@ const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availableTextLabels = computed(getAvailableTextLabels);
 
 useTitle(
-  computed(() => `Collection | ${collectionAccessObject.value?.collection.data.label ?? ''}`),
+  computed(() => `Collection | ${collectionAccessObject.value?.collection?.data.label ?? ''}`),
 );
 
 const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
@@ -102,7 +108,7 @@ const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
   getAvailableCollectionAnnotationConfigs(collectionAccessObject.value.collection.nodeLabels),
 );
 
-const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
+const textsTableData: ComputedRef<TextTableEntry[]> = computed(() => {
   return collectionAccessObject.value.texts.map((text: Text) => {
     return {
       labels: text.nodeLabels,
@@ -113,19 +119,45 @@ const tableData: ComputedRef<TextTableEntry[]> = computed(() => {
   });
 });
 
+watch(
+  () => route.params.uuid,
+  async (newUuid: string): Promise<void> => {
+    isLoading.value = true;
+
+    collectionAccessObject.value = {} as CollectionAccessObject;
+
+    // Fetch parent collection details and ancestry only if a UUID is present
+    if (newUuid) {
+      await getCollection();
+    }
+
+    // Reset ancestry - If no uuid param is set, needs to be cleanded anyway
+    ancestryPaths.value = [];
+
+    // Fetch parent collection details and ancestry only if a UUID is present
+    if (isValidCollection.value && newUuid !== '') {
+      await getCollectionAncestry();
+    }
+
+    if (isValidCollection.value || newUuid === '') {
+      await getGuidelines();
+      await getTexts();
+      await getAnnotations();
+      await getAnnotationStyles();
+
+      initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
+    isLoading.value = false;
+  },
+  {
+    immediate: true,
+  },
+);
+
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
-
-onMounted(async (): Promise<void> => {
-  await getCollection();
-
-  if (isValidCollection.value) {
-    await getGuidelines();
-    await getAnnotationStyles();
-    window.addEventListener('beforeunload', handleBeforeUnload);
-  }
-
-  isLoading.value = false;
-});
 
 function deleteAnnotation(uuid: string): void {
   collectionAccessObject.value.annotations = collectionAccessObject.value.annotations.filter(
@@ -471,9 +503,9 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-async function getCollection(): Promise<void> {
+async function getCollectionAncestry(): Promise<void> {
   try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid}`);
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/ancestry`);
 
     const response: Response = await fetch(url);
 
@@ -481,13 +513,66 @@ async function getCollection(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const fetchedCollectionAccessObject: CollectionAccessObject = await response.json();
+    const fetchedAncestryPaths: NodeAncestry[] = await response.json();
 
-    collectionAccessObject.value = fetchedCollectionAccessObject;
-    initialCollectionAccessObject.value = cloneDeep(fetchedCollectionAccessObject);
-    isValidCollection.value = true;
+    ancestryPaths.value = fetchedAncestryPaths;
   } catch (error: unknown) {
     console.error('Error fetching collection:', error);
+  }
+}
+
+async function getCollection(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedCollection: Collection = await response.json();
+
+    isValidCollection.value = true;
+    collectionAccessObject.value.collection = fetchedCollection;
+  } catch (error: unknown) {
+    console.error('Error fetching collection:', error);
+  }
+}
+
+async function getTexts(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/texts`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedTexts: Text[] = await response.json();
+
+    collectionAccessObject.value.texts = fetchedTexts;
+  } catch (error: unknown) {
+    console.error('Error fetching texts for collection:', error);
+  }
+}
+
+async function getAnnotations(): Promise<void> {
+  try {
+    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/annotations`);
+
+    const response: Response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const fetchedAnnotations: AnnotationData[] = await response.json();
+
+    collectionAccessObject.value.annotations = fetchedAnnotations;
+  } catch (error: unknown) {
+    console.error('Error fetching annotations for collection:', error);
   }
 }
 
@@ -518,7 +603,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     </div>
     <Toast />
     <ConfirmPopup />
-    <div class="header-buttons flex justify-content-between mb-2 pl-2 pt-2">
+    <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
       <RouterLink to="/">
         <Button
           icon="pi pi-home"
@@ -527,11 +612,45 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           title="Go to overview"
         ></Button>
       </RouterLink>
+      <div class="flex">
+        <RouterLink :to="`/collection-manager/${collectionAccessObject.collection.data.uuid}`">
+          <Button
+            icon="pi pi-sitemap"
+            severity="secondary"
+            title="Open this collection in Collection Manager"
+            label="Open in collection manager"
+            aria-label="Open this collection in Collection Manager"
+          ></Button>
+        </RouterLink>
+      </div>
     </div>
-    <div class="header flex align-items-center justify-content-center gap-3">
-      <h2 class="info mt-0">
-        {{ collectionAccessObject?.collection.data.label }}
-      </h2>
+    <h2 class="text-center">
+      {{ collectionAccessObject?.collection.data.label }}
+    </h2>
+    <div class="breadcrumbs-pane">
+      <div v-for="path in ancestryPaths">
+        <span v-for="(node, index) in path">
+          <span v-if="index !== 0"> -> </span>
+          <RouterLink
+            v-if="node.nodeLabels.includes('Collection')"
+            :to="`/collections/${node.data.uuid}`"
+            :title="`Go to Collection ${node.data.uuid}`"
+          >
+            {{ node.data.label }}
+            <i class="pi pi-external-link"></i>
+          </RouterLink>
+          <a
+            v-else-if="node.nodeLabels.includes('Text')"
+            :href="`/texts/${node.data.uuid}`"
+            :title="`Go to Text ${node.data.uuid}`"
+            target="_blank"
+          >
+            Text
+            <i class="pi pi-external-link"></i>
+          </a>
+          <span v-else> Annotation {{ node.data.type }}</span>
+        </span>
+      </div>
     </div>
     <Splitter
       class="flex-grow-1 overflow-y-auto gap-2"
@@ -723,7 +842,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           <h2 class="text-center">Texts ({{ collectionAccessObject.texts.length }})</h2>
           <div class="text-pane-content">
             <DataTable
-              :value="tableData"
+              :value="textsTableData"
               scrollable
               scrollHeight="flex"
               resizableColumns

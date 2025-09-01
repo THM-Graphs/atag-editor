@@ -1,59 +1,49 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
-import { refDebounced, useTitle } from '@vueuse/core';
+import { ref, onMounted, watch } from 'vue';
+import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
+import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
-import OverviewCollectionTable from '../components/OverviewCollectionTable.vue';
-import ICollection from '../models/ICollection';
+import CollectionCreationButton from '../components/CollectionCreationButton.vue';
+import CollectionTable from '../components/CollectionTable.vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { CollectionAccessObject, PaginationData, PaginationResult } from '../models/types';
+import {
+  Collection,
+  CollectionPreview,
+  CollectionSearchParams,
+  PaginationData,
+  PaginationResult,
+} from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
-
-const INPUT_DELAY: number = 300;
-const baseFetchUrl: string = '/api/collections';
+import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
-const { guidelines } = useGuidelinesStore();
+const { guidelines, availableCollectionLabels, initializeGuidelines } = useGuidelinesStore();
+const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
-const collections = ref<CollectionAccessObject[] | null>(null);
+const collections = ref<CollectionPreview[] | null>(null);
 const pagination = ref<PaginationData | null>(null);
 
 const asyncOperationRunning = ref<boolean>(false);
-
-// Refs for fetch url params to re-fetch collections on change
-
-const searchInput = ref<string>('');
-// This ref is used to prevent too many fetches when rapid typing
-const debouncedSearchInput = refDebounced(searchInput, INPUT_DELAY);
-const offset = ref<number>(0);
-// TODO: Make dynamically
-const rowCount = ref<number>(10);
-const sortField = ref<string>('');
-const sortDirection = ref<'asc' | 'desc'>('asc');
-
-const fetchUrl = computed<string>(() => {
-  const searchParams: URLSearchParams = new URLSearchParams();
-
-  searchParams.set('sort', sortField.value);
-  searchParams.set('order', sortDirection.value);
-  searchParams.set('limit', rowCount.value.toString());
-  searchParams.set('skip', offset.value.toString());
-  searchParams.set('search', debouncedSearchInput.value);
-
-  return `${baseFetchUrl}?${searchParams.toString()}`;
-});
 
 watch(fetchUrl, async () => await getCollections());
 
 onMounted(async (): Promise<void> => {
   await getGuidelines();
+
+  // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
+  // is initialized with an empty array
+  updateSearchParams({
+    nodeLabels: availableCollectionLabels.value,
+  });
+
   await getCollections();
 });
 
@@ -68,7 +58,7 @@ async function getCollections(): Promise<void> {
       throw new Error('Network response was not ok');
     }
 
-    const paginationResult: PaginationResult<CollectionAccessObject[]> = await response.json();
+    const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
 
     collections.value = paginationResult.data;
     pagination.value = paginationResult.pagination;
@@ -91,27 +81,42 @@ async function getGuidelines(): Promise<void> {
 
     const fetchedGuidelines: IGuidelines = await response.json();
 
-    guidelines.value = fetchedGuidelines;
+    initializeGuidelines(fetchedGuidelines);
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);
   }
 }
 
-function handleCollectionCreation(newCollection: ICollection): void {
-  showMessage('created', `"${newCollection.label}"`);
+function handleCollectionCreation(newCollection: Collection): void {
+  showMessage('created', `"${newCollection.data.label}"`);
   getCollections();
 }
 
+function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
+  const data: CollectionSearchParams = {
+    nodeLabels: selectedLabels,
+  };
+
+  updateSearchParams(data);
+}
+
 function handleSearchInputChange(newInput: string): void {
-  searchInput.value = newInput;
+  const data: CollectionSearchParams = {
+    searchInput: newInput,
+  };
+
+  updateSearchParams(data);
 }
 
 function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
-  // TODO: Fix this, looks ugly
-  sortField.value = (event.sortField as string | null) || '';
-  sortDirection.value = event.sortOrder === -1 ? 'desc' : 'asc';
-  rowCount.value = event.rows || 5;
-  offset.value = event.first || 0;
+  const data: CollectionSearchParams = {
+    sortField: (event.sortField as string | null) || '',
+    sortDirection: event.sortOrder === -1 ? 'desc' : 'asc',
+    rowCount: event.rows || 5,
+    offset: event.first || 0,
+  };
+
+  updateSearchParams(data);
 }
 
 function handleSortChange(event: DataTableSortEvent): void {
@@ -125,7 +130,7 @@ function handlePaginationChange(event: DataTablePageEvent): void {
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   toast.add({
     severity: 'success',
-    summary: operation === 'created' ? 'New text created' : 'Text deleted',
+    summary: operation === 'created' ? 'New collection created' : 'Collection deleted',
     detail: detail,
     life: 2000,
   });
@@ -136,12 +141,33 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
   <div class="container flex flex-column h-screen m-auto">
     <Toast />
 
+    <div class="header-buttons flex justify-content-end mx-2 pl-2 pt-2">
+      <div class="flex">
+        <RouterLink :to="`/collection-manager`">
+          <Button
+            icon="pi pi-sitemap"
+            severity="secondary"
+            title="Go to Collection manager page to edit collection network"
+            label="Go to Collection manager"
+            aria-label="Go to Collection manager"
+          ></Button>
+        </RouterLink>
+      </div>
+    </div>
+
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
 
-    <OverviewToolbar
-      @collection-created="handleCollectionCreation"
-      @search-input-changed="handleSearchInputChange"
-    />
+    <div class="flex gap-2">
+      <OverviewToolbar
+        v-if="guidelines"
+        :searchInputValue="searchParams.searchInput"
+        :nodeLabelsValue="searchParams.nodeLabels as string[]"
+        @search-input-changed="handleSearchInputChange"
+        @node-labels-input-changed="handleNodeLabelsInputChanged"
+      />
+
+      <CollectionCreationButton @collection-created="handleCollectionCreation" />
+    </div>
 
     <div class="counter text-right pt-2 pb-3">
       <strong class="text-base"
@@ -149,12 +175,14 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
       >
     </div>
 
-    <OverviewCollectionTable
+    <CollectionTable
+      v-if="guidelines"
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
       :collections="collections"
       :pagination="pagination"
       :async-operation-running="asyncOperationRunning"
+      mode="view"
     />
   </div>
 </template>

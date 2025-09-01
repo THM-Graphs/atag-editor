@@ -4,6 +4,7 @@ import guideLinesRoutes from './guidelines.routes.js';
 import entityRoutes from './entities.routes.js';
 import stylesRoutes from './styles.routes.js';
 import textRoutes from './text.routes.js';
+import networkRoutes from './network.routes.js';
 
 const router: Router = express.Router();
 
@@ -12,5 +13,6 @@ router.use('/guidelines', guideLinesRoutes);
 router.use('/entities', entityRoutes);
 router.use('/styles', stylesRoutes);
 router.use('/texts', textRoutes);
+router.use('/network', networkRoutes);
 
 export default router;
