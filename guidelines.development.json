@@ -93,11 +93,6 @@
         "additionalLabel": "Manuscript",
         "level": "secondary",
         "properties": []
-      },
-      {
-        "additionalLabel": "Root",
-        "level": "secondary",
-        "properties": []
       }
     ],
     "annotations": {
