@@ -16,4 +16,4 @@ RUN npm run compile
 EXPOSE 8080
 
 # Command to start the application in production mode
-CMD npm run start
+CMD ["npm" ,"run", "start"]

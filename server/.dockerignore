@@ -1,4 +1,7 @@
-node_modules
-/**/*.js
-*.js
-dist/
+**/node_modules/
+**/dist
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
