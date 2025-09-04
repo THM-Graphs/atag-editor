@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import NotFoundError from '../errors/not-found.error.js';
+import logger from '../logger.js';
 
 /**
  * Generic error handler.  Output error details as JSON.
@@ -18,7 +19,8 @@ export default function errorMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  console.log(error);
+  // TODO: Extend type?
+  (logger as any).fatal('error: ', error);
 
   let statusCode: number = 500;
   let message: string = 'Internal Server Error';

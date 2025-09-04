@@ -3,11 +3,15 @@ import cors from 'cors';
 import Neo4jDriver from './database/neo4j.js';
 import routes from './routes/index.js';
 import errorMiddleware from './middleware/error.middleware.js';
+import loggerMiddleware from './middleware/logger.middleware.js';
 
 const app: Application = express();
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// HTTP request logging
+app.use(loggerMiddleware);
 
 app.use('/api', routes);
 

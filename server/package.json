@@ -19,11 +19,14 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "neo4j-driver": "^5.22.0"
+    "morgan": "^1.10.1",
+    "neo4j-driver": "^5.22.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^20.12.10",
     "concurrently": "^8.2.2",
     "nodemon": "^3.1.0",
