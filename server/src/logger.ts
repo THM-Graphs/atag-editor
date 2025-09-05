@@ -1,4 +1,5 @@
 import winston from 'winston';
+import 'winston-daily-rotate-file';
 
 const { combine, timestamp, printf, colorize, json, errors } = winston.format;
 
@@ -47,19 +48,29 @@ const fileFormat: winston.Logform.Format = combine(
   json(),
 );
 
+// Base options for the file transports, used for error and combined logs
+const baseFileTransportOptions = {
+  dirname: 'logs',
+  // Keep for 14 days
+  maxFiles: '14d',
+  maxSize: '20m',
+  // Files will look like `combined-2023-10-05.log`
+  datePattern: 'YYYY-MM-DD',
+};
+
 const allTransports = [
   new winston.transports.Console({
     format: consoleFormat,
   }),
-  new winston.transports.File({
-    dirname: 'logs',
-    filename: 'combined.log',
+  new winston.transports.DailyRotateFile({
+    ...baseFileTransportOptions,
+    filename: 'combined-%DATE%.log',
     level: 'http',
     format: fileFormat,
   }),
-  new winston.transports.File({
-    dirname: 'logs',
-    filename: 'errors.log',
+  new winston.transports.DailyRotateFile({
+    ...baseFileTransportOptions,
+    filename: 'errors-%DATE%.log',
     level: 'error',
     format: fileFormat,
   }),
