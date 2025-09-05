@@ -88,7 +88,7 @@ function getTransports(
   if (mode === 'development') {
     return allTransports.filter(t => t instanceof winston.transports.Console);
   } else if (mode === 'production') {
-    return allTransports.filter(t => t instanceof winston.transports.File);
+    return allTransports.filter(t => t instanceof winston.transports.DailyRotateFile);
   }
 
   return allTransports;
