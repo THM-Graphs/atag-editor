@@ -37,6 +37,7 @@ services:
     restart: always
     volumes:
       - ../certificates/:/app/certificates
+      - ../logs/:/app/logs
     environment:
       - APP_HOST=${APP_HOST}
       - APP_PORT=${APP_PORT}
