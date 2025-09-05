@@ -94,10 +94,12 @@ function getTransports(
   return allTransports;
 }
 
-const logger: winston.Logger = winston.createLogger({
+const logger = winston.createLogger({
   levels: logLevels.levels,
   level: process.env.LOG_LEVEL || 'debug',
   transports: getTransports(process.env.NODE_ENV),
-});
+}) as winston.Logger & {
+  fatal: winston.LeveledLogMethod;
+};
 
 export default logger;

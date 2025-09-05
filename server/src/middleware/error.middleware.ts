@@ -11,16 +11,15 @@ import logger from '../logger.js';
  * @param {Request} req - The Express request object.
  * @param {Response} res - The Express response object.
  * @param {NextFunction} next - The next middleware function in the stack.
- * @returns {void}
+ * @returns {void} This function does not return any value.
  */
 export default function errorMiddleware(
   error: any,
   req: Request,
   res: Response,
   next: NextFunction,
-) {
-  // TODO: Extend type?
-  (logger as any).fatal('error: ', error);
+): void {
+  logger.error('error: ', error);
 
   let statusCode: number = 500;
   let message: string = 'Internal Server Error';
