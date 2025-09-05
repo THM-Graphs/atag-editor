@@ -23,9 +23,9 @@ const menuItems: MenuItem[] = [
     command: () => handleActionSelection('move'),
   },
   {
-    label: 'Copy',
+    label: 'Reference',
     icon: 'pi pi-link',
-    command: () => handleActionSelection('copy'),
+    command: () => handleActionSelection('reference'),
   },
   {
     separator: true,

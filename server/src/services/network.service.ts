@@ -9,12 +9,13 @@ import { Text, Collection, NetworkPostData } from '../models/types.js';
  */
 export default class NetworkService {
   /**
-   * Copies the given nodes to the given target collection (= creates new `PART_OF` relationships).
+   * Attaches given nodes to the given target collection (= creates new `PART_OF` relationships), but keeps them attached
+   * to their current parent collection(s).
    *
    * @param {NetworkPostData} data - The data containing the nodes to copy and the target collection.
    * @return {Promise<(Collection | Text)[]>} A promise that resolves to an array of the copied nodes.
    */
-  async copyNodes(data: NetworkPostData): Promise<(Collection | Text)[]> {
+  async referenceNodes(data: NetworkPostData): Promise<(Collection | Text)[]> {
     const { nodes, target } = data;
 
     if (!target) {

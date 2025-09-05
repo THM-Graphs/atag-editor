@@ -14,8 +14,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     let result;
 
-    if (actionType === 'copy') {
-      result = await networkService.copyNodes(data);
+    if (actionType === 'reference') {
+      result = await networkService.referenceNodes(data);
     } else if (actionType === 'move') {
       result = await networkService.moveNodes(data);
     } else if (actionType === 'dereference') {

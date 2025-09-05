@@ -22,7 +22,7 @@ const props = defineProps<{
 const toast: ToastServiceMethods = useToast();
 
 const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
-  const moveActions: CollectionNetworkActionType[] = ['copy', 'move'];
+  const moveActions: CollectionNetworkActionType[] = ['reference', 'move'];
 
   return moveActions.includes(props.action);
 });
@@ -49,8 +49,8 @@ const message: ComputedRef<string> = computed(() => {
   const base: string = `${collectionCount} collection${collectionCount > 1 ? 's' : ''} ${collectionCount > 1 ? 'are' : 'is'} about to be`;
 
   switch (props.action) {
-    case 'copy':
-      return `${base} copied to another parent`;
+    case 'reference':
+      return `${base} additionally attached to another parent`;
     case 'move':
       return `${base} moved to another parent`;
     case 'dereference':

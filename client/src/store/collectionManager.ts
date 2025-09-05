@@ -16,7 +16,7 @@ const currentActionInitiator = ref<'row' | 'toolbar'>(null);
 // "dereference" and "move" for example can only be executed when the selected collections
 // have a parent collection from which they can be detached.
 const allowedEditOperations = computed<CollectionNetworkActionType[]>(() => {
-  const alwaysAllowed: CollectionNetworkActionType[] = ['copy'];
+  const alwaysAllowed: CollectionNetworkActionType[] = ['reference'];
 
   const allowed: CollectionNetworkActionType[] = [...alwaysAllowed];
 
