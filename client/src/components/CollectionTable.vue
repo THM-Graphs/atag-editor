@@ -190,30 +190,9 @@ function handlePagination(event: DataTablePageEvent): void {
 
         <!-- Action columns -->
 
-        <Column field="actions" , header="Actions" class="flex gap-1">
+        <Column field="actions" header="Actions" class="flex gap-1">
           <template #body="{ data: row }: { data: CollectionPreview }" class="flex gap-1">
-            <RouterLink :to="`/collections/${row.collection.data.uuid}`">
-              <Button
-                icon="pi pi-pen-to-square"
-                severity="secondary"
-                class="w-2rem h-2rem"
-                title="Open in Collection editor"
-                aria-label="Open in Collection editor"
-              ></Button>
-            </RouterLink>
-
-            <RouterLink :to="`/collection-manager/${row.collection.data.uuid}`">
-              <Button
-                icon="pi pi-sitemap"
-                severity="secondary"
-                class="w-2rem h-2rem"
-                title="Open in Collection manager"
-                aria-label="Open in Collection manager"
-              ></Button>
-            </RouterLink>
-
             <Button
-              v-if="props.mode === 'edit'"
               icon="pi pi-ellipsis-v"
               rounded
               severity="secondary"
@@ -225,6 +204,7 @@ function handlePagination(event: DataTablePageEvent): void {
             <ActionMenu
               ref="actionMenu"
               target="single"
+              :tableMode="props.mode"
               :current-row="currentRow"
               :allowed-operations="allowedEditOperations"
             />
