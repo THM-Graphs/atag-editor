@@ -1,9 +1,9 @@
 import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
+import { collectionSortField } from '../utils/cypher.js';
 import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
-import IAnnotation from '../models/IAnnotation.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import {
@@ -77,17 +77,14 @@ export default class CollectionService {
       baseQuery +
       `
       // TODO: Fix sorting. Can be numbers, too (text count, annotation count etc.)
-      WITH c
-      ORDER BY c.${sort} ${order}
-      SKIP ${skip}
-      LIMIT ${limit}
-
-      // Get counts of connected nodes
-      WITH
-          c,
+      WITH c,
           size([(c)<-[:PART_OF]-(sub:Collection) | sub]) as collectionCount,
           size([(c)<-[:PART_OF]-(sub:Text) | sub]) as textCount,
           size([(c)-[:HAS_ANNOTATION]-(a:Annotation) | a]) as annotationCount
+
+      ORDER BY ${collectionSortField(sort)} ${order}
+      SKIP ${skip}
+      LIMIT ${limit}
 
       RETURN collect({
           collection: {
