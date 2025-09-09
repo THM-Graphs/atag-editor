@@ -1,3 +1,4 @@
+# Create JS bundle in the first step
 FROM node:24-alpine AS build
 
 # Set working directory
@@ -21,7 +22,7 @@ RUN npm install
 RUN npm run build
 
 # Build nginx image to serve bundle
-FROM nginx:alpine
+FROM nginx:alpine AS production
 
 # Copy nginx config
 COPY /nginx.conf /etc/nginx/nginx.conf
