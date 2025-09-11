@@ -68,12 +68,23 @@
               "required": true,
               "editable": false,
               "visible": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "editable": true,
+              "visible": true
             }
           ],
           "entities": [
             {
               "category": "persons",
               "nodeLabel": "Person"
+            },
+            {
+              "category": "groups",
+              "nodeLabel": "Group"
             }
           ],
           "additionalTexts": []
