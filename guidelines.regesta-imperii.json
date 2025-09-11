@@ -77,16 +77,7 @@
               "visible": true
             }
           ],
-          "entities": [
-            {
-              "category": "persons",
-              "nodeLabel": "Person"
-            },
-            {
-              "category": "groups",
-              "nodeLabel": "Group"
-            }
-          ],
+          "entities": [],
           "additionalTexts": []
         }
       },
@@ -361,6 +352,10 @@
       {
         "category": "persons",
         "nodeLabel": "Person"
+      },
+      {
+        "category": "groups",
+        "nodeLabel": "Group"
       },
       {
         "category": "places",
