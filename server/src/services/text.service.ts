@@ -45,10 +45,11 @@ export default class TextService {
    * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
    */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
+    // TODO: Replace ancestry with apoc function, not performant right now
     const query: string = `
     MATCH (t:Text {uuid: $uuid})
     MATCH (t)-[:PART_OF]->(c:Collection)
-    MATCH p = (t)-[:HAS_TEXT | REFERS_TO | HAS_ANNOTATION | PART_OF*]-(cStart:Collection)
+    MATCH p = (t)-[:HAS_TEXT | REFERS_TO | HAS_ANNOTATION | PART_OF*0..10]-(cStart:Collection)
     WHERE NOT ()-[:REFERS_TO]->(cStart)
     AND NOT ()<-[:PART_OF]-(cStart)
 
