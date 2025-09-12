@@ -2,6 +2,7 @@ import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import { collectionSortField } from '../utils/cypher.js';
+import { ancestryPaths } from '../utils/cypher.js';
 import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
@@ -177,39 +178,17 @@ export default class CollectionService {
    * is an array of node objects with their labels and properties.
    */
   public async getAncestry(uuid: string): Promise<NodeAncestry[]> {
-    // TODO: maxLevel 50 should be enough, but change maybe?
-    // TODO: What if circular matches happen? uniqueness should filter that
     const query: string = `
     MATCH (c:Collection|Annotation|Text {uuid: $uuid})
 
-    CALL apoc.path.expandConfig(c, {
-        relationshipFilter: 'PART_OF>|HAS_ANNOTATION<|REFERS_TO<',
-        labelFilter: 'Collection|Annotation|Text',
-        maxLevel: 50,
-        uniqueness: 'NODE_PATH'
-    }) YIELD path
-
-    WITH path, last(nodes(path)) AS topNode
-
-    // Keep only "longest paths" (which have Collections above the or annotations that reference it)
-    WHERE
-        NOT (topNode)-[:PART_OF]->() AND
-        NOT ()-[:REFERS_TO]->(topNode) AND 
-        NOT ()-[:HAS_ANNOTATION]->(topNode)
-
-    RETURN collect([
-        n IN reverse(tail(nodes(path))) | {
-            nodeLabels: labels(n), 
-            data: n {.*}
-        }
-    ]) as paths
+    ${ancestryPaths('c')}
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const ancestryPaths: NodeAncestry[] = result.records[0]?.get('paths');
+    const paths: NodeAncestry[] = result.records[0]?.get('paths');
 
     // TODO: Nested array, therefore this...fix within toNativeTypes function?
-    return ancestryPaths.map(p => p.map(node => toNativeTypes(node))) as NodeAncestry[];
+    return paths.map(p => p.map(node => toNativeTypes(node))) as NodeAncestry[];
   }
 
   /**

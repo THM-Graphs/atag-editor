@@ -1,12 +1,11 @@
 import { ref } from 'vue';
-import { Collection, Text, TextAccessObject } from '../models/types';
+import { Collection, NodeAncestry, Text, TextAccessObject } from '../models/types';
 import { cloneDeep } from '../utils/helper/helper';
-import IAnnotation from '../models/IAnnotation';
 
 const text = ref<Text>(null);
 const initialText = ref<Text>(null);
 const correspondingCollection = ref<Collection>(null);
-const path = ref<Text[] | Collection[] | IAnnotation[]>([]);
+const path = ref<NodeAncestry>([]);
 
 export function useTextStore() {
   function initializeText(newText: TextAccessObject): void {

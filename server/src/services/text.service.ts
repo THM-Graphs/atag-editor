@@ -2,6 +2,7 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/not-found.error.js';
 import { Text, TextAccessObject } from '../models/types.js';
+import { ancestryPaths } from '../utils/cypher.js';
 import { toNativeTypes } from '../utils/helper.js';
 
 export default class TextService {
@@ -45,13 +46,13 @@ export default class TextService {
    * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
    */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
-    // TODO: Replace ancestry with apoc function, not performant right now
     const query: string = `
     MATCH (t:Text {uuid: $uuid})
     MATCH (t)-[:PART_OF]->(c:Collection)
-    MATCH p = (t)-[:HAS_TEXT | REFERS_TO | HAS_ANNOTATION | PART_OF*0..10]-(cStart:Collection)
-    WHERE NOT ()-[:REFERS_TO]->(cStart)
-    AND NOT ()<-[:PART_OF]-(cStart)
+    
+    CALL (t) {
+        ${ancestryPaths('t')}
+    }
 
     RETURN {
         text: {
@@ -62,7 +63,7 @@ export default class TextService {
             nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
             data: c {.*}
         },
-        path: [n IN reverse(nodes(p)) | {nodeLabels: labels(n), data: n {.*}}]
+        path: paths[0]
     } as text
     `;
 
