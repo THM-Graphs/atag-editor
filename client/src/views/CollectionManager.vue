@@ -326,17 +326,6 @@ function toggleActionMenu(event: Event): void {
           title="Go to overview"
         ></Button>
       </RouterLink>
-      <div class="flex">
-        <RouterLink v-if="route.params.uuid" :to="`/collections/${collection?.data.uuid}`">
-          <Button
-            icon="pi pi-pen-to-square"
-            label="Open in details page"
-            severity="secondary"
-            aria-label="Open this collection in Collection editor"
-            title="Open this collection in Collection editor"
-          ></Button>
-        </RouterLink>
-      </div>
     </div>
     <h2
       class="text-center"
@@ -464,21 +453,37 @@ function toggleActionMenu(event: Event): void {
       </SplitterPanel>
 
       <SplitterPanel :size="4" class="overflow-y-auto pt-2">
-        <div class="collection-data text-center">
-          <div>Data of current collection</div>
-          <br />
+        <div class="collection-data p-2">
+          <div class="flex justify-content-center align-items-center gap-2">
+            <div class="text-center">Data of current collection</div>
+            <RouterLink v-if="route.params.uuid" :to="`/collections/${collection?.data.uuid}`">
+              <Button
+                icon="pi pi-external-link"
+                label="Open details"
+                severity="secondary"
+                aria-label="Open this collection in Details page"
+                title="Open this collection in Details page"
+              ></Button>
+            </RouterLink>
+          </div>
 
-          <template v-if="collection">
-            <div>
-              <Tag
-                v-for="label in collection.nodeLabels"
-                :value="label"
-                severity="contrast"
-                class="mr-1 mb-1 mt-1 inline-block"
-              />
+          <div class="p-4 separator relative text-center"></div>
+
+          <template v-if="collection" class="text-center">
+            <div class="labels text-center mb-3">
+              <h4 class="mt-0 mb-1">Labels</h4>
+              <div>
+                <Tag
+                  v-for="label in collection.nodeLabels"
+                  :value="label"
+                  severity="contrast"
+                  class="mr-1 mb-1 mt-1 inline-block"
+                />
+              </div>
             </div>
-            <br />
-            <div>
+            <div class="properties">
+              <h4 class="mt-0 mb-1 text-center mb-3">Properties</h4>
+
               <FormPropertiesSection
                 v-model="collection.data"
                 :fields="collectionFields"
@@ -496,11 +501,18 @@ function toggleActionMenu(event: Event): void {
 </template>
 
 <style scoped>
-.collection-data {
-  width: 250px;
-}
 .container {
   width: 80%;
   min-width: 800px;
+}
+
+.separator::after {
+  content: '';
+  border-bottom: 2px solid grey;
+  position: absolute;
+  width: 80px;
+  top: 50%;
+  transform: translateX(-50%);
+  left: 50%;
 }
 </style>
