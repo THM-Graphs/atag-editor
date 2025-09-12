@@ -30,7 +30,6 @@ import {
   Collection,
   CollectionAccessObject,
   CollectionPostData,
-  NodeAncestry,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -80,7 +79,6 @@ const collectionUuid = computed(() => route.params.uuid as string);
 
 // TODO: Split this up into smaller refs
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
-const ancestryPaths = ref<NodeAncestry[]>([]);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
 const mode = ref<'view' | 'edit'>('view');
@@ -126,17 +124,9 @@ watch(
 
     collectionAccessObject.value = {} as CollectionAccessObject;
 
-    // Fetch parent collection details and ancestry only if a UUID is present
+    // Fetch parent collection details only if a UUID is present
     if (newUuid) {
       await getCollection();
-    }
-
-    // Reset ancestry - If no uuid param is set, needs to be cleanded anyway
-    ancestryPaths.value = [];
-
-    // Fetch parent collection details and ancestry only if a UUID is present
-    if (isValidCollection.value && newUuid !== '') {
-      await getCollectionAncestry();
     }
 
     if (isValidCollection.value || newUuid === '') {
@@ -481,24 +471,6 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-async function getCollectionAncestry(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/ancestry`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAncestryPaths: NodeAncestry[] = await response.json();
-
-    ancestryPaths.value = fetchedAncestryPaths;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
-  }
-}
-
 async function getCollection(): Promise<void> {
   try {
     const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}`);
@@ -605,31 +577,6 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     <h2 class="text-center">
       {{ collectionAccessObject?.collection.data.label }}
     </h2>
-    <div class="breadcrumbs-pane">
-      <div v-for="path in ancestryPaths">
-        <span v-for="(node, index) in path">
-          <span v-if="index !== 0"> -> </span>
-          <RouterLink
-            v-if="node.nodeLabels.includes('Collection')"
-            :to="`/collections/${node.data.uuid}`"
-            :title="`Go to Collection ${node.data.uuid}`"
-          >
-            {{ node.data.label }}
-            <i class="pi pi-external-link"></i>
-          </RouterLink>
-          <a
-            v-else-if="node.nodeLabels.includes('Text')"
-            :href="`/texts/${node.data.uuid}`"
-            :title="`Go to Text ${node.data.uuid}`"
-            target="_blank"
-          >
-            Text
-            <i class="pi pi-external-link"></i>
-          </a>
-          <span v-else> Annotation {{ node.data.type }}</span>
-        </span>
-      </div>
-    </div>
     <Splitter
       class="flex-grow-1 overflow-y-auto gap-2"
       :pt="{

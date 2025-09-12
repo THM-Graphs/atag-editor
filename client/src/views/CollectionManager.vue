@@ -459,7 +459,6 @@ function toggleActionMenu(event: Event): void {
             <RouterLink v-if="route.params.uuid" :to="`/collections/${collection?.data.uuid}`">
               <Button
                 icon="pi pi-external-link"
-                label="Open details"
                 severity="secondary"
                 aria-label="Open this collection in Details page"
                 title="Open this collection in Details page"
