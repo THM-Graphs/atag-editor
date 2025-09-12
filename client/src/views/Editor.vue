@@ -46,7 +46,6 @@ onMounted(async (): Promise<void> => {
     await getGuidelines();
     await getCharacters();
     await getAnnotations();
-    await getAnnotationStyles();
 
     initializeEditor();
 
@@ -351,27 +350,6 @@ async function getGuidelines(): Promise<void> {
     initializeGuidelines(fetchedGuidelines);
   } catch (error: unknown) {
     console.error('Error fetching guidelines:', error);
-  }
-}
-
-async function getAnnotationStyles() {
-  try {
-    const url: string = buildFetchUrl('/api/styles');
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Failed to load stylesheet');
-    }
-
-    const styles: string = await response.text();
-    const styleTag: HTMLStyleElement = document.createElement('style');
-
-    styleTag.id = 'custom-styles';
-    styleTag.innerHTML = styles;
-
-    document.head.appendChild(styleTag);
-  } catch (error) {
-    console.error('Error loading stylesheet:', error);
   }
 }
 
