@@ -26,20 +26,6 @@
             "required": false,
             "editable": true,
             "visible": true
-          },
-          {
-            "name": "sender",
-            "type": "string",
-            "required": false,
-            "editable": true,
-            "visible": true
-          },
-          {
-            "name": "receiver",
-            "type": "string",
-            "required": false,
-            "editable": true,
-            "visible": true
           }
         ],
         "annotations": {
