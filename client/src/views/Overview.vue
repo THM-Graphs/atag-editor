@@ -165,8 +165,6 @@ function showMessage(operation: 'created' | 'deleted', detail?: string): void {
         @search-input-changed="handleSearchInputChange"
         @node-labels-input-changed="handleNodeLabelsInputChanged"
       />
-
-      <CollectionCreationButton @collection-created="handleCollectionCreation" />
     </div>
 
     <div class="counter text-right pt-2 pb-3">
