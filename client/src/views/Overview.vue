@@ -4,15 +4,11 @@ import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
-import { ToastServiceMethods } from 'primevue/toastservice';
-import { useToast } from 'primevue/usetoast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
-import CollectionCreationButton from '../components/CollectionCreationButton.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
 import {
-  Collection,
   CollectionPreview,
   CollectionSearchParams,
   PaginationData,
@@ -20,8 +16,6 @@ import {
 } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-
-const toast: ToastServiceMethods = useToast();
 
 useTitle('ATAG Editor');
 
@@ -87,11 +81,6 @@ async function getGuidelines(): Promise<void> {
   }
 }
 
-function handleCollectionCreation(newCollection: Collection): void {
-  showMessage('created', `"${newCollection.data.label}"`);
-  getCollections();
-}
-
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
   const data: CollectionSearchParams = {
     nodeLabels: selectedLabels,
@@ -125,15 +114,6 @@ function handleSortChange(event: DataTableSortEvent): void {
 
 function handlePaginationChange(event: DataTablePageEvent): void {
   updateTableUrlParams(event);
-}
-
-function showMessage(operation: 'created' | 'deleted', detail?: string): void {
-  toast.add({
-    severity: 'success',
-    summary: operation === 'created' ? 'New collection created' : 'Collection deleted',
-    detail: detail,
-    life: 2000,
-  });
 }
 </script>
 
