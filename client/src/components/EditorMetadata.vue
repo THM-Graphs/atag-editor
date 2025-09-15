@@ -17,7 +17,7 @@ type CollectionTableEntry = {
   value: string | number | boolean;
 };
 
-const { text, correspondingCollection, path } = useTextStore();
+const { text, correspondingCollection, paths } = useTextStore();
 const { getCollectionConfigFields } = useGuidelinesStore();
 
 const tableData: CollectionTableEntry[] = getCollectionTableData();
@@ -109,46 +109,50 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <div class="flex flex-column align-items-center">
-        <template v-for="(node, index) in path">
-          <i v-if="index !== 0" class="pi pi-arrow-down" style="font-size: 0.75rem"></i>
-          <div class="py-1">
-            <RouterLink
-              v-if="node.nodeLabels.includes('Collection')"
-              :to="`/collections/${node.data.uuid}`"
-              :title="`Go to Collection ${node.data.uuid}`"
-            >
-              <Tag
-                :value="node.nodeLabels.join(' | ')"
-                :severity="getNodeLabelTagColor(node.nodeLabels)"
-                class="mr-2"
-              />
-              <i class="pi pi-external-link"></i>
-            </RouterLink>
-            <a
-              v-else-if="node.nodeLabels.includes('Text')"
-              :href="`/texts/${node.data.uuid}`"
-              :title="`Go to Text ${node.data.uuid}`"
-              target="_blank"
-            >
-              <Tag
-                :value="node.nodeLabels.join(' | ')"
-                :severity="getNodeLabelTagColor(node.nodeLabels)"
-                class="mr-2"
-              />
-              <i class="pi pi-external-link"></i>
-            </a>
-            <span v-else>
-              <Tag
-                :value="node.nodeLabels.join(' | ')"
-                :severity="getNodeLabelTagColor(node.nodeLabels)"
-                :title="`${node.data.type}, '${node.data.text}'`"
-                class="mr-2"
-              />
-            </span>
-          </div>
-        </template>
-      </div>
+      <template v-for="(path, index) in paths">
+        <div class="text-center font-bold">Path {{ index + 1 }}:</div>
+
+        <div class="flex flex-column align-items-center mb-4">
+          <template v-for="(node, index) in path">
+            <i v-if="index !== 0" class="pi pi-arrow-down" style="font-size: 0.75rem"></i>
+            <div class="py-1">
+              <RouterLink
+                v-if="node.nodeLabels.includes('Collection')"
+                :to="`/collections/${node.data.uuid}`"
+                :title="`Go to Collection ${node.data.uuid}`"
+              >
+                <Tag
+                  :value="node.nodeLabels.join(' | ')"
+                  :severity="getNodeLabelTagColor(node.nodeLabels)"
+                  class="mr-2"
+                />
+                <i class="pi pi-external-link"></i>
+              </RouterLink>
+              <a
+                v-else-if="node.nodeLabels.includes('Text')"
+                :href="`/texts/${node.data.uuid}`"
+                :title="`Go to Text ${node.data.uuid}`"
+                target="_blank"
+              >
+                <Tag
+                  :value="node.nodeLabels.join(' | ')"
+                  :severity="getNodeLabelTagColor(node.nodeLabels)"
+                  class="mr-2"
+                />
+                <i class="pi pi-external-link"></i>
+              </a>
+              <span v-else>
+                <Tag
+                  :value="node.nodeLabels.join(' | ')"
+                  :severity="getNodeLabelTagColor(node.nodeLabels)"
+                  :title="`${node.data.type}, '${node.data.text}'`"
+                  class="mr-2"
+                />
+              </span>
+            </div>
+          </template>
+        </div>
+      </template>
     </Fieldset>
 
     <Fieldset legend="Collection" toggleable>

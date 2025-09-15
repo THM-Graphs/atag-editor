@@ -230,7 +230,7 @@ export type Text = Node<IText>;
 
 export type TextAccessObject = {
   collection: Collection;
-  path: Text[] | Collection[];
+  paths: NodeAncestry[];
   text: Text;
 };
 

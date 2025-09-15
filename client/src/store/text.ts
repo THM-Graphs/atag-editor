@@ -5,20 +5,20 @@ import { cloneDeep } from '../utils/helper/helper';
 const text = ref<Text>(null);
 const initialText = ref<Text>(null);
 const correspondingCollection = ref<Collection>(null);
-const path = ref<NodeAncestry>([]);
+const paths = ref<NodeAncestry[]>([]);
 
 export function useTextStore() {
   function initializeText(newText: TextAccessObject): void {
     text.value = newText.text;
     initialText.value = cloneDeep(newText.text);
     correspondingCollection.value = newText.collection;
-    path.value = newText.path;
+    paths.value = newText.paths;
   }
 
   return {
     correspondingCollection,
     initialText,
-    path,
+    paths,
     text,
     initializeText,
   };
