@@ -1,32 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
-import { buildFetchUrl } from '../utils/helper/helper';
-import {
-  CollectionPreview,
-  CollectionSearchParams,
-  PaginationData,
-  PaginationResult,
-} from '../models/types';
+import { CollectionPreview, CollectionSearchParams } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
+import { useFetchCollections } from '../composables/useFetchCollections';
 
 useTitle('ATAG Editor');
 
 const { guidelines, availableCollectionLabels } = useGuidelinesStore();
 const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
-const collections = ref<CollectionPreview[] | null>(null);
-const pagination = ref<PaginationData | null>(null);
+const { collections, isFetching, pagination, fetchCollections } = useFetchCollections(
+  fetchUrl.value,
+);
 
-const asyncOperationRunning = ref<boolean>(false);
-
-watch(fetchUrl, async () => await getCollections());
+watch(fetchUrl, async () => await fetchCollections());
 
 onMounted(async (): Promise<void> => {
   // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
@@ -35,30 +29,8 @@ onMounted(async (): Promise<void> => {
     nodeLabels: availableCollectionLabels.value,
   });
 
-  await getCollections();
+  await fetchCollections();
 });
-
-async function getCollections(): Promise<void> {
-  try {
-    asyncOperationRunning.value = true;
-    const url: string = buildFetchUrl(fetchUrl.value);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
-
-    collections.value = paginationResult.data;
-    pagination.value = paginationResult.pagination;
-  } catch (error: unknown) {
-    console.error('Error fetching collections:', error);
-  } finally {
-    asyncOperationRunning.value = false;
-  }
-}
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
   const data: CollectionSearchParams = {
@@ -136,9 +108,9 @@ function handlePaginationChange(event: DataTablePageEvent): void {
       v-if="guidelines"
       @sort-changed="handleSortChange"
       @pagination-changed="handlePaginationChange"
-      :collections="collections"
+      :collections="collections as CollectionPreview[]"
       :pagination="pagination"
-      :async-operation-running="asyncOperationRunning"
+      :async-operation-running="isFetching"
       mode="view"
     />
   </div>

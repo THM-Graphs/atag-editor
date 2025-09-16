@@ -4,57 +4,36 @@ import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
 import InputGroup from 'primevue/inputgroup';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-import {
-  CollectionPreview,
-  CollectionSearchParams,
-  PaginationData,
-  PaginationResult,
-} from '../models/types';
-import { buildFetchUrl } from '../utils/helper/helper';
+import { CollectionPreview, CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import Tag from 'primevue/tag';
 import Paginator from 'primevue/paginator';
 import { DataTablePageEvent } from 'primevue';
+import { useFetchCollections } from '../composables/useFetchCollections';
 
 const emit = defineEmits(['itemSelected']);
 
-const pagination = ref<PaginationData>(null);
-
 const { availableCollectionLabels } = useGuidelinesStore();
 const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch(50);
+const {
+  collections: fetchedItems,
+  pagination,
+  fetchCollections,
+} = useFetchCollections(collectionFetchUrl.value);
 
 const selectedCollectionLabels = ref(availableCollectionLabels.value);
 const isSearchActive = ref<boolean>(false);
 
 // State of search
-const fetchedItems = ref<CollectionPreview[]>([]);
 const searchInput = ref<string>('');
 
-watch(collectionFetchUrl, async () => await getCollections());
+watch(collectionFetchUrl, async () => await fetchCollections());
 
 function resetSearch(): void {
   searchInput.value = '';
-  fetchedItems.value = [];
+  // fetchedItems.value = [];
 
   setIsSearchActive(false);
-}
-
-async function getCollections(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(collectionFetchUrl.value);
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
-
-    fetchedItems.value = paginationResult.data;
-    pagination.value = paginationResult.pagination;
-  } catch (error: unknown) {
-    console.error('Error fetching collections:', error);
-  }
 }
 
 async function search(searchString: string): Promise<void> {
@@ -119,7 +98,7 @@ function handlePagination(event: DataTablePageEvent): void {
       <AutoComplete
         v-model="searchInput"
         :placeholder="`Search for collection`"
-        :suggestions="fetchedItems"
+        :suggestions="fetchedItems as CollectionPreview[]"
         class="searchbar"
         variant="filled"
         ref="searchbar"
