@@ -40,8 +40,7 @@ const route = useRoute();
 
 useTitle('Collection Manager');
 
-const { guidelines, fetchAndInitializeGuidelines, getCollectionConfigFields } =
-  useGuidelinesStore();
+const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 
 const {
   allowedEditOperations,
@@ -120,8 +119,6 @@ watch(
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await fetchAndInitializeGuidelines();
-
       // Collection filter params need to be reset
       resetCollectionSearchParams();
 

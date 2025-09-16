@@ -62,7 +62,6 @@ const confirm = useConfirm();
 
 const {
   guidelines,
-  fetchAndInitializeGuidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
   getAvailableCollectionAnnotationConfigs,
@@ -129,7 +128,6 @@ watch(
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await fetchAndInitializeGuidelines();
       await getTexts();
       await getAnnotations();
 

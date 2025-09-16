@@ -18,8 +18,7 @@ import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 useTitle('ATAG Editor');
 
-const { guidelines, availableCollectionLabels, fetchAndInitializeGuidelines } =
-  useGuidelinesStore();
+const { guidelines, availableCollectionLabels } = useGuidelinesStore();
 const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
 const collections = ref<CollectionPreview[] | null>(null);
@@ -30,8 +29,6 @@ const asyncOperationRunning = ref<boolean>(false);
 watch(fetchUrl, async () => await getCollections());
 
 onMounted(async (): Promise<void> => {
-  await fetchAndInitializeGuidelines();
-
   // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
   // is initialized with an empty array
   updateSearchParams({

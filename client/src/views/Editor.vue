@@ -28,7 +28,6 @@ import {
 } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
-import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
 
@@ -42,7 +41,6 @@ onMounted(async (): Promise<void> => {
   await getTextAccessObject();
 
   if (isValidText.value) {
-    await fetchAndInitializeGuidelines();
     await getCharacters();
     await getAnnotations();
 
@@ -111,7 +109,6 @@ const {
   updateAnnotationStatuses,
   updateTruncationStatus,
 } = useAnnotationStore();
-const { fetchAndInitializeGuidelines } = useGuidelinesStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
 
 useTitle(computed(() => `Text | ${text.value?.nodeLabels.join(', ') ?? ''}`));
