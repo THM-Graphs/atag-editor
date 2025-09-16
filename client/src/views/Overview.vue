@@ -6,7 +6,6 @@ import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import CollectionTable from '../components/CollectionTable.vue';
-import { IGuidelines } from '../models/IGuidelines';
 import { buildFetchUrl } from '../utils/helper/helper';
 import {
   CollectionPreview,
@@ -19,7 +18,8 @@ import { useCollectionSearch } from '../composables/useCollectionSearch';
 
 useTitle('ATAG Editor');
 
-const { guidelines, availableCollectionLabels, initializeGuidelines } = useGuidelinesStore();
+const { guidelines, availableCollectionLabels, fetchAndInitializeGuidelines } =
+  useGuidelinesStore();
 const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
 const collections = ref<CollectionPreview[] | null>(null);
@@ -30,7 +30,7 @@ const asyncOperationRunning = ref<boolean>(false);
 watch(fetchUrl, async () => await getCollections());
 
 onMounted(async (): Promise<void> => {
-  await getGuidelines();
+  await fetchAndInitializeGuidelines();
 
   // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
   // is initialized with an empty array
@@ -60,24 +60,6 @@ async function getCollections(): Promise<void> {
     console.error('Error fetching collections:', error);
   } finally {
     asyncOperationRunning.value = false;
-  }
-}
-
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/guidelines`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-
-    initializeGuidelines(fetchedGuidelines);
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
   }
 }
 

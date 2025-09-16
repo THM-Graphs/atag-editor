@@ -26,7 +26,6 @@ import {
   CharacterPostData,
   TextAccessObject,
 } from '../models/types';
-import { IGuidelines } from '../models/IGuidelines';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -43,7 +42,7 @@ onMounted(async (): Promise<void> => {
   await getTextAccessObject();
 
   if (isValidText.value) {
-    await getGuidelines();
+    await fetchAndInitializeGuidelines();
     await getCharacters();
     await getAnnotations();
 
@@ -112,7 +111,7 @@ const {
   updateAnnotationStatuses,
   updateTruncationStatus,
 } = useAnnotationStore();
-const { initializeGuidelines } = useGuidelinesStore();
+const { fetchAndInitializeGuidelines } = useGuidelinesStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
 
 useTitle(computed(() => `Text | ${text.value?.nodeLabels.join(', ') ?? ''}`));
@@ -332,24 +331,6 @@ async function getAnnotations(): Promise<void> {
     initializeAnnotations(fetchedAnnotations, 'database');
   } catch (error: unknown) {
     console.error('Error fetching annotations:', error);
-  }
-}
-
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/guidelines`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-
-    initializeGuidelines(fetchedGuidelines);
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
   }
 }
 

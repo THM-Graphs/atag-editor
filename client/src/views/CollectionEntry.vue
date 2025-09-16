@@ -23,7 +23,6 @@ import {
   cloneDeep,
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
-import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
   AnnotationType,
@@ -63,6 +62,7 @@ const confirm = useConfirm();
 
 const {
   guidelines,
+  fetchAndInitializeGuidelines,
   getAllCollectionConfigFields,
   getAvailableCollectionLabels,
   getAvailableCollectionAnnotationConfigs,
@@ -70,7 +70,6 @@ const {
   getCollectionAnnotationConfig,
   getCollectionAnnotationFields,
   getCollectionConfigFields,
-  initializeGuidelines,
 } = useGuidelinesStore();
 
 const collectionUuid = computed(() => route.params.uuid as string);
@@ -130,7 +129,7 @@ watch(
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await getGuidelines();
+      await fetchAndInitializeGuidelines();
       await getTexts();
       await getAnnotations();
 
@@ -171,24 +170,6 @@ function enrichCollectionData(): void {
         field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
-}
-
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/guidelines`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-
-    initializeGuidelines(fetchedGuidelines);
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
-  }
 }
 
 function handleAddNewAnnotation(newAnnotation: AnnotationData): void {

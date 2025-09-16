@@ -19,7 +19,6 @@ import { useToast } from 'primevue/usetoast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import Tag from 'primevue/tag';
 import { buildFetchUrl } from '../utils/helper/helper';
-import { IGuidelines } from '../models/IGuidelines';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import {
   Collection,
@@ -41,7 +40,8 @@ const route = useRoute();
 
 useTitle('Collection Manager');
 
-const { initializeGuidelines, guidelines, getCollectionConfigFields } = useGuidelinesStore();
+const { guidelines, fetchAndInitializeGuidelines, getCollectionConfigFields } =
+  useGuidelinesStore();
 
 const {
   allowedEditOperations,
@@ -120,7 +120,7 @@ watch(
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await getGuidelines();
+      await fetchAndInitializeGuidelines();
 
       // Collection filter params need to be reset
       resetCollectionSearchParams();
@@ -210,24 +210,6 @@ async function getCollections(): Promise<void> {
     console.error('Error fetching collections:', error);
   } finally {
     asyncOperationRunning.value = false;
-  }
-}
-
-async function getGuidelines(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/guidelines`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedGuidelines: IGuidelines = await response.json();
-
-    initializeGuidelines(fetchedGuidelines);
-  } catch (error: unknown) {
-    console.error('Error fetching guidelines:', error);
   }
 }
 
