@@ -24,6 +24,7 @@ import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import { useCollections } from '../composables/useCollections';
+import { useCollection } from '../composables/useCollection';
 import {
   Collection,
   CollectionNetworkActionType,
@@ -64,7 +65,7 @@ const {
 
 const { collections, isFetching, pagination, fetchCollections } = useCollections();
 
-const collection = ref<Collection>(null);
+const { collection, fetchCollection } = useCollection();
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
 // Initial pageload
@@ -101,7 +102,9 @@ watch(
     closeActionModal();
 
     if (newUuid) {
-      await getCollection();
+      await fetchCollection(newUuid);
+
+      isValidCollection.value = true;
     } else {
       // TODO: This is hacky: collection.value is the component's collection ref
       // At the end, the parentCollection ref of the store is set to this value. So currently,
@@ -149,25 +152,6 @@ watch(collectionFetchUrl, async () => {
     await fetchCollections(collection.value?.data.uuid, searchParams.value);
   }
 });
-
-async function getCollection(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${route.params.uuid}`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCollection: Collection = await response.json();
-
-    isValidCollection.value = true;
-    collection.value = fetchedCollection;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
-  }
-}
 
 async function getCollectionAncestry(): Promise<void> {
   try {

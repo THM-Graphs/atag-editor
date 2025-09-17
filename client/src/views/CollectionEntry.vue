@@ -16,6 +16,7 @@ import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import { useCollection } from '../composables/useCollection';
 import {
   areSetsEqual,
   buildFetchUrl,
@@ -26,7 +27,6 @@ import {
 import {
   AnnotationData,
   AnnotationType,
-  Collection,
   CollectionAccessObject,
   CollectionPostData,
   PropertyConfig,
@@ -72,6 +72,8 @@ const {
 } = useGuidelinesStore();
 
 const collectionUuid = computed(() => route.params.uuid as string);
+
+const { collection, fetchCollection } = useCollection();
 
 // ------------------------------------------------------------------------------
 
@@ -124,7 +126,10 @@ watch(
 
     // Fetch parent collection details only if a UUID is present
     if (newUuid) {
-      await getCollection();
+      await fetchCollection(collectionUuid.value);
+
+      isValidCollection.value = true;
+      collectionAccessObject.value.collection = cloneDeep(collection.value);
     }
 
     if (isValidCollection.value || newUuid === '') {
@@ -448,25 +453,6 @@ function removeUnnecessaryDataBeforeSave(): void {
       delete collectionAccessObject.value.collection.data[key];
     }
   });
-}
-
-async function getCollection(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCollection: Collection = await response.json();
-
-    isValidCollection.value = true;
-    collectionAccessObject.value.collection = fetchedCollection;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
-  }
 }
 
 async function getTexts(): Promise<void> {
