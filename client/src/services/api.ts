@@ -2,6 +2,7 @@ import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   Collection,
+  CollectionCreationData,
   CollectionPreview,
   CollectionSearchParams,
   PaginationResult,
@@ -52,6 +53,7 @@ export default class ApiService {
       return await response.json();
     } catch (error: unknown) {
       console.error('Error fetching collection:', error);
+      throw new Error(`Error fetching collection: ${error}`);
     }
   }
 
@@ -121,6 +123,7 @@ export default class ApiService {
       return await response.text();
     } catch (error) {
       console.error('Error loading stylesheet:', error);
+      throw new Error(`Error loading stylesheet: ${error}`);
     }
   }
 
@@ -137,6 +140,7 @@ export default class ApiService {
       return await response.json();
     } catch (error: unknown) {
       console.error('Error fetching text:', error);
+      throw new Error(`Error fetching text: ${error}`);
     }
   }
 
@@ -153,6 +157,7 @@ export default class ApiService {
       return await response.json();
     } catch (error: unknown) {
       console.error('Error fetching texts for collection:', error);
+      throw new Error(`Error fetching texts for collection: ${error}`);
     }
   }
 }

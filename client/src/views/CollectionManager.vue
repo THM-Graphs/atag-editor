@@ -65,7 +65,7 @@ const {
 
 const { collections, isFetching, pagination, fetchCollections } = useCollections();
 
-const { collection, fetchCollection } = useCollection();
+const { collection, error: collectionError, fetchCollection } = useCollection();
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
 // Initial pageload
@@ -104,7 +104,9 @@ watch(
     if (newUuid) {
       await fetchCollection(newUuid);
 
-      isValidCollection.value = true;
+      if (!collectionError.value) {
+        isValidCollection.value = true;
+      }
     } else {
       // TODO: This is hacky: collection.value is the component's collection ref
       // At the end, the parentCollection ref of the store is set to this value. So currently,
