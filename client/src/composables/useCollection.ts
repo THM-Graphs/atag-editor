@@ -1,8 +1,8 @@
 import { readonly, ref } from 'vue';
-import ApiService from '../services/api';
 import { Collection } from '../models/types';
+import { useAppStore } from '../store/app';
 
-const api: ApiService = new ApiService();
+const { api } = useAppStore();
 
 export function useCollection() {
   // Data

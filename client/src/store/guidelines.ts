@@ -2,9 +2,6 @@ import { computed, readonly, ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
-import ApiService from '../services/api';
-
-const api: ApiService = new ApiService();
 
 const guidelines = ref<IGuidelines>();
 const isFetching = ref<boolean>(false);
@@ -22,26 +19,6 @@ const { initializeFilter } = useFilterStore();
  * after the initialization. Other stores (filter.ts) are derived from this store.
  */
 export function useGuidelinesStore() {
-  /**
-   * Fetches the guidelines and initializes the store with the fetched data.
-   *
-   * @returns {Promise<void>} A promise that resolves when the operation is complete.
-   */
-  async function fetchAndInitializeGuidelines(): Promise<void> {
-    isFetching.value = true;
-
-    try {
-      const guidelines = await api.getGuidelines();
-
-      initializeGuidelines(guidelines);
-    } catch (e: unknown) {
-      error.value = e as Error;
-      console.error('Error fetching guidelines:', e);
-    } finally {
-      isFetching.value = false;
-    }
-  }
-
   /**
    * Initializes the store with the provided data and initializes the filter store.
    *
@@ -296,7 +273,6 @@ export function useGuidelinesStore() {
     guidelines,
     isFetching: readonly(isFetching),
     isInitialized: readonly(isInitialized),
-    fetchAndInitializeGuidelines,
     getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,

@@ -105,4 +105,20 @@ export default class ApiService {
       throw new Error(`Error fetching guidelines: ${error}`);
     }
   }
+
+  public async getStyles(): Promise<string> {
+    try {
+      const url: string = `${this.baseUrl}/styles`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Failed to load stylesheet');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error loading stylesheet:', error);
+    }
+  }
 }

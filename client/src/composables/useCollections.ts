@@ -1,4 +1,5 @@
 import { DeepReadonly, readonly, ref } from 'vue';
+import { useAppStore } from '../store/app';
 import {
   Collection,
   CollectionPreview,
@@ -6,9 +7,8 @@ import {
   PaginationData,
   PaginationResult,
 } from '../models/types';
-import ApiService from '../services/api';
 
-const api: ApiService = new ApiService();
+const { api } = useAppStore();
 
 export function useCollections() {
   // Data
