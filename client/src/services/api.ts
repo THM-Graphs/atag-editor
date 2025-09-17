@@ -5,6 +5,8 @@ import {
   CollectionPreview,
   CollectionSearchParams,
   PaginationResult,
+  Text,
+  TextAccessObject,
 } from '../models/types';
 
 export default class ApiService {
@@ -119,6 +121,38 @@ export default class ApiService {
       return await response.text();
     } catch (error) {
       console.error('Error loading stylesheet:', error);
+    }
+  }
+
+  public async getTextAccessObject(textUuid: string): Promise<TextAccessObject> {
+    try {
+      const url: string = `${this.baseUrl}/texts/${textUuid}`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching text:', error);
+    }
+  }
+
+  public async getTexts(collectionUuid: string): Promise<Text[]> {
+    try {
+      const url: string = `${this.baseUrl}/collections/${collectionUuid}/texts`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching texts for collection:', error);
     }
   }
 }

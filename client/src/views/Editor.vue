@@ -38,7 +38,9 @@ interface SidebarConfig {
 }
 
 onMounted(async (): Promise<void> => {
-  await getTextAccessObject();
+  await fetchAndInitializeText(textUuid);
+
+  isValidText.value = true;
 
   if (isValidText.value) {
     await getCharacters();
@@ -81,7 +83,7 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
   useEditorStore();
-const { text, initialText, initializeText } = useTextStore();
+const { text, initialText, fetchAndInitializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -142,25 +144,6 @@ const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
 const toast: ToastServiceMethods = useToast();
-
-async function getTextAccessObject(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedTextAccessObject: TextAccessObject = await response.json();
-
-    isValidText.value = true;
-    initializeText(fetchedTextAccessObject);
-  } catch (error: unknown) {
-    console.error('Error fetching text:', error);
-  }
-}
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {

@@ -48,6 +48,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
+import { useTexts } from '../composables/useTexts';
 
 type TextTableEntry = {
   labels: string[];
@@ -73,7 +74,8 @@ const {
 
 const collectionUuid = computed(() => route.params.uuid as string);
 
-const { collection, fetchCollection } = useCollection();
+const { fetchCollection } = useCollection();
+const { fetchTexts } = useTexts();
 
 // ------------------------------------------------------------------------------
 
@@ -126,14 +128,14 @@ watch(
 
     // Fetch parent collection details only if a UUID is present
     if (newUuid) {
-      await fetchCollection(collectionUuid.value);
+      collectionAccessObject.value.collection = await fetchCollection(collectionUuid.value);
 
       isValidCollection.value = true;
-      collectionAccessObject.value.collection = cloneDeep(collection.value);
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await getTexts();
+      collectionAccessObject.value.texts = await fetchTexts(collectionUuid.value);
+
       await getAnnotations();
 
       initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
@@ -453,24 +455,6 @@ function removeUnnecessaryDataBeforeSave(): void {
       delete collectionAccessObject.value.collection.data[key];
     }
   });
-}
-
-async function getTexts(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/texts`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedTexts: Text[] = await response.json();
-
-    collectionAccessObject.value.texts = fetchedTexts;
-  } catch (error: unknown) {
-    console.error('Error fetching texts for collection:', error);
-  }
 }
 
 async function getAnnotations(): Promise<void> {
