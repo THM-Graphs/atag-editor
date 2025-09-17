@@ -1,5 +1,5 @@
 import { readonly, ref } from 'vue';
-import { Collection } from '../models/types';
+import { Collection, CollectionCreationData } from '../models/types';
 import { useAppStore } from '../store/app';
 
 const { api } = useAppStore();
@@ -29,10 +29,28 @@ export function useCollection() {
     return collection.value;
   }
 
+  async function createCollection(data: CollectionCreationData): Promise<Collection> {
+    isFetching.value = true;
+
+    try {
+      const result: Collection = await api.createCollection(data);
+
+      collection.value = result;
+    } catch (e: unknown) {
+      error.value = e as Error;
+      console.error('Error fetching guidelines:', e);
+    } finally {
+      isFetching.value = false;
+    }
+
+    return collection.value;
+  }
+
   return {
     collection,
     error: readonly(error),
     isFetching: readonly(isFetching),
+    createCollection,
     fetchCollection,
   };
 }

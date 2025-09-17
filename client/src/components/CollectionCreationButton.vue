@@ -3,12 +3,13 @@ import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
+import { useCollection } from '../composables/useCollection';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
-import { buildFetchUrl, capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
+import { capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import {
   Collection,
@@ -30,9 +31,10 @@ const {
   getCollectionConfigFields,
 } = useGuidelinesStore();
 
+const { isFetching, createCollection } = useCollection();
+
 const newCollectionData = ref<CollectionAccessObject>(null);
 const dialogIsVisible = ref<boolean>(false);
-const asyncOperationRunning = ref<boolean>(false);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.collection.nodeLabels),
@@ -70,32 +72,13 @@ function removeUnnecessaryDataBeforeSave(): void {
 async function createNewCollection(): Promise<void> {
   removeUnnecessaryDataBeforeSave();
 
-  asyncOperationRunning.value = true;
-
   try {
-    const url: string = buildFetchUrl('/api/collections');
-
     const postData: CollectionCreationData = {
       ...newCollectionData.value,
       parentCollection: props.parentCollection ?? null,
     };
 
-    const response: Response = await fetch(url, {
-      method: 'POST',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify(postData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const createdCollection: Collection = await response.json();
+    const createdCollection: Collection = await createCollection(postData);
 
     newCollectionData.value = {} as CollectionAccessObject;
     dialogIsVisible.value = false;
@@ -103,8 +86,6 @@ async function createNewCollection(): Promise<void> {
     emit('collectionCreated', createdCollection);
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
-  } finally {
-    asyncOperationRunning.value = false;
   }
 }
 
@@ -238,7 +219,7 @@ async function hideDialog(): Promise<void> {
           type="submit"
           label="Create"
           title="Create new text"
-          :loading="asyncOperationRunning"
+          :loading="isFetching"
           :disabled="!inputIsValid"
         ></Button>
       </div>

@@ -40,6 +40,32 @@ export default class ApiService {
     return this.apiPrefix;
   }
 
+  public async createCollection(data: CollectionCreationData): Promise<Collection> {
+    try {
+      const url: string = `${this.baseUrl}/collections`;
+
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error creating collection:', error);
+      throw new Error(`Error creating collection: ${error}`);
+    }
+  }
+
   public async getCollection(collectionUuid: string): Promise<Collection> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}`;
