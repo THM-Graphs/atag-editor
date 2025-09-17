@@ -20,19 +20,18 @@ import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import Tag from 'primevue/tag';
 import { buildFetchUrl } from '../utils/helper/helper';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
+import ActionMenu from '../components/ActionMenu.vue';
+import CollectionEditModal from '../components/CollectionEditModal.vue';
+import { useCollectionManagerStore } from '../store/collectionManager';
+import { useCollections } from '../composables/useCollections';
 import {
   Collection,
   CollectionNetworkActionType,
   CollectionPreview,
   CollectionSearchParams,
   NodeAncestry,
-  PaginationData,
-  PaginationResult,
   PropertyConfig,
 } from '../models/types';
-import CollectionEditModal from '../components/CollectionEditModal.vue';
-import { useCollectionManagerStore } from '../store/collectionManager';
-import ActionMenu from '../components/ActionMenu.vue';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -63,9 +62,9 @@ const {
   updateUuid,
 } = useCollectionSearch(10);
 
+const { collections, isFetching, pagination, fetchCollections } = useCollections();
+
 const collection = ref<Collection>(null);
-const collections = ref<CollectionPreview[] | null>(null);
-const pagination = ref<PaginationData | null>(null);
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
 // Initial pageload
@@ -73,7 +72,7 @@ const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 const isFirstPageLoad = ref<boolean>(true);
 // For other async operations
-const asyncOperationRunning = ref<boolean>(false);
+const asyncOperationRunning = computed<boolean>(() => isFetching.value);
 
 const collectionFields = computed<PropertyConfig[]>(() => {
   return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
@@ -127,7 +126,7 @@ watch(
 
       // If this is the first page load, load collections here
       if (isFirstPageLoad.value) {
-        await getCollections();
+        await fetchCollections(collection.value?.data.uuid, searchParams.value);
         isFirstPageLoad.value = false;
       }
     }
@@ -147,7 +146,7 @@ watch(
 // since the component was recreated the watcher is therefore triggered.
 watch(collectionFetchUrl, async () => {
   if (!isFirstPageLoad.value) {
-    await getCollections();
+    await fetchCollections(collection.value?.data.uuid, searchParams.value);
   }
 });
 
@@ -188,31 +187,9 @@ async function getCollectionAncestry(): Promise<void> {
   }
 }
 
-async function getCollections(): Promise<void> {
-  try {
-    asyncOperationRunning.value = true;
-    const url: string = buildFetchUrl(collectionFetchUrl.value);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const paginationResult: PaginationResult<CollectionPreview[]> = await response.json();
-
-    collections.value = paginationResult.data;
-    pagination.value = paginationResult.pagination;
-  } catch (error: unknown) {
-    console.error('Error fetching collections:', error);
-  } finally {
-    asyncOperationRunning.value = false;
-  }
-}
-
-function handleCollectionCreation(newCollection: Collection): void {
+async function handleCollectionCreation(newCollection: Collection): Promise<void> {
   showMessage('created', `"${newCollection.data.label}"`);
-  getCollections();
+  await fetchCollections(collection.value?.data.uuid, searchParams.value);
 }
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
@@ -254,7 +231,7 @@ function handleActionCanceled(): void {
 async function handleActionDone(event: Action): Promise<void> {
   closeActionModal();
 
-  await getCollections();
+  await fetchCollections(collection.value?.data.uuid, searchParams.value);
 
   toast.add({
     severity: 'success',
@@ -420,7 +397,7 @@ function toggleActionMenu(event: Event): void {
 
           <CollectionTable
             v-if="guidelines"
-            :collections="collections"
+            :collections="collections as CollectionPreview[]"
             :pagination="pagination"
             :async-operation-running="asyncOperationRunning"
             mode="edit"

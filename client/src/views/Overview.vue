@@ -9,18 +9,16 @@ import CollectionTable from '../components/CollectionTable.vue';
 import { CollectionPreview, CollectionSearchParams } from '../models/types';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-import { useFetchCollections } from '../composables/useFetchCollections';
+import { useCollections } from '../composables/useCollections';
 
 useTitle('ATAG Editor');
 
 const { guidelines, availableCollectionLabels } = useGuidelinesStore();
 const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
-const { collections, isFetching, pagination, fetchCollections } = useFetchCollections(
-  fetchUrl.value,
-);
+const { collections, isFetching, pagination, fetchCollections } = useCollections();
 
-watch(fetchUrl, async () => await fetchCollections());
+watch(fetchUrl, async () => await fetchCollections(null, searchParams.value));
 
 onMounted(async (): Promise<void> => {
   // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
@@ -29,7 +27,7 @@ onMounted(async (): Promise<void> => {
     nodeLabels: availableCollectionLabels.value,
   });
 
-  await fetchCollections();
+  await fetchCollections(null, searchParams.value);
 });
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
