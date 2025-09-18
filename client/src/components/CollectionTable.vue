@@ -11,7 +11,7 @@ import { PaginationData, CollectionPreview, Collection } from '../models/types';
 import { ref, useTemplateRef, watch } from 'vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 
-type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections';
+type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections' | 'status';
 
 const props = defineProps<{
   collections: CollectionPreview[] | null;
@@ -31,6 +31,7 @@ const { allowedEditOperations } = useCollectionManagerStore();
 const COLUMN_CONFIG = {
   nodeLabels: { width: '8rem', sortable: false },
   label: { width: 'auto', sortable: true },
+  status: { width: 'auto', sortable: true },
   texts: { width: '5rem', sortable: true },
   annotations: { width: 'auto', sortable: true },
   collections: { width: 'auto', sortable: true },
@@ -167,6 +168,13 @@ function handlePagination(event: DataTablePageEvent): void {
             >
               {{ row.collection.data.label }}
             </RouterLink>
+          </template>
+        </Column>
+
+        <!-- TODO: This a hildegard-specific hack. Should my made dynamic -->
+        <Column v-bind="getColumnProps('status')">
+          <template #body="{ data: row }: { data: CollectionPreview }">
+            <span class="cell-info">{{ row.collection.data.status }}</span>
           </template>
         </Column>
 

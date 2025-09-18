@@ -19,7 +19,7 @@ const {
   collections: fetchedItems,
   pagination,
   fetchCollections,
-} = useFetchCollections(collectionFetchUrl.value);
+} = useFetchCollections(collectionFetchUrl);
 
 const selectedCollectionLabels = ref(availableCollectionLabels.value);
 const isSearchActive = ref<boolean>(false);

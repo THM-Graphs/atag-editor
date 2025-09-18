@@ -16,9 +16,7 @@ useTitle('ATAG Editor');
 const { guidelines, availableCollectionLabels } = useGuidelinesStore();
 const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
 
-const { collections, isFetching, pagination, fetchCollections } = useFetchCollections(
-  fetchUrl.value,
-);
+const { collections, isFetching, pagination, fetchCollections } = useFetchCollections(fetchUrl);
 
 watch(fetchUrl, async () => await fetchCollections());
 
