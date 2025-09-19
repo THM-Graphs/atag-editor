@@ -6,6 +6,7 @@ import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
 import IEntity from '../models/IEntity';
+import { useEntities } from '../composables/useEntities';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
@@ -34,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
+const { fetchEntities } = useEntities();
 
 const entityCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
 
@@ -150,25 +152,18 @@ function renderHTML(text: string, searchStr: string): string {
  */
 async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
-  const url: string = buildFetchUrl(`/api/entities?node=${nodeLabel}&searchStr=${searchString}`);
 
-  const response: Response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
-  const fetchedEntities: EntityEntry[] = await response.json();
+  const fetchedEntities: IEntity[] = await fetchEntities(nodeLabel, searchString);
 
   // Show only entries that are not already part of the annotation
   const existingUuids: string[] = entities.value[category].map((entry: EntityEntry) => entry.uuid);
 
-  const withoutDuplicates: EntityEntry[] = fetchedEntities.filter(
-    (entry: EntityEntry) => !existingUuids.includes(entry.uuid),
+  const withoutDuplicates: IEntity[] = fetchedEntities.filter(
+    (entry: IEntity) => !existingUuids.includes(entry.uuid),
   );
 
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml = withoutDuplicates.map((entry: EntityEntry) => ({
+  const withHtml: EntityEntry[] = withoutDuplicates.map((entry: IEntity) => ({
     ...entry,
     html: renderHTML(entry.label, searchString),
   }));

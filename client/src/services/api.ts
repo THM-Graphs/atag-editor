@@ -12,6 +12,7 @@ import {
   Text,
   TextAccessObject,
 } from '../models/types';
+import IEntity from '../models/IEntity';
 
 export default class ApiService {
   /** The base URL of the API */
@@ -157,6 +158,23 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching collections:', error);
       throw new Error(`Error fetching collections: ${error}`);
+    }
+  }
+
+  public async getEntities(nodeLabel: string, searchString: string): Promise<IEntity[]> {
+    try {
+      const url: string = `${this.baseUrl}/entities?node=${nodeLabel}&searchStr=${searchString}`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching entities:', error);
+      throw new Error(`Error fetching entities: ${error}`);
     }
   }
   public async getGuidelines(): Promise<IGuidelines> {
