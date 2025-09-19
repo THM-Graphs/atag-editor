@@ -19,13 +19,7 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
-import {
-  Annotation,
-  AnnotationData,
-  Character,
-  CharacterPostData,
-  TextAccessObject,
-} from '../models/types';
+import { Annotation, Character, CharacterPostData } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
@@ -40,11 +34,14 @@ interface SidebarConfig {
 onMounted(async (): Promise<void> => {
   await fetchAndInitializeText(textUuid);
 
-  isValidText.value = true;
-
   if (isValidText.value) {
     await getCharacters();
-    await getAnnotations();
+    await fetchAndInitializeAnnotations(text.value.data.uuid);
+
+    // TODO: This needs refactoring
+    if (annotationFetchError.value) {
+      return;
+    }
 
     initializeEditor();
 
@@ -77,13 +74,14 @@ const textUuid: string = route.params.uuid as string;
 
 // Initial page load
 const isLoading = ref<boolean>(true);
-const isValidText = ref<boolean>(false);
+const isValidText = computed<boolean>(() => !textFetchError.value && !annotationFetchError.value);
+
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
 const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
   useEditorStore();
-const { text, initialText, fetchAndInitializeText } = useTextStore();
+const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
@@ -98,12 +96,13 @@ const {
   resetInitialBoundaryCharacters,
 } = useCharactersStore();
 const {
+  error: annotationFetchError,
   initialSnippetAnnotations,
   initialTotalAnnotations,
   snippetAnnotations,
   totalAnnotations,
   extractSnippetAnnotations,
-  initializeAnnotations,
+  fetchAndInitializeAnnotations,
   insertSnippetIntoTotalAnnotations,
   getAnnotationsToSave,
   resetAnnotations,
@@ -293,24 +292,6 @@ async function getCharacters(): Promise<void> {
     initializeCharacters(fetchedCharacters, 'database');
   } catch (error: unknown) {
     console.error('Error fetching characters:', error);
-  }
-}
-
-async function getAnnotations(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAnnotations: AnnotationData[] = await response.json();
-
-    initializeAnnotations(fetchedAnnotations, 'database');
-  } catch (error: unknown) {
-    console.error('Error fetching annotations:', error);
   }
 }
 

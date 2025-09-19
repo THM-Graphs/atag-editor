@@ -1,6 +1,7 @@
 import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
+  AnnotationData,
   Collection,
   CollectionCreationData,
   CollectionPreview,
@@ -63,6 +64,26 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error creating collection:', error);
       throw new Error(`Error creating collection: ${error}`);
+    }
+  }
+
+  public async getAnnotations(
+    nodeType: 'collection' | 'text',
+    nodeUuid: string,
+  ): Promise<AnnotationData[]> {
+    try {
+      const url: string = `${this.baseUrl}/${nodeType}s/${nodeUuid}/annotations`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching annotations for collection:', error);
+      throw new Error(`Error fetching annotations: ${error}`);
     }
   }
 

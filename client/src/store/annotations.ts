@@ -1,4 +1,6 @@
 import { ref } from 'vue';
+import { useAppStore } from './app';
+import { useCharactersStore } from './characters';
 import {
   Annotation,
   AnnotationData,
@@ -6,16 +8,22 @@ import {
   Character,
   TextOperationResult,
 } from '../models/types';
-import { useCharactersStore } from './characters';
 import { cloneDeep } from '../utils/helper/helper';
 
+const { api } = useAppStore();
+
+const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
+  useCharactersStore();
+
+// Data
 const totalAnnotations = ref<Annotation[]>([]);
 const initialTotalAnnotations = ref<Annotation[]>([]);
 const snippetAnnotations = ref<Annotation[]>([]);
 const initialSnippetAnnotations = ref<Annotation[]>([]);
 
-const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStartCharacter } =
-  useCharactersStore();
+// Fetch status
+const isFetching = ref<boolean>(false);
+const error = ref<any>(null);
 
 /**
  * Store for managing the state of annotations inside an editor instance. When the component is mounted,
@@ -168,6 +176,30 @@ export function useAnnotationStore() {
     ).isLastCharacter = false;
 
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
+  }
+
+  /**
+   * Fetches the annotations for a given text UUID and initializes the store with the fetched data.
+   * Called when the editor is loaded, not during text import.
+   *
+   * If an error occurs during the operation, the `error` property is set to the error object.
+   *
+   * @param {string} textUuid The UUID of the text to fetch the annotations for.
+   * @returns {Promise<void>} A promise that resolves when the operation is complete.
+   */
+  async function fetchAndInitializeAnnotations(textUuid: string): Promise<void> {
+    isFetching.value = true;
+
+    try {
+      const fetchedAnnotations: AnnotationData[] = await api.getAnnotations('text', textUuid);
+
+      initializeAnnotations(fetchedAnnotations, 'database');
+    } catch (e: unknown) {
+      error.value = e as Error;
+      console.error('Error fetching annotations:', e);
+    } finally {
+      isFetching.value = false;
+    }
   }
 
   /**
@@ -464,14 +496,17 @@ export function useAnnotationStore() {
   }
 
   return {
+    error,
     initialSnippetAnnotations,
     initialTotalAnnotations,
+    isFetching,
     snippetAnnotations,
     totalAnnotations,
     addAnnotation,
     deleteAnnotation,
     expandAnnotation,
     extractSnippetAnnotations,
+    fetchAndInitializeAnnotations,
     getAnnotationInfo,
     getAnnotationsToSave,
     initializeAnnotations,
