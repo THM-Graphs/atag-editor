@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref } from 'vue';
 import Search from './Search.vue';
-import { useEditCollectionNetwork } from '../../src/composables/useEditCollectionNetwork';
+import { useNetwork } from '../composables/useNetwork';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
@@ -19,6 +19,7 @@ const props = defineProps<{
   parent: Collection | null;
 }>();
 
+const { error: networkFetchError, isFetching, updateNetwork } = useNetwork();
 const toast: ToastServiceMethods = useToast();
 
 const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
@@ -67,8 +68,6 @@ const actionLabel: ComputedRef<string> = computed(() => {
   return capitalize(props.action);
 });
 
-const { isFetching, executeAction } = useEditCollectionNetwork();
-
 async function finishAction(): Promise<void> {
   const data: NetworkPostData = {
     type: props.action,
@@ -77,16 +76,18 @@ async function finishAction(): Promise<void> {
     target: actionTarget.value ?? null,
   };
 
-  try {
-    await executeAction(data);
+  await updateNetwork(data);
 
-    emit('actionDone', {
-      type: props.action,
-      data: props.collections,
-    });
-  } catch (error: unknown) {
-    showMessage('error', error as Error);
+  if (networkFetchError.value) {
+    showMessage('error', networkFetchError.value as Error);
+
+    return;
   }
+
+  emit('actionDone', {
+    type: props.action,
+    data: props.collections,
+  });
 }
 
 function handleSearchItemSelected(collection: Collection): void {

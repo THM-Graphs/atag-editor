@@ -7,6 +7,7 @@ import {
   CollectionCreationData,
   CollectionPreview,
   CollectionSearchParams,
+  NetworkPostData,
   PaginationResult,
   Text,
   TextAccessObject,
@@ -223,6 +224,32 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching texts for collection:', error);
       throw new Error(`Error fetching texts for collection: ${error}`);
+    }
+  }
+
+  public async updateNetwork(data: NetworkPostData): Promise<(Collection | Text)[]> {
+    const url: string = `${this.baseUrl}/network`;
+
+    try {
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error updating network:', error);
+      throw new Error('Network could not be updated, try again...');
     }
   }
 }
