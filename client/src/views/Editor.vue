@@ -32,24 +32,34 @@ interface SidebarConfig {
 }
 
 onMounted(async (): Promise<void> => {
+  // TODO: This needs refactoring. Centralize fetches, split fetch/initialize logic
   await fetchAndInitializeText(textUuid);
 
-  if (isValidText.value) {
-    await getCharacters();
-    await fetchAndInitializeAnnotations(text.value.data.uuid);
-
-    // TODO: This needs refactoring
-    if (annotationFetchError.value) {
-      return;
-    }
-
-    initializeEditor();
-
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('keydown', handleKeyDown);
+  if (!isValidText.value) {
+    isLoading.value = false;
+    return;
   }
+
+  await fetchAndInitializeCharacters(text.value.data.uuid);
+
+  if (charactersFetchError.value) {
+    isLoading.value = false;
+    return;
+  }
+
+  await fetchAndInitializeAnnotations(text.value.data.uuid);
+
+  if (annotationFetchError.value) {
+    isLoading.value = false;
+    return;
+  }
+
+  initializeEditor();
+
+  window.addEventListener('mouseup', handleMouseUp);
+  window.addEventListener('mousedown', handleMouseDown);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  window.addEventListener('keydown', handleKeyDown);
 
   isLoading.value = false;
 });
@@ -74,7 +84,9 @@ const textUuid: string = route.params.uuid as string;
 
 // Initial page load
 const isLoading = ref<boolean>(true);
-const isValidText = computed<boolean>(() => !textFetchError.value && !annotationFetchError.value);
+const isValidText = computed<boolean>(
+  () => !textFetchError.value && !annotationFetchError.value && !charactersFetchError.value,
+);
 
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
@@ -85,12 +97,13 @@ const { error: textFetchError, text, initialText, fetchAndInitializeText } = use
 const {
   afterEndIndex,
   beforeStartIndex,
+  error: charactersFetchError,
   initialAfterEndCharacter,
   initialBeforeStartCharacter,
   initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
-  initializeCharacters,
+  fetchAndInitializeCharacters,
   insertSnippetIntoChain,
   resetCharacters,
   resetInitialBoundaryCharacters,
@@ -274,24 +287,6 @@ async function saveAnnotations(): Promise<void> {
 
   if (!response.ok) {
     throw new Error('Neither metadata nor text could be saved');
-  }
-}
-
-async function getCharacters(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCharacters: Character[] = await response.json();
-
-    initializeCharacters(fetchedCharacters, 'database');
-  } catch (error: unknown) {
-    console.error('Error fetching characters:', error);
   }
 }
 

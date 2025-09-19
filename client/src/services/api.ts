@@ -2,6 +2,7 @@ import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   AnnotationData,
+  Character,
   Collection,
   CollectionCreationData,
   CollectionPreview,
@@ -84,6 +85,23 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching annotations for collection:', error);
       throw new Error(`Error fetching annotations: ${error}`);
+    }
+  }
+
+  public async getCharacters(textUuid: string): Promise<Character[]> {
+    try {
+      const url: string = `${this.baseUrl}/texts/${textUuid}/characters`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching characters:', error);
+      throw new Error(`Error fetching characters: ${error}`);
     }
   }
 

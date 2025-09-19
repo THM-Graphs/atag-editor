@@ -49,6 +49,7 @@ import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
 import { useTexts } from '../composables/useTexts';
+import { useAnnotations } from '../composables/useAnnotations';
 
 type TextTableEntry = {
   labels: string[];
@@ -74,6 +75,7 @@ const {
 
 const collectionUuid = computed(() => route.params.uuid as string);
 
+const { fetchAnnotations } = useAnnotations();
 const { fetchCollection } = useCollection();
 const { fetchTexts } = useTexts();
 
@@ -136,7 +138,10 @@ watch(
     if (isValidCollection.value || newUuid === '') {
       collectionAccessObject.value.texts = await fetchTexts(collectionUuid.value);
 
-      await getAnnotations();
+      collectionAccessObject.value.annotations = await fetchAnnotations(
+        'collection',
+        collectionUuid.value,
+      );
 
       initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
 
@@ -455,24 +460,6 @@ function removeUnnecessaryDataBeforeSave(): void {
       delete collectionAccessObject.value.collection.data[key];
     }
   });
-}
-
-async function getAnnotations(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/annotations`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAnnotations: AnnotationData[] = await response.json();
-
-    collectionAccessObject.value.annotations = fetchedAnnotations;
-  } catch (error: unknown) {
-    console.error('Error fetching annotations for collection:', error);
-  }
 }
 
 function shiftText(textUuid: string, direction: 'up' | 'down') {
