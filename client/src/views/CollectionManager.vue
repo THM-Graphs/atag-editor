@@ -18,7 +18,6 @@ import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import Tag from 'primevue/tag';
-import { buildFetchUrl } from '../utils/helper/helper';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';

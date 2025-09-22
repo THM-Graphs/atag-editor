@@ -18,6 +18,9 @@ import {
 } from '../models/types';
 import IEntity from '../models/IEntity';
 
+/**
+ * The ApiService class provides methods for making API requests to the backend server.
+ */
 export default class ApiService {
   /** The base URL of the API */
   private baseUrl: string;

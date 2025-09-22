@@ -19,7 +19,6 @@ const props = defineProps<{
   parent: Collection | null;
 }>();
 
-// const { error: networkFetchError, isFetching, updateNetwork } = useNetwork();
 const toast: ToastServiceMethods = useToast();
 
 const { api } = useAppStore();
