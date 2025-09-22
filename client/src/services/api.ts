@@ -1,8 +1,10 @@
 import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
+  Annotation,
   AnnotationData,
   Character,
+  CharacterPostData,
   Collection,
   CollectionCreationData,
   CollectionPostData,
@@ -243,6 +245,57 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching texts for collection:', error);
       throw new Error(`Error fetching texts for collection: ${error}`);
+    }
+  }
+
+  public async updateAnnotations(textUuid: string, annotationsToSave: Annotation[]): Promise<void> {
+    try {
+      const url: string = `${this.baseUrl}/texts/${textUuid}/annotations`;
+
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(annotationsToSave),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+    } catch (error: unknown) {
+      console.error('Error updating annotations', error);
+      throw new Error('Error updating annotations', error);
+    }
+  }
+
+  public async updateCharacterChain(
+    textUuid: string,
+    characterPostData: CharacterPostData,
+  ): Promise<void> {
+    try {
+      const url: string = `${this.baseUrl}/texts/${textUuid}/characters`;
+
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(characterPostData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+    } catch (error: unknown) {
+      console.log('Error updating character chain:', error);
+      throw new Error('Error updating character chain:', error);
     }
   }
 

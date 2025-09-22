@@ -18,12 +18,13 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
+import { cloneDeep } from '../utils/helper/helper';
 import { Annotation, Character, CharacterPostData } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
+import { useAppStore } from '../store/app';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -90,6 +91,8 @@ const isValidText = computed<boolean>(
 
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
+
+const { api } = useAppStore();
 
 const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
   useEditorStore();
@@ -245,22 +248,7 @@ async function saveCharacters(): Promise<void> {
     text: totalCharacters.value.map(c => c.data.text).join(''),
   };
 
-  const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(characterPostData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Metadata could be saved, text not');
-  }
+  await api.updateCharacterChain(textUuid, characterPostData);
 }
 
 async function saveAnnotations(): Promise<void> {
@@ -272,22 +260,7 @@ async function saveAnnotations(): Promise<void> {
   // Reduce amount of data that need to sent to the backend
   const annotationsToSave: Annotation[] = getAnnotationsToSave();
 
-  const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(annotationsToSave),
-  });
-
-  if (!response.ok) {
-    throw new Error('Neither metadata nor text could be saved');
-  }
+  await api.updateAnnotations(textUuid, annotationsToSave);
 }
 
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {
