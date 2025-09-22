@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
 import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteLeave } from 'vue-router';
-import { useTitle } from '@vueuse/core';
+import { useEventListener, useTitle } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
@@ -57,11 +57,6 @@ onMounted(async (): Promise<void> => {
 
   initializeEditor();
 
-  window.addEventListener('mouseup', handleMouseUp);
-  window.addEventListener('mousedown', handleMouseDown);
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  window.addEventListener('keydown', handleKeyDown);
-
   isLoading.value = false;
 });
 
@@ -70,15 +65,14 @@ onUnmounted((): void => {
   resetAnnotations();
   resetEditor();
   resetHistory();
-
-  console.log('unmount...');
-  window.removeEventListener('mouseup', handleMouseUp);
-  window.removeEventListener('mousedown', handleMouseDown);
-  window.removeEventListener('beforeunload', handleBeforeUnload);
-  window.removeEventListener('keydown', handleKeyDown);
 });
 
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
+
+useEventListener('mouseup', handleMouseUp);
+useEventListener('mousedown', handleMouseDown);
+useEventListener('beforeunload', handleBeforeUnload);
+useEventListener('keydown', handleKeyDown);
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid: string = route.params.uuid as string;

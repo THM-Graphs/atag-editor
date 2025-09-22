@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, ComputedRef } from 'vue';
+import { useEventListener } from '@vueuse/core';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
@@ -99,12 +100,12 @@ const dataToImport = ref<{ annotations: AnnotationData[]; characters: Character[
 // Needs to be instantiated at top-level to make Vue track changes better
 const reader: FileReader = new FileReader();
 
-reader.addEventListener('load', () => {
+useEventListener(reader, 'load', () => {
   rawJson.value = reader.result as string;
   importJson();
 });
 
-reader.addEventListener('error', (event: ProgressEvent) => {
+useEventListener(reader, 'error', (event: ProgressEvent) => {
   const error: DOMException = (event.target as FileReader).error;
   addErrorMessage(error);
 });
