@@ -126,7 +126,7 @@ watch(
 
     // Fetch parent collection details and ancestry only if a UUID is present
     if (isValidCollection.value && newUuid !== '') {
-      await getCollectionAncestry();
+      await api.getCollectionAncestry(route.params.uuid as string);
     }
 
     if (isValidCollection.value || newUuid === '') {
@@ -161,24 +161,6 @@ watch(collectionFetchUrl, async () => {
     await fetchCollections(collection.value?.data.uuid, searchParams.value);
   }
 });
-
-async function getCollectionAncestry(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${route.params.uuid}/ancestry`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAncestryPaths: NodeAncestry[] = await response.json();
-
-    ancestryPaths.value = fetchedAncestryPaths;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
-  }
-}
 
 async function handleCollectionCreation(newCollection: Collection): Promise<void> {
   showMessage('created', `"${newCollection.data.label}"`);

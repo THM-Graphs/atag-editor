@@ -11,6 +11,7 @@ import {
   CollectionPreview,
   CollectionSearchParams,
   NetworkPostData,
+  NodeAncestry,
   PaginationResult,
   Text,
   TextAccessObject,
@@ -124,6 +125,23 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching collection:', error);
       throw new Error(`Error fetching collection: ${error}`);
+    }
+  }
+
+  public async getCollectionAncestry(collectionUuid: string): Promise<NodeAncestry> {
+    try {
+      const url: string = `${this.baseUrl}/collections/${collectionUuid}/ancestry`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error fetching node ancestry:', error);
+      throw new Error('Error fetching node ancestry:', error);
     }
   }
 
