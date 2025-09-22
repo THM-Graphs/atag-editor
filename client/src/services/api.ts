@@ -5,6 +5,7 @@ import {
   Character,
   Collection,
   CollectionCreationData,
+  CollectionPostData,
   CollectionPreview,
   CollectionSearchParams,
   NetworkPostData,
@@ -242,6 +243,32 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error fetching texts for collection:', error);
       throw new Error(`Error fetching texts for collection: ${error}`);
+    }
+  }
+
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
+    const url: string = `${this.baseUrl}/collections/${uuid}`;
+
+    try {
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.log('Error updating collection:', error);
+      throw new Error('Could not be saved, try again...', error);
     }
   }
 

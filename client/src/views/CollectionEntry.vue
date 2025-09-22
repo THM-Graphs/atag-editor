@@ -76,7 +76,7 @@ const {
 const collectionUuid = computed(() => route.params.uuid as string);
 
 const { fetchAnnotations } = useAnnotations();
-const { fetchCollection } = useCollection();
+const { fetchCollection, updateCollection } = useCollection();
 const { fetchTexts } = useTexts();
 
 // ------------------------------------------------------------------------------
@@ -402,24 +402,7 @@ async function saveCollection(): Promise<void> {
     initialData: initialCollectionAccessObject.value,
   };
 
-  const url: string = buildFetchUrl(
-    `/api/collections/${collectionAccessObject.value.collection.data.uuid}`,
-  );
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(collectionPostData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Could not be saved, try again...');
-  }
+  await updateCollection(collectionUuid.value, collectionPostData);
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
