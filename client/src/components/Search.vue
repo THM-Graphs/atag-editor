@@ -9,17 +9,13 @@ import { useGuidelinesStore } from '../store/guidelines';
 import Tag from 'primevue/tag';
 import Paginator from 'primevue/paginator';
 import { DataTablePageEvent } from 'primevue';
-import { useFetchCollections } from '../composables/useFetchCollections';
+import { useCollections } from '../composables/useCollections';
 
 const emit = defineEmits(['itemSelected']);
 
 const { availableCollectionLabels } = useGuidelinesStore();
-const { fetchUrl: collectionFetchUrl, updateSearchParams } = useCollectionSearch(50);
-const {
-  collections: fetchedItems,
-  pagination,
-  fetchCollections,
-} = useFetchCollections(collectionFetchUrl);
+const { fetchUrl: collectionFetchUrl, searchParams, updateSearchParams } = useCollectionSearch(50);
+const { collections: fetchedItems, pagination, fetchCollections } = useCollections();
 
 const selectedCollectionLabels = ref(availableCollectionLabels.value);
 const isSearchActive = ref<boolean>(false);
@@ -27,7 +23,9 @@ const isSearchActive = ref<boolean>(false);
 // State of search
 const searchInput = ref<string>('');
 
-watch(collectionFetchUrl, async () => await fetchCollections());
+watch(collectionFetchUrl, async () => await fetchCollections(null, searchParams.value), {
+  immediate: true,
+});
 
 function resetSearch(): void {
   searchInput.value = '';

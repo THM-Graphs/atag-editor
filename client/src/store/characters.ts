@@ -4,6 +4,7 @@ import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character, TextOperationResult } from '../models/types';
 import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
+import { useAppStore } from './app';
 
 type CharacterInfo = {
   char: Character | null;
@@ -12,6 +13,10 @@ type CharacterInfo = {
   anchorEndUuids?: string[];
 };
 
+const { api } = useAppStore();
+const { getAnnotationConfig } = useGuidelinesStore();
+
+// Data
 const beforeStartIndex = ref<number | null>(null);
 const afterEndIndex = ref<number | null>(null);
 
@@ -21,7 +26,9 @@ const initialSnippetCharacters = ref<Character[]>([]);
 const initialBeforeStartCharacter = ref<Character | null>(null);
 const initialAfterEndCharacter = ref<Character | null>(null);
 
-const { getAnnotationConfig } = useGuidelinesStore();
+// Fetch status
+const isFetching = ref<boolean>(false);
+const error = ref<any>(null);
 
 /**
  * Store for managing the state of characters inside an editor instance. When the component is mounted,
@@ -89,6 +96,30 @@ export function useCharactersStore() {
     initialSnippetCharacters.value = [];
 
     resetInitialBoundaryCharacters();
+  }
+
+  /**
+   * Fetches the characters for a given text UUID and initializes the store with the fetched data.
+   * Called when the editor is loaded, not during text import.
+   *
+   * If an error occurs during the operation, the `error` property is set to the error object.
+   *
+   * @param {string} textUuid The UUID of the text to fetch the characters for.
+   * @returns {Promise<void>} A promise that resolves when the operation is complete.
+   */
+  async function fetchAndInitializeCharacters(textUuid: string): Promise<void> {
+    isFetching.value = true;
+
+    try {
+      const fetchedCharacters: Character[] = await api.getCharacters(textUuid);
+
+      initializeCharacters(fetchedCharacters, 'database');
+    } catch (e: unknown) {
+      error.value = e as Error;
+      console.error('Error fetching characters:', e);
+    } finally {
+      isFetching.value = false;
+    }
   }
 
   function getAfterEndCharacter(): Character | null {
@@ -956,6 +987,7 @@ export function useCharactersStore() {
   return {
     afterEndIndex,
     beforeStartIndex,
+    error,
     initialAfterEndCharacter,
     initialSnippetCharacters,
     initialBeforeStartCharacter,
@@ -965,6 +997,7 @@ export function useCharactersStore() {
     deleteCharactersBetweenUuids,
     deleteWordAfterUuid,
     deleteWordBeforeUuid,
+    fetchAndInitializeCharacters,
     getAfterEndCharacter,
     getBeforeStartCharacter,
     createFullTextFromCharacters,

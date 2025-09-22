@@ -18,7 +18,6 @@ import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import {
   areSetsEqual,
-  buildFetchUrl,
   capitalize,
   cloneDeep,
   getDefaultValueForProperty,
@@ -26,7 +25,6 @@ import {
 import {
   AnnotationData,
   AnnotationType,
-  Collection,
   CollectionAccessObject,
   CollectionPostData,
   PropertyConfig,
@@ -48,6 +46,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
+import { useAppStore } from '../store/app';
 
 type TextTableEntry = {
   labels: string[];
@@ -59,6 +58,8 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
+
+const { api } = useAppStore();
 
 const {
   guidelines,
@@ -124,12 +125,18 @@ watch(
 
     // Fetch parent collection details only if a UUID is present
     if (newUuid) {
-      await getCollection();
+      collectionAccessObject.value.collection = await api.getCollection(collectionUuid.value);
+
+      isValidCollection.value = true;
     }
 
     if (isValidCollection.value || newUuid === '') {
-      await getTexts();
-      await getAnnotations();
+      collectionAccessObject.value.texts = await api.getTexts(collectionUuid.value);
+
+      collectionAccessObject.value.annotations = await api.getAnnotations(
+        'collection',
+        collectionUuid.value,
+      );
 
       initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
 
@@ -390,24 +397,7 @@ async function saveCollection(): Promise<void> {
     initialData: initialCollectionAccessObject.value,
   };
 
-  const url: string = buildFetchUrl(
-    `/api/collections/${collectionAccessObject.value.collection.data.uuid}`,
-  );
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(collectionPostData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Could not be saved, try again...');
-  }
+  await api.updateCollection(collectionUuid.value, collectionPostData);
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
@@ -448,61 +438,6 @@ function removeUnnecessaryDataBeforeSave(): void {
       delete collectionAccessObject.value.collection.data[key];
     }
   });
-}
-
-async function getCollection(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCollection: Collection = await response.json();
-
-    isValidCollection.value = true;
-    collectionAccessObject.value.collection = fetchedCollection;
-  } catch (error: unknown) {
-    console.error('Error fetching collection:', error);
-  }
-}
-
-async function getTexts(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/texts`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedTexts: Text[] = await response.json();
-
-    collectionAccessObject.value.texts = fetchedTexts;
-  } catch (error: unknown) {
-    console.error('Error fetching texts for collection:', error);
-  }
-}
-
-async function getAnnotations(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/collections/${collectionUuid.value}/annotations`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAnnotations: AnnotationData[] = await response.json();
-
-    collectionAccessObject.value.annotations = fetchedAnnotations;
-  } catch (error: unknown) {
-    console.error('Error fetching annotations for collection:', error);
-  }
 }
 
 function shiftText(textUuid: string, direction: 'up' | 'down') {

@@ -18,18 +18,13 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { buildFetchUrl, cloneDeep } from '../utils/helper/helper';
-import {
-  Annotation,
-  AnnotationData,
-  Character,
-  CharacterPostData,
-  TextAccessObject,
-} from '../models/types';
+import { cloneDeep } from '../utils/helper/helper';
+import { Annotation, Character, CharacterPostData } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
+import { useAppStore } from '../store/app';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -38,19 +33,34 @@ interface SidebarConfig {
 }
 
 onMounted(async (): Promise<void> => {
-  await getTextAccessObject();
+  // TODO: This needs refactoring. Centralize fetches, split fetch/initialize logic
+  await fetchAndInitializeText(textUuid);
 
-  if (isValidText.value) {
-    await getCharacters();
-    await getAnnotations();
-
-    initializeEditor();
-
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('keydown', handleKeyDown);
+  if (!isValidText.value) {
+    isLoading.value = false;
+    return;
   }
+
+  await fetchAndInitializeCharacters(text.value.data.uuid);
+
+  if (charactersFetchError.value) {
+    isLoading.value = false;
+    return;
+  }
+
+  await fetchAndInitializeAnnotations(text.value.data.uuid);
+
+  if (annotationFetchError.value) {
+    isLoading.value = false;
+    return;
+  }
+
+  initializeEditor();
+
+  window.addEventListener('mouseup', handleMouseUp);
+  window.addEventListener('mousedown', handleMouseDown);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  window.addEventListener('keydown', handleKeyDown);
 
   isLoading.value = false;
 });
@@ -75,33 +85,40 @@ const textUuid: string = route.params.uuid as string;
 
 // Initial page load
 const isLoading = ref<boolean>(true);
-const isValidText = ref<boolean>(false);
+const isValidText = computed<boolean>(
+  () => !textFetchError.value && !annotationFetchError.value && !charactersFetchError.value,
+);
+
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
+const { api } = useAppStore();
+
 const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
   useEditorStore();
-const { text, initialText, initializeText } = useTextStore();
+const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
 const {
   afterEndIndex,
   beforeStartIndex,
+  error: charactersFetchError,
   initialAfterEndCharacter,
   initialBeforeStartCharacter,
   initialSnippetCharacters,
   snippetCharacters,
   totalCharacters,
-  initializeCharacters,
+  fetchAndInitializeCharacters,
   insertSnippetIntoChain,
   resetCharacters,
   resetInitialBoundaryCharacters,
 } = useCharactersStore();
 const {
+  error: annotationFetchError,
   initialSnippetAnnotations,
   initialTotalAnnotations,
   snippetAnnotations,
   totalAnnotations,
   extractSnippetAnnotations,
-  initializeAnnotations,
+  fetchAndInitializeAnnotations,
   insertSnippetIntoTotalAnnotations,
   getAnnotationsToSave,
   resetAnnotations,
@@ -142,25 +159,6 @@ const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
 const toast: ToastServiceMethods = useToast();
-
-async function getTextAccessObject(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedTextAccessObject: TextAccessObject = await response.json();
-
-    isValidText.value = true;
-    initializeText(fetchedTextAccessObject);
-  } catch (error: unknown) {
-    console.error('Error fetching text:', error);
-  }
-}
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
@@ -250,22 +248,7 @@ async function saveCharacters(): Promise<void> {
     text: totalCharacters.value.map(c => c.data.text).join(''),
   };
 
-  const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(characterPostData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Metadata could be saved, text not');
-  }
+  await api.updateCharacterChain(textUuid, characterPostData);
 }
 
 async function saveAnnotations(): Promise<void> {
@@ -277,58 +260,7 @@ async function saveAnnotations(): Promise<void> {
   // Reduce amount of data that need to sent to the backend
   const annotationsToSave: Annotation[] = getAnnotationsToSave();
 
-  const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
-
-  const response: Response = await fetch(url, {
-    method: 'POST',
-    cache: 'no-cache',
-    credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    referrerPolicy: 'no-referrer',
-    body: JSON.stringify(annotationsToSave),
-  });
-
-  if (!response.ok) {
-    throw new Error('Neither metadata nor text could be saved');
-  }
-}
-
-async function getCharacters(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}/characters`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedCharacters: Character[] = await response.json();
-
-    initializeCharacters(fetchedCharacters, 'database');
-  } catch (error: unknown) {
-    console.error('Error fetching characters:', error);
-  }
-}
-
-async function getAnnotations(): Promise<void> {
-  try {
-    const url: string = buildFetchUrl(`/api/texts/${textUuid}/annotations`);
-
-    const response: Response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const fetchedAnnotations: AnnotationData[] = await response.json();
-
-    initializeAnnotations(fetchedAnnotations, 'database');
-  } catch (error: unknown) {
-    console.error('Error fetching annotations:', error);
-  }
+  await api.updateAnnotations(textUuid, annotationsToSave);
 }
 
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {

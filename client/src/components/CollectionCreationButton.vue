@@ -8,7 +8,7 @@ import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
-import { buildFetchUrl, capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
+import { capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
 import {
   Collection,
@@ -16,12 +16,15 @@ import {
   CollectionCreationData,
   PropertyConfig,
 } from '../models/types';
+import { useAppStore } from '../store/app';
 
 const emit = defineEmits(['collectionCreated']);
 
 const props = defineProps<{
   parentCollection?: Collection;
 }>();
+
+const { api } = useAppStore();
 
 const {
   availableCollectionLabels,
@@ -32,6 +35,7 @@ const {
 
 const newCollectionData = ref<CollectionAccessObject>(null);
 const dialogIsVisible = ref<boolean>(false);
+
 const asyncOperationRunning = ref<boolean>(false);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
@@ -68,34 +72,17 @@ function removeUnnecessaryDataBeforeSave(): void {
 }
 
 async function createNewCollection(): Promise<void> {
-  removeUnnecessaryDataBeforeSave();
-
   asyncOperationRunning.value = true;
 
-  try {
-    const url: string = buildFetchUrl('/api/collections');
+  removeUnnecessaryDataBeforeSave();
 
+  try {
     const postData: CollectionCreationData = {
       ...newCollectionData.value,
       parentCollection: props.parentCollection ?? null,
     };
 
-    const response: Response = await fetch(url, {
-      method: 'POST',
-      cache: 'no-cache',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify(postData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const createdCollection: Collection = await response.json();
+    const createdCollection: Collection = await api.createCollection(postData);
 
     newCollectionData.value = {} as CollectionAccessObject;
     dialogIsVisible.value = false;
