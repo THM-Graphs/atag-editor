@@ -24,7 +24,6 @@ import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import { useCollections } from '../composables/useCollections';
-import { useCollection } from '../composables/useCollection';
 import {
   Collection,
   CollectionNetworkActionType,
@@ -33,12 +32,15 @@ import {
   NodeAncestry,
   PropertyConfig,
 } from '../models/types';
+import { useAppStore } from '../store/app';
 
 const toast: ToastServiceMethods = useToast();
 
 const route = useRoute();
 
 useTitle('Collection Manager');
+
+const { api } = useAppStore();
 
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 
@@ -63,17 +65,20 @@ const {
   updateUuid,
 } = useCollectionSearch(10);
 
-const { collections, isFetching, pagination, fetchCollections } = useCollections();
+const {
+  collections,
+  isFetching: areCollectionsFetching,
+  pagination,
+  fetchCollections,
+} = useCollections();
 
-const { collection, error: collectionError, fetchCollection } = useCollection();
+const collection = ref<Collection>(null);
 const ancestryPaths = ref<NodeAncestry[] | null>(null);
 
 // Initial pageload
 const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 const isFirstPageLoad = ref<boolean>(true);
-// For other async operations
-const asyncOperationRunning = computed<boolean>(() => isFetching.value);
 
 const collectionFields = computed<PropertyConfig[]>(() => {
   return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
@@ -102,10 +107,12 @@ watch(
     closeActionModal();
 
     if (newUuid) {
-      await fetchCollection(newUuid);
-
-      if (!collectionError.value) {
+      try {
+        collection.value = await api.getCollection(newUuid);
         isValidCollection.value = true;
+      } catch (error: unknown) {
+        console.error('Error fetching collections:', error);
+        isValidCollection.value = false;
       }
     } else {
       // TODO: This is hacky: collection.value is the component's collection ref
@@ -385,7 +392,7 @@ function toggleActionMenu(event: Event): void {
             v-if="guidelines"
             :collections="collections as CollectionPreview[]"
             :pagination="pagination"
-            :async-operation-running="asyncOperationRunning"
+            :async-operation-running="areCollectionsFetching"
             mode="edit"
             @selection-changed="handleSelectionChange"
             @sort-changed="handleSortChange"

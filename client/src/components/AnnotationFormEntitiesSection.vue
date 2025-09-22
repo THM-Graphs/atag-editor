@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { nextTick, Ref, ref, useTemplateRef } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
-import { buildFetchUrl, camelCaseToTitleCase } from '../utils/helper/helper';
+import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
 import IEntity from '../models/IEntity';
-import { useEntities } from '../composables/useEntities';
+import { useAppStore } from '../store/app';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
@@ -35,7 +35,7 @@ const props = defineProps<{
 }>();
 
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
-const { fetchEntities } = useEntities();
+const { api } = useAppStore();
 
 const entityCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
 
@@ -153,7 +153,7 @@ function renderHTML(text: string, searchStr: string): string {
 async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
 
-  const fetchedEntities: IEntity[] = await fetchEntities(nodeLabel, searchString);
+  const fetchedEntities: IEntity[] = await api.getEntities(nodeLabel, searchString);
 
   // Show only entries that are not already part of the annotation
   const existingUuids: string[] = entities.value[category].map((entry: EntityEntry) => entry.uuid);

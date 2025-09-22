@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref } from 'vue';
 import Search from './Search.vue';
-import { useNetwork } from '../composables/useNetwork';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
@@ -10,6 +9,7 @@ import { Tag, ToastServiceMethods, useToast } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
+import { useAppStore } from '../store/app';
 
 // TODO: Or use store directly...?
 const props = defineProps<{
@@ -19,8 +19,12 @@ const props = defineProps<{
   parent: Collection | null;
 }>();
 
-const { error: networkFetchError, isFetching, updateNetwork } = useNetwork();
+// const { error: networkFetchError, isFetching, updateNetwork } = useNetwork();
 const toast: ToastServiceMethods = useToast();
+
+const { api } = useAppStore();
+
+const asyncOperationRunning = ref<boolean>(false);
 
 const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
   const moveActions: CollectionNetworkActionType[] = ['reference', 'move'];
@@ -69,6 +73,8 @@ const actionLabel: ComputedRef<string> = computed(() => {
 });
 
 async function finishAction(): Promise<void> {
+  asyncOperationRunning.value = true;
+
   const data: NetworkPostData = {
     type: props.action,
     nodes: props.collections ?? [],
@@ -76,18 +82,18 @@ async function finishAction(): Promise<void> {
     target: actionTarget.value ?? null,
   };
 
-  await updateNetwork(data);
+  try {
+    await api.updateNetwork(data);
 
-  if (networkFetchError.value) {
-    showMessage('error', networkFetchError.value as Error);
-
-    return;
+    emit('actionDone', {
+      type: props.action,
+      data: props.collections,
+    });
+  } catch (error: unknown) {
+    showMessage('error', error as Error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
-
-  emit('actionDone', {
-    type: props.action,
-    data: props.collections,
-  });
 }
 
 function handleSearchItemSelected(collection: Collection): void {
@@ -217,8 +223,8 @@ function removeActionTarget(): void {
         type="submit"
         :label="actionLabel"
         :title="title"
-        :loading="isFetching"
-        :disabled="!inputIsValid || isFetching"
+        :loading="asyncOperationRunning"
+        :disabled="!inputIsValid || asyncOperationRunning"
         @click="finishAction"
       ></Button>
     </div>

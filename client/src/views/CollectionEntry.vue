@@ -16,10 +16,8 @@ import DataInputComponent from '../components/DataInputComponent.vue';
 import DataInputGroup from '../components/DataInputGroup.vue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import { useCollection } from '../composables/useCollection';
 import {
   areSetsEqual,
-  buildFetchUrl,
   capitalize,
   cloneDeep,
   getDefaultValueForProperty,
@@ -48,8 +46,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
-import { useTexts } from '../composables/useTexts';
-import { useAnnotations } from '../composables/useAnnotations';
+import { useAppStore } from '../store/app';
 
 type TextTableEntry = {
   labels: string[];
@@ -61,6 +58,8 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
+
+const { api } = useAppStore();
 
 const {
   guidelines,
@@ -74,10 +73,6 @@ const {
 } = useGuidelinesStore();
 
 const collectionUuid = computed(() => route.params.uuid as string);
-
-const { fetchAnnotations } = useAnnotations();
-const { fetchCollection, updateCollection } = useCollection();
-const { fetchTexts } = useTexts();
 
 // ------------------------------------------------------------------------------
 
@@ -130,15 +125,15 @@ watch(
 
     // Fetch parent collection details only if a UUID is present
     if (newUuid) {
-      collectionAccessObject.value.collection = await fetchCollection(collectionUuid.value);
+      collectionAccessObject.value.collection = await api.getCollection(collectionUuid.value);
 
       isValidCollection.value = true;
     }
 
     if (isValidCollection.value || newUuid === '') {
-      collectionAccessObject.value.texts = await fetchTexts(collectionUuid.value);
+      collectionAccessObject.value.texts = await api.getTexts(collectionUuid.value);
 
-      collectionAccessObject.value.annotations = await fetchAnnotations(
+      collectionAccessObject.value.annotations = await api.getAnnotations(
         'collection',
         collectionUuid.value,
       );
@@ -402,7 +397,7 @@ async function saveCollection(): Promise<void> {
     initialData: initialCollectionAccessObject.value,
   };
 
-  await updateCollection(collectionUuid.value, collectionPostData);
+  await api.updateCollection(collectionUuid.value, collectionPostData);
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {

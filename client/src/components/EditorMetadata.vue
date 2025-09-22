@@ -24,7 +24,7 @@ const tableData: CollectionTableEntry[] = getCollectionTableData();
 
 function getCollectionTableData() {
   const fields: PropertyConfig[] = getCollectionConfigFields(
-    correspondingCollection.value.nodeLabels,
+    correspondingCollection.value.nodeLabels as string[],
   );
 
   return fields.map(field => ({

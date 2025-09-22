@@ -3,7 +3,6 @@ import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
-import { useCollection } from '../composables/useCollection';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
@@ -17,12 +16,15 @@ import {
   CollectionCreationData,
   PropertyConfig,
 } from '../models/types';
+import { useAppStore } from '../store/app';
 
 const emit = defineEmits(['collectionCreated']);
 
 const props = defineProps<{
   parentCollection?: Collection;
 }>();
+
+const { api } = useAppStore();
 
 const {
   availableCollectionLabels,
@@ -31,10 +33,10 @@ const {
   getCollectionConfigFields,
 } = useGuidelinesStore();
 
-const { isFetching, createCollection } = useCollection();
-
 const newCollectionData = ref<CollectionAccessObject>(null);
 const dialogIsVisible = ref<boolean>(false);
+
+const asyncOperationRunning = ref<boolean>(false);
 
 const dialogInputFields: ComputedRef<PropertyConfig[]> = computed(() =>
   getCollectionConfigFields(newCollectionData.value.collection.nodeLabels),
@@ -70,6 +72,8 @@ function removeUnnecessaryDataBeforeSave(): void {
 }
 
 async function createNewCollection(): Promise<void> {
+  asyncOperationRunning.value = true;
+
   removeUnnecessaryDataBeforeSave();
 
   try {
@@ -78,7 +82,7 @@ async function createNewCollection(): Promise<void> {
       parentCollection: props.parentCollection ?? null,
     };
 
-    const createdCollection: Collection = await createCollection(postData);
+    const createdCollection: Collection = await api.createCollection(postData);
 
     newCollectionData.value = {} as CollectionAccessObject;
     dialogIsVisible.value = false;
@@ -86,6 +90,8 @@ async function createNewCollection(): Promise<void> {
     emit('collectionCreated', createdCollection);
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
+  } finally {
+    asyncOperationRunning.value = false;
   }
 }
 
@@ -219,7 +225,7 @@ async function hideDialog(): Promise<void> {
           type="submit"
           label="Create"
           title="Create new text"
-          :loading="isFetching"
+          :loading="asyncOperationRunning"
           :disabled="!inputIsValid"
         ></Button>
       </div>
