@@ -1,18 +1,15 @@
-import { computed, readonly, ref } from 'vue';
-import { watchDebounced } from '@vueuse/core';
+import { readonly, ref } from 'vue';
 import { CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
 /**
- * Composable function for managing search parameters and generating a URL for fetching collection data. An optional UUID
- * parameter determines if the URL is scoped. If yes, only collections that have the collection with given UUID
- * as parent are fetched. If no, all collections are fetched.
+ * Composable function for managing search parameters for fetching collection data. An optional UUID
+ * parameter determines if only collections that have the collection with given UUID as parent are fetched.
+ * If no, all collections are fetched.
  *
- * Currently used for displaying (sub-)collections in a table, combined with pagination. Returns the search parameter object
- * as well as the URL generated from it.
+ * Currently used for displaying (sub-)collections in a table, combined with pagination. Returns the search parameter object.
  *
  * The object contains the following properties:
- * - `fetchUrl`: A reactive string property with the URL to fetch the data from.
  * - `searchParams`: A reactive object property with the search parameters. The object is readonly, but its properties are not. The properties are:
  *   - `searchInput`: The search string to search for in the collection.
  *   - `nodeLabels`: An array of node labels to filter by.
@@ -27,8 +24,6 @@ import { useGuidelinesStore } from '../store/guidelines';
  * @returns {Object} An object with reactive properties for performing a search query on the backend.
  */
 export function useCollectionSearch(rowCount?: number) {
-  const BASE_FETCH_URL: string = '/api/collections';
-  const INPUT_DELAY: number = 300; /* delay after input change in ms */
   const DEFAULT_ROW_COUNT: number | null = rowCount ?? null;
 
   const { availableCollectionLabels } = useGuidelinesStore();
@@ -43,37 +38,6 @@ export function useCollectionSearch(rowCount?: number) {
     rowCount: DEFAULT_ROW_COUNT,
     sortField: '',
     sortDirection: 'asc' as 'asc' | 'desc',
-  });
-
-  // Separate ref for the debounced search. Can be manipulated directly on search params reset
-  const debouncedSearchInput = ref<string>('');
-
-  const fetchUrl = computed<string>(() => {
-    const path = parentUuid.value
-      ? `${BASE_FETCH_URL}/${parentUuid.value}/collections`
-      : BASE_FETCH_URL;
-
-    const urlParams: URLSearchParams = new URLSearchParams();
-
-    urlParams.set('sort', searchParams.value.sortField);
-    urlParams.set('order', searchParams.value.sortDirection);
-    urlParams.set('skip', searchParams.value.offset.toString());
-    urlParams.set('search', debouncedSearchInput.value);
-    urlParams.set('nodeLabels', searchParams.value.nodeLabels.join(','));
-
-    // Optional parameter - only set if it is not null
-    if (searchParams.value.rowCount !== null) {
-      urlParams.set('limit', searchParams.value.rowCount.toString());
-    }
-
-    return `${path}?${urlParams.toString()}`;
-  });
-
-  // Watch searchInput and debounce it manually. This is a workaround to prevent double fetching - before,
-  // the input was debounced directly with refDebounced, but since data fetching happens directly after resetting,
-  // the old search input was used and after the debounced update another fetch was triggered.
-  watchDebounced(() => searchParams.value.searchInput, updateDebouncedSearchInput, {
-    debounce: INPUT_DELAY,
   });
 
   /**
@@ -91,13 +55,6 @@ export function useCollectionSearch(rowCount?: number) {
       sortField: '',
       sortDirection: 'asc',
     };
-
-    // Immediately reset the debounced value to prevent double fetching
-    debouncedSearchInput.value = '';
-  }
-
-  function updateDebouncedSearchInput(newValue: string) {
-    debouncedSearchInput.value = newValue;
   }
 
   /**
@@ -119,7 +76,6 @@ export function useCollectionSearch(rowCount?: number) {
   }
 
   return {
-    fetchUrl: readonly(fetchUrl),
     searchParams: readonly(searchParams),
     resetSearchParams,
     updateSearchParams,

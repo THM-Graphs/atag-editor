@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useTitle } from '@vueuse/core';
+import { useTitle, watchDebounced } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 import CollectionCreationButton from '../components/CollectionCreationButton.vue';
@@ -32,6 +32,7 @@ import {
   PropertyConfig,
 } from '../models/types';
 import { useAppStore } from '../store/app';
+import { FETCH_DELAY } from '../config/constants';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -57,10 +58,9 @@ const {
 } = useCollectionManagerStore();
 
 const {
-  fetchUrl: collectionFetchUrl,
   resetSearchParams: resetCollectionSearchParams,
   updateSearchParams,
-  searchParams,
+  searchParams: collectionSearchParams,
   updateUuid,
 } = useCollectionSearch(10);
 
@@ -137,7 +137,7 @@ watch(
 
       // If this is the first page load, load collections here
       if (isFirstPageLoad.value) {
-        await fetchCollections(collection.value?.data.uuid, searchParams.value);
+        await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
         isFirstPageLoad.value = false;
       }
     }
@@ -155,15 +155,22 @@ watch(
 // `immeditate: true` flage so that data were also fetched when the route was matched for the very first time.
 // Problem with that approach: When the route was reloaded or hit without coming from router link, double fetch occured
 // since the component was recreated the watcher is therefore triggered.
-watch(collectionFetchUrl, async () => {
-  if (!isFirstPageLoad.value) {
-    await fetchCollections(collection.value?.data.uuid, searchParams.value);
-  }
-});
+watchDebounced(
+  collectionSearchParams,
+  async () => {
+    if (!isFirstPageLoad.value) {
+      await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
+    }
+  },
+  {
+    deep: true,
+    debounce: FETCH_DELAY,
+  },
+);
 
 async function handleCollectionCreation(newCollection: Collection): Promise<void> {
   showMessage('created', `"${newCollection.data.label}"`);
-  await fetchCollections(collection.value?.data.uuid, searchParams.value);
+  await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 }
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
@@ -205,7 +212,7 @@ function handleActionCanceled(): void {
 async function handleActionDone(event: Action): Promise<void> {
   closeActionModal();
 
-  await fetchCollections(collection.value?.data.uuid, searchParams.value);
+  await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 
   toast.add({
     severity: 'success',
@@ -322,8 +329,8 @@ function toggleActionMenu(event: Event): void {
           <div class="flex gap-2">
             <OverviewToolbar
               v-if="guidelines"
-              :searchInputValue="searchParams.searchInput"
-              :nodeLabelsValue="searchParams.nodeLabels as string[]"
+              :searchInputValue="collectionSearchParams.searchInput"
+              :nodeLabelsValue="collectionSearchParams.nodeLabels as string[]"
               @search-input-changed="handleSearchInputChange"
               @node-labels-input-changed="handleNodeLabelsInputChanged"
             />

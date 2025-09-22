@@ -1,24 +1,32 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import { useTitle } from '@vueuse/core';
-import { useGuidelinesStore } from '../store/guidelines';
+import { useTitle, watchDebounced } from '@vueuse/core';
+import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
-import OverviewToolbar from '../components/OverviewToolbar.vue';
+import { onMounted } from 'vue';
 import CollectionTable from '../components/CollectionTable.vue';
-import { CollectionPreview, CollectionSearchParams } from '../models/types';
-import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+import OverviewToolbar from '../components/OverviewToolbar.vue';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 import { useCollections } from '../composables/useCollections';
+import { FETCH_DELAY } from '../config/constants';
+import { CollectionPreview, CollectionSearchParams } from '../models/types';
+import { useGuidelinesStore } from '../store/guidelines';
 
 useTitle('ATAG Editor');
 
 const { guidelines, availableCollectionLabels } = useGuidelinesStore();
-const { fetchUrl, searchParams, updateSearchParams } = useCollectionSearch(10);
+const { searchParams: collectionSearchParams, updateSearchParams } = useCollectionSearch(10);
 
 const { collections, isFetching, pagination, fetchCollections } = useCollections();
 
-watch(fetchUrl, async () => await fetchCollections(null, searchParams.value));
+watchDebounced(
+  collectionSearchParams,
+  async () => await fetchCollections(null, collectionSearchParams.value),
+  {
+    deep: true,
+    debounce: FETCH_DELAY,
+  },
+);
 
 onMounted(async (): Promise<void> => {
   // Initialize nodeLabels AFTER guidelines are loaded. Otherwise, the useCollectionSearch composable
@@ -27,7 +35,7 @@ onMounted(async (): Promise<void> => {
     nodeLabels: availableCollectionLabels.value,
   });
 
-  await fetchCollections(null, searchParams.value);
+  await fetchCollections(null, collectionSearchParams.value);
 });
 
 function handleNodeLabelsInputChanged(selectedLabels: string[]): void {
@@ -89,8 +97,8 @@ function handlePaginationChange(event: DataTablePageEvent): void {
     <div class="flex gap-2">
       <OverviewToolbar
         v-if="guidelines"
-        :searchInputValue="searchParams.searchInput"
-        :nodeLabelsValue="searchParams.nodeLabels as string[]"
+        :searchInputValue="collectionSearchParams.searchInput"
+        :nodeLabelsValue="collectionSearchParams.nodeLabels as string[]"
         @search-input-changed="handleSearchInputChange"
         @node-labels-input-changed="handleNodeLabelsInputChanged"
       />

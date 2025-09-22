@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
 import InputGroup from 'primevue/inputgroup';
@@ -10,11 +10,13 @@ import Tag from 'primevue/tag';
 import Paginator from 'primevue/paginator';
 import { DataTablePageEvent } from 'primevue';
 import { useCollections } from '../composables/useCollections';
+import { watchDebounced } from '@vueuse/core';
+import { FETCH_DELAY } from '../config/constants';
 
 const emit = defineEmits(['itemSelected']);
 
 const { availableCollectionLabels } = useGuidelinesStore();
-const { fetchUrl: collectionFetchUrl, searchParams, updateSearchParams } = useCollectionSearch(50);
+const { searchParams: collectionSearchParams, updateSearchParams } = useCollectionSearch(50);
 const { collections: fetchedItems, pagination, fetchCollections } = useCollections();
 
 const selectedCollectionLabels = ref(availableCollectionLabels.value);
@@ -23,9 +25,14 @@ const isSearchActive = ref<boolean>(false);
 // State of search
 const searchInput = ref<string>('');
 
-watch(collectionFetchUrl, async () => await fetchCollections(null, searchParams.value), {
-  immediate: true,
-});
+watchDebounced(
+  collectionSearchParams,
+  async () => await fetchCollections(null, collectionSearchParams.value),
+  {
+    deep: true,
+    debounce: FETCH_DELAY,
+  },
+);
 
 function resetSearch(): void {
   searchInput.value = '';
