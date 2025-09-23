@@ -16,7 +16,6 @@ import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
-import Tag from 'primevue/tag';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
@@ -31,6 +30,7 @@ import {
   PropertyConfig,
 } from '../models/types';
 import { useAppStore } from '../store/app';
+import NodeTag from '../components/NodeTag.vue';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -406,10 +406,10 @@ function toggleActionMenu(event: Event): void {
             <div class="labels text-center mb-3">
               <h4 class="mt-0 mb-1">Labels</h4>
               <div>
-                <Tag
+                <NodeTag
                   v-for="label in collection.nodeLabels"
-                  :value="label"
-                  severity="contrast"
+                  :content="label"
+                  type="Collection"
                   class="mr-1 mb-1 mt-1 inline-block"
                 />
               </div>

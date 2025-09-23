@@ -57,6 +57,8 @@ export type BaseNodeData = {
   uuid: string;
 };
 
+export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
+
 export type Character = {
   data: ICharacter;
   annotations: AnnotationReference[];

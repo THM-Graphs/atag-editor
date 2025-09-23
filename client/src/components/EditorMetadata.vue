@@ -10,7 +10,7 @@ import DataTable from 'primevue/datatable';
 import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
-import Tag from 'primevue/tag';
+import NodeTag from './NodeTag.vue';
 
 type CollectionTableEntry = {
   property: string;
@@ -35,19 +35,6 @@ function getCollectionTableData() {
 
 async function handleCopy(): Promise<void> {
   await navigator.clipboard.writeText(text.value.data.uuid);
-}
-
-function getNodeLabelTagColor(nodeLabels: string[]) {
-  switch (true) {
-    case nodeLabels.includes('Collection'):
-      return 'contrast';
-    case nodeLabels.includes('Text'):
-      return 'secondary';
-    case nodeLabels.includes('Annotation'):
-      return 'warn';
-    default:
-      return '';
-  }
 }
 </script>
 
@@ -93,7 +80,7 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
       </template>
       <div class="flex gap-2">
         <div v-if="text.nodeLabels.length > 0" v-for="label in text.nodeLabels" :key="label">
-          <Tag :value="label" severity="secondary" class="mr-1" />
+          <NodeTag :content="label" type="Text" class="mr-1" />
         </div>
         <div v-else>
           <i
@@ -121,11 +108,7 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
                 :to="`/collections/${node.data.uuid}`"
                 :title="`Go to Collection ${node.data.uuid}`"
               >
-                <Tag
-                  :value="node.nodeLabels.join(' | ')"
-                  :severity="getNodeLabelTagColor(node.nodeLabels)"
-                  class="mr-2"
-                />
+                <NodeTag :content="node.nodeLabels.join(' | ')" type="Collection" class="mr-2" />
                 <i class="pi pi-external-link"></i>
               </RouterLink>
               <a
@@ -134,17 +117,13 @@ function getNodeLabelTagColor(nodeLabels: string[]) {
                 :title="`Go to Text ${node.data.uuid}`"
                 target="_blank"
               >
-                <Tag
-                  :value="node.nodeLabels.join(' | ')"
-                  :severity="getNodeLabelTagColor(node.nodeLabels)"
-                  class="mr-2"
-                />
+                <NodeTag :content="node.nodeLabels.join(' | ')" type="Text" class="mr-2" />
                 <i class="pi pi-external-link"></i>
               </a>
               <span v-else>
-                <Tag
-                  :value="node.nodeLabels.join(' | ')"
-                  :severity="getNodeLabelTagColor(node.nodeLabels)"
+                <NodeTag
+                  :content="node.nodeLabels.join(' | ')"
+                  type="Annotation"
                   :title="`${node.data.type}, '${node.data.text}'`"
                   class="mr-2"
                 />

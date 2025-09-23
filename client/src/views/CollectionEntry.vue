@@ -39,7 +39,6 @@ import InputText from 'primevue/inputtext';
 import MultiSelect from 'primevue/multiselect';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
-import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useConfirm } from 'primevue/useconfirm';
@@ -47,6 +46,7 @@ import { useToast } from 'primevue/usetoast';
 import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
 import { useAppStore } from '../store/app';
+import NodeTag from '../components/NodeTag.vue';
 
 type TextTableEntry = {
   labels: string[];
@@ -521,7 +521,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               :filter="false"
             >
               <template #chip="{ value }">
-                <Tag :value="value" severity="contrast" class="mr-1" />
+                <NodeTag :content="value" type="Collection" class="mr-1" />
               </template>
             </MultiSelect>
           </div>
@@ -531,7 +531,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
               v-for="label in collectionAccessObject.collection.nodeLabels"
               :key="label"
             >
-              <Tag :value="label" severity="contrast" class="mr-1" />
+              <NodeTag :content="label" type="Collection" class="mr-1" />
             </template>
             <div v-else>
               <i>This Collection has no labels yet.</i>
@@ -703,15 +703,15 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                     :filter="false"
                   >
                     <template #chip="{ value }">
-                      <Tag :value="value" severity="secondary" class="mr-1" />
+                      <NodeTag :content="value" type="Text" class="mr-1" />
                     </template>
                   </MultiSelect>
                   <span v-else class="cell-info">
                     <div class="box flex" style="flex-wrap: wrap">
-                      <Tag
+                      <NodeTag
                         v-for="label in data.labels"
-                        :value="label"
-                        severity="secondary"
+                        :content="label"
+                        type="Text"
                         class="mr-1 mb-1 inline-block"
                       />
                     </div>

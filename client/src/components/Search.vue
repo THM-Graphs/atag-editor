@@ -6,10 +6,10 @@ import InputGroup from 'primevue/inputgroup';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 import { CollectionPreview, CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
-import Tag from 'primevue/tag';
 import Paginator from 'primevue/paginator';
 import { DataTablePageEvent } from 'primevue';
 import { useCollections } from '../composables/useCollections';
+import NodeTag from './NodeTag.vue';
 
 const emit = defineEmits(['itemSelected']);
 
@@ -106,7 +106,7 @@ function handlePagination(event: DataTablePageEvent): void {
         @change="handleCollectionLabelChange"
       >
         <template #chip="{ value }">
-          <Tag :value="value" severity="contrast" class="mr-1" />
+          <NodeTag :content="value" type="Collection" class="mr-1" />
         </template>
       </MultiSelect>
       <AutoComplete
@@ -127,10 +127,10 @@ function handlePagination(event: DataTablePageEvent): void {
         </template>
         <template #option="slotProps">
           <div class="flex gap-2">
-            <Tag
+            <NodeTag
               v-for="label in slotProps.option.collection.nodeLabels"
-              :value="label"
-              severity="contrast"
+              :content="label"
+              type="Collection"
             />
             <div class="font-medium">{{ slotProps.option.collection.data.label }}</div>
           </div>

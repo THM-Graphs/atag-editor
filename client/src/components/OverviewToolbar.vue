@@ -3,9 +3,9 @@ import { useGuidelinesStore } from '../store/guidelines';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
-import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
 import Toolbar from 'primevue/toolbar';
+import NodeTag from './NodeTag.vue';
 
 // Accept the composable's refs as props
 const props = defineProps<{
@@ -44,7 +44,7 @@ function handleNodeLabelsChange(value: string[]) {
         @update:modelValue="handleNodeLabelsChange"
       >
         <template #chip="{ value }">
-          <Tag :value="value" severity="contrast" class="mr-1" />
+          <NodeTag :content="value" type="Collection" class="mr-1" />
         </template>
       </MultiSelect>
     </template>

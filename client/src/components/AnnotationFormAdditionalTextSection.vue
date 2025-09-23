@@ -7,11 +7,11 @@ import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
 import Message from 'primevue/message';
 import { MultiSelect } from 'primevue';
-import Tag from 'primevue/tag';
 import { AdditionalText, PropertyConfig } from '../models/types';
 import InputGroup from 'primevue/inputgroup';
 import ICollection from '../models/ICollection';
 import IText from '../models/IText';
+import NodeTag from './NodeTag.vue';
 
 /**
  * Interface for relevant state information about additional texts of the annotation
@@ -220,30 +220,19 @@ function togglePreviewMode(uuid: string): void {
         <div class="button-pane flex justify-content-center">
           <div class="label-container w-full">
             <div class="collection-labels font-semibold">
-              <Tag
+              <NodeTag
                 v-for="label in additionalText.collection.nodeLabels"
-                :value="label"
-                severity="contrast"
-                size="small"
-                class="mr-1 mb-1"
-                :pt="{
-                  root: {
-                    title: 'Collection labels',
-                  },
-                }"
+                type="Collection"
+                :content="label"
+                class="mr-1 mb-4"
               />
             </div>
             <div class="text-labels font-semibold">
-              <Tag
+              <NodeTag
                 v-for="label in additionalText.text.nodeLabels"
-                :value="label"
-                severity="secondary"
+                :content="label"
+                type="Text"
                 class="mr-1 mb-1"
-                :pt="{
-                  root: {
-                    title: 'Text labels',
-                  },
-                }"
               />
             </div>
           </div>
@@ -328,7 +317,7 @@ function togglePreviewMode(uuid: string): void {
             }"
           >
             <template #chip="{ value }">
-              <Tag :value="value" severity="contrast" class="mr-1" />
+              <NodeTag type="Collection" :content="value" class="mr-1" />
             </template>
           </MultiSelect>
           <MultiSelect
@@ -346,7 +335,7 @@ function togglePreviewMode(uuid: string): void {
             }"
           >
             <template #chip="{ value }">
-              <Tag :value="value" severity="secondary" class="mr-1" />
+              <NodeTag type="Text" :content="value" class="mr-1" />
             </template>
           </MultiSelect>
           <InputText

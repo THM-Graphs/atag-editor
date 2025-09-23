@@ -6,7 +6,7 @@ import FulltextSearchbar from './FulltextSearchbar.vue';
 import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
-import Tag from 'primevue/tag';
+import NodeTag from './NodeTag.vue';
 
 const { text, correspondingCollection } = useTextStore();
 
@@ -40,11 +40,11 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
             <span severity="contrast" :title="`Collection: ${item.label}`">{{ item.label }}</span>
           </div>
           <div v-else class="text-labels">
-            <Tag
+            <NodeTag
               v-if="item.labels.length > 0"
               v-for="label in item.labels"
-              :value="label"
-              severity="secondary"
+              :content="label"
+              type="Text"
               class="mr-1 mb-1"
             />
             <span v-else class="font-italic" title="This Text has no labels yet"

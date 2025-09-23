@@ -53,6 +53,8 @@ export type AnnotationConfigEntity = {
   nodeLabel: string;
 };
 
+export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
+
 export type BaseNodeData = {
   uuid: string;
 };

@@ -2,11 +2,11 @@
 import { RouterLink } from 'vue-router';
 import LoadingSpinner from './LoadingSpinner.vue';
 import ActionMenu from './ActionMenu.vue';
+import NodeTag from './NodeTag.vue';
 import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
-import { Tag } from 'primevue';
 import { PaginationData, CollectionPreview, Collection } from '../models/types';
 import { ref, useTemplateRef, watch } from 'vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
@@ -148,10 +148,10 @@ function handlePagination(event: DataTablePageEvent): void {
           <template #body="{ data: row }: { data: CollectionPreview }">
             <span class="cell-info">
               <div class="box flex" style="flex-wrap: wrap">
-                <Tag
+                <NodeTag
                   v-for="label in row.collection.nodeLabels"
-                  :value="label"
-                  severity="contrast"
+                  :content="label"
+                  type="Collection"
                   class="mr-1 mb-1 mt-1 inline-block"
                 />
               </div>

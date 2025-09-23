@@ -5,11 +5,12 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
-import { Tag, ToastServiceMethods, useToast } from 'primevue';
+import { ToastServiceMethods, useToast } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
 import { useAppStore } from '../store/app';
+import NodeTag from './NodeTag.vue';
 
 // TODO: Or use store directly...?
 const props = defineProps<{
@@ -182,10 +183,10 @@ function removeActionTarget(): void {
           <Card>
             <template #content>
               <div class="flex gap-2">
-                <Tag
+                <NodeTag
                   v-for="nodeLabel in actionTarget.nodeLabels"
-                  :value="nodeLabel"
-                  severity="contrast"
+                  :content="nodeLabel"
+                  type="Collection"
                   class="mr-1"
                 />
                 <div>{{ actionTarget.data.label }}</div>

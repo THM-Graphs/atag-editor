@@ -3,10 +3,10 @@ import { computed, ComputedRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
+import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Dialog from 'primevue/dialog';
-import Tag from 'primevue/tag';
 import MultiSelect from 'primevue/multiselect';
 import { capitalize, getDefaultValueForProperty } from '../utils/helper/helper';
 import ICollection from '../models/ICollection';
@@ -159,10 +159,10 @@ async function hideDialog(): Promise<void> {
         <Card v-if="props?.parentCollection">
           <template #content>
             <div class="flex gap-2">
-              <Tag
+              <NodeTag
                 v-for="nodeLabel in props.parentCollection.nodeLabels"
-                :value="nodeLabel"
-                severity="contrast"
+                :content="nodeLabel"
+                type="Collection"
                 class="mr-1"
               />
               <div>{{ parentCollection.data.label }}</div>
@@ -187,7 +187,7 @@ async function hideDialog(): Promise<void> {
           :filter="false"
         >
           <template #chip="{ value }">
-            <Tag :value="value" severity="contrast" class="mr-1" />
+            <NodeTag :content="value" type="Collection" class="mr-1" />
           </template>
         </MultiSelect>
       </div>
