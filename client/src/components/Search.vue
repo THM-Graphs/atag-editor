@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import AutoComplete from 'primevue/autocomplete';
 import MultiSelect from 'primevue/multiselect';
 import InputGroup from 'primevue/inputgroup';
@@ -10,8 +10,6 @@ import Tag from 'primevue/tag';
 import Paginator from 'primevue/paginator';
 import { DataTablePageEvent } from 'primevue';
 import { useCollections } from '../composables/useCollections';
-import { watchDebounced } from '@vueuse/core';
-import { FETCH_DELAY } from '../config/constants';
 
 const emit = defineEmits(['itemSelected']);
 
@@ -25,12 +23,11 @@ const isSearchActive = ref<boolean>(false);
 // State of search
 const searchInput = ref<string>('');
 
-watchDebounced(
+watch(
   collectionSearchParams,
   async () => await fetchCollections(null, collectionSearchParams.value),
   {
     deep: true,
-    debounce: FETCH_DELAY,
   },
 );
 
@@ -41,12 +38,21 @@ function resetSearch(): void {
   setIsSearchActive(false);
 }
 
-async function search(searchString: string): Promise<void> {
-  // Use the selected collection labels or all if none selected
-  updateSearchParams({
-    searchInput: searchString,
-    nodeLabels: selectedCollectionLabels.value,
-  });
+/**
+ * Updates the search input in the collection search params and triggers a fetch of collections based on the new search input.
+ *
+ * IMPORTANT: PrimeVue's Autocomplete component's default delay of 300ms is set to 0
+ * to allow the composable coordinating the delay.
+ *
+ * @param {string} searchString - The new search input string.
+ */
+async function handleSearchInputChange(searchString: string): Promise<void> {
+  updateSearchParams(
+    {
+      searchInput: searchString,
+    },
+    { immediate: false },
+  );
 }
 
 function setIsSearchActive(mode: boolean): void {
@@ -65,12 +71,15 @@ function handleResultItemSelect(collection: CollectionPreview): void {
   resetSearch();
 }
 
-// Handle collection label selection changes
+/**
+ * Handle collection label selection changes.
+ *
+ * @returns {void} This function does not return any value.
+ */
 function handleCollectionLabelChange(): void {
-  // If there's an active search, re-run it with new filters
-  if (searchInput.value && searchInput.value.trim()) {
-    search(searchInput.value);
-  }
+  updateSearchParams({
+    nodeLabels: selectedCollectionLabels.value,
+  });
 }
 
 function handlePagination(event: DataTablePageEvent): void {
@@ -104,11 +113,12 @@ function handlePagination(event: DataTablePageEvent): void {
         v-model="searchInput"
         :placeholder="`Search for collection`"
         :suggestions="fetchedItems as CollectionPreview[]"
+        :delay="0"
         class="searchbar"
         variant="filled"
         ref="searchbar"
         title="Enter search term"
-        @complete="search($event.query)"
+        @complete="handleSearchInputChange($event.query)"
         @option-select="handleResultItemSelect($event.value)"
         @blur="isSearchActive = searchInput === '' ? false : true"
       >

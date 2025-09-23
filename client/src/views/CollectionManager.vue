@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useTitle, watchDebounced } from '@vueuse/core';
+import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 import CollectionCreationButton from '../components/CollectionCreationButton.vue';
@@ -12,7 +12,6 @@ import CollectionTable from '../components/CollectionTable.vue';
 import Button from 'primevue/button';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
-
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
@@ -32,7 +31,6 @@ import {
   PropertyConfig,
 } from '../models/types';
 import { useAppStore } from '../store/app';
-import { FETCH_DELAY } from '../config/constants';
 
 const toast: ToastServiceMethods = useToast();
 
@@ -152,10 +150,10 @@ watch(
 );
 
 // This watcher handles collection fetching EXCEPT on first page load. Before, this was also done here with the
-// `immeditate: true` flage so that data were also fetched when the route was matched for the very first time.
+// `immediate: true` flage so that data were also fetched when the route was matched for the very first time.
 // Problem with that approach: When the route was reloaded or hit without coming from router link, double fetch occured
 // since the component was recreated the watcher is therefore triggered.
-watchDebounced(
+watch(
   collectionSearchParams,
   async () => {
     if (!isFirstPageLoad.value) {
@@ -164,7 +162,6 @@ watchDebounced(
   },
   {
     deep: true,
-    debounce: FETCH_DELAY,
   },
 );
 
@@ -186,7 +183,7 @@ function handleSearchInputChange(newInput: string): void {
     searchInput: newInput,
   };
 
-  updateSearchParams(data);
+  updateSearchParams(data, { immediate: false });
 }
 
 function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {

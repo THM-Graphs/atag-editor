@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { useTitle, watchDebounced } from '@vueuse/core';
+import { useTitle } from '@vueuse/core';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
 import { useCollections } from '../composables/useCollections';
-import { FETCH_DELAY } from '../config/constants';
 import { CollectionPreview, CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
@@ -19,12 +18,11 @@ const { searchParams: collectionSearchParams, updateSearchParams } = useCollecti
 
 const { collections, isFetching, pagination, fetchCollections } = useCollections();
 
-watchDebounced(
+watch(
   collectionSearchParams,
   async () => await fetchCollections(null, collectionSearchParams.value),
   {
     deep: true,
-    debounce: FETCH_DELAY,
   },
 );
 
@@ -51,7 +49,7 @@ function handleSearchInputChange(newInput: string): void {
     searchInput: newInput,
   };
 
-  updateSearchParams(data);
+  updateSearchParams(data, { immediate: false });
 }
 
 function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): void {
