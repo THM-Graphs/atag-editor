@@ -70,7 +70,7 @@ const {
 } = useCollections();
 
 const collection = ref<Collection>(null);
-const ancestryPaths = ref<NodeAncestry[] | null>(null);
+const ancestryPaths = ref<NodeAncestry>([]);
 
 // Initial pageload
 const isLoading = ref<boolean>(false);
@@ -123,7 +123,7 @@ watch(
 
     // Fetch parent collection details and ancestry only if a UUID is present
     if (isValidCollection.value && newUuid !== '') {
-      await api.getCollectionAncestry(route.params.uuid as string);
+      ancestryPaths.value = await api.getCollectionAncestry(route.params.uuid as string);
     }
 
     if (isValidCollection.value || newUuid === '') {
