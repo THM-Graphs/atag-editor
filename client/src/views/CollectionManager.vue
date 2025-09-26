@@ -4,10 +4,10 @@ import { useRoute } from 'vue-router';
 import { useTitle } from '@vueuse/core';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useCollectionSearch } from '../composables/useCollectionSearch';
-import CollectionCreationButton from '../components/CollectionCreationButton.vue';
 import CollectionError from '../components/CollectionError.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import OverviewToolbar from '../components/OverviewToolbar.vue';
+import CollectionCreationModal from '../components/CollectionCreationModal.vue';
 import CollectionTable from '../components/CollectionTable.vue';
 import Button from 'primevue/button';
 import Splitter from 'primevue/splitter';
@@ -76,6 +76,9 @@ const ancestryPaths = ref<NodeAncestry>([]);
 const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 const isFirstPageLoad = ref<boolean>(true);
+
+// TODO: Not very good naming, but will be extracted into own composable for reusability anyway
+const creationDialogIsVisible = ref<boolean>(false);
 
 const collectionFields = computed<PropertyConfig[]>(() => {
   return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
@@ -166,7 +169,9 @@ watch(
 );
 
 async function handleCollectionCreation(newCollection: Collection): Promise<void> {
+  creationDialogIsVisible.value = false;
   showMessage('created', `"${newCollection.data.label}"`);
+
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 }
 
@@ -332,9 +337,19 @@ function toggleActionMenu(event: Event): void {
               @node-labels-input-changed="handleNodeLabelsInputChanged"
             />
 
-            <CollectionCreationButton
+            <Button
+              icon="pi pi-plus"
+              aria-label="Submit"
+              label="Add Collection"
+              title="Add new Collection"
+              @click="creationDialogIsVisible = true"
+            />
+
+            <CollectionCreationModal
+              v-if="creationDialogIsVisible"
               :parent-collection="collection"
               @collection-created="handleCollectionCreation"
+              @canceled="creationDialogIsVisible = false"
             />
           </div>
 

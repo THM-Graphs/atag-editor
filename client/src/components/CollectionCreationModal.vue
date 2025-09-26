@@ -18,11 +18,11 @@ import {
 } from '../models/types';
 import { useAppStore } from '../store/app';
 
-const emit = defineEmits(['collectionCreated']);
-
 const props = defineProps<{
   parentCollection?: Collection;
 }>();
+
+const emit = defineEmits(['collectionCreated', 'canceled']);
 
 const { api } = useAppStore();
 
@@ -33,8 +33,22 @@ const {
   getCollectionConfigFields,
 } = useGuidelinesStore();
 
-const newCollectionData = ref<CollectionAccessObject>(null);
-const dialogIsVisible = ref<boolean>(false);
+const newCollectionData = ref<CollectionAccessObject>({
+  collection: {
+    data: Object.fromEntries(
+      getAllCollectionConfigFields().map(f => [
+        f.name,
+        f?.required === true ? getDefaultValueForProperty(f.type) : null,
+      ]),
+    ) as ICollection,
+    nodeLabels: guidelines.value.collections.types
+      .filter(t => t.level === 'primary')
+      .map(t => t.additionalLabel),
+  },
+  texts: [],
+  annotations: [],
+  collections: {},
+} as CollectionAccessObject);
 
 const asyncOperationRunning = ref<boolean>(false);
 
@@ -84,9 +98,6 @@ async function createNewCollection(): Promise<void> {
 
     const createdCollection: Collection = await api.createCollection(postData);
 
-    newCollectionData.value = {} as CollectionAccessObject;
-    dialogIsVisible.value = false;
-
     emit('collectionCreated', createdCollection);
   } catch (error: unknown) {
     console.error('Error creating collection:', error);
@@ -95,46 +106,15 @@ async function createNewCollection(): Promise<void> {
   }
 }
 
-async function showDialog(): Promise<void> {
-  dialogIsVisible.value = true;
-
-  newCollectionData.value = {
-    collection: {
-      data: Object.fromEntries(
-        getAllCollectionConfigFields().map(f => [
-          f.name,
-          f?.required === true ? getDefaultValueForProperty(f.type) : null,
-        ]),
-      ) as ICollection,
-      nodeLabels: guidelines.value.collections.types
-        .filter(t => t.level === 'primary')
-        .map(t => t.additionalLabel),
-    },
-    texts: [],
-    annotations: [],
-    collections: {},
-  } as CollectionAccessObject;
-}
-
-async function hideDialog(): Promise<void> {
-  newCollectionData.value = null;
-  dialogIsVisible.value = false;
+function handleCancelClick() {
+  emit('canceled');
 }
 </script>
 
 <template>
-  <Button
-    icon="pi pi-plus"
-    aria-label="Submit"
-    label="Add Collection"
-    title="Add new Collection"
-    @click="showDialog"
-  />
-
-  <!-- TODO: Can this be a separate component or managed via composable? -->
   <Dialog
-    v-model:visible="dialogIsVisible"
     modal
+    :visible="true"
     :closable="false"
     :close-on-escape="false"
     :style="{ width: '25rem' }"
@@ -219,7 +199,7 @@ async function hideDialog(): Promise<void> {
           label="Cancel"
           title="Cancel"
           severity="secondary"
-          @click="hideDialog"
+          @click="handleCancelClick"
         ></Button>
         <Button
           type="submit"
