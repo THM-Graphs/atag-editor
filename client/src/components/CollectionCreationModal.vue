@@ -175,7 +175,7 @@ function handleCancelClick() {
         <h4 class="text-center">Add data</h4>
         <div
           class="input-container flex align-items-center gap-3 mb-3"
-          v-for="field in dialogInputFields"
+          v-for="(field, index) in dialogInputFields"
         >
           <label :for="field.name" class="font-semibold w-6rem"
             >{{ capitalize(field.name) }}
@@ -187,6 +187,7 @@ function handleCancelClick() {
           />
           <DataInputComponent
             v-else
+            :autofocus="index === 0"
             v-model="newCollectionData.collection.data[field.name]"
             :config="field"
           />
