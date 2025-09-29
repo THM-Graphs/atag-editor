@@ -41,18 +41,8 @@ useTitle('Collection Manager');
 
 const { api } = useAppStore();
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
-const {
-  allowedEditOperations,
-  tableSelection,
-  isActionModalVisible,
-  currentActionType,
-  actionTargetCollections,
-  parentCollection,
-  closeActionModal,
-  reset: resetCollectionManager,
-  setParentCollection,
-  setSelection,
-} = useCollectionManagerStore();
+const { allowedEditOperations, tableSelection, setParentCollection, setSelection } =
+  useCollectionManagerStore();
 
 const {
   resetSearchParams: resetCollectionSearchParams,
@@ -100,7 +90,8 @@ watch(
   async (newUuid: string) => {
     isLoading.value = true;
 
-    closeActionModal();
+    // TODO: Replace this
+    // closeActionModal();
 
     if (newUuid) {
       try {
@@ -198,16 +189,12 @@ function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): v
 }
 
 function handleSelectionChange(newSelection: CollectionPreview[]): void {
-  setSelection(newSelection.map(c => c.collection));
-}
-
-function handleActionCanceled(): void {
-  closeActionModal();
-  resetCollectionManager();
+  setSelection(newSelection);
 }
 
 async function handleActionDone(event: Action): Promise<void> {
-  closeActionModal();
+  // TODO: Replace this
+  // closeActionModal();
 
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 
@@ -217,6 +204,14 @@ async function handleActionDone(event: Action): Promise<void> {
     detail: event.data.length + ' collections updated',
     life: 3000,
   });
+}
+
+function handleTableActionSelected(action: Action): void {
+  openCollectionEditModal(action);
+}
+
+function handleBulkActionSelected(type: CollectionNetworkActionType): void {
+  openCollectionEditModal({ type, data: tableSelection.value.map(c => c.collection) });
 }
 
 function handleSortChange(event: DataTableSortEvent): void {
@@ -240,6 +235,25 @@ function openCollectionCreationModal(): void {
     },
     emits: {
       onCollectionCreated: handleCollectionCreation,
+    },
+  });
+}
+
+function openCollectionEditModal(action: Action): void {
+  dialog.open(CollectionEditModal, {
+    props: {
+      modal: true,
+      closable: false,
+      closeOnEscape: false,
+      style: { width: '25rem' },
+    },
+    data: {
+      action: action.type,
+      collections: action.data,
+      parent: collection.value,
+    },
+    emits: {
+      onActionDone: handleActionDone,
     },
   });
 }
@@ -380,18 +394,9 @@ function toggleActionMenu(event: Event): void {
               ref="actionMenu"
               target="bulk"
               :allowed-operations="allowedEditOperations"
+              @action-selected="handleBulkActionSelected"
             />
           </div>
-
-          <CollectionEditModal
-            v-if="isActionModalVisible"
-            :isVisible="isActionModalVisible"
-            :action="currentActionType"
-            :collections="actionTargetCollections"
-            :parent="parentCollection"
-            @action-done="handleActionDone"
-            @action-canceled="handleActionCanceled"
-          />
 
           <CollectionTable
             v-if="guidelines"
@@ -402,6 +407,7 @@ function toggleActionMenu(event: Event): void {
             @selection-changed="handleSelectionChange"
             @sort-changed="handleSortChange"
             @pagination-changed="handlePaginationChange"
+            @action-selected="handleTableActionSelected"
           />
         </div>
       </SplitterPanel>

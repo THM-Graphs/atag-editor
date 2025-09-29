@@ -1,12 +1,12 @@
 import { computed, ref } from 'vue';
-import { Collection, CollectionNetworkActionType } from '../models/types';
+import { Collection, CollectionNetworkActionType, CollectionPreview } from '../models/types';
 
 // This is only a mirror of the selectedRows ref from the PrimeVue table component
-const tableSelection = ref<Collection[]>([]);
+const tableSelection = ref<CollectionPreview[]>([]);
 const parentCollection = ref<Collection | null>(null);
 
 // These are the collections that are passed to the action modal
-const actionTargetCollections = ref<Collection[]>([]);
+const actionTargetCollections = ref<CollectionPreview[]>([]);
 
 const isActionModalVisible = ref(false);
 const currentActionType = ref<CollectionNetworkActionType | null>(null);
@@ -28,13 +28,13 @@ const allowedEditOperations = computed<CollectionNetworkActionType[]>(() => {
 });
 
 export function useCollectionManagerStore() {
-  function setSelection(collections: Collection[]) {
+  function setSelection(collections: CollectionPreview[]) {
     tableSelection.value = collections;
   }
 
   function openActionModal(
     actionType: CollectionNetworkActionType,
-    collections: Collection[],
+    collections: CollectionPreview[],
     initiator: 'row' | 'toolbar',
   ) {
     currentActionType.value = actionType;
@@ -43,33 +43,8 @@ export function useCollectionManagerStore() {
     isActionModalVisible.value = true;
   }
 
-  function closeActionModal() {
-    reset();
-  }
-
-  function openRowAction(actionType: CollectionNetworkActionType, collection: Collection) {
-    openActionModal(actionType, [collection], 'row');
-  }
-
-  function openBulkAction(actionType: CollectionNetworkActionType) {
-    if (tableSelection.value.length === 0) {
-      return false;
-    }
-
-    openActionModal(actionType, [...tableSelection.value], 'toolbar');
-
-    return true;
-  }
-
   function setParentCollection(collection: Collection | null) {
     parentCollection.value = collection;
-  }
-
-  function reset() {
-    currentActionType.value = null;
-    currentActionInitiator.value = null;
-    isActionModalVisible.value = false;
-    actionTargetCollections.value = [];
   }
 
   return {
@@ -79,11 +54,7 @@ export function useCollectionManagerStore() {
     isActionModalVisible,
     parentCollection,
     tableSelection,
-    closeActionModal,
     openActionModal,
-    openBulkAction,
-    openRowAction,
-    reset,
     setParentCollection,
     setSelection,
   };

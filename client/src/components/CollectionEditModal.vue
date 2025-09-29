@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import { computed, ComputedRef, inject, ref } from 'vue';
 import Search from './Search.vue';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
-import Dialog from 'primevue/dialog';
 import Message from 'primevue/message';
 import { ToastServiceMethods, useToast } from 'primevue';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types';
@@ -12,24 +11,32 @@ import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarge
 import { useAppStore } from '../store/app';
 import NodeTag from './NodeTag.vue';
 
-// TODO: Or use store directly...?
-const props = defineProps<{
-  isVisible: boolean;
-  action?: CollectionNetworkActionType;
-  collections?: Collection[];
-  parent: Collection | null;
-}>();
-
-const toast: ToastServiceMethods = useToast();
+const emit = defineEmits(['actionDone', 'actionCanceled']);
 
 const { api } = useAppStore();
+const toast: ToastServiceMethods = useToast();
 
 const asyncOperationRunning = ref<boolean>(false);
+
+// Must be computed's since PrimeVue's Dialog Service does not allow custom props for components
+const action = computed<CollectionNetworkActionType | null>(() => {
+  return dialogRef?.value?.data?.action || null;
+});
+
+const parent = computed<Collection | null>(() => {
+  return dialogRef?.value?.data?.parent || null;
+});
+
+const collections = computed<Collection[]>(() => {
+  return dialogRef?.value?.data?.collections || [];
+});
+
+const dialogRef: any = inject('dialogRef');
 
 const isMoveAction: ComputedRef<boolean> = computed((): boolean => {
   const moveActions: CollectionNetworkActionType[] = ['reference', 'move'];
 
-  return moveActions.includes(props.action);
+  return moveActions.includes(action.value);
 });
 
 const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
@@ -40,20 +47,20 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
   return true;
 });
 
-const emit = defineEmits(['actionDone', 'actionCanceled']);
+// ------------------------- UI stuff ------------------------
 
 // This is the Collection node the selected collections/texts will be attached to.
 const actionTarget = ref<Collection | null>(null);
 
 const title: ComputedRef<string> = computed(() => {
-  return capitalize(props.action) + ' collections';
+  return capitalize(action.value) + ' collections';
 });
 
 const message: ComputedRef<string> = computed(() => {
-  const collectionCount: number = props.collections?.length ?? 0;
+  const collectionCount: number = collections?.value?.length ?? 0;
   const base: string = `${collectionCount} collection${collectionCount > 1 ? 's' : ''} ${collectionCount > 1 ? 'are' : 'is'} about to be`;
 
-  switch (props.action) {
+  switch (action.value) {
     case 'reference':
       return `${base} additionally attached to another parent`;
     case 'move':
@@ -69,16 +76,16 @@ const errorMessages = ref([]);
 const errorMessageCount = ref(0);
 
 const actionLabel: ComputedRef<string> = computed(() => {
-  return capitalize(props.action);
+  return capitalize(action.value);
 });
 
 async function finishAction(): Promise<void> {
   asyncOperationRunning.value = true;
 
   const data: NetworkPostData = {
-    type: props.action,
-    nodes: props.collections ?? [],
-    origin: props.parent ?? null,
+    type: action.value,
+    nodes: collections.value ?? [],
+    origin: parent.value ?? null,
     target: actionTarget.value ?? null,
   };
 
@@ -86,8 +93,8 @@ async function finishAction(): Promise<void> {
     await api.updateNetwork(data);
 
     emit('actionDone', {
-      type: props.action,
-      data: props.collections,
+      type: action.value,
+      data: collections?.value,
     });
   } catch (error: unknown) {
     showMessage('error', error as Error);
@@ -97,7 +104,7 @@ async function finishAction(): Promise<void> {
 }
 
 function handleSearchItemSelected(collection: Collection): void {
-  const uuids: string[] = props.collections.map(c => c.data.uuid);
+  const uuids: string[] = collections?.value?.map(c => c.data.uuid);
 
   clearErrorMessages();
 
@@ -108,7 +115,7 @@ function handleSearchItemSelected(collection: Collection): void {
       );
     }
 
-    if (props.parent?.data.uuid === collection.data.uuid) {
+    if (parent.value?.data.uuid === collection.data.uuid) {
       throw new InvalidCollectionTargetError(
         'Collection can not be used as target they are already connected to it',
       );
@@ -141,6 +148,10 @@ function clearErrorMessages(): void {
   errorMessages.value = [];
 }
 
+function closeModal(): void {
+  dialogRef.value.close();
+}
+
 function showMessage(result: 'success' | 'error', error?: Error) {
   toast.add({
     severity: result,
@@ -150,8 +161,8 @@ function showMessage(result: 'success' | 'error', error?: Error) {
   });
 }
 
-async function hideDialog(): Promise<void> {
-  emit('actionCanceled');
+async function handleCancelClick(): Promise<void> {
+  closeModal();
 }
 
 function removeActionTarget(): void {
@@ -160,75 +171,65 @@ function removeActionTarget(): void {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="props.isVisible"
-    modal
-    :closable="false"
-    :close-on-escape="false"
-    :style="{ width: '25rem' }"
-  >
-    <template #header>
-      <h2 class="w-full text-center m-0">{{ title }}</h2>
-    </template>
+  <h2 class="w-full text-center m-0">{{ title }}</h2>
 
-    <div class="content text-center mb-2">
-      <div class="updates-container">
-        <h4>{{ message }}</h4>
-      </div>
-
-      <div v-if="isMoveAction" class="target-container">
-        <h4>Attach to new collection:</h4>
-
-        <div v-if="actionTarget" class="flex justify-content-between align-items-center gap-2">
-          <Card>
-            <template #content>
-              <div class="flex gap-2">
-                <NodeTag
-                  v-for="nodeLabel in actionTarget.nodeLabels"
-                  :content="nodeLabel"
-                  type="Collection"
-                  class="mr-1"
-                />
-                <div>{{ actionTarget.data.label }}</div>
-              </div>
-            </template>
-          </Card>
-          <Button
-            icon="pi pi-times"
-            size="small"
-            class="w-2rem h-2rem"
-            severity="danger"
-            title="Remove selected collection"
-            aria-label="Remove selected collection"
-            @click="removeActionTarget"
-          ></Button>
-        </div>
-
-        <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closable>{{
-          msg.content
-        }}</Message>
-        <Search v-if="!actionTarget" @item-selected="handleSearchItemSelected" />
-      </div>
+  <div class="content text-center mb-2">
+    <div class="updates-container">
+      <h4>{{ message }}</h4>
     </div>
 
-    <div class="button-container flex justify-content-end gap-2">
-      <Button
-        type="button"
-        label="Cancel"
-        title="Cancel"
-        severity="secondary"
-        @click="hideDialog"
-      ></Button>
-      <Button
-        type="submit"
-        :label="actionLabel"
-        :title="title"
-        :loading="asyncOperationRunning"
-        :disabled="!inputIsValid || asyncOperationRunning"
-        @click="finishAction"
-      ></Button>
+    <div v-if="isMoveAction" class="target-container">
+      <h4>Attach to new collection:</h4>
+
+      <div v-if="actionTarget" class="flex justify-content-between align-items-center gap-2">
+        <Card>
+          <template #content>
+            <div class="flex gap-2">
+              <NodeTag
+                v-for="nodeLabel in actionTarget.nodeLabels"
+                :content="nodeLabel"
+                type="Collection"
+                class="mr-1"
+              />
+              <div>{{ actionTarget.data.label }}</div>
+            </div>
+          </template>
+        </Card>
+        <Button
+          icon="pi pi-times"
+          size="small"
+          class="w-2rem h-2rem"
+          severity="danger"
+          title="Remove selected collection"
+          aria-label="Remove selected collection"
+          @click="removeActionTarget"
+        ></Button>
+      </div>
+
+      <Message v-for="msg of errorMessages" :key="msg.id" :severity="msg.severity" closable>{{
+        msg.content
+      }}</Message>
+      <Search v-if="!actionTarget" @item-selected="handleSearchItemSelected" />
     </div>
-  </Dialog>
+  </div>
+
+  <div class="button-container flex justify-content-end gap-2">
+    <Button
+      type="button"
+      label="Cancel"
+      title="Cancel"
+      severity="secondary"
+      @click="handleCancelClick"
+    ></Button>
+    <Button
+      type="submit"
+      :label="actionLabel"
+      :title="title"
+      :loading="asyncOperationRunning"
+      :disabled="!inputIsValid || asyncOperationRunning"
+      @click="finishAction"
+    ></Button>
+  </div>
 </template>
 
 <style scoped></style>

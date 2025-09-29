@@ -7,7 +7,7 @@ import { capitalize } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
-import { PaginationData, CollectionPreview, Collection } from '../models/types';
+import { PaginationData, CollectionPreview, CollectionNetworkActionType } from '../models/types';
 import { ref, useTemplateRef, watch } from 'vue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 
@@ -22,9 +22,14 @@ const props = defineProps<{
 
 const selectedRows = ref<CollectionPreview[]>([]);
 // Row from where the action menu is called
-const currentRow = ref<Collection | null>(null);
+const currentRow = ref<CollectionPreview | null>(null);
 
-const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
+const emit = defineEmits([
+  'actionSelected',
+  'paginationChanged',
+  'selectionChanged',
+  'sortChanged',
+]);
 
 const { allowedEditOperations } = useCollectionManagerStore();
 
@@ -62,7 +67,7 @@ function resetSelection() {
 
 // Function to toggle menu for a specific row
 function toggleMenu(event: Event, row: CollectionPreview): void {
-  currentRow.value = row.collection;
+  currentRow.value = row;
 
   actionMenu.value.toggle(event);
 }
@@ -89,6 +94,10 @@ function getColumnProps(columnName: ColumnName): Partial<ColumnProps> {
       },
     },
   };
+}
+
+function handleActionSelected(type: CollectionNetworkActionType) {
+  emit('actionSelected', { type: type, data: [currentRow.value.collection] });
 }
 
 function handleSelectionChange(newSelection: CollectionPreview[]) {
@@ -213,8 +222,9 @@ function handlePagination(event: DataTablePageEvent): void {
               ref="actionMenu"
               target="single"
               :tableMode="props.mode"
-              :current-row="currentRow"
+              :initiator="currentRow"
               :allowed-operations="allowedEditOperations"
+              @action-selected="handleActionSelected"
             />
           </template>
         </Column>
