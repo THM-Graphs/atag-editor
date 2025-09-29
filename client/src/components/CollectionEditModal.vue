@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, inject, ref } from 'vue';
+import { computed, ComputedRef, inject, ref, watch } from 'vue';
 import Search from './Search.vue';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
@@ -10,8 +10,11 @@ import { capitalize } from '../utils/helper/helper';
 import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
 import { useAppStore } from '../store/app';
 import NodeTag from './NodeTag.vue';
+import { useRoute } from 'vue-router';
 
 const emit = defineEmits(['actionDone', 'actionCanceled']);
+
+const route = useRoute();
 
 const { api } = useAppStore();
 const toast: ToastServiceMethods = useToast();
@@ -46,6 +49,8 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
 
   return true;
 });
+
+watch(() => route.path, closeModal);
 
 // ------------------------- UI stuff ------------------------
 

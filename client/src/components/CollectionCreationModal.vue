@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, inject, ref } from 'vue';
+import { computed, ComputedRef, inject, ref, watch } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
@@ -16,6 +16,9 @@ import {
   PropertyConfig,
 } from '../models/types';
 import { useAppStore } from '../store/app';
+import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+
+const route: RouteLocationNormalizedLoaded = useRoute();
 
 // Must be a computed since PrimeVue's Dialog Service does not allow custom props for components
 const parentCollection = computed<Collection | null>(() => {
@@ -72,6 +75,8 @@ const inputIsValid: ComputedRef<boolean> = computed((): boolean => {
 
   return selectedLabelsAreValid && requiredFieldsAreValid;
 });
+
+watch(() => route.path, closeModal);
 
 function closeModal(): void {
   dialogRef.value.close();

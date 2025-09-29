@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, useTemplateRef, inject } from 'vue';
+import { ref, computed, useTemplateRef, inject, watch } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
@@ -12,6 +12,9 @@ import Message from 'primevue/message';
 import Textarea from 'primevue/textarea';
 import ToggleButton from 'primevue/togglebutton';
 import { useImport } from '../composables/useImport';
+import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+
+const route: RouteLocationNormalizedLoaded = useRoute();
 
 const { totalAnnotations } = useAnnotationStore();
 const {
@@ -79,6 +82,8 @@ useEventListener(reader, 'error', (event: ProgressEvent) => {
   const error: DOMException = (event.target as FileReader).error;
   addErrorMessage(error);
 });
+
+watch(() => route.path, closeModal);
 
 function handleFinishClick(): void {
   finishImport();
