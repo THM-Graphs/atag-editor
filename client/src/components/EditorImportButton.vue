@@ -4,9 +4,11 @@ import { useCharactersStore } from '../store/characters';
 import Button from 'primevue/button';
 import { useDialog } from 'primevue';
 import ImportModal from './ImportModal.vue';
+import { useAppStore } from '../store/app';
 
 const dialog = useDialog();
 
+const { createModalInstance, destroyModalInstance } = useAppStore();
 const { afterEndIndex, beforeStartIndex, initialSnippetCharacters, snippetCharacters } =
   useCharactersStore();
 
@@ -33,14 +35,17 @@ const editorContainsText = computed<boolean>(() => {
 });
 
 function openImportModal(): void {
-  dialog.open(ImportModal, {
-    props: {
-      modal: true,
-      closable: false,
-      closeOnEscape: false,
-      style: { width: '30rem' },
-    },
-  });
+  createModalInstance(
+    dialog.open(ImportModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '30rem' },
+      },
+      onClose: () => destroyModalInstance(),
+    }),
+  );
 }
 </script>
 

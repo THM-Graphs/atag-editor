@@ -39,7 +39,7 @@ const toast: ToastServiceMethods = useToast();
 
 useTitle('Collection Manager');
 
-const { api } = useAppStore();
+const { api, createModalInstance, destroyModalInstance } = useAppStore();
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
 const { allowedEditOperations, tableSelection, setParentCollection, setSelection } =
   useCollectionManagerStore();
@@ -223,39 +223,45 @@ function handlePaginationChange(event: DataTablePageEvent): void {
 }
 
 function openCollectionCreationModal(): void {
-  dialog.open(CollectionCreationModal, {
-    props: {
-      modal: true,
-      closable: false,
-      closeOnEscape: false,
-      style: { width: '25rem' },
-    },
-    data: {
-      parentCollection: collection.value,
-    },
-    emits: {
-      onCollectionCreated: handleCollectionCreation,
-    },
-  });
+  createModalInstance(
+    dialog.open(CollectionCreationModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        parentCollection: collection.value,
+      },
+      emits: {
+        onCollectionCreated: handleCollectionCreation,
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
 }
 
 function openCollectionEditModal(action: Action): void {
-  dialog.open(CollectionEditModal, {
-    props: {
-      modal: true,
-      closable: false,
-      closeOnEscape: false,
-      style: { width: '25rem' },
-    },
-    data: {
-      action: action.type,
-      collections: action.data,
-      parent: collection.value,
-    },
-    emits: {
-      onActionDone: handleActionDone,
-    },
-  });
+  createModalInstance(
+    dialog.open(CollectionEditModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        action: action.type,
+        collections: action.data,
+        parent: collection.value,
+      },
+      emits: {
+        onActionDone: handleActionDone,
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
 }
 
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
