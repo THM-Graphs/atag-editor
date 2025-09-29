@@ -3,6 +3,7 @@ import ConfirmationService from 'primevue/confirmationservice';
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
 import Tooltip from 'primevue/tooltip';
+import DialogService from 'primevue/dialogservice';
 import ToastService from 'primevue/toastservice';
 import App from './App.vue';
 import router from './router.ts';
@@ -20,6 +21,7 @@ app
       preset: Aura,
     },
   })
+  .use(DialogService)
   .use(ConfirmationService)
   .use(ToastService);
 

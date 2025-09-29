@@ -15,7 +15,7 @@ import SplitterPanel from 'primevue/splitterpanel';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
-import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+import { DataTablePageEvent, DataTableSortEvent, useDialog } from 'primevue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
@@ -32,16 +32,15 @@ import {
 import { useAppStore } from '../store/app';
 import NodeTag from '../components/NodeTag.vue';
 
-const toast: ToastServiceMethods = useToast();
-
 const route = useRoute();
+
+const dialog: ReturnType<typeof useDialog> = useDialog();
+const toast: ToastServiceMethods = useToast();
 
 useTitle('Collection Manager');
 
 const { api } = useAppStore();
-
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
-
 const {
   allowedEditOperations,
   tableSelection,
@@ -76,9 +75,6 @@ const ancestryPaths = ref<NodeAncestry>([]);
 const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 const isFirstPageLoad = ref<boolean>(true);
-
-// TODO: Not very good naming, but will be extracted into own composable for reusability anyway
-const creationDialogIsVisible = ref<boolean>(false);
 
 const collectionFields = computed<PropertyConfig[]>(() => {
   return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
@@ -169,7 +165,6 @@ watch(
 );
 
 async function handleCollectionCreation(newCollection: Collection): Promise<void> {
-  creationDialogIsVisible.value = false;
   showMessage('created', `"${newCollection.data.label}"`);
 
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
@@ -230,6 +225,23 @@ function handleSortChange(event: DataTableSortEvent): void {
 
 function handlePaginationChange(event: DataTablePageEvent): void {
   updateTableUrlParams(event);
+}
+
+function openCollectionCreationModal(): void {
+  dialog.open(CollectionCreationModal, {
+    props: {
+      modal: true,
+      closable: false,
+      closeOnEscape: false,
+      style: { width: '25rem' },
+    },
+    data: {
+      parentCollection: collection.value,
+    },
+    emits: {
+      onCollectionCreated: handleCollectionCreation,
+    },
+  });
 }
 
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
@@ -342,14 +354,7 @@ function toggleActionMenu(event: Event): void {
               aria-label="Submit"
               label="Add Collection"
               title="Add new Collection"
-              @click="creationDialogIsVisible = true"
-            />
-
-            <CollectionCreationModal
-              v-if="creationDialogIsVisible"
-              :parent-collection="collection"
-              @collection-created="handleCollectionCreation"
-              @canceled="creationDialogIsVisible = false"
+              @click="openCollectionCreationModal"
             />
           </div>
 
