@@ -100,6 +100,11 @@ export type CollectionPreview = {
   };
 };
 
+export type FaviconResponse = {
+  contentType: string;
+  data: Buffer;
+};
+
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;

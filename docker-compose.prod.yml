@@ -39,6 +39,7 @@ services:
     environment:
       - APP_HOST=${APP_HOST}
       - APP_PORT=${APP_PORT}
+      - FAVICON_URL=${FAVICON_URL}
       - GUIDELINES_URL=${GUIDELINES_URL}
       - LOG_LEVEL=${LOG_LEVEL}
       - NEO4J_URI=${NEO4J_URI}
