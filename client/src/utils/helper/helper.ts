@@ -121,6 +121,61 @@ export function formatFileSize(bytes: number): string {
   return `${formattedSize} ${sizes[i]}`;
 }
 
+export function getCharacterUuidFromSpan(span: HTMLSpanElement | Element | null): string | null {
+  return span?.id ?? null;
+}
+
+/**
+ * Determines the outer boundary elements and their UUIDs of a given range.
+ * The function extracts the start and end span elements using `getRangeBoundaries`,
+ * then identifies the span elements immediately before the start and after the end
+ * of the range, if they exist. It returns these outer span elements and their corresponding
+ * UUIDs.
+ *
+ * @param {Range} range - A Range object representing the selected or highlighted text.
+ * @returns {Object} An object containing `leftSpan` and `rightSpan`, which are the
+ * HTML span elements immediately before and after the range, respectively, as well as
+ * `leftUuid` and `rightUuid`, which are the UUIDs of these span elements.
+ */
+export function getOuterRangeBoundaries(range: Range): {
+  leftSpan: HTMLSpanElement | null;
+  rightSpan: HTMLSpanElement | null;
+  leftUuid: string | null;
+  rightUuid: string | null;
+} {
+  const { startSpan, endSpan } = getRangeBoundaries(range);
+
+  const leftSpan: HTMLSpanElement | null =
+    (startSpan.previousElementSibling as HTMLSpanElement) ?? null;
+  const rightSpan: HTMLSpanElement | null = (endSpan.nextElementSibling as HTMLSpanElement) ?? null;
+  const leftUuid: string | null = leftSpan?.id ?? null;
+  const rightUuid: string | null = rightSpan?.id ?? null;
+
+  return {
+    leftSpan,
+    rightSpan,
+    leftUuid,
+    rightUuid,
+  };
+}
+
+/**
+ * Extracts the start and end span elements from a given Range and return an object with two properties,
+ * `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
+ *
+ * @param {Range} range A Range object
+ * @returns {Object} An object with two properties, `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
+ */
+export function getRangeBoundaries(range: Range): {
+  startSpan: HTMLSpanElement;
+  endSpan: HTMLSpanElement;
+} {
+  const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+  const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+
+  return { startSpan: startReferenceSpanElement, endSpan: endReferenceSpanElement };
+}
+
 /**
  * Checks if the given node is the text container element with id "text".
  *
@@ -189,7 +244,10 @@ export function getSelectionData(): { selection: Selection; range: Range; type: 
  * @param {Ref<HTMLDivElement>} editorElm - The ref to the editor element.
  * @return {boolean} True if the caret is before the first character, false otherwise.
  */
-export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
+export function isCaretAtBeginning(
+  characterSpan: HTMLSpanElement,
+  editorElm: Ref<HTMLDivElement>,
+): boolean {
   const { range } = getSelectionData();
   return characterSpan === editorElm.value.firstElementChild && range.startOffset === 0;
 }
@@ -202,7 +260,10 @@ export function isCaretAtBeginning(characterSpan: HTMLSpanElement, editorElm: Re
  * @param {Ref<HTMLDivElement>} editorElm - The ref to the editor element.
  * @return {boolean} True if the caret is after the last character, false otherwise.
  */
-export function isCaretAtEnd(characterSpan: HTMLSpanElement, editorElm: Ref<HTMLDivElement>) {
+export function isCaretAtEnd(
+  characterSpan: HTMLSpanElement,
+  editorElm: Ref<HTMLDivElement>,
+): boolean {
   const { range } = getSelectionData();
   const lastChild = editorElm.value.lastElementChild;
 
