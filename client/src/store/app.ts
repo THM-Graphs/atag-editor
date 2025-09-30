@@ -2,11 +2,15 @@ import { readonly, ref } from 'vue';
 import ApiService from '../services/api';
 import { useStyleTag } from '@vueuse/core';
 import { useGuidelinesStore } from './guidelines';
+import { DynamicDialogInstance } from 'primevue/dynamicdialogoptions';
 
 const { error: guidelinesError, initializeGuidelines } = useGuidelinesStore();
 
 // Data
 const api: ApiService = new ApiService();
+
+// Modals anywhere in the app are set to this variable
+const activeModal = ref<DynamicDialogInstance>(null);
 
 // Fetch status
 const isFetching = ref<boolean>(false);
@@ -26,6 +30,29 @@ const error = ref<any>(null);
  *   - `isFetching`: Whether the store is currently fetching data.
  */
 export function useAppStore() {
+  /**
+   * Sets the active modal instance to the provided PrimeVue DynamicDialog instance.
+   *
+   * Typically called when a modal is opened.
+   *
+   * @param {DynamicDialogInstance} instance - The modal instance to set as active.
+   * @returns {void} This function does not return any value.
+   */
+  function createModalInstance(instance: DynamicDialogInstance): void {
+    activeModal.value = instance;
+  }
+
+  /**
+   * Destroys the active modal instance.
+   *
+   * Typically called when a modal is closed.
+   *
+   * @returns {void} This function does not return any value.
+   */
+  function destroyModalInstance(): void {
+    activeModal.value = null;
+  }
+
   /**
    * Fetches the custom stylesheet and applies it to the document.
    *
@@ -87,9 +114,12 @@ export function useAppStore() {
   }
 
   return {
+    activeModal: readonly(activeModal),
     api: readonly(api),
     error: readonly(error),
     isFetching: readonly(isFetching),
+    createModalInstance,
+    destroyModalInstance,
     initializeApp,
   };
 }

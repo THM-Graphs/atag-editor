@@ -15,7 +15,7 @@ import SplitterPanel from 'primevue/splitterpanel';
 import Toast from 'primevue/toast';
 import { ToastServiceMethods } from 'primevue/toastservice';
 import { useToast } from 'primevue/usetoast';
-import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
+import { DataTablePageEvent, DataTableSortEvent, useDialog } from 'primevue';
 import FormPropertiesSection from '../components/FormPropertiesSection.vue';
 import ActionMenu from '../components/ActionMenu.vue';
 import CollectionEditModal from '../components/CollectionEditModal.vue';
@@ -32,28 +32,17 @@ import {
 import { useAppStore } from '../store/app';
 import NodeTag from '../components/NodeTag.vue';
 
-const toast: ToastServiceMethods = useToast();
-
 const route = useRoute();
+
+const dialog: ReturnType<typeof useDialog> = useDialog();
+const toast: ToastServiceMethods = useToast();
 
 useTitle('Collection Manager');
 
-const { api } = useAppStore();
-
+const { api, createModalInstance, destroyModalInstance } = useAppStore();
 const { guidelines, getCollectionConfigFields } = useGuidelinesStore();
-
-const {
-  allowedEditOperations,
-  tableSelection,
-  isActionModalVisible,
-  currentActionType,
-  actionTargetCollections,
-  parentCollection,
-  closeActionModal,
-  reset: resetCollectionManager,
-  setParentCollection,
-  setSelection,
-} = useCollectionManagerStore();
+const { allowedEditOperations, tableSelection, setParentCollection, setSelection } =
+  useCollectionManagerStore();
 
 const {
   resetSearchParams: resetCollectionSearchParams,
@@ -76,9 +65,6 @@ const ancestryPaths = ref<NodeAncestry>([]);
 const isLoading = ref<boolean>(false);
 const isValidCollection = ref<boolean>(false);
 const isFirstPageLoad = ref<boolean>(true);
-
-// TODO: Not very good naming, but will be extracted into own composable for reusability anyway
-const creationDialogIsVisible = ref<boolean>(false);
 
 const collectionFields = computed<PropertyConfig[]>(() => {
   return guidelines.value ? getCollectionConfigFields(collection.value.nodeLabels) : [];
@@ -103,8 +89,6 @@ watch(
   () => route.params.uuid,
   async (newUuid: string) => {
     isLoading.value = true;
-
-    closeActionModal();
 
     if (newUuid) {
       try {
@@ -169,7 +153,6 @@ watch(
 );
 
 async function handleCollectionCreation(newCollection: Collection): Promise<void> {
-  creationDialogIsVisible.value = false;
   showMessage('created', `"${newCollection.data.label}"`);
 
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
@@ -203,17 +186,10 @@ function updateTableUrlParams(event: DataTablePageEvent | DataTableSortEvent): v
 }
 
 function handleSelectionChange(newSelection: CollectionPreview[]): void {
-  setSelection(newSelection.map(c => c.collection));
-}
-
-function handleActionCanceled(): void {
-  closeActionModal();
-  resetCollectionManager();
+  setSelection(newSelection);
 }
 
 async function handleActionDone(event: Action): Promise<void> {
-  closeActionModal();
-
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 
   toast.add({
@@ -224,12 +200,62 @@ async function handleActionDone(event: Action): Promise<void> {
   });
 }
 
+function handleTableActionSelected(action: Action): void {
+  openCollectionEditModal(action);
+}
+
+function handleBulkActionSelected(type: CollectionNetworkActionType): void {
+  openCollectionEditModal({ type, data: tableSelection.value.map(c => c.collection) });
+}
+
 function handleSortChange(event: DataTableSortEvent): void {
   updateTableUrlParams(event);
 }
 
 function handlePaginationChange(event: DataTablePageEvent): void {
   updateTableUrlParams(event);
+}
+
+function openCollectionCreationModal(): void {
+  createModalInstance(
+    dialog.open(CollectionCreationModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        parentCollection: collection.value,
+      },
+      emits: {
+        onCollectionCreated: handleCollectionCreation,
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
+}
+
+function openCollectionEditModal(action: Action): void {
+  createModalInstance(
+    dialog.open(CollectionEditModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        action: action.type,
+        collections: action.data,
+        parent: collection.value,
+      },
+      emits: {
+        onActionDone: handleActionDone,
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
 }
 
 function showMessage(operation: 'created' | 'deleted', detail?: string): void {
@@ -342,14 +368,7 @@ function toggleActionMenu(event: Event): void {
               aria-label="Submit"
               label="Add Collection"
               title="Add new Collection"
-              @click="creationDialogIsVisible = true"
-            />
-
-            <CollectionCreationModal
-              v-if="creationDialogIsVisible"
-              :parent-collection="collection"
-              @collection-created="handleCollectionCreation"
-              @canceled="creationDialogIsVisible = false"
+              @click="openCollectionCreationModal"
             />
           </div>
 
@@ -375,18 +394,9 @@ function toggleActionMenu(event: Event): void {
               ref="actionMenu"
               target="bulk"
               :allowed-operations="allowedEditOperations"
+              @action-selected="handleBulkActionSelected"
             />
           </div>
-
-          <CollectionEditModal
-            v-if="isActionModalVisible"
-            :isVisible="isActionModalVisible"
-            :action="currentActionType"
-            :collections="actionTargetCollections"
-            :parent="parentCollection"
-            @action-done="handleActionDone"
-            @action-canceled="handleActionCanceled"
-          />
 
           <CollectionTable
             v-if="guidelines"
@@ -397,6 +407,7 @@ function toggleActionMenu(event: Event): void {
             @selection-changed="handleSelectionChange"
             @sort-changed="handleSortChange"
             @pagination-changed="handlePaginationChange"
+            @action-selected="handleTableActionSelected"
           />
         </div>
       </SplitterPanel>

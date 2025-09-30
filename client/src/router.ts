@@ -3,6 +3,9 @@ import Overview from './views/Overview.vue';
 import Editor from './views/Editor.vue';
 import CollectionEntry from './views/CollectionEntry.vue';
 import CollectionManager from './views/CollectionManager.vue';
+import { useNavigationGuard } from './composables/useNavigationGuard';
+
+const { hasOpenModal } = useNavigationGuard();
 
 const allRoutes = [
   { path: '/', component: Overview },
@@ -20,5 +23,7 @@ const router: Router = createRouter({
   history: createWebHistory(),
   routes: usedRoutes,
 });
+
+router.beforeEach(() => hasOpenModal());
 
 export default router;

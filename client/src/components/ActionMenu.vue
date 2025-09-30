@@ -1,27 +1,24 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue';
 import { Router, useRouter } from 'vue-router';
-import { useCollectionManagerStore } from '../store/collectionManager';
 import { TieredMenu } from 'primevue';
-import { CollectionNetworkActionType, Collection } from '../models/types';
+import { CollectionNetworkActionType, CollectionPreview } from '../models/types';
 import { MenuItem } from 'primevue/menuitem';
 
 const props = defineProps<{
   allowedOperations: CollectionNetworkActionType[];
   tableMode?: 'view' | 'edit';
   target: 'single' | 'bulk';
-  currentRow?: Collection;
+  initiator?: CollectionPreview;
 }>();
 
-const emit = defineEmits(['paginationChanged', 'selectionChanged', 'sortChanged']);
+const emit = defineEmits(['actionSelected']);
 
 defineExpose({
   toggle,
 });
 
 const router: Router = useRouter();
-
-const { openRowAction, openBulkAction } = useCollectionManagerStore();
 
 const menu = useTemplateRef<InstanceType<typeof TieredMenu>>('menu');
 
@@ -33,14 +30,14 @@ const menuItems = ref<MenuItem[]>([
       {
         label: 'Open in Manager',
         icon: 'pi pi-sitemap',
-        command: () => router.push(`/collection-manager/${props.currentRow?.data.uuid}`),
-        disabled: () => props.target === 'bulk' || !props.currentRow?.data.uuid,
+        command: () => router.push(`/collection-manager/${props.initiator?.collection.data.uuid}`),
+        disabled: () => props.target === 'bulk' || !props.initiator?.collection.data.uuid,
       },
       {
         label: 'Open details page',
         icon: 'pi pi-pen-to-square',
-        command: () => router.push(`/collections/${props.currentRow?.data.uuid}`),
-        disabled: () => props.target === 'bulk' || !props.currentRow?.data.uuid,
+        command: () => router.push(`/collections/${props.initiator?.collection.data.uuid}`),
+        disabled: () => props.target === 'bulk' || !props.initiator?.collection.data.uuid,
       },
     ],
   },
@@ -95,11 +92,7 @@ function toggle(event: Event): void {
 }
 
 function handleActionSelection(type: CollectionNetworkActionType): void {
-  if (props.target === 'single') {
-    openRowAction(type, props.currentRow);
-  } else {
-    openBulkAction(type);
-  }
+  emit('actionSelected', type);
 }
 </script>
 
