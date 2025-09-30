@@ -97,6 +97,8 @@ async function finishAction(): Promise<void> {
   try {
     await api.updateNetwork(data);
 
+    closeModal();
+
     emit('actionDone', {
       type: action.value,
       data: collections?.value,
