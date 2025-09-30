@@ -90,9 +90,6 @@ watch(
   async (newUuid: string) => {
     isLoading.value = true;
 
-    // TODO: Replace this
-    // closeActionModal();
-
     if (newUuid) {
       try {
         collection.value = await api.getCollection(newUuid);
@@ -193,9 +190,6 @@ function handleSelectionChange(newSelection: CollectionPreview[]): void {
 }
 
 async function handleActionDone(event: Action): Promise<void> {
-  // TODO: Replace this
-  // closeActionModal();
-
   await fetchCollections(collection.value?.data.uuid, collectionSearchParams.value);
 
   toast.add({
