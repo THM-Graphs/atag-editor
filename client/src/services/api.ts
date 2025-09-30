@@ -25,30 +25,9 @@ export default class ApiService {
   /** The base URL of the API */
   private baseUrl: string;
 
-  /** The API prefix (e.g. '/api') */
-  private apiPrefix: string;
-
   constructor() {
-    this.apiPrefix = '/api';
-    this.baseUrl = this.buildBaseUrl();
-  }
-
-  /**
-   * Builds the base URL of the API depending on the environment.
-   *
-   * In development mode, the URL is constructed with protocol and host before the API prefix.
-   * In production mode, the API prefix is used as is (handled by proxy servers like nginx).
-   *
-   * @returns {string} The built base URL.
-   */
-  private buildBaseUrl(): string {
-    if (import.meta.env.MODE === 'development') {
-      // Used for development currently, fix in future with vite configuration
-      return `${import.meta.env.VITE_PROTOCOL}://${import.meta.env.VITE_APP_HOST}:8080${this.apiPrefix}`;
-    }
-
-    // For production, use relative URL and leave configuration to nginx
-    return this.apiPrefix;
+    // Earlier built with a function, but now managed by Vite proxy configuration
+    this.baseUrl = '/api';
   }
 
   public async createCollection(data: CollectionCreationData): Promise<Collection> {
