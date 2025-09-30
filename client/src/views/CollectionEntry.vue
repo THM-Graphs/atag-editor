@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref, watch } from 'vue';
 import {
-  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
   RouteLocationNormalizedLoaded,
   RouterLink,
   useRoute,
@@ -150,7 +150,7 @@ watch(
   },
 );
 
-onBeforeRouteLeave(() => preventUserFromRouteLeaving());
+onBeforeRouteUpdate(() => preventUserFromRouteLeaving());
 
 function deleteAnnotation(uuid: string): void {
   collectionAccessObject.value.annotations = collectionAccessObject.value.annotations.filter(
