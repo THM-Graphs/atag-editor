@@ -67,15 +67,11 @@ export function useAnnotationStore() {
       },
     );
 
-    console.time('total map');
     // Create map of ALL annotations
     totalAnnotations.value = annotationObjects;
-    console.timeEnd('total map');
 
-    console.time('snippet map');
     // Create copy of annotations in the current characters snippet
     extractSnippetAnnotations();
-    console.timeEnd('snippet map');
 
     updateTruncationStatus();
 

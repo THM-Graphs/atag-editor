@@ -231,7 +231,6 @@ async function saveCharacters(): Promise<void> {
   const sliceEnd: number = endNodeIndex;
 
   const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
-  console.log(snippetToUpdate.map((c: Character) => c.data.text));
 
   // TODO: textUuid is not really needed since it is parsed from the url parameter
   const characterPostData: CharacterPostData = {

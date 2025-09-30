@@ -178,8 +178,6 @@ function enrichCollectionData(): void {
 }
 
 function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
-  console.log(newAnnotation);
-
   collectionAccessObject.value.annotations.push(newAnnotation);
 }
 
