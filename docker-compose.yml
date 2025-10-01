@@ -62,6 +62,7 @@ services:
       NEO4J_AUTH: ${NEO4J_USER}/${NEO4J_PW}
       NEO4J_PLUGINS: '["apoc", "apoc-extended"]'
       apoc.import.file.enabled: 'true'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.\\\*,atag.\\\*
       apoc.export.file.enabled: 'true'
       apoc.initializer.neo4j.0: CREATE CONSTRAINT collection_uuid IF NOT EXISTS FOR (c:Collection) REQUIRE c.uuid IS UNIQUE
       apoc.initializer.neo4j.1: CREATE CONSTRAINT text_uuid IF NOT EXISTS FOR (t:Text) REQUIRE t.uuid IS UNIQUE
