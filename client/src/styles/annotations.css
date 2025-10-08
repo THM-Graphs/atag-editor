@@ -125,8 +125,8 @@
   color: black;
   font-weight: normal;
   opacity: 1;
-  /* Space, curved arrow, newline */
-  content: '\20 \2936 \A';
+  /* Curved arrow, newline */
+  content: '\2936 \A';
   white-space: pre;
   user-select: none;
 }
