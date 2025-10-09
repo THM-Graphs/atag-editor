@@ -119,6 +119,18 @@
   opacity: var(--commentary-opacity);
 }
 
+#text > span:has(span.line.start)::before {
+  /* Disable stylings from span element... */
+  background-color: white;
+  color: black;
+  font-weight: normal;
+  opacity: 1;
+  /* Curved arrow */
+  content: '\2937';
+  white-space: pre;
+  user-select: none;
+}
+
 #text > span:has(span.line.end)::after {
   /* Disable stylings from span element... */
   background-color: white;
