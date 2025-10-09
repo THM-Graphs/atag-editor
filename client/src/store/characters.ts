@@ -928,7 +928,6 @@ export function useCharactersStore() {
    */
   function removeAnnotationFromCharacters(annotationUuid: string): TextOperationResult {
     // TODO: Reduce loops/duplicate method chaining
-    console.time('deannotate characters');
     const annotatedCharacters: Character[] = snippetCharacters.value.filter(c =>
       c.annotations.some(a => a.uuid === annotationUuid),
     );
@@ -942,8 +941,6 @@ export function useCharactersStore() {
     annotatedSnippetCharacters.forEach(
       c => (c.annotations = c.annotations.filter(a => a.uuid !== annotationUuid)),
     );
-
-    console.timeEnd('deannotate characters');
 
     return { changeSet: annotatedSnippetCharacters };
   }
