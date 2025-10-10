@@ -20,6 +20,11 @@ body {
   min-height: 100vh;
 }
 
+/* Used for debugging line annotations in Hildegard. TODO: Temporary, remove later */
+#text > span._line-debug_ {
+  background-color: red;
+}
+
 ul {
   padding: 0;
 }

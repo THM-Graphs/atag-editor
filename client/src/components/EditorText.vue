@@ -568,7 +568,7 @@ function createNewCharacter(char: string): Character {
             :class="
               selectedOptions.includes('line') &&
               !character.annotations.map(a => a.type).includes('line')
-                ? '_line.debug_'
+                ? '_line-debug_'
                 : ''
             "
           >
