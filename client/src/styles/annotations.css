@@ -183,11 +183,6 @@
   color: var(--sic-clr);
 }
 
-/* Used for debugging line annotations in Hildegard. TODO: Temporary, remove later */
-#text > span._line.debug_ {
-  background-color: red;
-}
-
 /* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
 .annotation-type-icon-entity {

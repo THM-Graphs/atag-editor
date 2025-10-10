@@ -565,12 +565,6 @@ function createNewCharacter(char: string): Character {
             v-for="character in snippetCharacters"
             :key="character.data.uuid"
             :id="character.data.uuid"
-            :class="
-              selectedOptions.includes('line') &&
-              !character.annotations.map(a => a.type).includes('line')
-                ? '_line-debug_'
-                : ''
-            "
           >
             {{ character.data.text
             }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
