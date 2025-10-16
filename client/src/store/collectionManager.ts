@@ -1,61 +1,89 @@
-import { computed, ref } from 'vue';
-import { Collection, CollectionNetworkActionType, CollectionPreview } from '../models/types';
+import { ref } from 'vue';
+import { Level } from '../models/types';
 
-// This is only a mirror of the selectedRows ref from the PrimeVue table component
-const tableSelection = ref<CollectionPreview[]>([]);
-const parentCollection = ref<Collection | null>(null);
-
-// These are the collections that are passed to the action modal
-const actionTargetCollections = ref<CollectionPreview[]>([]);
-
-const isActionModalVisible = ref(false);
-const currentActionType = ref<CollectionNetworkActionType | null>(null);
-const currentActionInitiator = ref<'row' | 'toolbar'>(null);
-
-// These are the collection manage operations which are allowed in the current scope.
-// "dereference" and "move" for example can only be executed when the selected collections
-// have a parent collection from which they can be detached.
-const allowedEditOperations = computed<CollectionNetworkActionType[]>(() => {
-  const alwaysAllowed: CollectionNetworkActionType[] = ['reference'];
-
-  const allowed: CollectionNetworkActionType[] = [...alwaysAllowed];
-
-  if (parentCollection.value) {
-    allowed.push('dereference', 'move');
-  }
-
-  return allowed;
-});
+const levels = ref<Level[]>([
+  {
+    data: [
+      {
+        nodeLabels: ['Project'],
+        data: {
+          uuid: 'f4a0af88-aa03-42e2-b322-060a7388eb59',
+          label: 'RI',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+      {
+        nodeLabels: ['Project'],
+        data: {
+          uuid: 'asdf-aa03-42e2-b322-060a7388eb59',
+          label: 'Hildegard',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+    ],
+    activeUuid: null,
+    level: 0,
+  },
+  {
+    data: [
+      {
+        nodeLabels: ['Manuscript'],
+        data: {
+          uuid: 'f4a0af88-a43s3-42e2-b322-060a7388eb59',
+          label: 'Wr',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+      {
+        nodeLabels: ['Mauscript'],
+        data: {
+          uuid: 'asdf-aa03-42e2-b322-060a7388xw59',
+          label: 'R',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+    ],
+    activeUuid: null,
+    level: 1,
+  },
+  {
+    data: [
+      {
+        nodeLabels: ['Letter'],
+        data: {
+          uuid: 'f4a0af88-a43s3-42e2-b322-06090088eb59',
+          label: 'Brief 1',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+      {
+        nodeLabels: ['Letter'],
+        data: {
+          uuid: 'asdf-aa23-42e2-b322-060a73x88xw59',
+          label: 'Brief 2',
+          sentBy: 'max',
+          receivedBy: 'max',
+          status: 'test',
+        },
+      },
+    ],
+    activeUuid: null,
+    level: 2,
+  },
+]);
 
 export function useCollectionManagerStore() {
-  function setSelection(collections: CollectionPreview[]) {
-    tableSelection.value = collections;
-  }
-
-  function openActionModal(
-    actionType: CollectionNetworkActionType,
-    collections: CollectionPreview[],
-    initiator: 'row' | 'toolbar',
-  ) {
-    currentActionType.value = actionType;
-    actionTargetCollections.value = collections;
-    currentActionInitiator.value = initiator;
-    isActionModalVisible.value = true;
-  }
-
-  function setParentCollection(collection: Collection | null) {
-    parentCollection.value = collection;
-  }
-
   return {
-    actionTargetCollections,
-    allowedEditOperations,
-    currentActionType,
-    isActionModalVisible,
-    parentCollection,
-    tableSelection,
-    openActionModal,
-    setParentCollection,
-    setSelection,
+    levels,
   };
 }

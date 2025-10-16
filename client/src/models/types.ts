@@ -148,6 +148,12 @@ export type HistoryRecord = {
   };
 };
 
+export type Level = {
+  data: Collection[];
+  activeUuid: string | null;
+  level: number;
+};
+
 export type MalformedAnnotation = {
   reason: 'indexOutOfBounds' | 'unconfiguredType';
   data: StandoffAnnotation;

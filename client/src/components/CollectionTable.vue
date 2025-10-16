@@ -9,7 +9,7 @@ import Column, { ColumnProps } from 'primevue/column';
 import DataTable, { DataTablePageEvent, DataTableSortEvent } from 'primevue/datatable';
 import { PaginationData, CollectionPreview, CollectionNetworkActionType } from '../models/types';
 import { ref, useTemplateRef, watch } from 'vue';
-import { useCollectionManagerStore } from '../store/collectionManager';
+import { useCollectionManagerStore } from '../store/oldCollectionManager';
 
 type ColumnName = 'nodeLabels' | 'label' | 'texts' | 'annotations' | 'collections' | 'status';
 
