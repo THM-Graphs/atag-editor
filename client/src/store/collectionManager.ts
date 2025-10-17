@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { Level } from '../models/types';
+import { Collection, CollectionAccessObject, Level } from '../models/types';
 
 const levels = ref<Level[]>([
   {
@@ -7,8 +7,8 @@ const levels = ref<Level[]>([
       {
         nodeLabels: ['Project'],
         data: {
-          uuid: 'f4a0af88-aa03-42e2-b322-060a7388eb59',
-          label: 'RI',
+          uuid: 'ri',
+          label: 'ri',
           sentBy: 'max',
           receivedBy: 'max',
           status: 'test',
@@ -17,7 +17,7 @@ const levels = ref<Level[]>([
       {
         nodeLabels: ['Project'],
         data: {
-          uuid: 'asdf-aa03-42e2-b322-060a7388eb59',
+          uuid: 'hild',
           label: 'Hildegard',
           sentBy: 'max',
           receivedBy: 'max',
@@ -28,62 +28,93 @@ const levels = ref<Level[]>([
     activeUuid: null,
     level: 0,
   },
-  {
-    data: [
-      {
-        nodeLabels: ['Manuscript'],
-        data: {
-          uuid: 'f4a0af88-a43s3-42e2-b322-060a7388eb59',
-          label: 'Wr',
-          sentBy: 'max',
-          receivedBy: 'max',
-          status: 'test',
-        },
-      },
-      {
-        nodeLabels: ['Mauscript'],
-        data: {
-          uuid: 'asdf-aa03-42e2-b322-060a7388xw59',
-          label: 'R',
-          sentBy: 'max',
-          receivedBy: 'max',
-          status: 'test',
-        },
-      },
-    ],
-    activeUuid: null,
-    level: 1,
-  },
-  {
-    data: [
-      {
-        nodeLabels: ['Letter'],
-        data: {
-          uuid: 'f4a0af88-a43s3-42e2-b322-06090088eb59',
-          label: 'Brief 1',
-          sentBy: 'max',
-          receivedBy: 'max',
-          status: 'test',
-        },
-      },
-      {
-        nodeLabels: ['Letter'],
-        data: {
-          uuid: 'asdf-aa23-42e2-b322-060a73x88xw59',
-          label: 'Brief 2',
-          sentBy: 'max',
-          receivedBy: 'max',
-          status: 'test',
-        },
-      },
-    ],
-    activeUuid: null,
-    level: 2,
-  },
 ]);
+
+const activeCollection = ref<CollectionAccessObject | null>(null);
+
+async function fetchCollections(index: number, uuid: string): Promise<Collection[]> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  const number = Math.random() * 6 + 1;
+
+  let i = 0;
+  const collections = [];
+
+  while (i <= number) {
+    collections.push({
+      nodeLabels: ['Letter'],
+      data: {
+        uuid: index + '-' + i,
+        label: index + '-' + i,
+        sentBy: 'max',
+        receivedBy: 'max',
+        status: 'test',
+      },
+    });
+
+    i++;
+  }
+
+  return collections;
+}
+
+async function fetchCollectionDetails(
+  index: number,
+  uuid: string,
+): Promise<CollectionAccessObject> {
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  const selectedCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
+
+  const cao: CollectionAccessObject = {
+    collection: selectedCollection,
+    texts: [
+      {
+        data: {
+          uuid: crypto.randomUUID() as string,
+          text: 'Here is some text',
+        },
+        nodeLabels: [],
+      },
+      {
+        data: {
+          uuid: crypto.randomUUID() as string,
+          text: 'Here is some text',
+        },
+        nodeLabels: [],
+      },
+    ],
+    annotations: [],
+  };
+
+  return cao;
+}
+
+async function activateCollection(index: number, uuid: string): Promise<void> {
+  const newChildrenCollections = await fetchCollections(index + 1, uuid);
+  const cao: CollectionAccessObject = await fetchCollectionDetails(index, uuid);
+
+  // Remove levels AFTER index and replace the first new level with fetched data
+  levels.value = [
+    ...levels.value.slice(0, index + 1),
+    {
+      activeUuid: null,
+      level: 0,
+      data: newChildrenCollections,
+    },
+  ];
+
+  levels.value[index].activeUuid = uuid;
+
+  activeCollection.value = cao;
+}
 
 export function useCollectionManagerStore() {
   return {
     levels,
+    activeCollection,
+    fetchCollections,
+    fetchCollectionDetails,
+    activateCollection,
   };
 }

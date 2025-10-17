@@ -4,8 +4,12 @@ import Button from 'primevue/button';
 
 import ButtonGroup from 'primevue/buttongroup';
 import ToggleButton from 'primevue/togglebutton';
+import { useCollectionManagerStore } from '../store/collectionManager';
+import NodeTag from './NodeTag.vue';
 
 defineProps<{}>();
+
+const { activeCollection } = useCollectionManagerStore();
 
 const mode = ref<'view' | 'edit'>('view');
 
@@ -28,7 +32,10 @@ function toggleEditMode(): void {
 </script>
 
 <template>
-  <div class="container h-full flex flex-column align-items-center text-center p-2">
+  <div
+    v-if="activeCollection"
+    class="container h-full flex flex-column align-items-center text-center p-2"
+  >
     <div class="main flex-grow-1 w-full">
       <h3>Label of Collection</h3>
       <ButtonGroup class="w-full flex">
@@ -53,8 +60,22 @@ function toggleEditMode(): void {
       </ButtonGroup>
 
       <div class="content">
-        <div v-if="isTextsSelected" class="data">Here are the texts</div>
-        <div v-else class="data">Here are the Collection details</div>
+        <div v-if="isTextsSelected" class="data">
+          <div v-for="text in activeCollection.texts" :key="text.data.uuid">
+            <div>{{ text.nodeLabels }}</div>
+            <div>{{ text.data.text }}</div>
+          </div>
+        </div>
+        <div v-else class="data">
+          <div class="node-labels">
+            <template v-for="label in activeCollection.collection.nodeLabels">
+              <NodeTag :content="label" type="Collection" />
+            </template>
+          </div>
+          <div class="properties">
+            {{ activeCollection.collection.data }}
+          </div>
+        </div>
       </div>
     </div>
 

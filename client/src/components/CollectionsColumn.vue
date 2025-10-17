@@ -2,12 +2,50 @@
 import { InputGroup, InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
+import { useRouter } from 'vue-router';
 
 const { levels } = useCollectionManagerStore();
+
+const router = useRouter();
 
 const props = defineProps<{
   index: number;
 }>();
+
+function updateUrlPath(uuid: string, index: number): void {
+  const isAlreadyActive: boolean = levels.value[index].activeUuid === uuid;
+
+  // Return if no update needed
+  if (isAlreadyActive) {
+    return;
+  }
+
+  const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
+
+  const currentUuids: string[] = uuidPath?.split(',') ?? [];
+
+  // Remove columns to the right of initiator column
+  // levels.value = levels.value.slice(0, index + 1);
+
+  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
+
+  // const newSearchParams = new URLSearchParams();
+  // newSearchParams.set('path', newUuids.join(','));
+
+  router.push({ query: { path: newUuids.join(',') } });
+
+  // console.log(route.query);
+
+  // Set active
+  // levels.value[index].activeUuid = uuid;
+
+  // const newActiveCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
+}
+
+function handleItemSelected(uuid: string): void {
+  // console.log(uuid);
+  updateUrlPath(uuid, props.index);
+}
 </script>
 
 <template>
@@ -23,6 +61,8 @@ const props = defineProps<{
         v-for="collection of levels[props.index].data"
         :key="collection.data.uuid"
         :collection="collection"
+        :isActive="levels[props.index].activeUuid === collection.data.uuid"
+        @item-selected="handleItemSelected"
       ></CollectionItem>
     </div>
     <div class="footer p-1 flex justify-content-center">
