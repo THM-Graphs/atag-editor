@@ -140,6 +140,11 @@ onMounted((): void => {
 <style scoped>
 .container {
   outline: 1px solid green;
+
+  .main,
+  .edit-area {
+    overflow-y: hidden;
+  }
 }
 
 .footer {
