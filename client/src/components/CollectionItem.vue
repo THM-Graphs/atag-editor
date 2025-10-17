@@ -32,11 +32,11 @@ function handleItemClick(): void {
   cursor: pointer;
 
   &:hover {
-    background-color: rgb(213, 213, 213);
+    background-color: hsl(0, 0%, 90%);
   }
 
   .active {
-    background-color: green;
+    background-color: hsl(0, 0%, 75%);
   }
 }
 </style>
