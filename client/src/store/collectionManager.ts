@@ -131,6 +131,8 @@ async function activateCollection(index: number, uuid: string): Promise<void> {
   levels.value[index].activeUuid = uuid;
 
   activeCollection.value = cao;
+
+  console.log(levels.value);
 }
 
 function setCollectionActive(cao: CollectionAccessObject): void {

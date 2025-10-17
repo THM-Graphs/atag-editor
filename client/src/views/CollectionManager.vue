@@ -102,7 +102,6 @@ onMounted((): void => {
     <CollectionTopMenu />
     <div class="main flex-grow-1 flex flex-column">
       <CollectionBreadcrumbs :path="pathToActiveCollection" />
-      <div>Here comes the additional action pane (remove selected collections etc.)</div>
 
       <div class="edit-area flex-grow-1">
         <Splitter
@@ -134,12 +133,16 @@ onMounted((): void => {
         </Splitter>
       </div>
     </div>
-    <div class="footer">I am the footer</div>
+    <div class="footer"></div>
   </div>
 </template>
 
 <style scoped>
 .container {
   outline: 1px solid green;
+}
+
+.footer {
+  height: 30px;
 }
 </style>

@@ -50,6 +50,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
   const isAlreadyActiveInEditPane: boolean =
     isAlreadySelectedInColumn && uuid === activeCollection.value.collection.data.uuid;
 
+  // Nothing happens, return;
   if (isAlreadyActiveInEditPane) {
     return;
   }
@@ -94,7 +95,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
 <style scoped>
 .column {
   border: 1px solid blue;
-  width: 200px;
+  min-width: 200px;
 }
 
 .content {
