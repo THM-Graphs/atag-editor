@@ -143,9 +143,9 @@ function toggleEditMode(): void {
 <template>
   <div
     v-if="temporaryWorkData"
-    class="container h-full flex flex-column align-items-center text-center p-2"
+    class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
-    <div class="main flex-grow-1 w-full">
+    <div class="main flex-grow-1 flex flex-column w-full">
       <h3>{{ temporaryWorkData.collection.data.label }}</h3>
       <ButtonGroup class="w-full flex">
         <ToggleButton
@@ -181,7 +181,7 @@ function toggleEditMode(): void {
       </ButtonGroup>
 
       <div class="content">
-        <div v-if="isDetailsSelected" class="properties-pane">
+        <div v-show="isDetailsSelected" class="properties-pane">
           <h3 class="text-center">Labels</h3>
           <div v-if="mode === 'edit'" class="flex justify-content-center">
             <MultiSelect
@@ -233,7 +233,7 @@ function toggleEditMode(): void {
           </form>
         </div>
 
-        <div v-else-if="isAnnotationsSelected" class="annotations-pane">
+        <div v-show="isAnnotationsSelected" class="annotations-pane">
           <div v-if="mode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
             <CollectionAnnotationButton
               v-for="type in availabeAnnotationTypes"
@@ -331,7 +331,7 @@ function toggleEditMode(): void {
             <ConfirmPopup></ConfirmPopup>
           </Panel>
         </div>
-        <div v-else-if="isTextsSelected" class="texts-pane">
+        <div v-show="isTextsSelected" class="texts-pane">
           <div v-for="text in temporaryWorkData.texts" :key="text.data.uuid">
             <div>{{ text.nodeLabels }}</div>
             <div>{{ text.data.text }}</div>
@@ -365,8 +365,18 @@ function toggleEditMode(): void {
 </template>
 
 <style scoped>
-.container {
+.edit-pane-container {
   outline: 1px solid grey;
+}
+
+.edit-pane-container,
+.main {
+  overflow-y: hidden;
+}
+
+.content {
+  flex-grow: 1;
+  overflow-y: auto;
 }
 
 .icon-container {

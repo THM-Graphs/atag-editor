@@ -77,7 +77,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
         <Button size="small" severity="secondary" icon="pi pi-filter" />
       </InputGroup>
     </div>
-    <div class="content flex-grow-1">
+    <div class="content">
       <CollectionItem
         v-for="collection of levels[props.index].data"
         :key="collection.data.uuid"
@@ -94,13 +94,12 @@ async function handleItemSelected(uuid: string): Promise<void> {
 
 <style scoped>
 .column {
-  border: 1px solid blue;
   min-width: 200px;
 }
 
 .content {
-  border: 1px solid red;
   overflow-y: scroll;
   overflow-x: hidden;
+  flex-grow: 1;
 }
 </style>
