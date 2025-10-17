@@ -3,8 +3,10 @@ import { InputGroup, InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
+import { CollectionAccessObject } from '../models/types';
 
-const { levels } = useCollectionManagerStore();
+const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } =
+  useCollectionManagerStore();
 
 const router = useRouter();
 
@@ -42,8 +44,26 @@ function updateUrlPath(uuid: string, index: number): void {
   // const newActiveCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
 }
 
-function handleItemSelected(uuid: string): void {
-  // console.log(uuid);
+async function handleItemSelected(uuid: string): Promise<void> {
+  const isAlreadySelectedInColumn: boolean = uuid === levels.value[props.index].activeUuid;
+
+  const isAlreadyActiveInEditPane: boolean =
+    isAlreadySelectedInColumn && uuid === activeCollection.value.collection.data.uuid;
+
+  if (isAlreadyActiveInEditPane) {
+    return;
+  }
+
+  // Only update collection in edit pane. Leave navigation path intact
+  if (isAlreadySelectedInColumn) {
+    const cao: CollectionAccessObject = await fetchCollectionDetails(props.index, uuid);
+
+    setCollectionActive(cao);
+
+    return;
+  }
+
+  // Else, change URL and let the watcher handle the rest
   updateUrlPath(uuid, props.index);
 }
 </script>

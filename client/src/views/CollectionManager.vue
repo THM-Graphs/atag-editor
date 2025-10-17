@@ -16,7 +16,7 @@ const isLoading = ref<boolean>(true);
 
 const route = useRoute();
 
-const { levels, activateCollection } = useCollectionManagerStore();
+const { levels, activateCollection, pathToActiveCollection } = useCollectionManagerStore();
 
 watch(
   () => route.query.path,
@@ -101,7 +101,7 @@ onMounted((): void => {
   <div v-else class="container flex flex-column h-screen">
     <CollectionTopMenu />
     <div class="main flex-grow-1 flex flex-column">
-      <CollectionBreadcrumbs />
+      <CollectionBreadcrumbs :path="pathToActiveCollection" />
       <div>Here comes the additional action pane (remove selected collections etc.)</div>
 
       <div class="edit-area flex-grow-1">

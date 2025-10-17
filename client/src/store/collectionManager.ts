@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Collection, CollectionAccessObject, Level } from '../models/types';
 
 const levels = ref<Level[]>([
@@ -31,6 +31,30 @@ const levels = ref<Level[]>([
 ]);
 
 const activeCollection = ref<CollectionAccessObject | null>(null);
+
+const pathToActiveCollection = computed<Collection[]>(() => {
+  if (!activeCollection.value) {
+    return [];
+  }
+
+  let items = [];
+
+  for (const level of levels.value) {
+    const activeInColumn: Collection | null = level.data.find(
+      c => c.data.uuid === level.activeUuid,
+    );
+
+    if (activeInColumn) {
+      items.push(activeInColumn);
+    }
+
+    if (level.activeUuid === activeCollection.value.collection.data.uuid) {
+      break;
+    }
+  }
+
+  return items;
+});
 
 async function fetchCollections(index: number, uuid: string): Promise<Collection[]> {
   await new Promise(resolve => setTimeout(resolve, 300));
@@ -109,12 +133,18 @@ async function activateCollection(index: number, uuid: string): Promise<void> {
   activeCollection.value = cao;
 }
 
+function setCollectionActive(cao: CollectionAccessObject): void {
+  activeCollection.value = cao;
+}
+
 export function useCollectionManagerStore() {
   return {
     levels,
+    pathToActiveCollection,
     activeCollection,
     fetchCollections,
     fetchCollectionDetails,
     activateCollection,
+    setCollectionActive,
   };
 }
