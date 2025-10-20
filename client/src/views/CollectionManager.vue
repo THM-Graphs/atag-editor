@@ -9,14 +9,24 @@ import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionBreadcrumbs from '../components/CollectionBreadcrumbs.vue';
 import CollectionsColumn from '../components/CollectionsColumn.vue';
 import CollectionEditPane from '../components/CollectionEditPane.vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
 
 const route = useRoute();
 
-const { levels, activateCollection, pathToActiveCollection } = useCollectionManagerStore();
+const { levels, activateCollection, pathToActiveCollection, reset } = useCollectionManagerStore();
+
+const router = useRouter();
+
+function updateUrlPath(uuid: string, index: number): void {
+  const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
+  const currentUuids: string[] = uuidPath?.split(',') ?? [];
+  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
+
+  router.push({ query: { path: newUuids.join(',') } });
+}
 
 watch(
   () => route.query.path,
@@ -25,18 +35,17 @@ watch(
       return;
     }
 
+    // Empty path query -> Restore default view
+    if (!newValue || newValue === '') {
+      await reset();
+    }
+
     const oldUuids = (oldValue as string)?.split(',') ?? [];
     const newUuids = (newValue as string)?.split(',') ?? [];
 
     const { index, uuid } = getUrlChangeInfo(oldUuids, newUuids);
 
     await activateCollection(index, uuid);
-
-    // console.log(
-    //   index,
-    //   uuid,
-    //   levels.value[index].data.find(c => c.data.uuid === uuid),
-    // );
 
     isLoading.value = false;
   },
@@ -49,6 +58,16 @@ function getUrlChangeInfo(
 ): { index: number; uuid: null | string } {
   let firstChangedIndex: number;
   let firstChangedUuid: string;
+
+  // If item earlier in the path is selected
+  if (oldUuids.length > newUuids.length) {
+    const lastNewIndex: number = newUuids.length - 1;
+
+    return {
+      index: lastNewIndex,
+      uuid: newUuids[lastNewIndex],
+    };
+  }
 
   let i = 0;
 
@@ -76,16 +95,16 @@ function getUrlChangeInfo(
       uuid: newUuids[firstNewIndex],
     };
   }
+}
 
-  // If item earlier in the path is selected
-  if (oldUuids.length > newUuids.length) {
-    const lastOldIndex: number = oldUuids.length - 1;
+function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void {
+  const { index, uuid } = data;
 
-    return {
-      index: lastOldIndex,
-      uuid: oldUuids[lastOldIndex],
-    };
-  }
+  updateUrlPath(uuid, index);
+}
+
+function handleBreadcrumbHomeClick(): void {
+  router.push({ query: {} });
 }
 
 onMounted((): void => {
@@ -101,7 +120,11 @@ onMounted((): void => {
   <div v-else class="container flex flex-column h-screen">
     <CollectionTopMenu />
     <div class="main flex-grow-1 flex flex-column">
-      <CollectionBreadcrumbs :path="pathToActiveCollection" />
+      <CollectionBreadcrumbs
+        :path="pathToActiveCollection"
+        @item-clicked="handleBreadcrumbItemClick"
+        @home-clicked="handleBreadcrumbHomeClick"
+      />
 
       <div class="edit-area flex-grow-1">
         <Splitter

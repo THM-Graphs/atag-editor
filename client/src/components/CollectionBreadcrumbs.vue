@@ -8,12 +8,19 @@ const props = defineProps<{
   path: Collection[];
 }>();
 
+const emit = defineEmits(['itemClicked', 'homeClicked']);
+
 const home = ref<MenuItem>({
   icon: 'pi pi-home',
+  command: () => emit('homeClicked'),
 });
 
 const breadcrumbItems = computed<MenuItem[]>(() =>
-  props.path.map(item => ({ label: item.data.label })),
+  props.path.map((item, index) => ({
+    index,
+    label: item.data.label,
+    command: () => emit('itemClicked', { index, uuid: item.data.uuid }),
+  })),
 );
 </script>
 

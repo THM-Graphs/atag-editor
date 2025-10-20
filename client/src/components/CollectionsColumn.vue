@@ -15,33 +15,11 @@ const props = defineProps<{
 }>();
 
 function updateUrlPath(uuid: string, index: number): void {
-  const isAlreadyActive: boolean = levels.value[index].activeUuid === uuid;
-
-  // Return if no update needed
-  if (isAlreadyActive) {
-    return;
-  }
-
   const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
-
   const currentUuids: string[] = uuidPath?.split(',') ?? [];
-
-  // Remove columns to the right of initiator column
-  // levels.value = levels.value.slice(0, index + 1);
-
   const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
 
-  // const newSearchParams = new URLSearchParams();
-  // newSearchParams.set('path', newUuids.join(','));
-
   router.push({ query: { path: newUuids.join(',') } });
-
-  // console.log(route.query);
-
-  // Set active
-  // levels.value[index].activeUuid = uuid;
-
-  // const newActiveCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
 }
 
 async function handleItemSelected(uuid: string): Promise<void> {
