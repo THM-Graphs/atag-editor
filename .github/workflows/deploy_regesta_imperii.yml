@@ -1,10 +1,6 @@
 name: Deploy editor to Regesta Imperii Server
 
-on:
-  workflow_run:
-    workflows: [Build and publish Docker images]
-    types: [completed]
-    branches: [main]
+on: workflow_dispatch
 
 jobs:
   deploy:
