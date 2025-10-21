@@ -1,5 +1,5 @@
 import { Ref } from 'vue';
-import { Annotation, PropertyConfigDataType } from '../../models/types';
+import { Annotation, PropertyConfigDataType, Text } from '../../models/types';
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
@@ -51,6 +51,23 @@ export function cloneDeep<T>(input: T): T {
 
   // Default for primitive types like string, number, boolean, etc.
   return input;
+}
+
+/**
+ * Creates a new Text object with default values.
+ *
+ * This function is used to generate a new Text object with default values for the node labels and data properties.
+ *
+ * @return {Text} A new Text object with default values.
+ */
+export function createNewTextObject(): Text {
+  return {
+    nodeLabels: [],
+    data: {
+      uuid: crypto.randomUUID(),
+      text: '',
+    },
+  };
 }
 
 /**

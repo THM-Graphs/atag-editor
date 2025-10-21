@@ -12,8 +12,9 @@ import {
   AnnotationType,
   CollectionAccessObject,
   PropertyConfig,
+  Text,
 } from '../models/types';
-import { capitalize, cloneDeep } from '../utils/helper/helper';
+import { capitalize, cloneDeep, createNewTextObject } from '../utils/helper/helper';
 import MultiSelect from 'primevue/multiselect';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
@@ -26,6 +27,7 @@ import Fieldset from 'primevue/fieldset';
 import FormPropertiesSection from './FormPropertiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
+import TextContainer from './TextContainer.vue';
 
 defineProps<{}>();
 
@@ -44,11 +46,16 @@ const confirm = useConfirm();
 const temporaryWorkData = ref<CollectionAccessObject | null>(null);
 const initialTemporaryWorkData = ref<CollectionAccessObject | null>(null);
 
+const temporaryTexts = ref<Text[]>([]);
+
 watch(
   () => activeCollection.value?.collection.data.uuid,
   () => {
     temporaryWorkData.value = cloneDeep(activeCollection.value);
     initialTemporaryWorkData.value = cloneDeep(activeCollection.value);
+
+    temporaryTexts.value = [];
+
     console.log('another collection is in focus now');
   },
 );
@@ -72,6 +79,10 @@ const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
   getAvailableCollectionAnnotationConfigs(temporaryWorkData.value.collection.nodeLabels),
 );
 
+function clearTemporaryTexts(): void {
+  temporaryTexts.value = [];
+}
+
 function deleteAnnotation(uuid: string): void {
   temporaryWorkData.value.annotations = temporaryWorkData.value.annotations.filter(
     a => a.properties.uuid !== uuid,
@@ -82,8 +93,23 @@ function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
   temporaryWorkData.value.annotations.push(newAnnotation);
 }
 
+function handleAddText(newText: Text) {
+  temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== newText.data.uuid);
+
+  temporaryWorkData.value.texts.push(newText);
+}
+
+async function handleAddTextClick(): Promise<void> {
+  const newText: Text = createNewTextObject();
+
+  temporaryTexts.value.push(newText);
+}
+
 async function handleCancelChanges(): Promise<void> {
   temporaryWorkData.value = cloneDeep(initialTemporaryWorkData.value);
+
+  clearTemporaryTexts();
+
   toggleEditMode();
 }
 
@@ -108,6 +134,16 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
+function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
+  if (status === 'existing') {
+    temporaryWorkData.value.texts = temporaryWorkData.value.texts.filter(
+      t => t.data.uuid !== text.data.uuid,
+    );
+  } else {
+    temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== text.data.uuid);
+  }
+}
+
 async function handleSaveChanges(): Promise<void> {
   // asyncOperationRunning.value = true;
 
@@ -115,6 +151,8 @@ async function handleSaveChanges(): Promise<void> {
     // await saveCollection();
 
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
+
+    clearTemporaryTexts();
 
     toggleEditMode();
     // showMessage('success');
@@ -331,11 +369,32 @@ function toggleEditMode(): void {
             <ConfirmPopup></ConfirmPopup>
           </Panel>
         </div>
-        <div v-show="isTextsSelected" class="texts-pane">
-          <div v-for="text in temporaryWorkData.texts" :key="text.data.uuid">
-            <div>{{ text.nodeLabels }}</div>
-            <div>{{ text.data.text }}</div>
-          </div>
+        <div v-show="isTextsSelected" class="texts-pane text-left">
+          <TextContainer
+            v-for="text in temporaryWorkData.texts"
+            :text="text"
+            :mode="mode"
+            status="existing"
+            @text-removed="handleRemoveText(text, 'existing')"
+          />
+          <TextContainer
+            v-for="text in temporaryTexts"
+            :text="text"
+            :mode="mode"
+            status="temporary"
+            @text-added="handleAddText(text)"
+            @text-removed="handleRemoveText(text, 'temporary')"
+          />
+          <Button
+            v-if="mode === 'edit'"
+            class="mt-2 w-full h-2rem"
+            icon="pi pi-plus"
+            size="small"
+            severity="secondary"
+            label="Add text"
+            title="Add new text"
+            @click="handleAddTextClick"
+          />
         </div>
       </div>
     </div>

@@ -111,7 +111,7 @@ export function useCollectionManagerStore() {
         {
           data: {
             uuid: crypto.randomUUID() as string,
-            text: '1162 September 7, Saint-Jean-de-Losne Friedrich teilt dem Klerus und allen Angehörigen der Kirche von Genf',
+            text: '1162 September 7, Saint-Jean-de-Losne Friedrich teilt dem Klerus und allen Angehörigen der Kirche von Genf (omnibus casatis et militibus et burgensibus atque civibus et cęteris omnibus tam minoribus quam maioribus ad episcopatum Gebennensem pertinentibus) mit, er habe nach dem von Bischof Heinrich von Würzburg gefällten Fürstenspruch der Klage des Bischofs Arducius von Genf wegen der Entfremdung der Regalien seiner Kirche durch Herzog Berthold von Zähringen und Graf Amadeus von Genf stattgegeben und durch Markgraf Albrecht (den Bären) von Sachsen die Restitution des Bischofs in den Genuß dieser Rechte verfügt, die er (der Kaiser) früher zu Unrecht an den Herzog ausgetan hatte. Z.: die Erzbischöfe Konrad von Mainz und Rainald von Köln, Patriarch Ulrich von Aquileia, die Erzbischöfe Hillin von Trier, Wichmann von Magdeburg, Primas Heraclius von Lyon, Stephan von Vienne, Walther von Besançon, Hartwig von Bremen, Wilhelm von Embrun und Guido von Ravenna, die Bischöfe Heinrich von Würzburg,',
           },
           nodeLabels: ['Text'],
         },
