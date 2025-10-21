@@ -109,8 +109,10 @@ function togglePreviewMode(): void {
 
     <template #content>
       <div v-if="props.status === 'existing'">
-        <div class="text">
-          {{ displayedText }}
+        <div class="text" title="Open text in Editor">
+          <a :href="`/texts/${props.text.data.uuid}`" target="_blank" rel="noopener noreferrer">
+            {{ displayedText }}
+          </a>
         </div>
         <Button
           v-if="props.text.data.text.length > PREVIEW_LENGTH"
@@ -141,4 +143,14 @@ function togglePreviewMode(): void {
   </Card>
 </template>
 
-<style scoped></style>
+<style scoped>
+.text a {
+  color: inherit;
+  display: block;
+}
+
+*:has(.text):hover {
+  background-color: #efefef;
+  transition: background-color 0.2s;
+}
+</style>
