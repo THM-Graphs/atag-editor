@@ -6,6 +6,7 @@ import Button from 'primevue/button';
 import MultiSelect from 'primevue/multiselect';
 import Textarea from 'primevue/textarea';
 import { useGuidelinesStore } from '../store/guidelines';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
   status: 'existing' | 'temporary';
@@ -18,7 +19,18 @@ const emit = defineEmits<{
   (e: 'textRemoved', text: Text): void;
 }>();
 
+const PREVIEW_LENGTH: number = 300;
+
 const { getAvailableTextLabels } = useGuidelinesStore();
+
+const isExpanded = ref<boolean>(false);
+
+const displayedText = computed<string>(() => {
+  return isExpanded.value
+    ? props.text.data.text
+    : props.text.data.text.slice(0, PREVIEW_LENGTH) +
+        (props.text.data.text.length > PREVIEW_LENGTH ? '...' : '');
+});
 
 function handleRemoveText() {
   emit('textRemoved', props.text);
@@ -26,6 +38,16 @@ function handleRemoveText() {
 
 function handleAddTextClick() {
   emit('textAdded', props.text);
+}
+
+/**
+ * Toggles the preview mode of an text entry. By default, only a preview is shown,
+ * but can be expanded on button click.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function togglePreviewMode(): void {
+  isExpanded.value = !isExpanded.value;
 }
 </script>
 
@@ -86,7 +108,20 @@ function handleAddTextClick() {
     </template>
 
     <template #content>
-      <div v-if="props.status === 'existing'">{{ props.text.data.text }}</div>
+      <div v-if="props.status === 'existing'">
+        <div class="text">
+          {{ displayedText }}
+        </div>
+        <Button
+          v-if="props.text.data.text.length > PREVIEW_LENGTH"
+          :icon="isExpanded ? 'pi pi-angle-double-up' : 'pi pi-angle-double-down'"
+          severity="secondary"
+          size="small"
+          class="w-full"
+          :title="isExpanded ? 'Hide full text' : 'Show full text'"
+          @click="togglePreviewMode"
+        />
+      </div>
       <div v-else>
         <Textarea v-model="text.data.text" class="w-full" placeholder="Add text" />
       </div>

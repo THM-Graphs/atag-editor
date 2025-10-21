@@ -104,7 +104,7 @@ export function useCollectionManagerStore() {
         {
           data: {
             uuid: crypto.randomUUID() as string,
-            text: '1162 September 7, Saint-Jean-de-Losne Friedrich teilt dem Klerus und allen Angehörigen der Kirche von Genf',
+            text: 'König Heinrichs militärische Vorbereitungen für den Romzug und die Stärke seiner Truppen diskutiert ausführlich Pauly, Auf nach Rom! (2016) S. 32–38. – Zu beachten ist, dass sich Ferreto de’ Ferretis Angabe auf die Gesamtstärke des königlichen Heeres bei dessen Aufenthalt in Turin (Nrn. 00724 und 00729) bezieht, nachdem dieser bereits Zuzug aus Italien erhalten hatte.',
           },
           nodeLabels: ['Introduction'],
         },

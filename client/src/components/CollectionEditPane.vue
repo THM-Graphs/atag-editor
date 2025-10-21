@@ -56,6 +56,8 @@ watch(
 
     temporaryTexts.value = [];
 
+    mode.value = 'view';
+
     console.log('another collection is in focus now');
   },
 );
