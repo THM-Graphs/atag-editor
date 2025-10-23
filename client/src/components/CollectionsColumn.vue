@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 import { CollectionAccessObject, CollectionSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 
@@ -22,13 +22,10 @@ const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } 
 const { searchParams, updateSearchParams } = useSearchParams();
 
 const availableCollectionLabels = getAvailableCollectionLabels();
-const allLabelsSelected = computed<boolean>(
-  () => selectedNodeLabels.value.length === availableCollectionLabels.length,
-);
 
-// State of filters
-const selectedNodeLabels = ref<string[]>(availableCollectionLabels);
-const searchInput = ref<string>('');
+const areAllLabelsSelected = computed<boolean>(
+  () => searchParams.value.nodeLabels.length === availableCollectionLabels.length,
+);
 
 // TODO: Fetch data
 watch(searchParams, async () => console.log(searchParams.value), {
@@ -89,14 +86,14 @@ function updateUrlPath(uuid: string, index: number): void {
     <div class="header flex gap-1 p-1">
       <InputText
         size="small"
-        :modelValue="searchInput"
+        :modelValue="searchParams.searchInput"
         spellcheck="false"
         placeholder="Filter by label"
         title="Filter Collections by label"
         @update:model-value="handleSearchInputChange"
       />
       <MultiSelect
-        :modelValue="selectedNodeLabels"
+        :modelValue="searchParams.nodeLabels"
         :options="availableCollectionLabels"
         dropdownIcon="pi pi-filter"
         :filter="false"
@@ -117,7 +114,7 @@ function updateUrlPath(uuid: string, index: number): void {
         }"
       >
         <template #dropdownicon>
-          <OverlayBadge v-if="!allLabelsSelected" severity="danger">
+          <OverlayBadge v-if="!areAllLabelsSelected" severity="danger">
             <i class="pi pi-filter-fill" />
           </OverlayBadge>
         </template>
