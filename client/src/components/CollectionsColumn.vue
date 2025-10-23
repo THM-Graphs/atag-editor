@@ -1,26 +1,39 @@
 <script setup lang="ts">
-import { InputGroup, InputText, Button } from 'primevue';
+import { InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
-import { CollectionAccessObject } from '../models/types';
-
-const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } =
-  useCollectionManagerStore();
-
-const router = useRouter();
+import { CollectionAccessObject, CollectionSearchParams } from '../models/types';
+import { useGuidelinesStore } from '../store/guidelines';
+import MultiSelect from 'primevue/multiselect';
+import { computed, ref, watch } from 'vue';
+import OverlayBadge from 'primevue/overlaybadge';
+import { useSearchParams } from '../composables/useSearchParams';
 
 const props = defineProps<{
   index: number;
 }>();
 
-function updateUrlPath(uuid: string, index: number): void {
-  const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
-  const currentUuids: string[] = uuidPath?.split(',') ?? [];
-  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
+const router = useRouter();
 
-  router.push({ query: { path: newUuids.join(',') } });
-}
+const { getAvailableCollectionLabels } = useGuidelinesStore();
+const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } =
+  useCollectionManagerStore();
+const { searchParams, updateSearchParams } = useSearchParams();
+
+const availableCollectionLabels = getAvailableCollectionLabels();
+const allLabelsSelected = computed<boolean>(
+  () => selectedNodeLabels.value.length === availableCollectionLabels.length,
+);
+
+// State of filters
+const selectedNodeLabels = ref<string[]>(availableCollectionLabels);
+const searchInput = ref<string>('');
+
+// TODO: Fetch data
+watch(searchParams, async () => console.log(searchParams.value), {
+  deep: true,
+});
 
 async function handleItemSelected(uuid: string): Promise<void> {
   const isAlreadySelectedInColumn: boolean = uuid === levels.value[props.index].activeUuid;
@@ -45,15 +58,70 @@ async function handleItemSelected(uuid: string): Promise<void> {
   // Else, change URL and let the watcher handle the rest
   updateUrlPath(uuid, props.index);
 }
+
+function handleNodeLabelsChange(selectedLabels: string[]) {
+  const data: CollectionSearchParams = {
+    nodeLabels: selectedLabels,
+  };
+
+  updateSearchParams(data);
+}
+
+function handleSearchInputChange(newInput: string) {
+  const data: CollectionSearchParams = {
+    searchInput: newInput,
+  };
+
+  updateSearchParams(data, { immediate: false });
+}
+
+function updateUrlPath(uuid: string, index: number): void {
+  const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
+  const currentUuids: string[] = uuidPath?.split(',') ?? [];
+  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
+
+  router.push({ query: { path: newUuids.join(',') } });
+}
 </script>
 
 <template>
   <div class="column flex flex-column">
-    <div class="header p-1">
-      <InputGroup>
-        <InputText size="small" spellcheck="false" placeholder="Filter by label" />
-        <Button size="small" severity="secondary" icon="pi pi-filter" />
-      </InputGroup>
+    <div class="header flex gap-1 p-1">
+      <InputText
+        size="small"
+        :modelValue="searchInput"
+        spellcheck="false"
+        placeholder="Filter by label"
+        title="Filter Collections by label"
+        @update:model-value="handleSearchInputChange"
+      />
+      <MultiSelect
+        :modelValue="selectedNodeLabels"
+        :options="availableCollectionLabels"
+        dropdownIcon="pi pi-filter"
+        :filter="false"
+        title="Select node labels to filter"
+        @update:modelValue="handleNodeLabelsChange"
+        :pt="{
+          root: {
+            style: {
+              height: '100%',
+            },
+          },
+          dropdownIcon: 'pi pi-filter',
+          labelContainer: {
+            style: {
+              display: 'none',
+            },
+          },
+        }"
+      >
+        <template #dropdownicon>
+          <OverlayBadge v-if="!allLabelsSelected" severity="danger">
+            <i class="pi pi-filter-fill" />
+          </OverlayBadge>
+        </template>
+      </MultiSelect>
     </div>
     <div class="content">
       <CollectionItem
