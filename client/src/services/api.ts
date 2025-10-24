@@ -8,7 +8,6 @@ import {
   Collection,
   CollectionCreationData,
   CollectionPostData,
-  CollectionPreview,
   CollectionSearchParams,
   NetworkPostData,
   NodeAncestry,
@@ -130,7 +129,7 @@ export default class ApiService {
   public async getCollections(
     parentUuid: string,
     params: DeepReadonly<CollectionSearchParams> | CollectionSearchParams,
-  ): Promise<PaginationResult<CollectionPreview[]>> {
+  ): Promise<PaginationResult<Collection[]>> {
     const DEFAULT_ROW_COUNT: number | null = 10;
 
     const path: string = parentUuid

@@ -16,7 +16,8 @@ const isLoading = ref<boolean>(true);
 
 const route = useRoute();
 
-const { levels, activateCollection, pathToActiveCollection, reset } = useCollectionManagerStore();
+const { levels, pathToActiveCollection, activateCollection, restoreDefaultView } =
+  useCollectionManagerStore();
 
 const router = useRouter();
 
@@ -37,7 +38,8 @@ watch(
 
     // Empty path query -> Restore default view
     if (!newValue || newValue === '') {
-      await reset();
+      await restoreDefaultView();
+      return;
     }
 
     const oldUuids = (oldValue as string)?.split(',') ?? [];
@@ -49,7 +51,7 @@ watch(
 
     isLoading.value = false;
   },
-  { immediate: true },
+  { immediate: false },
 );
 
 function getUrlChangeInfo(
@@ -147,7 +149,11 @@ onMounted((): void => {
         >
           <SplitterPanel :size="10" class="overflow-y-auto">
             <div class="columns-container h-full flex overflow-x-scroll">
-              <CollectionsColumn v-for="(_, index) in levels" :index="index" />
+              <CollectionsColumn
+                v-for="(_, index) in levels"
+                :index="index"
+                :parentUuid="levels[index].parentUuid"
+              />
             </div>
           </SplitterPanel>
           <SplitterPanel :size="10" class="overflow-y-auto">

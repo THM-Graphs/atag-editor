@@ -152,6 +152,7 @@ export type Level = {
   data: Collection[];
   activeUuid: string | null;
   level: number;
+  parentUuid: string | null;
 };
 
 export type MalformedAnnotation = {

@@ -27,12 +27,10 @@ type CollectionTextObject = {
 
 export default class CollectionService {
   /**
-   * Retrieves a paginated list of collection preview objects. These objects include the properties and labels of
-   * the `Collection` node as well as counts of connected `Annotation`, `Text`, and `Collection` nodes. Be aware that only Sub-Collections are included in the
-   * collection count (= incoming `PART_OF` relationships).
+   * Retrieves a paginated list of collections.
    *
-   *
-   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection.
+   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection. Otherwise,
+   * all top-level collections (= without outgoing PART_OF relationship) are fetched.
    * Additional labels for the collection nodes can be specified to filter the results. Pagination parameters such as sort order,
    * limit, skip, and search string are also taken into account.
    *
@@ -44,7 +42,7 @@ export default class CollectionService {
    * @param {string} search - The search string to filter collections by their label.
    * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
    *
-   * @return {Promise<PaginationResult<CollectionPreview[]>>} A promise that resolves to a paginated result of Collection preview objects.
+   * @return {Promise<PaginationResult<Collection[]>>} A promise that resolves to a paginated result of Collections.
    */
   public async getCollections(
     additionalLabels: string[],
@@ -54,22 +52,25 @@ export default class CollectionService {
     skip: number,
     search: string,
     parentUuid: string | null,
-  ): Promise<PaginationResult<CollectionPreview[]>> {
-    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch everything
+  ): Promise<PaginationResult<Collection[]>> {
+    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch collections
+    // that don't have a parent (top level collections)
     const baseCollectionSnippet = parentUuid
       ? `MATCH (parent:Collection {uuid: '${parentUuid}'})<-[:PART_OF]-(c:Collection)`
-      : `MATCH (c:Collection)`;
+      : `MATCH (c:Collection) WHERE NOT EXISTS {
+             (:Collection)<-[:PART_OF]-(c)
+         }`;
 
     const baseQuery: string =
       baseCollectionSnippet +
       `
-      WHERE
-          CASE
-              WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
-              ELSE apoc.coll.intersection($additionalLabels, labels(c))
-          END
-          AND
-          toLower(c.label) CONTAINS $search
+      ${parentUuid ? 'WHERE' : 'AND'}
+      CASE
+          WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
+          ELSE apoc.coll.intersection($additionalLabels, labels(c))
+      END
+      AND
+      toLower(c.label) CONTAINS $search
       `;
 
     const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;
@@ -77,26 +78,13 @@ export default class CollectionService {
     const dataQuery: string =
       baseQuery +
       `
-      // TODO: Fix sorting. Can be numbers, too (text count, annotation count etc.)
-      WITH c,
-          size([(c)<-[:PART_OF]-(sub:Collection) | sub]) as collectionCount,
-          size([(c)<-[:PART_OF]-(sub:Text) | sub]) as textCount,
-          size([(c)-[:HAS_ANNOTATION]-(a:Annotation) | a]) as annotationCount
-
       ORDER BY ${collectionSortField(sort)} ${order}
       SKIP ${skip}
       LIMIT ${limit}
 
       RETURN collect({
-          collection: {
-              nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-              data: c {.*}
-          }, 
-          nodeCounts: {
-              collections: collectionCount,
-              texts: textCount,
-              annotations: annotationCount
-          }
+          nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+          data: c {.*}
       }) AS collections
       `;
 
@@ -113,9 +101,9 @@ export default class CollectionService {
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const rawData: CollectionPreview[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: Collection[] = dataResult.records[0]?.get('collections') || [];
 
-    const data: CollectionPreview[] = rawData.map(cao => toNativeTypes(cao)) as CollectionPreview[];
+    const data: Collection[] = rawData.map(cao => toNativeTypes(cao)) as Collection[];
 
     return {
       data,

@@ -8,7 +8,6 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   Annotation,
   Collection,
-  CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
   CollectionPreview,
@@ -31,16 +30,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const parentUuid: string | null = req.query.parentUuid as string | null;
 
-    const collections: PaginationResult<CollectionPreview[]> =
-      await collectionService.getCollections(
-        nodeLabels,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-        parentUuid,
-      );
+    const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
+      nodeLabels,
+      sort,
+      order,
+      limit,
+      skip,
+      search,
+      parentUuid,
+    );
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -81,16 +79,15 @@ router.get('/:uuid/collections', async (req: Request, res: Response, next: NextF
     .filter(label => label.trim() !== '');
 
   try {
-    const collections: PaginationResult<CollectionPreview[]> =
-      await collectionService.getCollections(
-        nodeLabels,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-        parentUuid,
-      );
+    const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
+      nodeLabels,
+      sort,
+      order,
+      limit,
+      skip,
+      search,
+      parentUuid,
+    );
 
     res.status(200).json(collections);
   } catch (error: unknown) {

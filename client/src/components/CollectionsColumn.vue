@@ -3,33 +3,52 @@ import { InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
-import { CollectionAccessObject, CollectionSearchParams } from '../models/types';
+import { CollectionAccessObject, CollectionSearchParams, PaginationData } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
+import { useAppStore } from '../store/app';
 
 const props = defineProps<{
   index: number;
+  parentUuid: string | null;
 }>();
 
 const router = useRouter();
 
+const { api } = useAppStore();
 const { getAvailableCollectionLabels } = useGuidelinesStore();
 const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } =
   useCollectionManagerStore();
-const { searchParams, updateSearchParams } = useSearchParams();
+const { searchParams, updateSearchParams } = useSearchParams(50);
 
 const availableCollectionLabels = getAvailableCollectionLabels();
+
+const columnPagination = ref<PaginationData>(null);
 
 const areAllLabelsSelected = computed<boolean>(
   () => searchParams.value.nodeLabels.length === availableCollectionLabels.length,
 );
 
-// TODO: Fetch data
-watch(searchParams, async () => console.log(searchParams.value), {
+async function fetchData(): Promise<void> {
+  const { data, pagination } = await api.getCollections(
+    props.parentUuid,
+    searchParams.value as CollectionSearchParams,
+  );
+
+  levels.value[props.index].data = data;
+
+  columnPagination.value = pagination;
+}
+
+watch(searchParams, fetchData, {
   deep: true,
+});
+
+watch(() => props.parentUuid, fetchData, {
+  immediate: true,
 });
 
 async function handleItemSelected(uuid: string): Promise<void> {
@@ -45,7 +64,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
 
   // Only update collection in edit pane. Leave navigation path intact
   if (isAlreadySelectedInColumn) {
-    const cao: CollectionAccessObject = await fetchCollectionDetails(props.index, uuid);
+    const cao: CollectionAccessObject = await fetchCollectionDetails(uuid);
 
     setCollectionActive(cao);
 
