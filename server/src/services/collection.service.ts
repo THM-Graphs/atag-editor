@@ -3,7 +3,7 @@ import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import { collectionSortField } from '../utils/cypher.js';
 import { ancestryPaths } from '../utils/cypher.js';
-import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
+import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
@@ -14,15 +14,19 @@ import {
   PropertyConfig,
   Text,
   Collection,
-  CollectionPreview,
   NodeAncestry,
   CollectionCreationData,
 } from '../models/types.js';
+import ICharacter from '../models/ICharacter.js';
 
 type CollectionTextObject = {
   all: Text[];
-  created: Text[];
+  created: CreatedText[];
   deleted: Text[];
+};
+
+type CreatedText = Text & {
+  characters: ICharacter[];
 };
 
 export default class CollectionService {
@@ -298,9 +302,12 @@ export default class CollectionService {
     const initialTextUuids: string[] = initialData.texts.map(t => t.data.uuid);
     const newTextUUids: string[] = newData.texts.map(t => t.data.uuid);
 
-    const createdTexts: Text[] = newData.texts.filter(
-      text => !initialTextUuids.includes(text.data.uuid),
-    );
+    const createdTexts: CreatedText[] = newData.texts
+      .filter((text: Text) => !initialTextUuids.includes(text.data.uuid))
+      .map((t: Text) => ({
+        ...t,
+        characters: createCharactersFromText(t.data.text),
+      }));
 
     const deletedTexts: Text[] = initialData.texts.filter(
       text => !newTextUUids.includes(text.data.uuid),
@@ -368,6 +375,14 @@ export default class CollectionService {
       MERGE (t:Text {uuid: textToCreate.data.uuid})-[:PART_OF]->(c)
       WITH t, textToCreate
       SET t = textToCreate.data
+
+      WITH t, textToCreate
+
+      CALL atag.chains.update(t.uuid, null, null, textToCreate.characters, {
+          textLabel: "Text",
+          elementLabel: "Character",
+          relationshipType: "NEXT_CHARACTER"
+      }) YIELD path
 
       RETURN collect(t) as createdTexts
     }

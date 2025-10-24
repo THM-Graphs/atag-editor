@@ -11,14 +11,20 @@ import {
   AnnotationData,
   AnnotationType,
   CollectionAccessObject,
+  CollectionPostData,
   PropertyConfig,
   Text,
 } from '../models/types';
-import { capitalize, cloneDeep, createNewTextObject } from '../utils/helper/helper';
+import {
+  capitalize,
+  cloneDeep,
+  createNewTextObject,
+  getDefaultValueForProperty,
+} from '../utils/helper/helper';
 import MultiSelect from 'primevue/multiselect';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
-import { useConfirm } from 'primevue';
+import { ToastServiceMethods, useConfirm, useToast } from 'primevue';
 import ConfirmPopup from 'primevue/confirmpopup';
 import CollectionAnnotationButton from './CollectionAnnotationButton.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
@@ -28,14 +34,20 @@ import FormPropertiesSection from './FormPropertiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import TextContainer from './TextContainer.vue';
+import { useAppStore } from '../store/app';
 
 defineProps<{}>();
+
+const { api } = useAppStore();
+
+const toast: ToastServiceMethods = useToast();
 
 const {
   guidelines,
   getCollectionAnnotationFields,
   getCollectionAnnotationConfig,
   getCollectionConfigFields,
+  getAllCollectionConfigFields,
   getAvailableCollectionLabels,
   getAvailableCollectionAnnotationConfigs,
 } = useGuidelinesStore();
@@ -48,19 +60,8 @@ const initialTemporaryWorkData = ref<CollectionAccessObject | null>(null);
 
 const temporaryTexts = ref<Text[]>([]);
 
-watch(
-  () => activeCollection.value?.collection.data.uuid,
-  () => {
-    temporaryWorkData.value = cloneDeep(activeCollection.value);
-    initialTemporaryWorkData.value = cloneDeep(activeCollection.value);
-
-    temporaryTexts.value = [];
-
-    mode.value = 'view';
-  },
-);
-
 const mode = ref<'view' | 'edit'>('view');
+const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
 
 const selectedView = ref<'texts' | 'details' | 'annotations'>('details');
@@ -79,6 +80,18 @@ const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
   getAvailableCollectionAnnotationConfigs(temporaryWorkData.value.collection.nodeLabels),
 );
 
+watch(
+  () => activeCollection.value?.collection.data.uuid,
+  () => {
+    temporaryWorkData.value = cloneDeep(activeCollection.value);
+    initialTemporaryWorkData.value = cloneDeep(activeCollection.value);
+
+    temporaryTexts.value = [];
+
+    mode.value = 'view';
+  },
+);
+
 function clearTemporaryTexts(): void {
   temporaryTexts.value = [];
 }
@@ -87,6 +100,25 @@ function deleteAnnotation(uuid: string): void {
   temporaryWorkData.value.annotations = temporaryWorkData.value.annotations.filter(
     a => a.properties.uuid !== uuid,
   );
+}
+
+/**
+ * Fills in any missing collection properties with the type-specific default value.
+ *
+ * Called when entering edit mode to create a full data object from which the dynamically rendered fields
+ * can get their values from.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function enrichCollectionData(): void {
+  const allPossibleFields: PropertyConfig[] = getAllCollectionConfigFields();
+
+  allPossibleFields.forEach(field => {
+    if (!(field.name in temporaryWorkData.value.collection.data)) {
+      temporaryWorkData.value.collection.data[field.name] =
+        field?.required === true ? getDefaultValueForProperty(field.type) : null;
+    }
+  });
 }
 
 function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
@@ -145,23 +177,66 @@ function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
 }
 
 async function handleSaveChanges(): Promise<void> {
-  // asyncOperationRunning.value = true;
+  asyncOperationRunning.value = true;
 
   try {
-    // await saveCollection();
+    await saveCollection();
 
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
 
     clearTemporaryTexts();
-
     toggleEditMode();
-    // showMessage('success');
+    showMessage('success');
   } catch (error: unknown) {
-    // showMessage('error', error as Error);
+    showMessage('error', error as Error);
     console.error('Error updating collection:', error);
   } finally {
-    // asyncOperationRunning.value = false;
+    asyncOperationRunning.value = false;
   }
+}
+
+/**
+ * Called before saving the collection to remove any data entries that are not configured
+ * according to the current node labels of the collection.
+ *
+ * This is necessary since on edit mode toggling the data object was filled with empty data entries temporarily
+ * to form a data pool for the dynamically rendered input fields (see `enrichCollectionData`).
+ *
+ * @returns {void} This function does not return any value.
+ */
+function removeUnnecessaryDataBeforeSave(): void {
+  // Get configured field names that are allowed to be saved
+  const configuredFieldNames: string[] = getCollectionConfigFields(
+    temporaryWorkData.value.collection.nodeLabels,
+  ).map(f => f.name);
+
+  // Remove data entries that are not configured
+  Object.keys(temporaryWorkData.value.collection.data).forEach(key => {
+    if (!configuredFieldNames.includes(key) && key !== 'uuid') {
+      delete temporaryWorkData.value.collection.data[key];
+    }
+  });
+}
+
+async function saveCollection(): Promise<void> {
+  removeUnnecessaryDataBeforeSave();
+
+  const collectionPostData: CollectionPostData = {
+    data: temporaryWorkData.value,
+    initialData: initialTemporaryWorkData.value,
+  };
+
+  console.log(collectionPostData);
+  await api.updateCollection(temporaryWorkData.value.collection.data.uuid, collectionPostData);
+}
+
+function showMessage(result: 'success' | 'error', error?: Error) {
+  toast.add({
+    severity: result,
+    summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
+    detail: error?.message ?? '',
+    life: 2000,
+  });
 }
 
 function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
@@ -170,8 +245,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 
 function toggleEditMode(): void {
   if (mode.value === 'view') {
-    // TODO: Do this too, but not now.
-    // enrichCollectionData();
+    enrichCollectionData();
   }
 
   mode.value = mode.value === 'view' ? 'edit' : 'view';
@@ -408,12 +482,14 @@ function toggleEditMode(): void {
       ></Button>
       <Button
         v-if="mode === 'edit'"
+        :loading="asyncOperationRunning"
         icon="pi pi-save"
         label="Save"
         @click="handleSaveChanges"
       ></Button>
       <Button
         v-if="mode === 'edit'"
+        :disabled="asyncOperationRunning"
         icon="pi pi-times"
         label="Cancel"
         severity="secondary"

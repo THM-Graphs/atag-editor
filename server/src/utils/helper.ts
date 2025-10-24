@@ -11,6 +11,7 @@ import {
   types,
 } from 'neo4j-driver';
 import { PropertyConfig } from '../models/types.js';
+import ICharacter from '../models/ICharacter.js';
 
 /**
  * Capitalizes the first letter of a given string.
@@ -20,6 +21,22 @@ import { PropertyConfig } from '../models/types.js';
  */
 export function capitalize(inputString: string): string {
   return inputString.charAt(0).toUpperCase() + inputString.slice(1);
+}
+
+/**
+ * Creates an array of Character nodes from a given string.
+ *
+ * Used for preprocessing texts that came attached to Annotations or Collections and have to be created
+ * from scratch in the database.
+ *
+ * @param {string} text - The string to create characters from.
+ * @return {ICharacter[]} An array of ICharacter objects, one for each character in the input string.
+ */
+export function createCharactersFromText(text: string): ICharacter[] {
+  return text.split('').map((c: string) => ({
+    text: c,
+    uuid: crypto.randomUUID(),
+  }));
 }
 
 /**
