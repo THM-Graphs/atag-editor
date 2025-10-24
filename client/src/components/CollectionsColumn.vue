@@ -52,7 +52,8 @@ watch(() => props.parentUuid, fetchData, {
 });
 
 async function handleItemSelected(uuid: string): Promise<void> {
-  const isAlreadySelectedInColumn: boolean = uuid === levels.value[props.index].activeUuid;
+  const isAlreadySelectedInColumn: boolean =
+    uuid === levels.value[props.index].activeCollection?.data.uuid;
 
   const isAlreadyActiveInEditPane: boolean =
     isAlreadySelectedInColumn && uuid === activeCollection.value.collection.data.uuid;
@@ -144,7 +145,7 @@ function updateUrlPath(uuid: string, index: number): void {
         v-for="collection of levels[props.index].data"
         :key="collection.data.uuid"
         :collection="collection"
-        :isActive="levels[props.index].activeUuid === collection.data.uuid"
+        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.uuid"
         @item-selected="handleItemSelected"
       ></CollectionItem>
     </div>

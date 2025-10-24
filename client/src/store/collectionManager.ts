@@ -7,7 +7,7 @@ const { api } = useAppStore();
 const levels = ref<Level[]>([
   {
     data: [],
-    activeUuid: null,
+    activeCollection: null,
     level: 0,
     parentUuid: null,
   },
@@ -19,18 +19,12 @@ const pathToActiveCollection = computed<Collection[]>(() => {
     return [];
   }
 
-  let items = [];
+  let items: Collection[] = [];
 
   for (const level of levels.value) {
-    const activeInColumn: Collection | null = level.data.find(
-      c => c.data.uuid === level.activeUuid,
-    );
+    items.push(level.activeCollection);
 
-    if (activeInColumn) {
-      items.push(activeInColumn);
-    }
-
-    if (level.activeUuid === activeCollection.value?.collection?.data?.uuid) {
+    if (level.activeCollection.data.uuid === activeCollection.value?.collection?.data?.uuid) {
       break;
     }
   }
@@ -56,25 +50,30 @@ export function useCollectionManagerStore() {
   async function activateCollection(index: number, uuid: string): Promise<void> {
     const cao: CollectionAccessObject = await fetchCollectionDetails(uuid);
 
-    // Remove levels AFTER index and replace the first new level with fetched data
-    levels.value = [
-      ...levels.value.slice(0, index + 1),
-      {
-        activeUuid: null,
+    const currentSecondColumn: Level = levels.value[index + 1];
+
+    // Remove levels AFTER index
+    levels.value = [...levels.value.slice(0, index + 1)];
+
+    if (uuid === currentSecondColumn?.parentUuid) {
+      levels.value.push({ ...currentSecondColumn, activeCollection: null });
+    } else {
+      levels.value.push({
+        activeCollection: null,
         level: 0,
         data: [],
         parentUuid: uuid,
-      },
-    ];
+      });
+    }
 
-    levels.value[index].activeUuid = uuid;
+    levels.value[index].activeCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
 
     activeCollection.value = cao;
   }
 
   async function restoreDefaultView(): Promise<void> {
     // Reset path selection (no selected item in column, nothing displayed in edit pane)
-    levels.value[0].activeUuid = null;
+    levels.value[0].activeCollection = null;
     setCollectionActive(null);
 
     // Keep only first level
