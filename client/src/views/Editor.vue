@@ -136,7 +136,7 @@ const mainWidth: ComputedRef<number> = computed(() => {
 
 const sidebars = ref<Record<string, SidebarConfig>>({
   left: {
-    isCollapsed: false,
+    isCollapsed: true,
     resizerActive: false,
     width: 350,
   },
