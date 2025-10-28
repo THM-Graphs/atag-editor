@@ -69,7 +69,7 @@ export default class CollectionService {
               ELSE apoc.coll.intersection($additionalLabels, labels(c))
           END
           AND
-          toLower(c.label) CONTAINS $search
+          toLower(c.label) CONTAINS toLower($search)
       `;
 
     const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;

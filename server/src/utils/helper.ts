@@ -58,7 +58,7 @@ export function getPagination(req: Request): Record<string, any> {
   }
 
   return {
-    search,
+    search: (search as string).toLowerCase(),
     sort,
     order,
     limit: parseInt(limit as string) || MAX_ROW_COUNT,
