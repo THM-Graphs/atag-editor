@@ -99,10 +99,14 @@ function handleShrink(): void {
     <template #header>
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
-          <AnnotationTypeIcon :annotationType="annotation.data.properties.type" />
+          <AnnotationTypeIcon
+            :annotationType="annotation.data.properties.subType ?? annotation.data.properties.type"
+          />
         </div>
         <div class="annotation-type-container">
-          <span class="font-bold">{{ annotation.data.properties.type }}</span>
+          <span class="font-bold">{{
+            annotation.data.properties.subType ?? annotation.data.properties.type
+          }}</span>
         </div>
         <div class="preview font-italic text-xs" :title="annotation.data.properties.text">
           {{ previewText }}

@@ -602,10 +602,14 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
             <template #header>
               <div class="flex items-center gap-1 align-items-center">
                 <div class="icon-container">
-                  <AnnotationTypeIcon :annotationType="annotation.properties.type" />
+                  <AnnotationTypeIcon
+                    :annotationType="annotation.properties.subType ?? annotation.properties.type"
+                  />
                 </div>
                 <div class="annotation-type-container">
-                  <span class="font-bold">{{ annotation.properties.type }}</span>
+                  <span class="font-bold">{{
+                    annotation.properties.subType ?? annotation.properties.type
+                  }}</span>
                 </div>
               </div>
             </template>

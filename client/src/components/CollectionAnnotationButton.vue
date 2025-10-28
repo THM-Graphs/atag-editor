@@ -218,6 +218,15 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     <template #default>
       <span v-if="!hasIcon"> {{ annotationType }} </span>
     </template>
+
+    <template #item="{ label }">
+      <div class="flex p-1 gap-1 align-items-center select-none cursor-pointer">
+        <span :style="{ display: 'block', width: '20px', height: '20px' }">
+          <AnnotationTypeIcon :annotationType="label as string" />
+        </span>
+        <span>{{ label }}</span>
+      </div>
+    </template>
   </SplitButton>
 </template>
 

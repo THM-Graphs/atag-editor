@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ annotationType: string }>();
+defineProps<{ annotationType: string | number }>();
 </script>
 
 <template>
