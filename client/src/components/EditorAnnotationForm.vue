@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { toggleTextHightlighting } from '../utils/helper/helper';
@@ -32,6 +32,13 @@ const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.pro
 
 const panelIsCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
+const previewText = computed<string>(() => {
+  const sliced: string = annotation.data.properties.text?.slice(0, 10);
+
+  return annotation.data.properties.text?.length >= 10
+    ? sliced + '...'
+    : annotation.data.properties.text;
+});
 
 function handleDeleteAnnotation(event: MouseEvent): void {
   if (annotation.isTruncated) {
@@ -96,6 +103,9 @@ function handleShrink(): void {
         </div>
         <div class="annotation-type-container">
           <span class="font-bold">{{ annotation.data.properties.type }}</span>
+        </div>
+        <div class="preview font-italic text-xs" :title="annotation.data.properties.text">
+          {{ previewText }}
         </div>
         <div
           class="spy pi pi-eye cursor-pointer"
