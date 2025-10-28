@@ -89,7 +89,7 @@ const isLoading = ref<boolean>(true);
 const asyncOperationRunning = ref<boolean>(false);
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
-const availableTextLabels = computed(getAvailableTextLabels);
+const availableTextLabels = computed(() => getAvailableTextLabels().sort());
 
 useTitle(
   computed(() => `Collection | ${collectionAccessObject.value?.collection?.data.label ?? ''}`),
