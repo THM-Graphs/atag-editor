@@ -138,11 +138,6 @@ async function handleCopy(): Promise<void> {
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <RouterLink
-        :to="`/collections/${correspondingCollection.data.uuid}`"
-        class="block w-full text-center"
-        >Go to Collection page<i class="pi pi-external-link ml-2"></i
-      ></RouterLink>
 
       <DataTable
         :value="tableData"

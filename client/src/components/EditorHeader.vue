@@ -10,7 +10,11 @@ import NodeTag from './NodeTag.vue';
 
 const { text, correspondingCollection } = useTextStore();
 
-const breadcrumbRoot = ref({ role: 'Collection', label: correspondingCollection.value.data.label });
+const breadcrumbRoot = ref({
+  role: 'Collection',
+  label: correspondingCollection.value.data.label,
+  uuid: correspondingCollection.value.data.uuid,
+});
 const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
 </script>
 
@@ -37,7 +41,13 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
       <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
         <template #item="{ item }">
           <div v-if="item.role === 'Collection'">
-            <span severity="contrast" :title="`Collection: ${item.label}`">{{ item.label }}</span>
+            <RouterLink
+              :to="`/collections/${item.uuid}`"
+              severity="contrast"
+              :title="`Collection: ${item.label}`"
+            >
+              {{ item.label }}
+            </RouterLink>
           </div>
           <div v-else class="text-labels">
             <NodeTag
