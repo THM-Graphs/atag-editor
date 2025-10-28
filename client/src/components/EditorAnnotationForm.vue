@@ -157,6 +157,7 @@ function handleShrink(): void {
       v-if="config.hasEntities === true && !panelIsCollapsed"
       v-model="annotation.data.entities"
       mode="edit"
+      :default-search-value="annotation.data.properties.text"
     />
 
     <div v-if="!panelIsCollapsed" class="edit-buttons flex justify-content-center">

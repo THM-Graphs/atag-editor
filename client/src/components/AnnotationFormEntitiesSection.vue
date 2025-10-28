@@ -32,6 +32,7 @@ const entities = defineModel<{
 
 const props = defineProps<{
   mode?: 'edit' | 'view';
+  defaultSearchValue?: string;
 }>();
 
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
@@ -213,6 +214,8 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
         @click="changeEntitiesSelectionMode(category, 'edit')"
       />
       <AutoComplete
+        :default-value="props.defaultSearchValue"
+        :complete-on-focus="props.defaultSearchValue ? true : false"
         v-if="props.mode === 'edit'"
         v-show="entitiesSearchObject[category].mode === 'edit'"
         v-model="entitiesSearchObject[category].currentItem"

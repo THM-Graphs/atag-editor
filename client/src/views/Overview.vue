@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useTitle } from '@vueuse/core';
 import { DataTablePageEvent, DataTableSortEvent } from 'primevue';
-import Button from 'primevue/button';
 import Toast from 'primevue/toast';
 import { onMounted, watch } from 'vue';
 import CollectionTable from '../components/CollectionTable.vue';
