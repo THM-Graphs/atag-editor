@@ -725,7 +725,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                   <RouterLink
                     class="cell-link block w-full"
                     :to="`/texts/${data.uuid}`"
-                    title="Open Text in Editor"
+                    :title="data.text"
                   >
                     <span v-if="data.text.length > 0">{{ data.text }}</span>
                     <i v-else>No text yet...</i>
