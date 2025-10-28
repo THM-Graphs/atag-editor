@@ -77,17 +77,7 @@ function handlePaginationChange(event: DataTablePageEvent): void {
     <Toast />
 
     <div class="header-buttons flex justify-content-end mx-2 pl-2 pt-2">
-      <div class="flex">
-        <RouterLink :to="`/collection-manager`">
-          <Button
-            icon="pi pi-sitemap"
-            severity="secondary"
-            title="Go to Collection manager page to edit collection network"
-            label="Go to Collection manager"
-            aria-label="Go to Collection manager"
-          ></Button>
-        </RouterLink>
-      </div>
+      <div class="flex"></div>
     </div>
 
     <h1 class="text-center text-5xl line-height-2">Collections</h1>
