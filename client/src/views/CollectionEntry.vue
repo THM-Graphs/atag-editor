@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, useTemplateRef, watch } from 'vue';
 import {
   onBeforeRouteUpdate,
   RouteLocationNormalizedLoaded,
@@ -58,6 +58,8 @@ type TextTableEntry = {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const toast: ToastServiceMethods = useToast();
 const confirm = useConfirm();
+
+const form = useTemplateRef('properties-form');
 
 const { api } = useAppStore();
 
@@ -256,6 +258,12 @@ async function handleSaveChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
+    const isValid: boolean = form.value.reportValidity();
+
+    if (!isValid) {
+      return;
+    }
+
     await saveCollection();
 
     initialCollectionAccessObject.value = cloneDeep(collectionAccessObject.value);
@@ -537,7 +545,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
           </div>
 
           <h2 class="text-center">Properties</h2>
-          <form>
+          <form ref="properties-form">
             <div class="flex align-items-center gap-3 mb-3">
               <InputText
                 id="uuid"
@@ -556,6 +564,7 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
                 @click="handleCopy"
               />
             </div>
+
             <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">
                 <label :for="field.name" class="w-10rem font-semibold"

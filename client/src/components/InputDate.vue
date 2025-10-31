@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import type { Ref } from 'vue';
+import { onMounted, ref, useTemplateRef, watch } from 'vue';
+import type { ComponentPublicInstance, Ref } from 'vue';
 import DatePicker from 'primevue/datepicker';
 import { PropertyConfig } from '../models/types';
 
@@ -11,6 +11,18 @@ const props = defineProps<{
   config: Partial<PropertyConfig>;
   mode?: 'edit' | 'view';
 }>();
+
+const datePicker = useTemplateRef<ComponentPublicInstance>('datePicker');
+
+// TODO: This is a hack since the required attribute can not be set directly via props...
+// This is needed for form control in the frontend. Replace with Primevue form validation later?
+onMounted(() => {
+  const inputElm: HTMLInputElement | null = datePicker.value.$el.querySelector('input');
+
+  if (inputElm && props.config.required) {
+    inputElm.required = true;
+  }
+});
 
 // This Date object will represent the UTC time, independent from the user's timezone
 const internalDate: Ref<Date | null> = ref(null);
@@ -217,6 +229,7 @@ watch(internalDate, (newLocalDate: Date | null) => updateModelValue(newLocalDate
 
 <template>
   <DatePicker
+    ref="datePicker"
     v-model="internalDate"
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
