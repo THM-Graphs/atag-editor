@@ -20,8 +20,14 @@ const router = useRouter();
 
 const { api } = useAppStore();
 const { getAvailableCollectionLabels } = useGuidelinesStore();
-const { activeCollection, levels, fetchCollectionDetails, setCollectionActive } =
-  useCollectionManagerStore();
+const {
+  activeCollection,
+  levels,
+  pathToActiveCollection,
+  fetchCollectionDetails,
+  setCollectionActive,
+  setPathToActiveCollection,
+} = useCollectionManagerStore();
 const { searchParams, updateSearchParams } = useSearchParams(50);
 
 const availableCollectionLabels = getAvailableCollectionLabels();
@@ -67,6 +73,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
   if (isAlreadySelectedInColumn) {
     const cao: CollectionAccessObject = await fetchCollectionDetails(uuid);
 
+    setPathToActiveCollection(pathToActiveCollection.value.slice(0, props.index + 1));
     setCollectionActive(cao);
 
     return;
@@ -157,7 +164,7 @@ function updateUrlPath(uuid: string, index: number): void {
 
 <style scoped>
 .column {
-  min-width: 200px;
+  width: 200px;
 }
 
 .content {

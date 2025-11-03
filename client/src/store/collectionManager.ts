@@ -14,33 +14,18 @@ const levels = ref<Level[]>([
 ]);
 
 const activeCollection = ref<CollectionAccessObject | null>(null);
-const pathToActiveCollection = computed<Collection[]>(() => {
-  if (!activeCollection.value) {
-    return [];
-  }
-
-  let items: Collection[] = [];
-
-  for (const level of levels.value) {
-    items.push(level.activeCollection);
-
-    if (level.activeCollection.data.uuid === activeCollection.value?.collection?.data?.uuid) {
-      break;
-    }
-  }
-
-  return items;
-});
+const pathToActiveCollection = ref<Collection[]>([]);
 
 const asyncOperationRunning = ref<boolean>(false);
 
 export function useCollectionManagerStore() {
   async function fetchCollectionDetails(uuid: string): Promise<CollectionAccessObject> {
     // TODO: Handle errors
-    // TODO: Fire requests simultaneously or all at once to improve performance
-    const collection: Collection = await api.getCollection(uuid);
-    const annotations: AnnotationData[] = await api.getAnnotations('collection', uuid);
-    const texts: Text[] = await api.getTexts(uuid);
+    const [collection, annotations, texts] = await Promise.all([
+      api.getCollection(uuid),
+      api.getAnnotations('collection', uuid),
+      api.getTexts(uuid),
+    ]);
 
     const cao: CollectionAccessObject = { collection, texts, annotations };
 
@@ -66,7 +51,8 @@ export function useCollectionManagerStore() {
       });
     }
 
-    levels.value[index].activeCollection = levels.value[index].data.find(c => c.data.uuid === uuid);
+    levels.value[index].activeCollection =
+      levels.value[index].data.find(c => c.data.uuid === uuid) ?? null;
 
     activeCollection.value = cao;
   }
@@ -74,6 +60,7 @@ export function useCollectionManagerStore() {
   async function restoreDefaultView(): Promise<void> {
     // Reset path selection (no selected item in column, nothing displayed in edit pane)
     levels.value[0].activeCollection = null;
+    setPathToActiveCollection([]);
     setCollectionActive(null);
 
     // Keep only first level
@@ -82,6 +69,14 @@ export function useCollectionManagerStore() {
 
   function setCollectionActive(cao: CollectionAccessObject): void {
     activeCollection.value = cao;
+  }
+
+  function setPathToActiveCollection(path: Collection[]): void {
+    pathToActiveCollection.value = path;
+  }
+
+  async function validatePath(uuidString: string): Promise<Collection[]> {
+    return await api.validateCollectionPath(uuidString);
   }
 
   return {
@@ -93,5 +88,7 @@ export function useCollectionManagerStore() {
     activateCollection,
     restoreDefaultView,
     setCollectionActive,
+    setPathToActiveCollection,
+    validatePath,
   };
 }

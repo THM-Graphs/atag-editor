@@ -349,4 +349,21 @@ export default class ApiService {
       throw new Error('Network could not be updated, try again...');
     }
   }
+
+  public async validateCollectionPath(uuidString: string): Promise<Collection[]> {
+    try {
+      const url: string = `${this.baseUrl}/network?path=${uuidString}`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error validating path:', error);
+      throw new Error(`Error validating path: ${error}`);
+    }
+  }
 }

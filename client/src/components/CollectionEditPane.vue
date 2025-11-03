@@ -90,6 +90,7 @@ watch(
 
     mode.value = 'view';
   },
+  { immediate: true },
 );
 
 function clearTemporaryTexts(): void {
