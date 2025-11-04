@@ -42,13 +42,12 @@ function updateUrlPath(uuid: string, index: number): void {
 watch(
   () => route.query.path,
   async (newValue, oldValue) => {
-    // On page load
+    // On first page load
     if (isLoading.value) {
-      if (newValue) {
-        try {
+      try {
+        // If path exists on pate load
+        if (newValue) {
           const path: Collection[] = await validatePath(newValue as string);
-
-          isPathValid.value = true;
 
           levels.value = path.map((collection: Collection, index: number) => {
             const parent: Collection | null = path[index - 1] ?? null;
@@ -68,27 +67,22 @@ watch(
             parentUuid: path[path.length - 1].data.uuid,
           });
 
-          setPathToActiveCollection(path);
-
           const cao: CollectionAccessObject = await fetchCollectionDetails(
             path[path.length - 1].data.uuid,
           );
 
+          setPathToActiveCollection(path);
           setCollectionActive(cao);
-        } catch (error: unknown) {
-          isPathValid.value = false;
-        } finally {
-          isLoading.value = false;
-        }
-      } else {
-        try {
+          // Else, restore default view
+        } else {
           await restoreDefaultView();
-          isPathValid.value = true;
-        } catch (error: unknown) {
-          isPathValid.value = false;
-        } finally {
-          isLoading.value = false;
         }
+
+        isPathValid.value = true;
+      } catch (error: unknown) {
+        isPathValid.value = false;
+      } finally {
+        isLoading.value = false;
       }
 
       return;
@@ -107,10 +101,11 @@ watch(
 
     try {
       const path: Collection[] = await validatePath(newValue as string);
-      setPathToActiveCollection(path);
 
       await activateCollection(index, uuid);
+      setPathToActiveCollection(path);
     } catch (error: unknown) {
+      isPathValid.value = false;
     } finally {
       isLoading.value = false;
     }
