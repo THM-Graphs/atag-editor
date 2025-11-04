@@ -110,7 +110,7 @@ export default class ApiService {
     }
   }
 
-  public async getCollectionAncestry(collectionUuid: string): Promise<NodeAncestry> {
+  public async getCollectionAncestry(collectionUuid: string): Promise<NodeAncestry[]> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}/ancestry`;
 

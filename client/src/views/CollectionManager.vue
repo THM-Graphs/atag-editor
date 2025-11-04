@@ -59,7 +59,7 @@ const {
 } = useCollections();
 
 const collection = ref<Collection>(null);
-const ancestryPaths = ref<NodeAncestry>([]);
+const ancestryPaths = ref<NodeAncestry[]>([]);
 
 // Initial pageload
 const isLoading = ref<boolean>(false);
