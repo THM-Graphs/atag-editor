@@ -245,22 +245,6 @@ watch(internalDate, (newLocalDate: Date | null) => updateModelValue(newLocalDate
       }),
     }"
   />
-  <input
-    type="date"
-    :value="dateModelValue"
-    :required="config.required"
-    class="shadow-input"
-    tabindex="-1"
-  />
 </template>
 
-<style scoped>
-.shadow-input {
-  position: absolute;
-  inset: 0;
-  width: 5rem;
-  height: 4rem;
-  /* background: red;
-  pointer-events: none; */
-}
-</style>
+<style scoped></style>
