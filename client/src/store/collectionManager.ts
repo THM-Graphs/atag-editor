@@ -4,14 +4,7 @@ import { useAppStore } from './app';
 
 const { api } = useAppStore();
 
-const levels = ref<Level[]>([
-  {
-    data: [],
-    activeCollection: null,
-    level: 0,
-    parentUuid: null,
-  },
-]);
+const levels = ref<Level[]>([]);
 
 const activeCollection = ref<CollectionAccessObject | null>(null);
 const pathToActiveCollection = ref<Collection[]>([]);
@@ -45,7 +38,6 @@ export function useCollectionManagerStore() {
     } else {
       levels.value.push({
         activeCollection: null,
-        level: 0,
         data: [],
         parentUuid: uuid,
       });
@@ -75,6 +67,70 @@ export function useCollectionManagerStore() {
     pathToActiveCollection.value = path;
   }
 
+  async function updateLevelsAndFetchData(newPath: Collection[]) {
+    setPathToActiveCollection(newPath);
+    updateLevels();
+
+    if (newPath.length === 0) {
+      setCollectionActive(null);
+
+      return;
+    }
+
+    const cao: CollectionAccessObject = await fetchCollectionDetails(
+      newPath[newPath.length - 1].data.uuid,
+    );
+
+    setCollectionActive(cao);
+  }
+
+  function updateLevels(): void {
+    const newPathLength: number = pathToActiveCollection.value.length;
+
+    // Keep last column (when URL is only truncated and not changed, or the navigation
+    // happend via breadcrumbs, the children should not be refetched)
+    const currentLastColumn: Level = levels.value[newPathLength];
+
+    if (levels.value.length > newPathLength) {
+      // slice levels to match new path length
+      levels.value = levels.value.slice(0, newPathLength);
+    } else if (newPathLength > levels.value.length) {
+      // Fill up with empty levels
+      const diff: number = newPathLength - levels.value.length;
+
+      for (let i = 0; i < diff; i++) {
+        levels.value.push({
+          data: [],
+          activeCollection: null,
+          parentUuid: null,
+        });
+      }
+    }
+
+    // Then: Set activeCollection and parentUuid of each level
+    levels.value.forEach((level: Level, index: number) => {
+      level.activeCollection = pathToActiveCollection.value[index];
+      level.parentUuid = levels.value[index - 1]?.activeCollection?.data.uuid ?? null;
+    });
+
+    const lastActiveCollectionIsSame: boolean =
+      levels.value[levels.value.length - 1]?.activeCollection?.data.uuid ===
+      currentLastColumn?.parentUuid;
+
+    // Then: Add level for the children of last selection in path. Is either an empty level
+    // or an existing level (see comments above)
+    if (lastActiveCollectionIsSame && currentLastColumn) {
+      levels.value.push({ ...currentLastColumn, activeCollection: null });
+    } else {
+      // Else, Add empty level
+      levels.value.push({
+        activeCollection: null,
+        data: [],
+        parentUuid: levels.value[levels.value.length - 1]?.activeCollection?.data.uuid ?? null,
+      });
+    }
+  }
+
   async function validatePath(uuidString: string): Promise<Collection[]> {
     return await api.validateCollectionPath(uuidString);
   }
@@ -89,6 +145,7 @@ export function useCollectionManagerStore() {
     restoreDefaultView,
     setCollectionActive,
     setPathToActiveCollection,
+    updateLevelsAndFetchData,
     validatePath,
   };
 }

@@ -151,7 +151,6 @@ export type HistoryRecord = {
 export type Level = {
   data: Collection[];
   activeCollection: Collection | null;
-  level: number;
   parentUuid: string | null;
 };
 

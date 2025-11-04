@@ -10,7 +10,7 @@ import CollectionBreadcrumbs from '../components/CollectionBreadcrumbs.vue';
 import CollectionsColumn from '../components/CollectionsColumn.vue';
 import CollectionEditPane from '../components/CollectionEditPane.vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Collection, CollectionAccessObject } from '../models/types';
+import { Collection } from '../models/types';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
@@ -21,12 +21,9 @@ const route = useRoute();
 const {
   levels,
   pathToActiveCollection,
-  activateCollection,
   restoreDefaultView,
   validatePath,
-  setCollectionActive,
-  fetchCollectionDetails,
-  setPathToActiveCollection,
+  updateLevelsAndFetchData,
 } = useCollectionManagerStore();
 
 const router = useRouter();
@@ -41,42 +38,14 @@ function updateUrlPath(uuid: string, index: number): void {
 
 watch(
   () => route.query.path,
-  async (newValue, oldValue) => {
+  async (newValue: string, oldValue: string) => {
+    // TODO: This can be refactored...
     // On first page load
     if (isLoading.value) {
       try {
-        // If path exists on pate load
-        if (newValue) {
-          const path: Collection[] = await validatePath(newValue as string);
-
-          levels.value = path.map((collection: Collection, index: number) => {
-            const parent: Collection | null = path[index - 1] ?? null;
-
-            return {
-              data: [],
-              activeCollection: collection,
-              level: index,
-              parentUuid: parent?.data.uuid ?? null,
-            };
-          });
-
-          levels.value.push({
-            activeCollection: null,
-            level: path.length,
-            data: [],
-            parentUuid: path[path.length - 1].data.uuid,
-          });
-
-          const cao: CollectionAccessObject = await fetchCollectionDetails(
-            path[path.length - 1].data.uuid,
-          );
-
-          setPathToActiveCollection(path);
-          setCollectionActive(cao);
-          // Else, restore default view
-        } else {
-          await restoreDefaultView();
-        }
+        // If path exists on page load, validate it. Else, just fetch top-level collections
+        const newPath: Collection[] = newValue ? await validatePath(newValue) : [];
+        updateLevelsAndFetchData(newPath);
 
         isPathValid.value = true;
       } catch (error: unknown) {
@@ -94,16 +63,11 @@ watch(
       return;
     }
 
-    const oldUuids = (oldValue as string)?.split(',') ?? [];
-    const newUuids = (newValue as string)?.split(',') ?? [];
-
-    const { index, uuid } = getUrlChangeInfo(oldUuids, newUuids);
-
     try {
-      const path: Collection[] = await validatePath(newValue as string);
+      const newPath: Collection[] = await validatePath(newValue as string);
+      updateLevelsAndFetchData(newPath);
 
-      await activateCollection(index, uuid);
-      setPathToActiveCollection(path);
+      isPathValid.value = true;
     } catch (error: unknown) {
       isPathValid.value = false;
     } finally {
@@ -112,51 +76,6 @@ watch(
   },
   { immediate: true },
 );
-
-function getUrlChangeInfo(
-  oldUuids: string[],
-  newUuids: string[],
-): { index: number; uuid: null | string } {
-  let firstChangedIndex: number;
-  let firstChangedUuid: string;
-
-  // If item earlier in the path is selected
-  if (oldUuids.length > newUuids.length) {
-    const lastNewIndex: number = newUuids.length - 1;
-
-    return {
-      index: lastNewIndex,
-      uuid: newUuids[lastNewIndex],
-    };
-  }
-
-  let i = 0;
-
-  // I changes on the same level occur OR earlier in the path
-  while (i <= oldUuids.length && i <= newUuids.length) {
-    firstChangedIndex = i;
-    firstChangedUuid = newUuids[i];
-
-    if (oldUuids[i] !== newUuids[i]) {
-      return {
-        index: firstChangedIndex,
-        uuid: firstChangedUuid,
-      };
-    }
-
-    i++;
-  }
-
-  // If not, find first uuid of new path
-  if (newUuids.length > oldUuids.length) {
-    const firstNewIndex: number = oldUuids.length + 1;
-
-    return {
-      index: firstNewIndex,
-      uuid: newUuids[firstNewIndex],
-    };
-  }
-}
 
 function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void {
   const { index, uuid } = data;
