@@ -27,10 +27,12 @@ import {
   AnnotationType,
   CollectionAccessObject,
   CollectionPostData,
+  NodeAncestry,
   PropertyConfig,
   Text,
 } from '../models/types';
 import Button from 'primevue/button';
+import Breadcrumb from 'primevue/breadcrumb';
 import Column from 'primevue/column';
 import ConfirmPopup from 'primevue/confirmpopup';
 import DataTable from 'primevue/datatable';
@@ -47,6 +49,7 @@ import { useTitle } from '@vueuse/core';
 import Panel from 'primevue/panel';
 import { useAppStore } from '../store/app';
 import NodeTag from '../components/NodeTag.vue';
+import { MenuItem } from 'primevue/menuitem';
 
 type TextTableEntry = {
   labels: string[];
@@ -82,6 +85,8 @@ const collectionUuid = computed(() => route.params.uuid as string);
 const collectionAccessObject = ref<CollectionAccessObject | null>(null);
 const isValidCollection = ref<boolean>(false);
 const initialCollectionAccessObject = ref<CollectionAccessObject | null>(null);
+const ancestryPaths = ref<NodeAncestry[]>([]);
+
 const mode = ref<'view' | 'edit'>('view');
 const propertiesAreCollapsed = ref<boolean>(false);
 
@@ -118,6 +123,27 @@ const textsTableData: ComputedRef<TextTableEntry[]> = computed(() => {
   });
 });
 
+// Breadcrumbs
+const home = ref<MenuItem>({
+  icon: 'pi pi-home',
+});
+
+const breadcrumbPaths = computed(() => {
+  return ancestryPaths.value.map(path => {
+    const mapped = path.map((item, index) => ({
+      index,
+      label: item.data.label,
+    }));
+
+    mapped.push({
+      index: path.length,
+      label: collectionAccessObject.value?.collection.data.label,
+    });
+
+    return mapped;
+  });
+});
+
 watch(
   () => route.params.uuid,
   async (newUuid: string): Promise<void> => {
@@ -133,8 +159,9 @@ watch(
     }
 
     if (isValidCollection.value || newUuid === '') {
-      collectionAccessObject.value.texts = await api.getTexts(collectionUuid.value);
+      ancestryPaths.value = await api.getCollectionAncestry(route.params.uuid as string);
 
+      collectionAccessObject.value.texts = await api.getTexts(collectionUuid.value);
       collectionAccessObject.value.annotations = await api.getAnnotations(
         'collection',
         collectionUuid.value,
@@ -474,14 +501,21 @@ function shiftText(textUuid: string, direction: 'up' | 'down') {
     <Toast />
     <ConfirmPopup />
     <div class="header-buttons flex justify-content-between mx-2 pl-2 pt-2">
-      <RouterLink to="/">
-        <Button
-          icon="pi pi-home"
-          aria-label="Home"
-          class="w-2rem h-2rem"
-          title="Go to overview"
-        ></Button>
-      </RouterLink>
+      <div class="container p-1">
+        <Breadcrumb
+          v-for="path in breadcrumbPaths"
+          :home="home"
+          :model="path"
+          :pt="{
+            root: {
+              style: {
+                padding: 0,
+              },
+            },
+          }"
+        >
+        </Breadcrumb>
+      </div>
       <div class="flex">
         <RouterLink :to="`/collection-manager/${collectionAccessObject.collection.data.uuid}`">
           <Button
