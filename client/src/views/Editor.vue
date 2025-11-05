@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
-import { RouteLocationNormalizedLoaded, useRoute, onBeforeRouteUpdate } from 'vue-router';
+import {
+  RouteLocationNormalizedLoaded,
+  useRoute,
+  onBeforeRouteUpdate,
+  onBeforeRouteLeave,
+} from 'vue-router';
 import { useEventListener, useTitle } from '@vueuse/core';
 import { useCharactersStore } from '../store/characters';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
@@ -68,6 +73,7 @@ onUnmounted((): void => {
 });
 
 onBeforeRouteUpdate(() => preventUserFromRouteLeaving());
+onBeforeRouteLeave(() => preventUserFromRouteLeaving());
 
 useEventListener('mouseup', handleMouseUp);
 useEventListener('mousedown', handleMouseDown);
