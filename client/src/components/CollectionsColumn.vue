@@ -12,10 +12,11 @@ import {
 } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
+import { useInfiniteScroll } from '@vueuse/core';
 
 const props = defineProps<{
   index: number;
@@ -34,15 +35,46 @@ const {
   setCollectionActive,
   setPathToActiveCollection,
 } = useCollectionManagerStore();
-const { searchParams, updateSearchParams } = useSearchParams(10);
+const { searchParams, updateSearchParams } = useSearchParams(25);
 
 const availableCollectionLabels = getAvailableCollectionLabels();
 
 const columnPagination = ref<PaginationData>(null);
 
+const column = useTemplateRef<HTMLDivElement>('column');
+const scrollPane = useTemplateRef<HTMLDivElement>('scroll-pane');
+
 const areAllLabelsSelected = computed<boolean>(
   () => searchParams.value.nodeLabels.length === availableCollectionLabels.length,
 );
+
+const initialDataAreFetched = ref<boolean>(false);
+// The useInfiniteScroll composable has its own loading state management, but it does not work
+// well with the initial data fetching logic. Therefore, an component wide loading state is used.
+const isLoading = ref<boolean>(false);
+
+// TODO: Use reset method as soon vueUse package version is updated
+useInfiniteScroll(scrollPane, fetchMoreData, {
+  distance: searchParams.value.rowCount,
+  canLoadMore: () => {
+    // Prevent parallel loading
+    if (isLoading.value === true) {
+      return false;
+    }
+
+    // Initial data fetching should come from the component lifecycle
+    if (initialDataAreFetched.value === false) {
+      return false;
+    }
+
+    // If no cursor available, nothing more to load (obviously)
+    if (columnPagination.value?.nextCursor == null) {
+      return false;
+    }
+
+    return true;
+  },
+});
 
 watch(searchParams, handleSearchParamsChange, {
   deep: true,
@@ -50,6 +82,10 @@ watch(searchParams, handleSearchParamsChange, {
 
 watch(() => props.parentUuid, handleParentUuidChange, {
   immediate: true,
+});
+
+onMounted(() => {
+  scrollToColumn();
 });
 
 function addData(data: Collection[]) {
@@ -66,21 +102,31 @@ async function fetchData(): Promise<PaginationResult<Collection[]>> {
 }
 
 async function fetchInitialData(): Promise<void> {
-  const { data, pagination } = await fetchData();
+  setIsLoading(true);
 
+  const { data, pagination } = await fetchData();
   replaceData(data);
   setPagination(pagination);
+
+  initialDataAreFetched.value = true;
+
+  setIsLoading(false);
 }
 
 async function fetchMoreData(): Promise<void> {
-  const { data, pagination } = await fetchData();
+  setIsLoading(true);
 
+  const { data, pagination } = await fetchData();
   addData(data);
   setPagination(pagination);
+
+  setIsLoading(false);
 }
 
 async function handleParentUuidChange() {
-  fetchInitialData();
+  await fetchInitialData();
+
+  initialDataAreFetched.value = true;
 }
 
 async function handleItemSelected(uuid: string): Promise<void> {
@@ -149,10 +195,18 @@ function updateUrlPath(uuid: string, index: number): void {
 
   router.push({ query: { path: newUuids.join(',') } });
 }
+
+function scrollToColumn() {
+  column.value.scrollIntoView({ behavior: 'smooth' });
+}
+
+function setIsLoading(state: boolean) {
+  isLoading.value = state;
+}
 </script>
 
 <template>
-  <div class="column flex flex-column">
+  <div class="column flex flex-column" ref="column">
     <div class="header flex gap-1 p-1">
       <InputText
         size="small"
@@ -190,7 +244,7 @@ function updateUrlPath(uuid: string, index: number): void {
         </template>
       </MultiSelect>
     </div>
-    <div class="content">
+    <div class="content" ref="scroll-pane">
       <CollectionItem
         v-for="collection of levels[props.index].data"
         :key="collection.data.uuid"
@@ -198,12 +252,12 @@ function updateUrlPath(uuid: string, index: number): void {
         :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.uuid"
         @item-selected="handleItemSelected"
       ></CollectionItem>
-      <div class="cursor-item">
-        <div>UUID: {{ columnPagination?.nextCursor?.uuid }}</div>
-        <div>Label: {{ columnPagination?.nextCursor?.label }}</div>
-        <button v-if="columnPagination?.nextCursor" class="w-full" @click="fetchMoreData">
-          Load more...
-        </button>
+      <div
+        class="text-center"
+        v-if="isLoading && levels[props.index].data.length > 0"
+        title="More data are loading..."
+      >
+        <span class="pi pi-spin pi-spinner"></span>
       </div>
     </div>
     <div class="count text-xs text-right pr-3">
