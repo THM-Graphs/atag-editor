@@ -1,7 +1,7 @@
 import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
-import { collectionSortField } from '../utils/cypher.js';
+import { sortDirection } from '../utils/cypher.js';
 import { ancestryPaths } from '../utils/cypher.js';
 import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
@@ -16,6 +16,7 @@ import {
   Collection,
   NodeAncestry,
   CollectionCreationData,
+  CursorData,
 } from '../models/types.js';
 import ICharacter from '../models/ICharacter.js';
 
@@ -31,31 +32,29 @@ type CreatedText = Text & {
 
 export default class CollectionService {
   /**
-   * Retrieves a paginated list of collections.
+   * Retrieves a paginated list of collections using cursor-based pagination.
    *
    * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection. Otherwise,
    * all top-level collections (= without outgoing PART_OF relationship) are fetched.
    * Additional labels for the collection nodes can be specified to filter the results. Pagination parameters such as sort order,
-   * limit, skip, and search string are also taken into account.
+   * limit, and search string are also taken into account.
    *
    * @param {string[]} additionalLabels - The additional labels to match in the query, e.g., "Letter".
-   * @param {string} sort - The field by which to sort the collections.
-   * @param {string} order - The order in which to sort the collections (ascending or descending).
+   * @param {string} order - The order in which to sort the collections ('ASC' or 'DESC').
    * @param {number} limit - The maximum number of collections to return.
-   * @param {number} skip - The number of collections to skip before starting to collect the result set.
    * @param {string} search - The search string to filter collections by their label.
    * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
+   * @param {CursorData | null} cursor - The cursor for pagination, or null for the first page.
    *
    * @return {Promise<PaginationResult<Collection[]>>} A promise that resolves to a paginated result of Collections.
    */
   public async getCollections(
     additionalLabels: string[],
-    sort: string,
     order: string,
     limit: number,
-    skip: number,
     search: string,
     parentUuid: string | null,
+    cursor: CursorData | null = null,
   ): Promise<PaginationResult<Collection[]>> {
     // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch collections
     // that don't have a parent (top level collections)
@@ -65,6 +64,12 @@ export default class CollectionService {
              (:Collection)<-[:PART_OF]-(c)
          }`;
 
+    // Build cursor condition, depending on whether a cursor is provided or not
+    const cursorCondition: string = cursor
+      ? `AND (c.label > $cursorLabel OR (c.label = $cursorLabel AND c.uuid ${sortDirection(order)} $cursorUuid))`
+      : '';
+
+    // Base query: Add filters for nodeLabels and search string
     const baseQuery: string =
       baseCollectionSnippet +
       `
@@ -74,40 +79,61 @@ export default class CollectionService {
           ELSE apoc.coll.intersection($additionalLabels, labels(c))
       END
       AND
-      toLower(c.label) CONTAINS $search
+      toLower(c.label) CONTAINS toLower($search)
       `;
 
+    // Count query: Get the total number of records matching the filters
     const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;
 
+    // Query for pagintation. Fetch limit + 1 to determine if there are more records
     const dataQuery: string =
       baseQuery +
+      cursorCondition +
       `
-      ORDER BY ${collectionSortField(sort)} ${order}
-      SKIP ${skip}
-      LIMIT ${limit}
+      ORDER BY c.label ${order}, c.uuid ${order}
+      LIMIT $limit
 
       RETURN collect({
           nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
           data: c {.*}
       }) AS collections
-      `;
+    `;
+
+    const queryParams = {
+      additionalLabels,
+      search,
+      limit: int(limit + 1),
+      ...(cursor && {
+        cursorLabel: cursor.label,
+        cursorUuid: cursor.uuid,
+      }),
+    };
 
     const [countResult, dataResult] = await Promise.all([
-      Neo4jDriver.runQuery(countQuery, { additionalLabels, search }),
-      Neo4jDriver.runQuery(dataQuery, {
-        additionalLabels,
-        skip: int(skip),
-        limit: int(limit),
-        sort: int(sort),
-        order,
-        search,
-      }),
+      Neo4jDriver.runQuery(countQuery, queryParams),
+      Neo4jDriver.runQuery(dataQuery, queryParams),
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
     const rawData: Collection[] = dataResult.records[0]?.get('collections') || [];
 
-    const data: Collection[] = rawData.map(cao => toNativeTypes(cao)) as Collection[];
+    // Check if there are more records
+    const hasMore: boolean = rawData.length > limit;
+    const collections: Collection[] = hasMore ? rawData.slice(0, limit) : rawData;
+
+    const data: Collection[] = collections.map(c => toNativeTypes(c)) as Collection[];
+
+    // Generate next cursor from the last item
+    let nextCursor: CursorData | null = null;
+
+    if (hasMore && data.length > 0) {
+      const lastItem: Collection = data[data.length - 1];
+
+      nextCursor = {
+        label: lastItem.data.label,
+        uuid: lastItem.data.uuid,
+      };
+    }
 
     return {
       data,
@@ -115,9 +141,8 @@ export default class CollectionService {
         limit,
         order,
         search,
-        skip,
-        sort,
         totalRecords,
+        nextCursor,
       },
     };
   }

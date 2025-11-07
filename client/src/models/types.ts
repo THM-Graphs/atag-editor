@@ -103,9 +103,7 @@ export type CollectionPreview = {
 export type CollectionSearchParams = {
   searchInput?: string;
   nodeLabels?: string[];
-  offset?: number;
   rowCount?: number;
-  sortField?: string;
   sortDirection?: 'asc' | 'desc';
 };
 
@@ -177,9 +175,13 @@ export type PaginationData = {
   limit: number;
   order: string;
   search: string;
-  skip: number;
-  sort: string;
   totalRecords: number;
+  nextCursor: CursorData | null;
+};
+
+export type CursorData = {
+  label: string;
+  uuid: string;
 };
 
 export type PaginationResult<T> = {

@@ -10,7 +10,7 @@ import {
   isTime,
   types,
 } from 'neo4j-driver';
-import { PropertyConfig } from '../models/types.js';
+import { CursorData, PropertyConfig } from '../models/types.js';
 import ICharacter from '../models/ICharacter.js';
 
 /**
@@ -55,7 +55,7 @@ export function createCharactersFromText(text: string): ICharacter[] {
  */
 export function getPagination(req: Request): Record<string, any> {
   // TODO: Should this function have more restriction functionalities/error handling
-  let { search, limit, skip, sort, order } = req.query;
+  let { search, limit, order, cursorUuid, cursorLabel } = req.query;
 
   // Valid Order directions
   const ORDER_ASC: string = 'ASC';
@@ -64,10 +64,16 @@ export function getPagination(req: Request): Record<string, any> {
   // TODO: This is a temporary solution until a better endless
   // pagination solution in the frontend is implemented
   const MAX_ROW_COUNT: number = 1000;
+  const isCursorValid: boolean = typeof cursorUuid === 'string' && typeof cursorLabel === 'string';
 
   // Set default values
-  sort ||= 'label';
   search ||= '';
+  const cursor: CursorData | null = isCursorValid
+    ? {
+        uuid: cursorUuid as string,
+        label: cursorLabel as string,
+      }
+    : null;
 
   // Only accept ASC/DESC values
   if (!order || !ORDERS.includes(order.toString().toUpperCase())) {
@@ -75,11 +81,10 @@ export function getPagination(req: Request): Record<string, any> {
   }
 
   return {
-    search,
-    sort,
-    order,
+    cursor,
     limit: parseInt(limit as string) || MAX_ROW_COUNT,
-    skip: parseInt(skip as string) || 0,
+    order,
+    search,
   };
 }
 

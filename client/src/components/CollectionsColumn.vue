@@ -3,7 +3,13 @@ import { InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
-import { CollectionAccessObject, CollectionSearchParams, PaginationData } from '../models/types';
+import {
+  Collection,
+  CollectionAccessObject,
+  CollectionSearchParams,
+  PaginationData,
+  PaginationResult,
+} from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
 import { computed, ref, watch } from 'vue';
@@ -28,7 +34,7 @@ const {
   setCollectionActive,
   setPathToActiveCollection,
 } = useCollectionManagerStore();
-const { searchParams, updateSearchParams } = useSearchParams(50);
+const { searchParams, updateSearchParams } = useSearchParams(10);
 
 const availableCollectionLabels = getAvailableCollectionLabels();
 
@@ -38,24 +44,44 @@ const areAllLabelsSelected = computed<boolean>(
   () => searchParams.value.nodeLabels.length === availableCollectionLabels.length,
 );
 
-async function fetchData(): Promise<void> {
-  const { data, pagination } = await api.getCollections(
-    props.parentUuid,
-    searchParams.value as CollectionSearchParams,
-  );
-
-  levels.value[props.index].data = data;
-
-  columnPagination.value = pagination;
-}
-
-watch(searchParams, fetchData, {
+watch(searchParams, handleSearchParamsChange, {
   deep: true,
 });
 
-watch(() => props.parentUuid, fetchData, {
+watch(() => props.parentUuid, handleParentUuidChange, {
   immediate: true,
 });
+
+function addData(data: Collection[]) {
+  levels.value[props.index].data.push(...data);
+}
+
+async function fetchData(): Promise<PaginationResult<Collection[]>> {
+  const { data, pagination } = await api.getCollections(props.parentUuid, {
+    filters: searchParams.value,
+    cursor: columnPagination.value?.nextCursor,
+  });
+
+  return { data, pagination };
+}
+
+async function fetchInitialData(): Promise<void> {
+  const { data, pagination } = await fetchData();
+
+  replaceData(data);
+  setPagination(pagination);
+}
+
+async function fetchMoreData(): Promise<void> {
+  const { data, pagination } = await fetchData();
+
+  addData(data);
+  setPagination(pagination);
+}
+
+async function handleParentUuidChange() {
+  fetchInitialData();
+}
 
 async function handleItemSelected(uuid: string): Promise<void> {
   const isAlreadySelectedInColumn: boolean =
@@ -97,6 +123,23 @@ function handleSearchInputChange(newInput: string) {
   };
 
   updateSearchParams(data, { immediate: false });
+}
+
+async function handleSearchParamsChange() {
+  resetPagination();
+  fetchInitialData();
+}
+
+function replaceData(data: Collection[]) {
+  levels.value[props.index].data = data;
+}
+
+function resetPagination(): void {
+  setPagination(null);
+}
+
+function setPagination(newPagination: PaginationData) {
+  columnPagination.value = newPagination;
 }
 
 function updateUrlPath(uuid: string, index: number): void {
@@ -155,6 +198,16 @@ function updateUrlPath(uuid: string, index: number): void {
         :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.uuid"
         @item-selected="handleItemSelected"
       ></CollectionItem>
+      <div class="cursor-item">
+        <div>UUID: {{ columnPagination?.nextCursor?.uuid }}</div>
+        <div>Label: {{ columnPagination?.nextCursor?.label }}</div>
+        <button v-if="columnPagination?.nextCursor" class="w-full" @click="fetchMoreData">
+          Load more...
+        </button>
+      </div>
+    </div>
+    <div class="count text-xs text-right pr-3">
+      {{ levels[props.index].data.length }}/{{ columnPagination?.totalRecords }}
     </div>
     <div class="footer p-1 flex justify-content-center">
       <Button size="small" severity="secondary" icon="pi pi-plus" label="Add Collection" />
@@ -171,5 +224,10 @@ function updateUrlPath(uuid: string, index: number): void {
   overflow-y: scroll;
   overflow-x: hidden;
   flex-grow: 1;
+}
+
+.cursor-item {
+  background-color: orange;
+  font-size: 0.75rem;
 }
 </style>

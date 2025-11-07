@@ -23,7 +23,7 @@ const annotationService: AnnotationService = new AnnotationService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { sort, order, limit, skip, search } = getPagination(req);
+    const { order, limit, search, cursor } = getPagination(req);
     const nodeLabels: string[] = (req.query.nodeLabels as string)
       .split(',')
       .filter(label => label.trim() !== '');
@@ -32,12 +32,11 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
       nodeLabels,
-      sort,
       order,
       limit,
-      skip,
       search,
       parentUuid,
+      cursor,
     );
 
     res.status(200).json(collections);
@@ -73,7 +72,7 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
 router.get('/:uuid/collections', async (req: Request, res: Response, next: NextFunction) => {
   const parentUuid: string = req.params.uuid;
 
-  const { sort, order, limit, skip, search } = getPagination(req);
+  const { order, limit, search, cursor } = getPagination(req);
   const nodeLabels: string[] = ((req.query.nodeLabels as string) ?? '')
     .split(',')
     .filter(label => label.trim() !== '');
@@ -81,12 +80,11 @@ router.get('/:uuid/collections', async (req: Request, res: Response, next: NextF
   try {
     const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
       nodeLabels,
-      sort,
       order,
       limit,
-      skip,
       search,
       parentUuid,
+      cursor,
     );
 
     res.status(200).json(collections);

@@ -2,8 +2,8 @@ import { DeepReadonly, readonly, ref } from 'vue';
 import { useAppStore } from '../store/app';
 import {
   Collection,
-  CollectionPreview,
   CollectionSearchParams,
+  CursorData,
   PaginationData,
   PaginationResult,
 } from '../models/types';
@@ -13,7 +13,7 @@ const { api } = useAppStore();
 export function useCollections() {
   // Data
   const collection = ref<Collection>(null);
-  const collections = ref<CollectionPreview[]>([]);
+  const collections = ref<Collection[]>([]);
   const pagination = ref<PaginationData>(null);
 
   // Fetch status
@@ -22,21 +22,21 @@ export function useCollections() {
 
   async function fetchCollections(
     parentUuid: string | null,
-    params: DeepReadonly<CollectionSearchParams> | CollectionSearchParams,
+    params: {
+      filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
+      cursor: CursorData | null;
+    },
   ) {
     isFetching.value = true;
 
     try {
-      const result: PaginationResult<CollectionPreview[]> = await api.getCollections(
-        parentUuid,
-        params,
-      );
+      const result: PaginationResult<Collection[]> = await api.getCollections(parentUuid, params);
 
       collections.value = result.data;
       pagination.value = result.pagination;
     } catch (e: unknown) {
       error.value = e as Error;
-      console.error('Error fetching guidelines:', e);
+      console.error('Error fetching collections:', e);
     } finally {
       isFetching.value = false;
     }

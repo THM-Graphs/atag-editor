@@ -15,9 +15,7 @@ import { FETCH_DELAY } from '../config/constants';
  * - `searchParams`: A reactive object property with the search parameters. The object is readonly, but its properties are not. The properties are:
  *   - `searchInput`: The search string to search for in the collection.
  *   - `nodeLabels`: An array of node labels to filter by.
- *   - `offset`: The number of results to skip in the result set.
  *   - `rowCount`: The number of results to return in the result set.
- *   - `sortField`: The field to sort by.
  *   - `sortDirection`: The direction to sort by.
  * - `resetSearchParams`: A function that resets the search parameters to their default values.
  * - `updateSearchParams`: A function that updates the search parameters with given data. These are partials, so not all parameters will be updated.
@@ -36,9 +34,7 @@ export function useCollectionSearch(rowCount?: number) {
   const searchParams = ref<CollectionSearchParams>({
     searchInput: '',
     nodeLabels: availableCollectionLabels.value,
-    offset: 0,
     rowCount: DEFAULT_ROW_COUNT,
-    sortField: '',
     sortDirection: 'asc' as 'asc' | 'desc',
   });
 
@@ -52,9 +48,7 @@ export function useCollectionSearch(rowCount?: number) {
     searchParams.value = {
       searchInput: '',
       nodeLabels: availableCollectionLabels.value,
-      offset: 0,
       rowCount: DEFAULT_ROW_COUNT,
-      sortField: '',
       sortDirection: 'asc',
     };
   }

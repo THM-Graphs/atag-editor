@@ -9,6 +9,7 @@ import {
   CollectionCreationData,
   CollectionPostData,
   CollectionSearchParams,
+  CursorData,
   NetworkPostData,
   NodeAncestry,
   PaginationResult,
@@ -128,7 +129,10 @@ export default class ApiService {
 
   public async getCollections(
     parentUuid: string,
-    params: DeepReadonly<CollectionSearchParams> | CollectionSearchParams,
+    params: {
+      filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
+      cursor: CursorData | null;
+    },
   ): Promise<PaginationResult<Collection[]>> {
     const DEFAULT_ROW_COUNT: number | null = 10;
 
@@ -138,14 +142,16 @@ export default class ApiService {
 
     const urlParams: URLSearchParams = new URLSearchParams();
 
-    urlParams.set('sort', params.sortField);
-    urlParams.set('order', params.sortDirection);
-    urlParams.set('skip', params.offset.toString());
-    urlParams.set('search', params.searchInput);
-    urlParams.set('nodeLabels', params.nodeLabels.join(','));
+    const { filters, cursor } = params;
+
+    urlParams.set('order', filters.sortDirection);
+    urlParams.set('search', filters.searchInput);
+    urlParams.set('nodeLabels', filters.nodeLabels.join(','));
+    urlParams.set('cursorUuid', cursor?.uuid ?? '');
+    urlParams.set('cursorLabel', cursor?.label ?? '');
 
     // Use default limit if none is provided
-    urlParams.set('limit', params.rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
+    urlParams.set('limit', filters.rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
 
     const fetchUrl: string = `${path}?${urlParams.toString()}`;
 
