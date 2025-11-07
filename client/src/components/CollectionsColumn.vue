@@ -163,6 +163,23 @@ function handleNodeLabelsChange(selectedLabels: string[]) {
   updateSearchParams(data);
 }
 
+async function handleRefreshClick() {
+  if (isLoading.value === true) {
+    return;
+  }
+
+  setIsLoading(true);
+  setPagination(null);
+
+  const { data, pagination } = await fetchData();
+  replaceData(data);
+  setPagination(pagination);
+
+  initialDataAreFetched.value = true;
+
+  setIsLoading(false);
+}
+
 function handleSearchInputChange(newInput: string) {
   const data: CollectionSearchParams = {
     searchInput: newInput,
@@ -222,6 +239,7 @@ function setIsLoading(state: boolean) {
         dropdownIcon="pi pi-filter"
         :filter="false"
         title="Select node labels to filter"
+        class="flex-shrink-0"
         @update:modelValue="handleNodeLabelsChange"
         :pt="{
           root: {
@@ -243,6 +261,13 @@ function setIsLoading(state: boolean) {
           </OverlayBadge>
         </template>
       </MultiSelect>
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-refresh"
+        title="Refresh data"
+        @click="handleRefreshClick"
+      />
     </div>
     <div class="content" ref="scroll-pane">
       <CollectionItem
@@ -264,7 +289,13 @@ function setIsLoading(state: boolean) {
       {{ levels[props.index].data.length }}/{{ columnPagination?.totalRecords }}
     </div>
     <div class="footer p-1 flex justify-content-center">
-      <Button size="small" severity="secondary" icon="pi pi-plus" label="Add Collection" />
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-plus"
+        class="w-full"
+        label="Add Collection"
+      />
     </div>
   </div>
 </template>
@@ -272,6 +303,10 @@ function setIsLoading(state: boolean) {
 <style scoped>
 .column {
   width: 200px;
+}
+
+.header > * {
+  min-width: 0;
 }
 
 .content {
