@@ -30,7 +30,6 @@ const { getAvailableCollectionLabels } = useGuidelinesStore();
 const {
   activeCollection,
   levels,
-  pathToActiveCollection,
   fetchCollectionDetails,
   setCollectionActive,
   setPathToActiveCollection,
@@ -145,7 +144,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
   if (isAlreadySelectedInColumn) {
     const cao: CollectionAccessObject = await fetchCollectionDetails(uuid);
 
-    setPathToActiveCollection(pathToActiveCollection.value.slice(0, props.index + 1));
+    setPathToActiveCollection(levels.value.slice(0, props.index + 1).map(l => l.activeCollection));
     setCollectionActive(cao);
 
     return;
