@@ -17,7 +17,8 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
-import { useInfiniteScroll, useToNumber } from '@vueuse/core';
+import { useInfiniteScroll } from '@vueuse/core';
+import Toast from 'primevue/toast';
 import { createNewCollectionAccessObject } from '../utils/helper/helper';
 
 const props = defineProps<{
