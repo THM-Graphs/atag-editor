@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { InputText, Button } from 'primevue';
+import { InputText, Button, useToast } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
@@ -17,7 +17,7 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
-import { useInfiniteScroll } from '@vueuse/core';
+import { useInfiniteScroll, useToNumber } from '@vueuse/core';
 import { createNewCollectionAccessObject } from '../utils/helper/helper';
 
 const props = defineProps<{
@@ -25,6 +25,7 @@ const props = defineProps<{
   parentUuid: string | null;
 }>();
 
+const toast = useToast();
 const router = useRouter();
 
 const { api } = useAppStore();
@@ -167,7 +168,7 @@ async function handleParentUuidChange() {
 
 async function handleItemSelected(uuid: string): Promise<void> {
   if (!canNavigate.value) {
-    alert('Please save your changes first.');
+    showUnsavedChangesWarning();
     return;
   }
 
@@ -249,6 +250,15 @@ function resetPagination(): void {
 
 function setPagination(newPagination: PaginationData) {
   columnPagination.value = newPagination;
+}
+
+function showUnsavedChangesWarning() {
+  toast.add({
+    severity: 'warn',
+    summary: 'You have unsaved changes.',
+    detail: 'Please save or discard your changes before selecting other collections.',
+    life: 3000,
+  });
 }
 
 function updateUrlPath(uuid: string, index: number): void {
@@ -345,6 +355,7 @@ function setIsLoading(state: boolean) {
       />
     </div>
   </div>
+  <Toast />
 </template>
 
 <style scoped>

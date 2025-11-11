@@ -7,6 +7,10 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --z-index-overlay: 100;
+  --z-index-gutter: 200;
+  --z-index-edit-pane: 1000;
 }
 
 a {

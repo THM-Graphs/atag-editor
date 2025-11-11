@@ -589,6 +589,12 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 }
 
 .edit-pane-container,
+.edit-pane-container * {
+  position: relative;
+  z-index: var(--z-index-edit-pane);
+}
+
+.edit-pane-container,
 .main {
   overflow-y: hidden;
 }

@@ -11,11 +11,13 @@ import CollectionsColumn from '../components/CollectionsColumn.vue';
 import CollectionEditPane from '../components/CollectionEditPane.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Collection } from '../models/types';
+import { useToast } from 'primevue';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
 const isPathValid = ref<boolean>(false);
 
+const toast = useToast();
 const route = useRoute();
 
 const {
@@ -73,7 +75,7 @@ watch(
 
 function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void {
   if (!canNavigate.value) {
-    alert('Please save your changes first.');
+    showUnsavedChangesWarning();
     return;
   }
 
@@ -84,11 +86,20 @@ function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void 
 
 function handleBreadcrumbHomeClick(): void {
   if (!canNavigate.value) {
-    alert('Please save your changes first.');
+    showUnsavedChangesWarning();
     return;
   }
 
   router.push({ query: {} });
+}
+
+function showUnsavedChangesWarning() {
+  toast.add({
+    severity: 'warn',
+    summary: 'You have unsaved changes.',
+    detail: 'Please save or discard your changes before selecting other collections.',
+    life: 3000,
+  });
 }
 </script>
 
@@ -100,6 +111,11 @@ function handleBreadcrumbHomeClick(): void {
     <LoadingSpinner v-if="isLoading === true" />
 
     <div v-else class="container flex flex-column h-screen">
+      <div
+        class="absolute overlay w-full h-full"
+        v-if="canNavigate === false"
+        @click="showUnsavedChangesWarning"
+      ></div>
       <CollectionTopMenu />
       <div class="main flex-grow-1 flex flex-column">
         <CollectionBreadcrumbs
@@ -115,6 +131,7 @@ function handleBreadcrumbHomeClick(): void {
               gutter: {
                 style: {
                   width: '4px',
+                  zIndex: 'var(--z-index-gutter)',
                 },
               },
               gutterHandle: {
@@ -159,5 +176,9 @@ function handleBreadcrumbHomeClick(): void {
 
 .footer {
   height: 30px;
+}
+
+.overlay {
+  z-index: var(--z-index-overlay);
 }
 </style>
