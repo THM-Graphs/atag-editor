@@ -10,7 +10,9 @@ import { useGuidelinesStore } from '../store/guidelines';
 import {
   AnnotationData,
   AnnotationType,
+  Collection,
   CollectionAccessObject,
+  CollectionCreationData,
   CollectionPostData,
   PropertyConfig,
   Text,
@@ -35,9 +37,11 @@ import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextS
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import TextContainer from './TextContainer.vue';
 import { useAppStore } from '../store/app';
+import { useRouter } from 'vue-router';
 
 defineProps<{}>();
 
+const router = useRouter();
 const { api } = useAppStore();
 
 const toast: ToastServiceMethods = useToast();
@@ -51,7 +55,14 @@ const {
   getAvailableCollectionLabels,
   getAvailableCollectionAnnotationConfigs,
 } = useGuidelinesStore();
-const { activeCollection } = useCollectionManagerStore();
+const {
+  activeCollection,
+  levels,
+  mode: globalMode,
+  setMode,
+  pathToActiveCollection,
+  createNewUrlPath,
+} = useCollectionManagerStore();
 
 const confirm = useConfirm();
 
@@ -60,7 +71,15 @@ const initialTemporaryWorkData = ref<CollectionAccessObject | null>(null);
 
 const temporaryTexts = ref<Text[]>([]);
 
-const mode = ref<'view' | 'edit'>('view');
+// Responsible for setting inputs (non-)editable. The global mode
+// determines the state of the page.
+const formMode = computed<'view' | 'edit'>(() => {
+  if (globalMode.value === 'create' || globalMode.value === 'edit') {
+    return 'edit';
+  } else {
+    return 'view';
+  }
+});
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
 
@@ -88,7 +107,10 @@ watch(
 
     temporaryTexts.value = [];
 
-    mode.value = 'view';
+    // In this case, the collection data is editable directly, meaning that the data need to be enriched
+    if (globalMode.value === 'create') {
+      enrichCollectionData();
+    }
   },
   { immediate: true },
 );
@@ -120,6 +142,8 @@ function enrichCollectionData(): void {
         field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
+
+  console.log(temporaryWorkData.value.collection.data);
 }
 
 function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
@@ -138,12 +162,17 @@ async function handleAddTextClick(): Promise<void> {
   temporaryTexts.value.push(newText);
 }
 
-async function handleCancelChanges(): Promise<void> {
+function handleClickEditButton(): void {
+  enrichCollectionData();
+  setMode('edit');
+}
+
+async function handleDiscardChanges(): Promise<void> {
   temporaryWorkData.value = cloneDeep(initialTemporaryWorkData.value);
 
   clearTemporaryTexts();
 
-  toggleEditMode();
+  setMode('view');
 }
 
 function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
@@ -177,17 +206,63 @@ function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
   }
 }
 
-async function handleSaveChanges(): Promise<void> {
+async function createCollection() {
+  const parentCollection: Collection | null =
+    pathToActiveCollection.value[pathToActiveCollection.value.length - 2] ?? null;
+
+  const creationData: CollectionCreationData = {
+    ...temporaryWorkData.value,
+    parentCollection,
+  };
+
+  const createdCollection: Collection = await api.createCollection(creationData);
+
+  // TODO: Hack for now, fix
+  temporaryWorkData.value.collection.data.uuid = createdCollection.data.uuid;
+  initialTemporaryWorkData.value.collection.data.uuid = createdCollection.data.uuid;
+
+  const updateData: CollectionPostData = {
+    data: temporaryWorkData.value,
+    initialData: initialTemporaryWorkData.value,
+  };
+
+  const updated: Collection = await api.updateCollection(
+    temporaryWorkData.value.collection.data.uuid,
+    updateData,
+  );
+
+  // Set returned collection data to column list item
+  const pathIndex: number = pathToActiveCollection.value.length - 1;
+  let collectionInColumn: Collection | null =
+    levels.value[pathIndex].data.find(c => c.data.uuid === updated.data.uuid) ?? null;
+
+  if (collectionInColumn) {
+    collectionInColumn.data = updated.data;
+    collectionInColumn.nodeLabels = updated.nodeLabels;
+  }
+
+  // Set mode to view
+  setMode('view');
+
+  // Update route (created collection must be in focus and children displayed)
+  router.push({ query: { path: createNewUrlPath(updated.data.uuid, pathIndex) } });
+}
+
+async function handleApplyChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
-    await saveCollection();
+    if ((globalMode.value = 'create')) {
+      await createCollection();
+    } else {
+      await saveCollection();
+    }
 
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
 
     clearTemporaryTexts();
-    toggleEditMode();
     showMessage('success');
+    setMode('view');
   } catch (error: unknown) {
     showMessage('error', error as Error);
     console.error('Error updating collection:', error);
@@ -227,7 +302,6 @@ async function saveCollection(): Promise<void> {
     initialData: initialTemporaryWorkData.value,
   };
 
-  console.log(collectionPostData);
   await api.updateCollection(temporaryWorkData.value.collection.data.uuid, collectionPostData);
 }
 
@@ -244,13 +318,13 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
   selectedView.value = direction;
 }
 
-function toggleEditMode(): void {
-  if (mode.value === 'view') {
-    enrichCollectionData();
-  }
+// function toggleEditMode(): void {
+//   if (mode.value === 'view') {
+//     enrichCollectionData();
+//   }
 
-  mode.value = mode.value === 'view' ? 'edit' : 'view';
-}
+//   mode.value = mode.value === 'view' ? 'edit' : 'view';
+// }
 </script>
 
 <template>
@@ -258,6 +332,10 @@ function toggleEditMode(): void {
     v-if="temporaryWorkData"
     class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
+    <div class="status text-left">
+      <div>Global: {{ globalMode }}</div>
+      <div>Component: {{ formMode }}</div>
+    </div>
     <div class="main flex-grow-1 flex flex-column w-full">
       <h3>{{ temporaryWorkData.collection.data.label }}</h3>
       <ButtonGroup class="w-full flex">
@@ -296,7 +374,7 @@ function toggleEditMode(): void {
       <div class="content">
         <div v-show="isDetailsSelected" class="properties-pane">
           <h3 class="text-center">Labels</h3>
-          <div v-if="mode === 'edit'" class="flex justify-content-center">
+          <div v-if="formMode === 'edit'" class="flex justify-content-center">
             <MultiSelect
               v-model="temporaryWorkData.collection.nodeLabels"
               :options="availableCollectionLabels"
@@ -323,6 +401,8 @@ function toggleEditMode(): void {
           </div>
 
           <h3 class="text-center">Properties</h3>
+          <pre class="text-left">{{ temporaryWorkData.collection.data }}</pre>
+
           <form>
             <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">
@@ -333,13 +413,13 @@ function toggleEditMode(): void {
                   v-if="field.type === 'array'"
                   v-model="temporaryWorkData.collection.data[field.name]"
                   :config="field"
-                  :mode="mode"
+                  :mode="formMode"
                 />
                 <DataInputComponent
                   v-else
                   v-model="temporaryWorkData.collection.data[field.name]"
                   :config="field"
-                  :mode="mode"
+                  :mode="formMode"
                 />
               </div>
             </div>
@@ -347,12 +427,12 @@ function toggleEditMode(): void {
         </div>
 
         <div v-show="isAnnotationsSelected" class="annotations-pane">
-          <div v-if="mode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
+          <div v-if="formMode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
             <CollectionAnnotationButton
               v-for="type in availabeAnnotationTypes"
               :annotationType="type.type"
               :collection-node-labels="temporaryWorkData.collection.nodeLabels"
-              :mode="mode"
+              :mode="formMode"
               @add-annotation="handleAddNewAnnotation"
             />
           </div>
@@ -402,7 +482,7 @@ function toggleEditMode(): void {
                     annotation.properties.type,
                   )
                 "
-                :mode="mode"
+                :mode="formMode"
               />
             </Fieldset>
             <AnnotationFormAdditionalTextSection
@@ -412,7 +492,7 @@ function toggleEditMode(): void {
                   annotation.properties.type,
                 ).hasAdditionalTexts === true
               "
-              :mode="mode"
+              :mode="formMode"
               v-model="annotation.additionalTexts"
               :initial-additional-texts="
                 initialTemporaryWorkData.annotations.find(
@@ -427,12 +507,12 @@ function toggleEditMode(): void {
                   annotation.properties.type,
                 ).hasEntities === true
               "
-              :mode="mode"
+              :mode="formMode"
               v-model="annotation.entities"
             />
             <div class="action-buttons flex justify-content-center">
               <Button
-                v-if="mode === 'edit'"
+                v-if="formMode === 'edit'"
                 label="Delete"
                 title="Delete annotation"
                 severity="danger"
@@ -448,20 +528,20 @@ function toggleEditMode(): void {
           <TextContainer
             v-for="text in temporaryWorkData.texts"
             :text="text"
-            :mode="mode"
+            :mode="formMode"
             status="existing"
             @text-removed="handleRemoveText(text, 'existing')"
           />
           <TextContainer
             v-for="text in temporaryTexts"
             :text="text"
-            :mode="mode"
+            :mode="formMode"
             status="temporary"
             @text-added="handleAddText(text)"
             @text-removed="handleRemoveText(text, 'temporary')"
           />
           <Button
-            v-if="mode === 'edit'"
+            v-if="formMode === 'edit'"
             class="mt-2 w-full h-2rem"
             icon="pi pi-plus"
             size="small"
@@ -476,25 +556,25 @@ function toggleEditMode(): void {
 
     <div class="buttons flex justify-content-center gap-2">
       <Button
-        v-if="mode === 'view'"
+        v-if="formMode === 'view'"
         icon="pi pi-pencil"
         label="Edit"
-        @click="toggleEditMode"
+        @click="handleClickEditButton"
       ></Button>
       <Button
-        v-if="mode === 'edit'"
+        v-if="formMode === 'edit'"
         :loading="asyncOperationRunning"
-        icon="pi pi-save"
-        label="Save"
-        @click="handleSaveChanges"
+        :icon="globalMode === 'create' ? 'pi pi-plus' : 'pi pi-save'"
+        :label="globalMode === 'create' ? 'Create' : 'Save'"
+        @click="handleApplyChanges"
       ></Button>
       <Button
-        v-if="mode === 'edit'"
+        v-if="formMode === 'edit'"
         :disabled="asyncOperationRunning"
         icon="pi pi-times"
         label="Cancel"
         severity="secondary"
-        @click="handleCancelChanges"
+        @click="handleDiscardChanges"
       ></Button>
     </div>
   </div>

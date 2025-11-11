@@ -110,7 +110,7 @@ router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) =>
   const data: CollectionPostData = req.body;
 
   try {
-    const collection: ICollection = await collectionService.updateCollection(uuid, data);
+    const collection: Collection = await collectionService.updateCollection(uuid, data);
 
     const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
     const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(

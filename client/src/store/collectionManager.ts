@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue';
-import { AnnotationData, Collection, CollectionAccessObject, Level, Text } from '../models/types';
+import { ref } from 'vue';
+import { Collection, CollectionAccessObject, Level, Text } from '../models/types';
 import { useAppStore } from './app';
 
 const { api } = useAppStore();
@@ -9,6 +9,7 @@ const levels = ref<Level[]>([]);
 const activeCollection = ref<CollectionAccessObject | null>(null);
 const pathToActiveCollection = ref<Collection[]>([]);
 
+const mode = ref<'view' | 'edit' | 'create'>('view');
 const asyncOperationRunning = ref<boolean>(false);
 
 export function useCollectionManagerStore() {
@@ -49,6 +50,19 @@ export function useCollectionManagerStore() {
     activeCollection.value = cao;
   }
 
+  function createNewUrlPathElements(uuid: string, index: number): string[] {
+    // Update URL path
+    const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
+    const currentUuids: string[] = uuidPath?.split(',') ?? [];
+    const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
+
+    return newUuids;
+  }
+
+  function createNewUrlPath(uuid: string, index: number): string {
+    return createNewUrlPathElements(uuid, index).join(',');
+  }
+
   async function restoreDefaultView(): Promise<void> {
     // Reset path selection (no selected item in column, nothing displayed in edit pane)
     levels.value[0].activeCollection = null;
@@ -65,6 +79,10 @@ export function useCollectionManagerStore() {
 
   function setPathToActiveCollection(path: Collection[]): void {
     pathToActiveCollection.value = path;
+  }
+
+  function setMode(newMode: 'view' | 'edit' | 'create'): void {
+    mode.value = newMode;
   }
 
   async function updateLevelsAndFetchData(newPath: Collection[]) {
@@ -138,12 +156,16 @@ export function useCollectionManagerStore() {
   return {
     asyncOperationRunning,
     levels,
+    mode,
     pathToActiveCollection,
     activeCollection,
-    fetchCollectionDetails,
     activateCollection,
+    createNewUrlPath,
+    createNewUrlPathElements,
+    fetchCollectionDetails,
     restoreDefaultView,
     setCollectionActive,
+    setMode,
     setPathToActiveCollection,
     updateLevelsAndFetchData,
     validatePath,

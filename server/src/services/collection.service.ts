@@ -288,10 +288,7 @@ export default class CollectionService {
 
     const collection: Collection = {
       nodeLabels: [...data.collection.nodeLabels, 'Collection'],
-      data: {
-        ...toNeo4jTypes(data.collection.data, fields),
-        uuid: crypto.randomUUID(),
-      },
+      data: toNeo4jTypes(data.collection.data, fields),
     } as Collection;
 
     const parentUuid: string | null = data.parentCollection?.data.uuid ?? null;
@@ -354,9 +351,9 @@ export default class CollectionService {
    * @param {string} uuid - The UUID of the collection node to update.
    * @param {CollectionPostData} data - The data containing updates for the collection.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
+   * @return {Promise<Collection>} A promise that resolves to the updated collection node.
    */
-  public async updateCollection(uuid: string, data: CollectionPostData): Promise<ICollection> {
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const fields: PropertyConfig[] = await guidelineService.getCollectionConfigFields(
       data.data.collection.nodeLabels,
@@ -445,11 +442,14 @@ export default class CollectionService {
         RETURN collect(t1) as updatedTexts
     }
 
-    RETURN c {.*} AS collection
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, collection, texts });
-    const updatedCollection: ICollection = result.records[0]?.get('collection');
+    const updatedCollection: Collection = result.records[0]?.get('collection');
 
     if (!updatedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);

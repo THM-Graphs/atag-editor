@@ -1,5 +1,14 @@
 import { Ref } from 'vue';
-import { Annotation, PropertyConfigDataType, Text } from '../../models/types';
+import {
+  Annotation,
+  CollectionAccessObject,
+  PropertyConfigDataType,
+  Text,
+} from '../../models/types';
+import ICollection from '../../models/ICollection';
+import { useGuidelinesStore } from '../../store/guidelines';
+
+const { getAllCollectionConfigFields } = useGuidelinesStore();
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
@@ -51,6 +60,20 @@ export function cloneDeep<T>(input: T): T {
 
   // Default for primitive types like string, number, boolean, etc.
   return input;
+}
+
+export function createNewCollectionAccessObject(): CollectionAccessObject {
+  return {
+    collection: {
+      data: {
+        label: '',
+        uuid: crypto.randomUUID(),
+      } as ICollection,
+      nodeLabels: [],
+    },
+    texts: [],
+    annotations: [],
+  };
 }
 
 /**

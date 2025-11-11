@@ -17,6 +17,7 @@ import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
 import { useInfiniteScroll } from '@vueuse/core';
+import { createNewCollectionAccessObject } from '../utils/helper/helper';
 
 const props = defineProps<{
   index: number;
@@ -32,6 +33,7 @@ const {
   levels,
   fetchCollectionDetails,
   setCollectionActive,
+  setMode,
   setPathToActiveCollection,
 } = useCollectionManagerStore();
 const { searchParams, updateSearchParams } = useSearchParams(25);
@@ -120,6 +122,24 @@ async function fetchMoreData(): Promise<void> {
   setPagination(pagination);
 
   setIsLoading(false);
+}
+
+function handleAddCollectionClick() {
+  setMode('create');
+  const newCollection: CollectionAccessObject = createNewCollectionAccessObject();
+  console.log('Very basic: ', newCollection);
+
+  // Add to beginning of list
+  levels.value[props.index].data.unshift(newCollection.collection);
+
+  // Add new collection as active in this column
+  levels.value[props.index].activeCollection = newCollection.collection;
+
+  // Set new path
+  setPathToActiveCollection(levels.value.slice(0, props.index + 1).map(l => l.activeCollection));
+
+  // Display in edit pane
+  setCollectionActive(newCollection);
 }
 
 async function handleParentUuidChange() {
@@ -294,6 +314,7 @@ function setIsLoading(state: boolean) {
         icon="pi pi-plus"
         class="w-full"
         label="Add Collection"
+        @click="handleAddCollectionClick"
       />
     </div>
   </div>
