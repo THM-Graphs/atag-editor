@@ -255,7 +255,7 @@ async function handleApplyChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
-    if ((globalMode.value = 'create')) {
+    if (globalMode.value === 'create') {
       await createCollection();
     } else {
       await saveCollection();
