@@ -207,7 +207,7 @@ function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
   }
 }
 
-async function createCollection() {
+async function createCollection(): Promise<Collection> {
   const parentCollection: Collection | null =
     pathToActiveCollection.value[pathToActiveCollection.value.length - 2] ?? null;
 
@@ -216,11 +216,7 @@ async function createCollection() {
     parentCollection,
   };
 
-  const createdCollection: Collection = await api.createCollection(creationData);
-
-  // TODO: Hack for now, fix
-  temporaryWorkData.value.collection.data.uuid = createdCollection.data.uuid;
-  initialTemporaryWorkData.value.collection.data.uuid = createdCollection.data.uuid;
+  await api.createCollection(creationData);
 
   const updateData: CollectionPostData = {
     data: temporaryWorkData.value,
@@ -232,33 +228,36 @@ async function createCollection() {
     updateData,
   );
 
-  // Set returned collection data to column list item
-  const pathIndex: number = pathToActiveCollection.value.length - 1;
-  let collectionInColumn: CollectionStatusObject | null =
-    levels.value[pathIndex].collections.find(c => c.data.data.uuid === updated.data.uuid) ?? null;
-
-  // TODO: Fix this
-  if (collectionInColumn) {
-    collectionInColumn.data.data = updated.data;
-    collectionInColumn.data.nodeLabels = updated.nodeLabels;
-    collectionInColumn.status = 'existing';
-  }
-
-  // Set mode to view
-  setMode('view');
-
-  // Update route (created collection must be in focus and children displayed)
-  router.push({ query: { path: createNewUrlPath(updated.data.uuid, pathIndex) } });
+  return updated;
 }
 
 async function handleApplyChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
+  let result: Collection | null = null;
+
   try {
     if (globalMode.value === 'create') {
-      await createCollection();
+      result = await createCollection();
+
+      // Set returned collection data to column list item
+      const pathIndex: number = pathToActiveCollection.value.length - 1;
+
+      let collectionInColumn: CollectionStatusObject | null =
+        levels.value[pathIndex].collections.find(c => c.data.data.uuid === result.data.uuid) ??
+        null;
+
+      // TODO: Fix this
+      if (collectionInColumn) {
+        collectionInColumn.data.data = result.data;
+        collectionInColumn.data.nodeLabels = result.nodeLabels;
+        collectionInColumn.status = 'existing';
+      }
+
+      // Update route (created collection must be in focus and children displayed)
+      router.push({ query: { path: createNewUrlPath(result.data.uuid, pathIndex) } });
     } else {
-      await saveCollection();
+      result = await updateCollection();
     }
 
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
@@ -297,7 +296,7 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-async function saveCollection(): Promise<void> {
+async function updateCollection(): Promise<Collection> {
   removeUnnecessaryDataBeforeSave();
 
   const collectionPostData: CollectionPostData = {
@@ -305,7 +304,10 @@ async function saveCollection(): Promise<void> {
     initialData: initialTemporaryWorkData.value,
   };
 
-  await api.updateCollection(temporaryWorkData.value.collection.data.uuid, collectionPostData);
+  return await api.updateCollection(
+    temporaryWorkData.value.collection.data.uuid,
+    collectionPostData,
+  );
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
