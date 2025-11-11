@@ -19,22 +19,16 @@ const isPathValid = ref<boolean>(false);
 const route = useRoute();
 
 const {
+  canNavigate,
   levels,
   pathToActiveCollection,
+  createNewUrlPath,
   restoreDefaultView,
   validatePath,
   updateLevelsAndFetchData,
 } = useCollectionManagerStore();
 
 const router = useRouter();
-
-function updateUrlPath(uuid: string, index: number): void {
-  const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
-  const currentUuids: string[] = uuidPath?.split(',') ?? [];
-  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
-
-  router.push({ query: { path: newUuids.join(',') } });
-}
 
 watch(
   () => route.query.path,
@@ -78,12 +72,22 @@ watch(
 );
 
 function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void {
+  if (!canNavigate.value) {
+    alert('Please save your changes first.');
+    return;
+  }
+
   const { index, uuid } = data;
 
-  updateUrlPath(uuid, index);
+  router.push({ query: { path: createNewUrlPath(uuid, index) } });
 }
 
 function handleBreadcrumbHomeClick(): void {
+  if (!canNavigate.value) {
+    alert('Please save your changes first.');
+    return;
+  }
+
   router.push({ query: {} });
 }
 </script>

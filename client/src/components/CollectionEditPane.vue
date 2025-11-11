@@ -14,6 +14,7 @@ import {
   CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
+  CollectionStatusObject,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -233,12 +234,14 @@ async function createCollection() {
 
   // Set returned collection data to column list item
   const pathIndex: number = pathToActiveCollection.value.length - 1;
-  let collectionInColumn: Collection | null =
-    levels.value[pathIndex].data.find(c => c.data.uuid === updated.data.uuid) ?? null;
+  let collectionInColumn: CollectionStatusObject | null =
+    levels.value[pathIndex].collections.find(c => c.data.data.uuid === updated.data.uuid) ?? null;
 
+  // TODO: Fix this
   if (collectionInColumn) {
-    collectionInColumn.data = updated.data;
-    collectionInColumn.nodeLabels = updated.nodeLabels;
+    collectionInColumn.data.data = updated.data;
+    collectionInColumn.data.nodeLabels = updated.nodeLabels;
+    collectionInColumn.status = 'existing';
   }
 
   // Set mode to view

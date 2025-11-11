@@ -146,8 +146,13 @@ export type HistoryRecord = {
   };
 };
 
+export type CollectionStatusObject = {
+  data: Collection;
+  status: 'existing' | 'temporary';
+};
+
 export type Level = {
-  data: Collection[];
+  collections: CollectionStatusObject[];
   activeCollection: Collection | null;
   parentUuid: string | null;
 };

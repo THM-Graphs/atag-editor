@@ -1,5 +1,5 @@
-import { ref } from 'vue';
-import { Collection, CollectionAccessObject, Level, Text } from '../models/types';
+import { computed, ref } from 'vue';
+import { Collection, CollectionAccessObject, Level } from '../models/types';
 import { useAppStore } from './app';
 
 const { api } = useAppStore();
@@ -11,6 +11,13 @@ const pathToActiveCollection = ref<Collection[]>([]);
 
 const mode = ref<'view' | 'edit' | 'create'>('view');
 const asyncOperationRunning = ref<boolean>(false);
+const canNavigate = computed<boolean>(() => {
+  if (mode.value === 'edit' || mode.value === 'create') {
+    return false;
+  }
+
+  return true;
+});
 
 export function useCollectionManagerStore() {
   async function fetchCollectionDetails(uuid: string): Promise<CollectionAccessObject> {
@@ -39,13 +46,13 @@ export function useCollectionManagerStore() {
     } else {
       levels.value.push({
         activeCollection: null,
-        data: [],
+        collections: [],
         parentUuid: uuid,
       });
     }
 
     levels.value[index].activeCollection =
-      levels.value[index].data.find(c => c.data.uuid === uuid) ?? null;
+      levels.value[index].collections.find(c => c.data.data.uuid === uuid).data ?? null;
 
     activeCollection.value = cao;
   }
@@ -118,7 +125,7 @@ export function useCollectionManagerStore() {
 
       for (let i = 0; i < diff; i++) {
         levels.value.push({
-          data: [],
+          collections: [],
           activeCollection: null,
           parentUuid: null,
         });
@@ -143,7 +150,7 @@ export function useCollectionManagerStore() {
       // Else, Add empty level
       levels.value.push({
         activeCollection: null,
-        data: [],
+        collections: [],
         parentUuid: levels.value[levels.value.length - 1]?.activeCollection?.data.uuid ?? null,
       });
     }
@@ -155,6 +162,7 @@ export function useCollectionManagerStore() {
 
   return {
     asyncOperationRunning,
+    canNavigate,
     levels,
     mode,
     pathToActiveCollection,

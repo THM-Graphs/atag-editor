@@ -7,6 +7,7 @@ import {
   Collection,
   CollectionAccessObject,
   CollectionSearchParams,
+  CollectionStatusObject,
   PaginationData,
   PaginationResult,
 } from '../models/types';
@@ -30,6 +31,7 @@ const { api } = useAppStore();
 const { getAvailableCollectionLabels } = useGuidelinesStore();
 const {
   activeCollection,
+  canNavigate,
   levels,
   fetchCollectionDetails,
   setCollectionActive,
@@ -90,7 +92,14 @@ onMounted(() => {
 });
 
 function addData(data: Collection[]) {
-  levels.value[props.index].data.push(...data);
+  levels.value[props.index].collections.push(
+    ...data.map((c: Collection) => {
+      return {
+        data: c,
+        status: 'existing',
+      } as CollectionStatusObject;
+    }),
+  );
 }
 
 async function fetchData(): Promise<PaginationResult<Collection[]>> {
@@ -125,12 +134,20 @@ async function fetchMoreData(): Promise<void> {
 }
 
 function handleAddCollectionClick() {
+  if (!canNavigate.value) {
+    // TODO: Show message?
+    return;
+  }
+
   setMode('create');
+
   const newCollection: CollectionAccessObject = createNewCollectionAccessObject();
-  console.log('Very basic: ', newCollection);
 
   // Add to beginning of list
-  levels.value[props.index].data.unshift(newCollection.collection);
+  levels.value[props.index].collections.unshift({
+    data: newCollection.collection,
+    status: 'temporary',
+  });
 
   // Add new collection as active in this column
   levels.value[props.index].activeCollection = newCollection.collection;
@@ -149,6 +166,11 @@ async function handleParentUuidChange() {
 }
 
 async function handleItemSelected(uuid: string): Promise<void> {
+  if (!canNavigate.value) {
+    alert('Please save your changes first.');
+    return;
+  }
+
   const isAlreadySelectedInColumn: boolean =
     uuid === levels.value[props.index].activeCollection?.data.uuid;
 
@@ -213,7 +235,12 @@ async function handleSearchParamsChange() {
 }
 
 function replaceData(data: Collection[]) {
-  levels.value[props.index].data = data;
+  levels.value[props.index].collections = data.map(c => {
+    return {
+      data: c,
+      status: 'existing',
+    };
+  });
 }
 
 function resetPagination(): void {
@@ -290,22 +317,22 @@ function setIsLoading(state: boolean) {
     </div>
     <div class="content" ref="scroll-pane">
       <CollectionItem
-        v-for="collection of levels[props.index].data"
-        :key="collection.data.uuid"
+        v-for="collection of levels[props.index].collections"
+        :key="collection.data.data.uuid"
         :collection="collection"
-        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.uuid"
+        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
         @item-selected="handleItemSelected"
       ></CollectionItem>
       <div
         class="text-center"
-        v-if="isLoading && levels[props.index].data.length > 0"
+        v-if="isLoading && levels[props.index].collections.length > 0"
         title="More data are loading..."
       >
         <span class="pi pi-spin pi-spinner"></span>
       </div>
     </div>
     <div class="count text-xs text-right pr-3">
-      {{ levels[props.index].data.length }}/{{ columnPagination?.totalRecords }}
+      {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
     </div>
     <div class="footer p-1 flex justify-content-center">
       <Button

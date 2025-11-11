@@ -1,27 +1,35 @@
 <script setup lang="ts">
-import { Collection } from '../models/types';
+import { CollectionStatusObject } from '../models/types';
 import NodeTag from './NodeTag.vue';
 
 const emit = defineEmits(['itemSelected']);
 
 const props = defineProps<{
-  collection: Collection;
+  collection: CollectionStatusObject;
   isActive: boolean;
 }>();
 
 function handleItemClick(): void {
   // Emit the event with the collection data
-  emit('itemSelected', props.collection.data.uuid);
+  emit('itemSelected', props.collection.data.data.uuid);
 }
 </script>
 
 <template>
-  <div class="container p-1" :class="props.isActive ? 'active' : ''" @click="handleItemClick">
+  <div
+    class="container p-1"
+    :class="{ active: props.isActive, temporary: props.collection.status === 'temporary' }"
+    @click="handleItemClick"
+  >
     <div class="labels">
-      <NodeTag v-for="label in props.collection.nodeLabels" :content="label" type="Collection" />
+      <NodeTag
+        v-for="label in props.collection.data.nodeLabels"
+        :content="label"
+        type="Collection"
+      />
     </div>
     <div class="label font-bold">
-      {{ props.collection.data.label }}
+      {{ props.collection.data.data.label }}
     </div>
   </div>
 </template>
