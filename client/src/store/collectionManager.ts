@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { Collection, CollectionAccessObject, Level } from '../models/types';
 import { useAppStore } from './app';
+import { useRefHistory } from '@vueuse/core';
 
 const { api } = useAppStore();
 
@@ -8,6 +9,10 @@ const levels = ref<Level[]>([]);
 
 const activeCollection = ref<CollectionAccessObject | null>(null);
 const pathToActiveCollection = ref<Collection[]>([]);
+
+const previousPaths = useRefHistory(pathToActiveCollection, {
+  capacity: 5,
+});
 
 const mode = ref<'view' | 'edit' | 'create'>('view');
 const asyncOperationRunning = ref<boolean>(false);
@@ -78,6 +83,12 @@ export function useCollectionManagerStore() {
 
     // Keep only first level
     levels.value = levels.value.slice(0, 1);
+  }
+
+  function restorePath(): void {
+    if (previousPaths.canUndo) {
+      previousPaths.undo();
+    }
   }
 
   function setCollectionActive(cao: CollectionAccessObject): void {
@@ -172,9 +183,11 @@ export function useCollectionManagerStore() {
     createNewUrlPathElements,
     fetchCollectionDetails,
     restoreDefaultView,
+    restorePath,
     setCollectionActive,
     setMode,
     setPathToActiveCollection,
+    updateLevels,
     updateLevelsAndFetchData,
     validatePath,
   };

@@ -14,7 +14,6 @@ import {
   CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
-  CollectionStatusObject,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -62,6 +61,8 @@ const {
   mode: globalMode,
   setMode,
   pathToActiveCollection,
+  restorePath,
+  updateLevelsAndFetchData,
   createNewUrlPath,
 } = useCollectionManagerStore();
 
@@ -171,6 +172,11 @@ function handleClickEditButton(): void {
 async function handleDiscardChanges(): Promise<void> {
   temporaryWorkData.value = cloneDeep(initialTemporaryWorkData.value);
 
+  if (globalMode.value === 'create') {
+    restorePath();
+    updateLevelsAndFetchData(pathToActiveCollection.value);
+  }
+
   clearTemporaryTexts();
 
   setMode('view');
@@ -231,16 +237,15 @@ async function createCollection(): Promise<Collection> {
   return updated;
 }
 
-function findCollectionInLevels(uuid: string, index: number) {
-  return levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
-}
-
-function transferDataToCollection(collection: CollectionStatusObject, newData: Collection): void {
+function transferDataToListItem(uuid: string, index: number, data: Collection): void {
   // TODO: Fix this
-  if (collection) {
-    collection.data.data.data = newData.data;
-    collection.data.data.nodeLabels = newData.nodeLabels;
-    collection.status = 'existing';
+  const collectionObject =
+    levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
+
+  if (collectionObject) {
+    collectionObject.data.data = data.data;
+    collectionObject.data.nodeLabels = data.nodeLabels;
+    collectionObject.status = 'existing';
   }
 }
 
@@ -249,29 +254,25 @@ async function handleApplyChanges(): Promise<void> {
 
   asyncOperationRunning.value = true;
 
-  let result: Collection | null = null;
-
   try {
-    if (globalMode.value === 'create') {
-      result = await createCollection();
-    } else {
-      result = await updateCollection();
-    }
+    const result: Collection =
+      globalMode.value === 'create' ? await createCollection() : await updateCollection();
 
     // Set returned collection data to column list item
     const pathIndex: number = pathToActiveCollection.value.length - 1;
-    const foundCollection = findCollectionInLevels(result.data.uuid, pathIndex);
 
-    transferDataToCollection(foundCollection, result);
+    // Update column entry (data, status)
+    transferDataToListItem(result.data.uuid, pathIndex, result);
+
+    // Clean up pane data
+    initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
+    clearTemporaryTexts();
 
     // Update route when new collection was created (created collection must be in focus and children displayed)
     if (operationType === 'create') {
       router.push({ query: { path: createNewUrlPath(result.data.uuid, pathIndex) } });
     }
 
-    initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
-
-    clearTemporaryTexts();
     showMessage('success');
     setMode('view');
   } catch (error: unknown) {
