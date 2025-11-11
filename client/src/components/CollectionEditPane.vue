@@ -231,7 +231,22 @@ async function createCollection(): Promise<Collection> {
   return updated;
 }
 
+function findCollectionInLevels(uuid: string, index: number) {
+  return levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
+}
+
+function transferDataToCollection(collection: CollectionStatusObject, newData: Collection): void {
+  // TODO: Fix this
+  if (collection) {
+    collection.data.data.data = newData.data;
+    collection.data.data.nodeLabels = newData.nodeLabels;
+    collection.status = 'existing';
+  }
+}
+
 async function handleApplyChanges(): Promise<void> {
+  const operationType: 'create' | 'update' = globalMode.value === 'create' ? 'create' : 'update';
+
   asyncOperationRunning.value = true;
 
   let result: Collection | null = null;
@@ -239,25 +254,19 @@ async function handleApplyChanges(): Promise<void> {
   try {
     if (globalMode.value === 'create') {
       result = await createCollection();
-
-      // Set returned collection data to column list item
-      const pathIndex: number = pathToActiveCollection.value.length - 1;
-
-      let collectionInColumn: CollectionStatusObject | null =
-        levels.value[pathIndex].collections.find(c => c.data.data.uuid === result.data.uuid) ??
-        null;
-
-      // TODO: Fix this
-      if (collectionInColumn) {
-        collectionInColumn.data.data = result.data;
-        collectionInColumn.data.nodeLabels = result.nodeLabels;
-        collectionInColumn.status = 'existing';
-      }
-
-      // Update route (created collection must be in focus and children displayed)
-      router.push({ query: { path: createNewUrlPath(result.data.uuid, pathIndex) } });
     } else {
       result = await updateCollection();
+    }
+
+    // Set returned collection data to column list item
+    const pathIndex: number = pathToActiveCollection.value.length - 1;
+    const foundCollection = findCollectionInLevels(result.data.uuid, pathIndex);
+
+    transferDataToCollection(foundCollection, result);
+
+    // Update route when new collection was created (created collection must be in focus and children displayed)
+    if (operationType === 'create') {
+      router.push({ query: { path: createNewUrlPath(result.data.uuid, pathIndex) } });
     }
 
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
