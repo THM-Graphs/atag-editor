@@ -9,7 +9,7 @@ import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionBreadcrumbs from '../components/CollectionBreadcrumbs.vue';
 import CollectionsColumn from '../components/CollectionsColumn.vue';
 import CollectionEditPane from '../components/CollectionEditPane.vue';
-import { useRoute, useRouter } from 'vue-router';
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router';
 import { Collection } from '../models/types';
 import { useToast } from 'primevue';
 
@@ -72,6 +72,24 @@ watch(
   },
   { immediate: true },
 );
+
+onBeforeRouteLeave(() => {
+  if (!canNavigate.value) {
+    showUnsavedChangesWarning();
+    return false;
+  }
+
+  return true;
+});
+
+onBeforeRouteUpdate(() => {
+  if (!canNavigate.value) {
+    showUnsavedChangesWarning();
+    return false;
+  }
+
+  return true;
+});
 
 function handleBreadcrumbItemClick(data: { index: number; uuid: string }): void {
   if (!canNavigate.value) {
