@@ -162,6 +162,7 @@ function handleAddCollectionClick() {
 }
 
 async function handleParentUuidChange() {
+  resetPagination();
   await fetchInitialData();
 
   initialDataAreFetched.value = true;
