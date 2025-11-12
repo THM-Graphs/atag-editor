@@ -1,4 +1,4 @@
-import neo4j, { Config, Driver, QueryResult, ServerInfo, Session } from 'neo4j-driver';
+import neo4j, { Driver, QueryResult, ServerInfo, Session } from 'neo4j-driver';
 
 export default class Neo4jDriver {
   public static instance: Driver;
@@ -35,7 +35,9 @@ export default class Neo4jDriver {
    * @return {Promise<QueryResult>} A promise that resolves to the query result.
    */
   public static async runQuery(query: string, ...params: any[]): Promise<QueryResult> {
-    const session: Session = this.instance.session();
+    const session: Session = this.instance.session({
+      database: process.env.DATABASE_NAME ?? 'neo4j',
+    });
     // TODO: This should ideally be split up in "exectuteWrite" and "executeRead"
     const result: QueryResult = await session.executeWrite(tx => {
       return tx.run(query, ...params);
