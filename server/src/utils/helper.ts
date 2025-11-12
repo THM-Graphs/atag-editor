@@ -64,7 +64,8 @@ export function getPagination(req: Request): Record<string, any> {
   // TODO: This is a temporary solution until a better endless
   // pagination solution in the frontend is implemented
   const MAX_ROW_COUNT: number = 1000;
-  const isCursorValid: boolean = typeof cursorUuid === 'string' && typeof cursorLabel === 'string';
+  const isCursorValid: boolean =
+    typeof cursorUuid === 'string' && typeof cursorLabel === 'string' && cursorUuid !== '';
 
   // Set default values
   search ||= '';

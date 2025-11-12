@@ -73,7 +73,7 @@ useInfiniteScroll(scrollPane, fetchMoreData, {
     }
 
     // If no cursor available, nothing more to load (obviously)
-    if (columnPagination.value?.nextCursor == null) {
+    if (columnPagination.value?.nextCursor === null) {
       return false;
     }
 
@@ -159,6 +159,13 @@ function handleAddCollectionClick() {
 
   // Display in edit pane
   setCollectionActive(newCollection);
+}
+
+function handleChangeSortOrderClick() {
+  resetPagination();
+  updateSearchParams({
+    sortDirection: searchParams.value.sortDirection === 'asc' ? 'desc' : 'asc',
+  });
 }
 
 async function handleParentUuidChange() {
@@ -325,6 +332,13 @@ function setIsLoading(state: boolean) {
         icon="pi pi-refresh"
         title="Refresh data"
         @click="handleRefreshClick"
+      />
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-sort-alpha-down"
+        title="Change sort"
+        @click="handleChangeSortOrderClick"
       />
     </div>
     <div class="content" ref="scroll-pane">

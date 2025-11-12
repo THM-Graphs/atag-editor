@@ -147,11 +147,12 @@ export default class ApiService {
     urlParams.set('order', filters.sortDirection);
     urlParams.set('search', filters.searchInput);
     urlParams.set('nodeLabels', filters.nodeLabels.join(','));
-    urlParams.set('cursorUuid', cursor?.uuid ?? '');
-    urlParams.set('cursorLabel', cursor?.label ?? '');
-
-    // Use default limit if none is provided
     urlParams.set('limit', filters.rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
+
+    if (cursor) {
+      urlParams.set('cursorUuid', cursor.uuid ?? '');
+      urlParams.set('cursorLabel', cursor.label ?? '');
+    }
 
     const fetchUrl: string = `${path}?${urlParams.toString()}`;
 

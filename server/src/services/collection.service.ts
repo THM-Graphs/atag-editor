@@ -66,7 +66,7 @@ export default class CollectionService {
 
     // Build cursor condition, depending on whether a cursor is provided or not
     const cursorCondition: string = cursor
-      ? `AND (c.label > $cursorLabel OR (c.label = $cursorLabel AND c.uuid ${sortDirection(order)} $cursorUuid))`
+      ? `AND (c.label ${sortDirection(order)} $cursorLabel OR (c.label = $cursorLabel AND c.uuid ${sortDirection(order)} $cursorUuid))`
       : '';
 
     // Base query: Add filters for nodeLabels and search string
