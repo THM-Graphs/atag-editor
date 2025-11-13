@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onUpdated, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, watch } from 'vue';
 import Button from 'primevue/button';
 
 import ButtonGroup from 'primevue/buttongroup';
@@ -393,10 +393,6 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
     v-if="temporaryWorkData"
     class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
-    <div class="status text-left">
-      <div>Global: {{ globalMode }}</div>
-      <div>Component: {{ formMode }}</div>
-    </div>
     <div class="main flex-grow-1 flex flex-column w-full">
       <h3>{{ temporaryWorkData.collection.data.label }}</h3>
       <ButtonGroup class="w-full flex">
@@ -462,8 +458,6 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
           </div>
 
           <h3 class="text-center">Properties</h3>
-          <pre class="text-left">{{ temporaryWorkData.collection.data }}</pre>
-
           <form>
             <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">

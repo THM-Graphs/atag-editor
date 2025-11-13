@@ -162,7 +162,7 @@ function showUnsavedChangesWarning() {
               },
             }"
           >
-            <SplitterPanel :size="10" class="overflow-y-auto">
+            <SplitterPanel class="overflow-y-auto">
               <div class="columns-container h-full flex overflow-x-scroll">
                 <CollectionsColumn
                   v-for="(_, index) in levels"
@@ -171,7 +171,7 @@ function showUnsavedChangesWarning() {
                 />
               </div>
             </SplitterPanel>
-            <SplitterPanel :size="10" class="overflow-y-auto">
+            <SplitterPanel :size="20" class="overflow-y-auto">
               <CollectionEditPane />
             </SplitterPanel>
           </Splitter>
