@@ -56,6 +56,31 @@ export default class ApiService {
     }
   }
 
+  public async deleteCollection(uuid: string): Promise<Collection> {
+    try {
+      const url: string = `${this.baseUrl}/collections/${uuid}`;
+
+      const response: Response = await fetch(url, {
+        method: 'DELETE',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error deleting collection:', error);
+      throw new Error(`Error deleting collection: ${error}`);
+    }
+  }
+
   public async getAnnotations(
     nodeType: 'collection' | 'text',
     nodeUuid: string,

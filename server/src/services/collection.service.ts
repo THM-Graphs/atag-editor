@@ -459,23 +459,46 @@ export default class CollectionService {
   }
 
   /**
-   * Deletes a collection node with given UUID, along with an associated text node.
+   * Deletes a Collection node with the given UUID, along with its associated Text nodes, Character nodes, and Annotation nodes.
    *
-   * @param {string} uuid - The UUID of the collection node to delete.
-   * @return {Promise<ICollection>} A promise that resolves to the deleted collection.
+   * @param {string} uuid - The UUID of the Collection node to delete.
+   * @throws {NotFoundError} If the Collection with the specified UUID is not found.
+   * @return {Promise<Collection>} A promise that resolves to the deleted Collection node.
    */
-  public async deleteCollection(uuid: string): Promise<ICollection> {
-    // TODO: Update query so that it matches the whole subgraph
+  public async deleteCollection(uuid: string): Promise<Collection> {
     const query: string = `
-    MATCH (c:Collection {uuid: $uuid})<-[:PART_OF]-(t:Text)
-    OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(chars:Character)
-    WITH c, t, chars, c {.*} as collection
-    DETACH DELETE c, t, chars
-    RETURN collection
+
+    MATCH (c:Collection {uuid: $uuid})
+
+    WITH c, {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collectionToDelete
+
+    // Delete annotations
+    CALL (c) {
+        OPTIONAL MATCH (c)-[:HAS_ANNOTATION]->(a:Annotation)
+        DETACH DELETE a
+    }
+
+    // Delete texts, characters, and annotations
+    CALL (c) {
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        
+        OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+        OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
+
+        DETACH DELETE t, a, ch
+    }
+
+    // Delete collection
+    DETACH DELETE c
+
+    RETURN collectionToDelete as collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const deletedCollection: ICollection = result.records[0]?.get('collection');
+    const deletedCollection: Collection = result.records[0]?.get('collection');
 
     if (!deletedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);

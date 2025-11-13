@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref, watch } from 'vue';
+import { computed, ComputedRef, onUpdated, ref, watch } from 'vue';
 import Button from 'primevue/button';
 
 import ButtonGroup from 'primevue/buttongroup';
@@ -14,6 +14,7 @@ import {
   CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
+  CollectionStatusObject,
   PropertyConfig,
   Text,
 } from '../models/types';
@@ -26,7 +27,7 @@ import {
 import MultiSelect from 'primevue/multiselect';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
-import { ToastServiceMethods, useConfirm, useToast } from 'primevue';
+import { ToastServiceMethods, useConfirm, useDialog, useToast } from 'primevue';
 import ConfirmPopup from 'primevue/confirmpopup';
 import CollectionAnnotationButton from './CollectionAnnotationButton.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
@@ -38,13 +39,13 @@ import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import TextContainer from './TextContainer.vue';
 import { useAppStore } from '../store/app';
 import { useRouter } from 'vue-router';
-
-defineProps<{}>();
+import CollectionDeleteModal from './CollectionDeleteModal.vue';
 
 const router = useRouter();
-const { api } = useAppStore();
+const { api, createModalInstance, destroyModalInstance } = useAppStore();
 
 const toast: ToastServiceMethods = useToast();
+const dialog: ReturnType<typeof useDialog> = useDialog();
 
 const {
   guidelines,
@@ -59,11 +60,14 @@ const {
   activeCollection,
   levels,
   mode: globalMode,
-  setMode,
   pathToActiveCollection,
-  restorePath,
-  updateLevelsAndFetchData,
   createNewUrlPath,
+  findCollectionInHierarchy,
+  getUrlPath,
+  removeTemporaryCollectionItems,
+  restorePath,
+  setMode,
+  updateLevelsAndFetchData,
 } = useCollectionManagerStore();
 
 const confirm = useConfirm();
@@ -144,8 +148,6 @@ function enrichCollectionData(): void {
         field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
-
-  console.log(temporaryWorkData.value.collection.data);
 }
 
 function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
@@ -177,6 +179,7 @@ async function handleDiscardChanges(): Promise<void> {
     updateLevelsAndFetchData(pathToActiveCollection.value);
   }
 
+  removeTemporaryCollectionItems();
   clearTemporaryTexts();
 
   setMode('view');
@@ -238,9 +241,8 @@ async function createCollection(): Promise<Collection> {
 }
 
 function transferDataToListItem(uuid: string, index: number, data: Collection): void {
-  // TODO: Fix this
-  const collectionObject =
-    levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
+  // TODO: Make this more elegant
+  const collectionObject: CollectionStatusObject | null = findCollectionInHierarchy(uuid, index);
 
   if (collectionObject) {
     collectionObject.data.data = data.data;
@@ -281,6 +283,58 @@ async function handleApplyChanges(): Promise<void> {
   } finally {
     asyncOperationRunning.value = false;
   }
+}
+
+async function handleDeleteColletion() {
+  createModalInstance(
+    dialog.open(CollectionDeleteModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        action: 'delete',
+        collection: temporaryWorkData.value,
+      },
+      emits: {
+        onDeleted: handleSuccessfullDeletion,
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
+}
+
+function handleSuccessfullDeletion() {
+  showMessage('success');
+  updateView();
+}
+
+function updateView() {
+  const currentUuids: string[] = getUrlPath();
+
+  // Set returned collection data to column list item
+  const pathIndex: number = pathToActiveCollection.value.length - 1;
+  const newUuids: string[] = currentUuids.slice(0, pathIndex);
+
+  router.push({ query: { path: newUuids.join(',') } });
+
+  // Remove collection from level explicitly. This is not handled by the watcher since the watcher
+  // either refetches completely or keeps the last level.
+  levels.value[newUuids.length].collections = levels.value[newUuids.length].collections.filter(
+    c => c.data.data.uuid !== temporaryWorkData.value.collection.data.uuid,
+  );
+
+  // TODO: Or this approach? Would require type changing and refactor of item display in column. But
+  // const collectionItem = findCollection(
+  //   temporaryWorkData.value.collection.data.uuid,
+  //   newUuids.length,
+  // );
+
+  // collectionItem.status = 'deleted';
+
+  setMode('view');
 }
 
 /**
@@ -332,14 +386,6 @@ function showMessage(result: 'success' | 'error', error?: Error) {
 function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
   selectedView.value = direction;
 }
-
-// function toggleEditMode(): void {
-//   if (mode.value === 'view') {
-//     enrichCollectionData();
-//   }
-
-//   mode.value = mode.value === 'view' ? 'edit' : 'view';
-// }
 </script>
 
 <template>
@@ -590,6 +636,14 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         label="Cancel"
         severity="secondary"
         @click="handleDiscardChanges"
+      ></Button>
+      <Button
+        v-if="formMode === 'edit' && globalMode !== 'create'"
+        :disabled="asyncOperationRunning"
+        icon="pi pi-trash"
+        label="Delete"
+        severity="danger"
+        @click="handleDeleteColletion"
       ></Button>
     </div>
   </div>

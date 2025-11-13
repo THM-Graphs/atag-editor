@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { Collection, CollectionAccessObject, Level } from '../models/types';
+import { Collection, CollectionAccessObject, CollectionStatusObject, Level } from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
 
@@ -56,16 +56,19 @@ export function useCollectionManagerStore() {
       });
     }
 
-    levels.value[index].activeCollection =
-      levels.value[index].collections.find(c => c.data.data.uuid === uuid).data ?? null;
+    levels.value[index].activeCollection = findCollectionInHierarchy(uuid, index)?.data ?? null;
 
     activeCollection.value = cao;
   }
 
+  function removeTemporaryCollectionItems() {
+    levels.value.forEach(level => {
+      level.collections = level.collections.filter(c => c.status !== 'temporary');
+    });
+  }
+
   function createNewUrlPathElements(uuid: string, index: number): string[] {
-    // Update URL path
-    const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
-    const currentUuids: string[] = uuidPath?.split(',') ?? [];
+    const currentUuids: string[] = getUrlPath();
     const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
 
     return newUuids;
@@ -73,6 +76,16 @@ export function useCollectionManagerStore() {
 
   function createNewUrlPath(uuid: string, index: number): string {
     return createNewUrlPathElements(uuid, index).join(',');
+  }
+
+  function findCollectionInHierarchy(uuid: string, index: number): CollectionStatusObject | null {
+    return levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
+  }
+
+  function getUrlPath(): string[] {
+    const uuidPath: string | null = new URLSearchParams(window.location.search).get('path');
+
+    return uuidPath?.split(',') ?? [];
   }
 
   async function restoreDefaultView(): Promise<void> {
@@ -179,9 +192,12 @@ export function useCollectionManagerStore() {
     pathToActiveCollection,
     activeCollection,
     activateCollection,
+    removeTemporaryCollectionItems,
     createNewUrlPath,
     createNewUrlPathElements,
     fetchCollectionDetails,
+    findCollectionInHierarchy,
+    getUrlPath,
     restoreDefaultView,
     restorePath,
     setCollectionActive,
