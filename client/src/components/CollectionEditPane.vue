@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref, watch } from 'vue';
+import { computed, ComputedRef, ref, useTemplateRef, watch } from 'vue';
 import Button from 'primevue/button';
 
 import ButtonGroup from 'primevue/buttongroup';
@@ -46,6 +46,7 @@ const { api, createModalInstance, destroyModalInstance } = useAppStore();
 
 const toast: ToastServiceMethods = useToast();
 const dialog: ReturnType<typeof useDialog> = useDialog();
+const form = useTemplateRef<HTMLFormElement>('form');
 
 const {
   guidelines,
@@ -254,6 +255,12 @@ function transferDataToListItem(uuid: string, index: number, data: Collection): 
 }
 
 async function handleApplyChanges(): Promise<void> {
+  const isValid: boolean = form.value.reportValidity();
+
+  if (!isValid) {
+    return;
+  }
+
   const operationType: 'create' | 'update' = globalMode.value === 'create' ? 'create' : 'update';
 
   asyncOperationRunning.value = true;
@@ -460,7 +467,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
           </div>
 
           <h3 class="text-center">Properties</h3>
-          <form>
+          <form ref="form">
             <div class="input-container" v-for="field in collectionFields">
               <div class="flex align-items-center gap-3 mb-3">
                 <label :for="field.name" class="w-10rem font-semibold"
