@@ -175,7 +175,7 @@ export default class NetworkService {
     const path: Collection[] = result.records[0]?.get('path');
 
     if (!path) {
-      throw new NotFoundError(`The path does not exist :/`);
+      throw new NotFoundError(`The requested path [${uuids}] does not exist`);
     }
 
     return path;

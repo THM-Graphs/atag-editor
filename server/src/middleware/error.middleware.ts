@@ -5,8 +5,6 @@ import logger from '../logger.js';
 /**
  * Generic error handler.  Output error details as JSON.
  *
- * WARNING: You shouldn't do this in a production environment in any circumstances
- *
  * @param {any} error - The error object that was thrown or passed to the next function.
  * @param {Request} req - The Express request object.
  * @param {Response} res - The Express response object.
@@ -33,6 +31,7 @@ export default function errorMiddleware(
     status: 'error',
     code: statusCode,
     message: message,
+    // This would not be ideal for production environment, but since it's commented out, no problem
     // trace: error.trace,
     // details: error.details,
   });
