@@ -47,7 +47,7 @@ function handleItemClick(): void {
 
 <style scoped>
 .container {
-  outline: 1px solid grey;
+  border-bottom: 1px solid grey;
   cursor: pointer;
 
   &:hover {

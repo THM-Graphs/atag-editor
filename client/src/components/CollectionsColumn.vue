@@ -400,9 +400,6 @@ function startResize() {
   display: flex;
   width: 200px;
 }
-.content {
-  scrollbar-width: none;
-}
 
 .resizer {
   padding: 10px 0;
@@ -427,9 +424,11 @@ function startResize() {
 }
 
 .content {
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
   flex-grow: 1;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
 }
 
 .cursor-item {
