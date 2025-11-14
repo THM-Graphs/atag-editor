@@ -17,7 +17,7 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
-import { useInfiniteScroll } from '@vueuse/core';
+import { useEventListener, useInfiniteScroll } from '@vueuse/core';
 import Toast from 'primevue/toast';
 import { createNewCollectionAccessObject } from '../utils/helper/helper';
 
@@ -285,98 +285,138 @@ function scrollToColumn() {
 function setIsLoading(state: boolean) {
   isLoading.value = state;
 }
+
+const resizer = useTemplateRef('resizer');
+
+function handleResize(event) {
+  // console.log('Column width: ', column.value.getBoundingClientRect().width);
+  // console.log('Column left offset: ', column.value.getBoundingClientRect().left);
+  // console.log('Cursor: ', event.clientX);
+
+  const newWidth = event.clientX - column.value.getBoundingClientRect().left;
+  console.log('New width: ', newWidth);
+  column.value.style.width = `${newWidth}px`;
+  // const sidebar: SidebarConfig = sidebars.value[activeResizer.value];
+  // sidebar.width =
+  //   activeResizer.value === 'left' ? event.clientX : window.innerWidth - event.clientX;
+}
+
+function endResize() {
+  window.removeEventListener('mousemove', handleResize);
+}
+
+useEventListener(resizer, 'mousedown', startResize);
+useEventListener(window, 'mouseup', endResize);
+
+function startResize() {
+  window.addEventListener('mousemove', handleResize);
+}
 </script>
 
 <template>
-  <div class="column flex flex-column" ref="column">
-    <div class="header flex gap-1 p-1">
-      <InputText
-        size="small"
-        :modelValue="searchParams.searchInput"
-        spellcheck="false"
-        placeholder="Filter by label"
-        title="Filter Collections by label"
-        @update:model-value="handleSearchInputChange"
-      />
-      <MultiSelect
-        :modelValue="searchParams.nodeLabels"
-        :options="availableCollectionLabels"
-        dropdownIcon="pi pi-filter"
-        :filter="false"
-        title="Select node labels to filter"
-        class="flex-shrink-0"
-        @update:modelValue="handleNodeLabelsChange"
-        :pt="{
-          root: {
-            style: {
-              height: '100%',
+  <div class="column-wrapper" ref="column">
+    <div class="column-content flex flex-column">
+      <div class="header flex gap-1 p-1">
+        <InputText
+          size="small"
+          :modelValue="searchParams.searchInput"
+          spellcheck="false"
+          placeholder="Filter by label"
+          title="Filter Collections by label"
+          @update:model-value="handleSearchInputChange"
+        />
+        <MultiSelect
+          :modelValue="searchParams.nodeLabels"
+          :options="availableCollectionLabels"
+          dropdownIcon="pi pi-filter"
+          :filter="false"
+          title="Select node labels to filter"
+          class="flex-shrink-0"
+          @update:modelValue="handleNodeLabelsChange"
+          :pt="{
+            root: {
+              style: {
+                height: '100%',
+              },
             },
-          },
-          dropdownIcon: 'pi pi-filter',
-          labelContainer: {
-            style: {
-              display: 'none',
+            dropdownIcon: 'pi pi-filter',
+            labelContainer: {
+              style: {
+                display: 'none',
+              },
             },
-          },
-        }"
-      >
-        <template #dropdownicon>
-          <OverlayBadge v-if="!areAllLabelsSelected" severity="danger">
-            <i class="pi pi-filter-fill" />
-          </OverlayBadge>
-        </template>
-      </MultiSelect>
-      <Button
-        size="small"
-        severity="secondary"
-        icon="pi pi-refresh"
-        title="Refresh data"
-        @click="handleRefreshClick"
-      />
-      <Button
-        size="small"
-        severity="secondary"
-        icon="pi pi-sort-alpha-down"
-        title="Change sort"
-        @click="handleChangeSortOrderClick"
-      />
-    </div>
-    <div class="content" ref="scroll-pane">
-      <CollectionItem
-        v-for="collection of levels[props.index].collections"
-        :key="collection.data.data.uuid"
-        :collection="collection"
-        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
-        @item-selected="handleItemSelected"
-      ></CollectionItem>
-      <div
-        class="text-center"
-        v-if="isLoading && levels[props.index].collections.length > 0"
-        title="More data are loading..."
-      >
-        <span class="pi pi-spin pi-spinner"></span>
+          }"
+        >
+          <template #dropdownicon>
+            <OverlayBadge v-if="!areAllLabelsSelected" severity="danger">
+              <i class="pi pi-filter-fill" />
+            </OverlayBadge>
+          </template>
+        </MultiSelect>
+        <Button
+          size="small"
+          severity="secondary"
+          icon="pi pi-refresh"
+          title="Refresh data"
+          @click="handleRefreshClick"
+        />
+        <Button
+          size="small"
+          severity="secondary"
+          icon="pi pi-sort-alpha-down"
+          title="Change sort"
+          @click="handleChangeSortOrderClick"
+        />
+      </div>
+      <div class="content" ref="scroll-pane">
+        <CollectionItem
+          v-for="collection of levels[props.index].collections"
+          :key="collection.data.data.uuid"
+          :collection="collection"
+          :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
+          @item-selected="handleItemSelected"
+        ></CollectionItem>
+        <div
+          class="text-center"
+          v-if="isLoading && levels[props.index].collections.length > 0"
+          title="More data are loading..."
+        >
+          <span class="pi pi-spin pi-spinner"></span>
+        </div>
+      </div>
+      <div class="count text-xs text-right pr-3">
+        {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
+      </div>
+      <div class="footer p-1 flex justify-content-center">
+        <Button
+          size="small"
+          severity="secondary"
+          icon="pi pi-plus"
+          class="w-full"
+          label="Add Collection"
+          @click="handleAddCollectionClick"
+        />
       </div>
     </div>
-    <div class="count text-xs text-right pr-3">
-      {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
-    </div>
-    <div class="footer p-1 flex justify-content-center">
-      <Button
-        size="small"
-        severity="secondary"
-        icon="pi pi-plus"
-        class="w-full"
-        label="Add Collection"
-        @click="handleAddCollectionClick"
-      />
-    </div>
+    <div class="resizer" ref="resizer"></div>
   </div>
   <Toast />
 </template>
 
 <style scoped>
-.column {
+.column-wrapper {
+  display: flex;
   width: 200px;
+}
+
+.column-content {
+  min-width: 0;
+}
+
+.resizer {
+  background-color: green;
+  width: 10px;
+  cursor: col-resize;
 }
 
 .header > * {
