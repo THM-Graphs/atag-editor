@@ -49,6 +49,7 @@ const columnPagination = ref<PaginationData>(null);
 
 const column = useTemplateRef<HTMLDivElement>('column');
 const scrollPane = useTemplateRef<HTMLDivElement>('scroll-pane');
+const resizer = useTemplateRef<HTMLDivElement>('resizer');
 
 const areAllLabelsSelected = computed<boolean>(
   () => searchParams.value.nodeLabels.length === availableCollectionLabels.length,
@@ -58,6 +59,9 @@ const initialDataAreFetched = ref<boolean>(false);
 // The useInfiniteScroll composable has its own loading state management, but it does not work
 // well with the initial data fetching logic. Therefore, an component wide loading state is used.
 const isLoading = ref<boolean>(false);
+
+useEventListener(resizer, 'mousedown', startResize);
+useEventListener(window, 'mouseup', endResize);
 
 // TODO: Use reset method as soon vueUse package version is updated
 useInfiniteScroll(scrollPane, fetchMoreData, {
@@ -103,6 +107,10 @@ function addData(data: Collection[]) {
       } as CollectionStatusObject;
     }),
   );
+}
+
+function endResize() {
+  window.removeEventListener('mousemove', handleResize);
 }
 
 async function fetchData(): Promise<PaginationResult<Collection[]>> {
@@ -232,6 +240,11 @@ async function handleRefreshClick() {
   setIsLoading(false);
 }
 
+function handleResize(event: MouseEvent) {
+  const newWidth: number = event.clientX - column.value.getBoundingClientRect().left;
+  column.value.style.width = `${newWidth}px`;
+}
+
 function handleSearchInputChange(newInput: string) {
   const data: CollectionSearchParams = {
     searchInput: newInput,
@@ -285,28 +298,6 @@ function scrollToColumn() {
 function setIsLoading(state: boolean) {
   isLoading.value = state;
 }
-
-const resizer = useTemplateRef('resizer');
-
-function handleResize(event) {
-  // console.log('Column width: ', column.value.getBoundingClientRect().width);
-  // console.log('Column left offset: ', column.value.getBoundingClientRect().left);
-  // console.log('Cursor: ', event.clientX);
-
-  const newWidth = event.clientX - column.value.getBoundingClientRect().left;
-  console.log('New width: ', newWidth);
-  column.value.style.width = `${newWidth}px`;
-  // const sidebar: SidebarConfig = sidebars.value[activeResizer.value];
-  // sidebar.width =
-  //   activeResizer.value === 'left' ? event.clientX : window.innerWidth - event.clientX;
-}
-
-function endResize() {
-  window.removeEventListener('mousemove', handleResize);
-}
-
-useEventListener(resizer, 'mousedown', startResize);
-useEventListener(window, 'mouseup', endResize);
 
 function startResize() {
   window.addEventListener('mousemove', handleResize);
@@ -397,7 +388,9 @@ function startResize() {
       />
     </div>
   </div>
-  <div class="resizer" ref="resizer"></div>
+  <div class="resizer" ref="resizer" title="Hold down mouse and drag to resize column">
+    <div class="handle"></div>
+  </div>
   <Toast />
 </template>
 
@@ -408,9 +401,21 @@ function startResize() {
 }
 
 .resizer {
-  background-color: green;
-  width: 10px;
+  padding: 10px 0;
+  background-color: var(--p-splitter-gutter-background);
+  width: 7px;
   cursor: col-resize;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .handle {
+    width: 3px;
+    border-radius: 5px;
+    background-color: rgb(143, 143, 143);
+    height: 50px;
+  }
 }
 
 .header > * {
