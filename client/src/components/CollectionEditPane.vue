@@ -410,7 +410,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         <Tag
           v-if="globalMode === 'create'"
           severity="success"
-          value="New collection"
+          value="New"
           icon="pi pi-sparkles"
           rounded
         ></Tag>
@@ -463,6 +463,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
               v-model="temporaryWorkData.collection.nodeLabels"
               :options="availableCollectionLabels"
               display="chip"
+              title="Select node labels"
               placeholder="Select labels"
               :filter="false"
             >
@@ -641,6 +642,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         v-if="formMode === 'view'"
         icon="pi pi-pencil"
         label="Edit"
+        title="Edit collection"
         @click="handleClickEditButton"
       ></Button>
       <Button
@@ -648,13 +650,15 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         :loading="asyncOperationRunning"
         :icon="globalMode === 'create' ? 'pi pi-plus' : 'pi pi-save'"
         :label="globalMode === 'create' ? 'Create' : 'Save'"
+        :title="globalMode === 'create' ? 'Create new collection' : 'Save changes'"
         @click="handleApplyChanges"
       ></Button>
       <Button
         v-if="formMode === 'edit'"
         :disabled="asyncOperationRunning"
         icon="pi pi-times"
-        label="Cancel"
+        :title="globalMode === 'create' ? 'Discard collection' : 'Cancel changes'"
+        :label="globalMode === 'create' ? 'Discard' : 'Cancel'"
         severity="secondary"
         @click="handleDiscardChanges"
       ></Button>
@@ -663,6 +667,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         :disabled="asyncOperationRunning"
         icon="pi pi-trash"
         label="Delete"
+        title="Delete collection"
         severity="danger"
         @click="handleDeleteColletion"
       ></Button>

@@ -390,6 +390,7 @@ function startResize() {
         icon="pi pi-plus"
         class="w-full"
         label="Add Collection"
+        title="Add new Collection"
         @click="handleAddCollectionClick"
       />
     </div>

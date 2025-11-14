@@ -25,7 +25,7 @@ const breadcrumbItems = computed<MenuItem[]>(() =>
 </script>
 
 <template>
-  <div class="container p-1">
+  <div class="breadcrumbs-section p-1">
     <Breadcrumb
       :home="home"
       :model="breadcrumbItems"
