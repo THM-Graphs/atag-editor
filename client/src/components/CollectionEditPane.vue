@@ -155,6 +155,8 @@ function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
 }
 
 function handleAddText(newText: Text) {
+  newText.data.text = newText.data.text.replace(/(\r\n|\n|\r)/g, ' ');
+
   temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== newText.data.uuid);
 
   temporaryWorkData.value.texts.push(newText);
