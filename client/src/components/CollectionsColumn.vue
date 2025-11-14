@@ -154,17 +154,19 @@ function handleAddCollectionClick() {
 
   const newCollection: CollectionAccessObject = createNewCollectionAccessObject();
 
-  // Add to beginning of list
-  levels.value[props.index].collections.unshift({
+  const temporaryListItem: CollectionStatusObject = {
     data: {
       ...newCollection.collection,
       data: { ...newCollection.collection.data, label: 'New Collection' },
     },
     status: 'temporary',
-  });
+  };
+
+  // Add to beginning of list
+  levels.value[props.index].collections.unshift(temporaryListItem);
 
   // Add new collection as active in this column
-  levels.value[props.index].activeCollection = newCollection.collection;
+  levels.value[props.index].activeCollection = temporaryListItem.data;
 
   // Set new path
   setPathToActiveCollection(levels.value.slice(0, props.index + 1).map(l => l.activeCollection));
