@@ -314,103 +314,97 @@ function startResize() {
 </script>
 
 <template>
-  <div class="column-wrapper" ref="column">
-    <div class="column-content flex flex-column">
-      <div class="header flex gap-1 p-1">
-        <InputText
-          size="small"
-          :modelValue="searchParams.searchInput"
-          spellcheck="false"
-          placeholder="Filter by label"
-          title="Filter Collections by label"
-          @update:model-value="handleSearchInputChange"
-        />
-        <MultiSelect
-          :modelValue="searchParams.nodeLabels"
-          :options="availableCollectionLabels"
-          dropdownIcon="pi pi-filter"
-          :filter="false"
-          title="Select node labels to filter"
-          class="flex-shrink-0"
-          @update:modelValue="handleNodeLabelsChange"
-          :pt="{
-            root: {
-              style: {
-                height: '100%',
-              },
+  <div class="column flex flex-column" ref="column">
+    <div class="header flex gap-1 p-1">
+      <InputText
+        size="small"
+        :modelValue="searchParams.searchInput"
+        spellcheck="false"
+        placeholder="Filter by label"
+        title="Filter Collections by label"
+        @update:model-value="handleSearchInputChange"
+      />
+      <MultiSelect
+        :modelValue="searchParams.nodeLabels"
+        :options="availableCollectionLabels"
+        dropdownIcon="pi pi-filter"
+        :filter="false"
+        title="Select node labels to filter"
+        class="flex-shrink-0"
+        @update:modelValue="handleNodeLabelsChange"
+        :pt="{
+          root: {
+            style: {
+              height: '100%',
             },
-            dropdownIcon: 'pi pi-filter',
-            labelContainer: {
-              style: {
-                display: 'none',
-              },
+          },
+          dropdownIcon: 'pi pi-filter',
+          labelContainer: {
+            style: {
+              display: 'none',
             },
-          }"
-        >
-          <template #dropdownicon>
-            <OverlayBadge v-if="!areAllLabelsSelected" severity="danger">
-              <i class="pi pi-filter-fill" />
-            </OverlayBadge>
-          </template>
-        </MultiSelect>
-        <Button
-          size="small"
-          severity="secondary"
-          icon="pi pi-refresh"
-          title="Refresh data"
-          @click="handleRefreshClick"
-        />
-        <Button
-          size="small"
-          severity="secondary"
-          icon="pi pi-sort-alpha-down"
-          title="Change sort"
-          @click="handleChangeSortOrderClick"
-        />
-      </div>
-      <div class="content" ref="scroll-pane">
-        <CollectionItem
-          v-for="collection of levels[props.index].collections"
-          :key="collection.data.data.uuid"
-          :collection="collection"
-          :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
-          @item-selected="handleItemSelected"
-        ></CollectionItem>
-        <div
-          class="text-center"
-          v-if="isLoading && levels[props.index].collections.length > 0"
-          title="More data are loading..."
-        >
-          <span class="pi pi-spin pi-spinner"></span>
-        </div>
-      </div>
-      <div class="count text-xs text-right pr-3">
-        {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
-      </div>
-      <div class="footer p-1 flex justify-content-center">
-        <Button
-          size="small"
-          severity="secondary"
-          icon="pi pi-plus"
-          class="w-full"
-          label="Add Collection"
-          @click="handleAddCollectionClick"
-        />
+          },
+        }"
+      >
+        <template #dropdownicon>
+          <OverlayBadge v-if="!areAllLabelsSelected" severity="danger">
+            <i class="pi pi-filter-fill" />
+          </OverlayBadge>
+        </template>
+      </MultiSelect>
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-refresh"
+        title="Refresh data"
+        @click="handleRefreshClick"
+      />
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-sort-alpha-down"
+        title="Change sort"
+        @click="handleChangeSortOrderClick"
+      />
+    </div>
+    <div class="content" ref="scroll-pane">
+      <CollectionItem
+        v-for="collection of levels[props.index].collections"
+        :key="collection.data.data.uuid"
+        :collection="collection"
+        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
+        @item-selected="handleItemSelected"
+      ></CollectionItem>
+      <div
+        class="text-center"
+        v-if="isLoading && levels[props.index].collections.length > 0"
+        title="More data are loading..."
+      >
+        <span class="pi pi-spin pi-spinner"></span>
       </div>
     </div>
-    <div class="resizer" ref="resizer"></div>
+    <div class="count text-xs text-right pr-3">
+      {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
+    </div>
+    <div class="footer p-1 flex justify-content-center">
+      <Button
+        size="small"
+        severity="secondary"
+        icon="pi pi-plus"
+        class="w-full"
+        label="Add Collection"
+        @click="handleAddCollectionClick"
+      />
+    </div>
   </div>
+  <div class="resizer" ref="resizer"></div>
   <Toast />
 </template>
 
 <style scoped>
-.column-wrapper {
+.column {
   display: flex;
   width: 200px;
-}
-
-.column-content {
-  min-width: 0;
 }
 
 .resizer {
