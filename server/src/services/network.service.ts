@@ -152,6 +152,10 @@ export default class NetworkService {
 
     MATCH (first:Collection{uuid: $uuids[0]})
 
+    WHERE NOT EXISTS {
+        (first)-[:PART_OF]->(:Collection)
+    }
+
     CALL apoc.path.expandConfig(first, {
         relationshipFilter: '<PART_OF',
         allowlistNodes: allowlistNodes
