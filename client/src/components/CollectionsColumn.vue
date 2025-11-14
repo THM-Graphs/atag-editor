@@ -305,10 +305,11 @@ function startResize() {
 </script>
 
 <template>
-  <div class="column flex flex-column" ref="column">
-    <div class="header flex gap-1 p-1">
+  <div class="column flex flex-column p-1" ref="column">
+    <div class="header flex gap-1">
       <InputText
         size="small"
+        class="w-full"
         :modelValue="searchParams.searchInput"
         spellcheck="false"
         placeholder="Filter by label"
@@ -377,7 +378,7 @@ function startResize() {
     <div class="count text-xs text-right pr-3">
       {{ levels[props.index].collections.length }}/{{ columnPagination?.totalRecords }}
     </div>
-    <div class="footer p-1 flex justify-content-center">
+    <div class="footer flex justify-content-center">
       <Button
         size="small"
         severity="secondary"
@@ -398,6 +399,9 @@ function startResize() {
 .column {
   display: flex;
   width: 200px;
+}
+.content {
+  scrollbar-width: none;
 }
 
 .resizer {

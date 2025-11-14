@@ -169,7 +169,6 @@ function showUnsavedChangesWarning() {
                   :index="index"
                   :parentUuid="levels[index].parentUuid"
                 />
-                <!-- <div class="expansion-pane"></div> -->
               </div>
             </SplitterPanel>
             <SplitterPanel :size="20" class="overflow-y-auto">
@@ -195,11 +194,6 @@ function showUnsavedChangesWarning() {
 
 .footer {
   height: 30px;
-}
-
-.expansion-pane {
-  width: 400px;
-  background-color: lightblue;
 }
 
 .overlay {
