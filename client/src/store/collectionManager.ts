@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, readonly, ref } from 'vue';
 import { Collection, CollectionAccessObject, CollectionStatusObject, Level } from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
@@ -16,6 +16,7 @@ const previousPaths = useRefHistory(pathToActiveCollection, {
 
 const mode = ref<'view' | 'edit' | 'create'>('view');
 const asyncOperationRunning = ref<boolean>(false);
+const isFetchingCollectionDetails = ref<boolean>(false);
 const canNavigate = computed<boolean>(() => {
   if (mode.value === 'edit' || mode.value === 'create') {
     return false;
@@ -26,6 +27,8 @@ const canNavigate = computed<boolean>(() => {
 
 export function useCollectionManagerStore() {
   async function fetchCollectionDetails(uuid: string): Promise<CollectionAccessObject> {
+    isFetchingCollectionDetails.value = true;
+
     // TODO: Handle errors
     const [collection, annotations, texts] = await Promise.all([
       api.getCollection(uuid),
@@ -34,6 +37,8 @@ export function useCollectionManagerStore() {
     ]);
 
     const cao: CollectionAccessObject = { collection, texts, annotations };
+
+    isFetchingCollectionDetails.value = false;
 
     return cao;
   }
@@ -57,7 +62,6 @@ export function useCollectionManagerStore() {
     }
 
     levels.value[index].activeCollection = findCollectionInHierarchy(uuid, index)?.data ?? null;
-
     activeCollection.value = cao;
   }
 
@@ -187,6 +191,7 @@ export function useCollectionManagerStore() {
   return {
     asyncOperationRunning,
     canNavigate,
+    isFetchingCollectionDetails: readonly(isFetchingCollectionDetails),
     levels,
     mode,
     pathToActiveCollection,

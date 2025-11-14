@@ -18,6 +18,7 @@ import {
   PropertyConfig,
   Text,
 } from '../models/types';
+import Tag from 'primevue/tag';
 import {
   capitalize,
   cloneDeep,
@@ -40,6 +41,7 @@ import TextContainer from './TextContainer.vue';
 import { useAppStore } from '../store/app';
 import { useRouter } from 'vue-router';
 import CollectionDeleteModal from './CollectionDeleteModal.vue';
+import ProgressSpinner from 'primevue/progressspinner';
 
 const router = useRouter();
 const { api, createModalInstance, destroyModalInstance } = useAppStore();
@@ -59,6 +61,7 @@ const {
 } = useGuidelinesStore();
 const {
   activeCollection,
+  isFetchingCollectionDetails,
   levels,
   mode: globalMode,
   pathToActiveCollection,
@@ -399,43 +402,58 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 
 <template>
   <div
-    v-if="temporaryWorkData"
+    v-if="temporaryWorkData && !isFetchingCollectionDetails"
     class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
     <div class="main flex-grow-1 flex flex-column w-full">
-      <h3>{{ temporaryWorkData.collection.data.label }}</h3>
-      <ButtonGroup class="w-full flex">
-        <ToggleButton
-          :model-value="isDetailsSelected"
-          class="w-full"
-          onLabel="Details"
-          offLabel="Details"
-          onIcon="pi pi-info-circle"
-          offIcon="pi pi-info-circle"
-          title="Show Collection details"
-          @change="toggleViewMode('details')"
-        />
-        <ToggleButton
-          :model-value="isAnnotationsSelected"
-          class="w-full"
-          onLabel="Annotations"
-          offLabel="Annotations"
-          onIcon="pi pi-pencil"
-          offIcon="pi pi-pencil"
-          title="Show Annotations"
-          @change="toggleViewMode('annotations')"
-        />
-        <ToggleButton
-          :model-value="isTextsSelected"
-          class="w-full"
-          onLabel="Texts"
-          offLabel="Texts"
-          onIcon="pi pi-align-justify"
-          offIcon="pi pi-align-justify"
-          title="Show Texts"
-          @change="toggleViewMode('texts')"
-        />
-      </ButtonGroup>
+      <div class="status-section h-2rem relative text-right">
+        <Tag
+          v-if="globalMode === 'create'"
+          severity="success"
+          value="New collection"
+          icon="pi pi-sparkles"
+          rounded
+        ></Tag>
+      </div>
+
+      <div class="label-section">
+        <h3>{{ temporaryWorkData.collection.data.label }}</h3>
+      </div>
+
+      <div class="tab-section">
+        <ButtonGroup class="w-full flex">
+          <ToggleButton
+            :model-value="isDetailsSelected"
+            class="w-full"
+            onLabel="Details"
+            offLabel="Details"
+            onIcon="pi pi-info-circle"
+            offIcon="pi pi-info-circle"
+            title="Show Collection details"
+            @change="toggleViewMode('details')"
+          />
+          <ToggleButton
+            :model-value="isAnnotationsSelected"
+            class="w-full"
+            onLabel="Annotations"
+            offLabel="Annotations"
+            onIcon="pi pi-pencil"
+            offIcon="pi pi-pencil"
+            title="Show Annotations"
+            @change="toggleViewMode('annotations')"
+          />
+          <ToggleButton
+            :model-value="isTextsSelected"
+            class="w-full"
+            onLabel="Texts"
+            offLabel="Texts"
+            onIcon="pi pi-align-justify"
+            offIcon="pi pi-align-justify"
+            title="Show Texts"
+            @change="toggleViewMode('texts')"
+          />
+        </ButtonGroup>
+      </div>
 
       <div class="content">
         <div v-show="isDetailsSelected" class="properties-pane">
@@ -650,6 +668,28 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
       ></Button>
     </div>
   </div>
+
+  <div
+    v-if="isFetchingCollectionDetails"
+    class="w-full h-full flex justify-content-center align-items-center"
+  >
+    <ProgressSpinner
+      class="loading-spinner"
+      style="width: 80px; height: 80px"
+      strokeWidth="2"
+      fill="transparent"
+      animationDuration="1.5s"
+      aria-label="Custom ProgressSpinner"
+      :dt="{
+        root: {
+          colorOne: 'black',
+          colorTwo: 'black',
+          colorThree: 'black',
+          colorFour: 'black',
+        },
+      }"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -666,6 +706,11 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 .edit-pane-container,
 .main {
   overflow-y: hidden;
+}
+
+.label-section {
+  line-break: auto;
+  min-height: 2rem;
 }
 
 .content {
