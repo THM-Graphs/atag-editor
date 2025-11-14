@@ -1,11 +1,7 @@
-<script setup lang="ts">
-import Button from 'primevue/button';
-</script>
+<script setup lang="ts"></script>
 
 <template>
-  <div class="top-menu">
-    <Button icon="pi pi-home"></Button>
-  </div>
+  <div class="top-menu"></div>
 </template>
 
 <style scoped></style>
