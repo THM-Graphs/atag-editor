@@ -156,7 +156,10 @@ function handleAddCollectionClick() {
 
   // Add to beginning of list
   levels.value[props.index].collections.unshift({
-    data: newCollection.collection,
+    data: {
+      ...newCollection.collection,
+      data: { ...newCollection.collection.data, label: 'New Collection' },
+    },
     status: 'temporary',
   });
 

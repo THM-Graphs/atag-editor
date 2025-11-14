@@ -62,12 +62,15 @@ export function cloneDeep<T>(input: T): T {
   return input;
 }
 
-export function createNewCollectionAccessObject(): CollectionAccessObject {
+export function createNewCollectionAccessObject(
+  data?: Partial<ICollection>,
+): CollectionAccessObject {
   return {
     collection: {
       data: {
         label: '',
         uuid: crypto.randomUUID(),
+        ...data,
       } as ICollection,
       nodeLabels: [],
     },
