@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import CollectionTopMenu from '../components/CollectionTopMenu.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Splitter from 'primevue/splitter';
@@ -12,6 +12,7 @@ import CollectionEditPane from '../components/CollectionEditPane.vue';
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router';
 import { Collection } from '../models/types';
 import { useToast } from 'primevue';
+import CollectionPathError from '../components/CollectionPathError.vue';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
@@ -122,7 +123,9 @@ function showUnsavedChangesWarning() {
 </script>
 
 <template>
-  <div v-if="!isLoading && !isPathValid">Path is not valid</div>
+  <template v-if="!isLoading && !isPathValid">
+    <CollectionPathError />
+  </template>
   <template v-else>
     <Toast />
 
