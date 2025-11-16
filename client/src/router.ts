@@ -1,17 +1,12 @@
 import { RouteRecordRaw, Router, createWebHistory, createRouter } from 'vue-router';
-import Overview from './views/Overview.vue';
 import Editor from './views/Editor.vue';
-import CollectionEntry from './views/CollectionEntry.vue';
 import CollectionManager from './views/CollectionManager.vue';
 import { useNavigationGuard } from './composables/useNavigationGuard';
 
 const { hasOpenModal } = useNavigationGuard();
 
 const allRoutes = [
-  { path: '/', component: Overview },
-  { path: '/collection-manager/:uuid?', component: CollectionManager },
-  { path: '/collections', component: Overview },
-  { path: '/collections/:uuid', component: CollectionEntry },
+  { path: '/', component: CollectionManager },
   { path: '/texts/:uuid', component: Editor },
 ];
 

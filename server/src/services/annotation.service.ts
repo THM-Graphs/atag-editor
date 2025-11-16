@@ -1,7 +1,7 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
-import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
+import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
@@ -244,12 +244,7 @@ export default class AnnotationService {
             text: {
               nodeLabels: additionalText.text.nodeLabels,
               data: additionalText.text.data,
-              characters: additionalText.text.data.text.split('').map(c => {
-                return {
-                  text: c,
-                  uuid: crypto.randomUUID(),
-                };
-              }),
+              characters: createCharactersFromText(additionalText.text.data.text),
             },
           });
         }

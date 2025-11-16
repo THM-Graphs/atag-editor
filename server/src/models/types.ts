@@ -128,9 +128,13 @@ export type PaginationData = {
   limit: number;
   order: string;
   search: string;
-  skip: number;
-  sort: string;
   totalRecords: number;
+  nextCursor: CursorData | null;
+};
+
+export type CursorData = {
+  label: string;
+  uuid: string;
 };
 
 export type PaginationResult<T> = {

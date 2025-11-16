@@ -8,8 +8,8 @@ import {
   Collection,
   CollectionCreationData,
   CollectionPostData,
-  CollectionPreview,
   CollectionSearchParams,
+  CursorData,
   NetworkPostData,
   NodeAncestry,
   PaginationResult,
@@ -53,6 +53,31 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error creating collection:', error);
       throw new Error(`Error creating collection: ${error}`);
+    }
+  }
+
+  public async deleteCollection(uuid: string): Promise<Collection> {
+    try {
+      const url: string = `${this.baseUrl}/collections/${uuid}`;
+
+      const response: Response = await fetch(url, {
+        method: 'DELETE',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error deleting collection:', error);
+      throw new Error(`Error deleting collection: ${error}`);
     }
   }
 
@@ -129,8 +154,11 @@ export default class ApiService {
 
   public async getCollections(
     parentUuid: string,
-    params: DeepReadonly<CollectionSearchParams> | CollectionSearchParams,
-  ): Promise<PaginationResult<CollectionPreview[]>> {
+    params: {
+      filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
+      cursor: CursorData | null;
+    },
+  ): Promise<PaginationResult<Collection[]>> {
     const DEFAULT_ROW_COUNT: number | null = 10;
 
     const path: string = parentUuid
@@ -139,14 +167,17 @@ export default class ApiService {
 
     const urlParams: URLSearchParams = new URLSearchParams();
 
-    urlParams.set('sort', params.sortField);
-    urlParams.set('order', params.sortDirection);
-    urlParams.set('skip', params.offset.toString());
-    urlParams.set('search', params.searchInput);
-    urlParams.set('nodeLabels', params.nodeLabels.join(','));
+    const { filters, cursor } = params;
 
-    // Use default limit if none is provided
-    urlParams.set('limit', params.rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
+    urlParams.set('order', filters.sortDirection);
+    urlParams.set('search', filters.searchInput);
+    urlParams.set('nodeLabels', filters.nodeLabels.join(','));
+    urlParams.set('limit', filters.rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
+
+    if (cursor) {
+      urlParams.set('cursorUuid', cursor.uuid ?? '');
+      urlParams.set('cursorLabel', cursor.label ?? '');
+    }
 
     const fetchUrl: string = `${path}?${urlParams.toString()}`;
 
@@ -348,6 +379,23 @@ export default class ApiService {
     } catch (error: unknown) {
       console.error('Error updating network:', error);
       throw new Error('Network could not be updated, try again...');
+    }
+  }
+
+  public async validateCollectionPath(uuidString: string): Promise<Collection[]> {
+    try {
+      const url: string = `${this.baseUrl}/network?path=${uuidString}`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      console.error('Error validating path:', error);
+      throw new Error(`Error validating path: ${error}`);
     }
   }
 }

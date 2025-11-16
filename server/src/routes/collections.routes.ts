@@ -8,7 +8,6 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   Annotation,
   Collection,
-  CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
   CollectionPreview,
@@ -24,23 +23,21 @@ const annotationService: AnnotationService = new AnnotationService();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { sort, order, limit, skip, search } = getPagination(req);
+    const { order, limit, search, cursor } = getPagination(req);
     const nodeLabels: string[] = (req.query.nodeLabels as string)
       .split(',')
       .filter(label => label.trim() !== '');
 
     const parentUuid: string | null = req.query.parentUuid as string | null;
 
-    const collections: PaginationResult<CollectionPreview[]> =
-      await collectionService.getCollections(
-        nodeLabels,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-        parentUuid,
-      );
+    const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
+      nodeLabels,
+      order,
+      limit,
+      search,
+      parentUuid,
+      cursor,
+    );
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -75,22 +72,20 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
 router.get('/:uuid/collections', async (req: Request, res: Response, next: NextFunction) => {
   const parentUuid: string = req.params.uuid;
 
-  const { sort, order, limit, skip, search } = getPagination(req);
+  const { order, limit, search, cursor } = getPagination(req);
   const nodeLabels: string[] = ((req.query.nodeLabels as string) ?? '')
     .split(',')
     .filter(label => label.trim() !== '');
 
   try {
-    const collections: PaginationResult<CollectionPreview[]> =
-      await collectionService.getCollections(
-        nodeLabels,
-        sort,
-        order,
-        limit,
-        skip,
-        search,
-        parentUuid,
-      );
+    const collections: PaginationResult<Collection[]> = await collectionService.getCollections(
+      nodeLabels,
+      order,
+      limit,
+      search,
+      parentUuid,
+      cursor,
+    );
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -115,7 +110,7 @@ router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) =>
   const data: CollectionPostData = req.body;
 
   try {
-    const collection: ICollection = await collectionService.updateCollection(uuid, data);
+    const collection: Collection = await collectionService.updateCollection(uuid, data);
 
     const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
     const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
@@ -134,7 +129,7 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
   const uuid: string = req.params.uuid;
 
   try {
-    const collection: ICollection = await collectionService.deleteCollection(uuid);
+    const collection: Collection = await collectionService.deleteCollection(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {

@@ -23,13 +23,10 @@ import { FETCH_DELAY } from '../config/constants';
  * @param {number} rowCount - The number of rows to fetch per page (optional).
  * @returns {Object} An object with reactive properties for performing a search query on the backend.
  */
-export function useCollectionSearch(rowCount?: number) {
+export function useSearchParams(rowCount?: number) {
   const DEFAULT_ROW_COUNT: number | null = rowCount ?? null;
 
   const { availableCollectionLabels } = useGuidelinesStore();
-
-  // UUID of the parent collection (if there is one)
-  const parentUuid = ref<string>('');
 
   const searchParams = ref<CollectionSearchParams>({
     searchInput: '',
@@ -98,14 +95,9 @@ export function useCollectionSearch(rowCount?: number) {
     }
   }
 
-  function updateUuid(newUuid: string | undefined): void {
-    parentUuid.value = newUuid;
-  }
-
   return {
     searchParams: readonly(searchParams),
     resetSearchParams,
     updateSearchParams,
-    updateUuid,
   };
 }

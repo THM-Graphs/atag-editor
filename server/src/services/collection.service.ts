@@ -1,9 +1,9 @@
 import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
-import { collectionSortField } from '../utils/cypher.js';
+import { sortDirection } from '../utils/cypher.js';
 import { ancestryPaths } from '../utils/cypher.js';
-import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
+import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
 import NotFoundError from '../errors/not-found.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
@@ -14,108 +14,126 @@ import {
   PropertyConfig,
   Text,
   Collection,
-  CollectionPreview,
   NodeAncestry,
   CollectionCreationData,
+  CursorData,
 } from '../models/types.js';
+import ICharacter from '../models/ICharacter.js';
 
 type CollectionTextObject = {
   all: Text[];
-  created: Text[];
+  created: CreatedText[];
   deleted: Text[];
+};
+
+type CreatedText = Text & {
+  characters: ICharacter[];
 };
 
 export default class CollectionService {
   /**
-   * Retrieves a paginated list of collection preview objects. These objects include the properties and labels of
-   * the `Collection` node as well as counts of connected `Annotation`, `Text`, and `Collection` nodes. Be aware that only Sub-Collections are included in the
-   * collection count (= incoming `PART_OF` relationships).
+   * Retrieves a paginated list of collections using cursor-based pagination.
    *
-   *
-   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection.
+   * The scope of the query can be constrained by providing a UUID to fetch only Sub-Collections of a specific collection. Otherwise,
+   * all top-level collections (= without outgoing PART_OF relationship) are fetched.
    * Additional labels for the collection nodes can be specified to filter the results. Pagination parameters such as sort order,
-   * limit, skip, and search string are also taken into account.
+   * limit, and search string are also taken into account.
    *
    * @param {string[]} additionalLabels - The additional labels to match in the query, e.g., "Letter".
-   * @param {string} sort - The field by which to sort the collections.
-   * @param {string} order - The order in which to sort the collections (ascending or descending).
+   * @param {string} order - The order in which to sort the collections ('ASC' or 'DESC').
    * @param {number} limit - The maximum number of collections to return.
-   * @param {number} skip - The number of collections to skip before starting to collect the result set.
    * @param {string} search - The search string to filter collections by their label.
    * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
+   * @param {CursorData | null} cursor - The cursor for pagination, or null for the first page.
    *
-   * @return {Promise<PaginationResult<CollectionPreview[]>>} A promise that resolves to a paginated result of Collection preview objects.
+   * @return {Promise<PaginationResult<Collection[]>>} A promise that resolves to a paginated result of Collections.
    */
   public async getCollections(
     additionalLabels: string[],
-    sort: string,
     order: string,
     limit: number,
-    skip: number,
     search: string,
     parentUuid: string | null,
-  ): Promise<PaginationResult<CollectionPreview[]>> {
-    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch everything
+    cursor: CursorData | null = null,
+  ): Promise<PaginationResult<Collection[]>> {
+    // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch collections
+    // that don't have a parent (top level collections)
     const baseCollectionSnippet = parentUuid
       ? `MATCH (parent:Collection {uuid: '${parentUuid}'})<-[:PART_OF]-(c:Collection)`
-      : `MATCH (c:Collection)`;
+      : `MATCH (c:Collection) WHERE NOT EXISTS {
+             (:Collection)<-[:PART_OF]-(c)
+         }`;
 
+    // Build cursor condition, depending on whether a cursor is provided or not
+    const cursorCondition: string = cursor
+      ? `AND (c.label ${sortDirection(order)} $cursorLabel OR (c.label = $cursorLabel AND c.uuid ${sortDirection(order)} $cursorUuid))`
+      : '';
+
+    // Base query: Add filters for nodeLabels and search string
     const baseQuery: string =
       baseCollectionSnippet +
       `
-      WHERE
-          CASE
-              WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
-              ELSE apoc.coll.intersection($additionalLabels, labels(c))
-          END
-          AND
-          toLower(c.label) CONTAINS toLower($search)
+      ${parentUuid ? 'WHERE' : 'AND'}
+      CASE
+          WHEN size($additionalLabels) = 0 THEN size([l in labels(c) WHERE l <> 'Collection']) = 0
+          ELSE apoc.coll.intersection($additionalLabels, labels(c))
+      END
+      AND
+      toLower(c.label) CONTAINS toLower($search)
       `;
 
+    // Count query: Get the total number of records matching the filters
     const countQuery: string = baseQuery + `RETURN count(c) AS totalRecords`;
 
+    // Query for pagintation. Fetch limit + 1 to determine if there are more records
     const dataQuery: string =
       baseQuery +
+      cursorCondition +
       `
-      // TODO: Fix sorting. Can be numbers, too (text count, annotation count etc.)
-      WITH c,
-          size([(c)<-[:PART_OF]-(sub:Collection) | sub]) as collectionCount,
-          size([(c)<-[:PART_OF]-(sub:Text) | sub]) as textCount,
-          size([(c)-[:HAS_ANNOTATION]-(a:Annotation) | a]) as annotationCount
-
-      ORDER BY ${collectionSortField(sort)} ${order}
-      SKIP ${skip}
-      LIMIT ${limit}
+      ORDER BY c.label ${order}, c.uuid ${order}
+      LIMIT $limit
 
       RETURN collect({
-          collection: {
-              nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-              data: c {.*}
-          }, 
-          nodeCounts: {
-              collections: collectionCount,
-              texts: textCount,
-              annotations: annotationCount
-          }
+          nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+          data: c {.*}
       }) AS collections
-      `;
+    `;
+
+    const queryParams = {
+      additionalLabels,
+      search,
+      limit: int(limit + 1),
+      ...(cursor && {
+        cursorLabel: cursor.label,
+        cursorUuid: cursor.uuid,
+      }),
+    };
 
     const [countResult, dataResult] = await Promise.all([
-      Neo4jDriver.runQuery(countQuery, { additionalLabels, search }),
-      Neo4jDriver.runQuery(dataQuery, {
-        additionalLabels,
-        skip: int(skip),
-        limit: int(limit),
-        sort: int(sort),
-        order,
-        search,
-      }),
+      Neo4jDriver.runQuery(countQuery, queryParams),
+      Neo4jDriver.runQuery(dataQuery, queryParams),
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const rawData: CollectionPreview[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: Collection[] = dataResult.records[0]?.get('collections') || [];
 
-    const data: CollectionPreview[] = rawData.map(cao => toNativeTypes(cao)) as CollectionPreview[];
+    // Check if there are more records
+    const hasMore: boolean = rawData.length > limit;
+    const collections: Collection[] = hasMore ? rawData.slice(0, limit) : rawData;
+
+    const data: Collection[] = collections.map(c => toNativeTypes(c)) as Collection[];
+
+    // Generate next cursor from the last item
+    let nextCursor: CursorData | null = null;
+
+    if (hasMore && data.length > 0) {
+      const lastItem: Collection = data[data.length - 1];
+
+      nextCursor = {
+        label: lastItem.data.label,
+        uuid: lastItem.data.uuid,
+      };
+    }
 
     return {
       data,
@@ -123,9 +141,8 @@ export default class CollectionService {
         limit,
         order,
         search,
-        skip,
-        sort,
         totalRecords,
+        nextCursor,
       },
     };
   }
@@ -271,10 +288,7 @@ export default class CollectionService {
 
     const collection: Collection = {
       nodeLabels: [...data.collection.nodeLabels, 'Collection'],
-      data: {
-        ...toNeo4jTypes(data.collection.data, fields),
-        uuid: crypto.randomUUID(),
-      },
+      data: toNeo4jTypes(data.collection.data, fields),
     } as Collection;
 
     const parentUuid: string | null = data.parentCollection?.data.uuid ?? null;
@@ -310,9 +324,12 @@ export default class CollectionService {
     const initialTextUuids: string[] = initialData.texts.map(t => t.data.uuid);
     const newTextUUids: string[] = newData.texts.map(t => t.data.uuid);
 
-    const createdTexts: Text[] = newData.texts.filter(
-      text => !initialTextUuids.includes(text.data.uuid),
-    );
+    const createdTexts: CreatedText[] = newData.texts
+      .filter((text: Text) => !initialTextUuids.includes(text.data.uuid))
+      .map((t: Text) => ({
+        ...t,
+        characters: createCharactersFromText(t.data.text),
+      }));
 
     const deletedTexts: Text[] = initialData.texts.filter(
       text => !newTextUUids.includes(text.data.uuid),
@@ -334,9 +351,9 @@ export default class CollectionService {
    * @param {string} uuid - The UUID of the collection node to update.
    * @param {CollectionPostData} data - The data containing updates for the collection.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<ICollection>} A promise that resolves to the updated collection node.
+   * @return {Promise<Collection>} A promise that resolves to the updated collection node.
    */
-  public async updateCollection(uuid: string, data: CollectionPostData): Promise<ICollection> {
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const fields: PropertyConfig[] = await guidelineService.getCollectionConfigFields(
       data.data.collection.nodeLabels,
@@ -381,6 +398,14 @@ export default class CollectionService {
       WITH t, textToCreate
       SET t = textToCreate.data
 
+      WITH t, textToCreate
+
+      CALL atag.chains.update(t.uuid, null, null, textToCreate.characters, {
+          textLabel: "Text",
+          elementLabel: "Character",
+          relationshipType: "NEXT_CHARACTER"
+      }) YIELD path
+
       RETURN collect(t) as createdTexts
     }
 
@@ -417,11 +442,14 @@ export default class CollectionService {
         RETURN collect(t1) as updatedTexts
     }
 
-    RETURN c {.*} AS collection
+    RETURN {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, collection, texts });
-    const updatedCollection: ICollection = result.records[0]?.get('collection');
+    const updatedCollection: Collection = result.records[0]?.get('collection');
 
     if (!updatedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
@@ -431,23 +459,46 @@ export default class CollectionService {
   }
 
   /**
-   * Deletes a collection node with given UUID, along with an associated text node.
+   * Deletes a Collection node with the given UUID, along with its associated Text nodes, Character nodes, and Annotation nodes.
    *
-   * @param {string} uuid - The UUID of the collection node to delete.
-   * @return {Promise<ICollection>} A promise that resolves to the deleted collection.
+   * @param {string} uuid - The UUID of the Collection node to delete.
+   * @throws {NotFoundError} If the Collection with the specified UUID is not found.
+   * @return {Promise<Collection>} A promise that resolves to the deleted Collection node.
    */
-  public async deleteCollection(uuid: string): Promise<ICollection> {
-    // TODO: Update query so that it matches the whole subgraph
+  public async deleteCollection(uuid: string): Promise<Collection> {
     const query: string = `
-    MATCH (c:Collection {uuid: $uuid})<-[:PART_OF]-(t:Text)
-    OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(chars:Character)
-    WITH c, t, chars, c {.*} as collection
-    DETACH DELETE c, t, chars
-    RETURN collection
+
+    MATCH (c:Collection {uuid: $uuid})
+
+    WITH c, {
+        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        data: c {.*}
+    } AS collectionToDelete
+
+    // Delete annotations
+    CALL (c) {
+        OPTIONAL MATCH (c)-[:HAS_ANNOTATION]->(a:Annotation)
+        DETACH DELETE a
+    }
+
+    // Delete texts, characters, and annotations
+    CALL (c) {
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        
+        OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
+        OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)
+
+        DETACH DELETE t, a, ch
+    }
+
+    // Delete collection
+    DETACH DELETE c
+
+    RETURN collectionToDelete as collection
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const deletedCollection: ICollection = result.records[0]?.get('collection');
+    const deletedCollection: Collection = result.records[0]?.get('collection');
 
     if (!deletedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);

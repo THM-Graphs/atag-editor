@@ -139,4 +139,45 @@ export default class NetworkService {
 
     return updatedNodes;
   }
+
+  async validatePath(uuids: string[]): Promise<Collection[]> {
+    if (!uuids || uuids.length === 0) {
+      return [];
+    }
+
+    const query: string = `
+    UNWIND $uuids as uuid
+    MATCH (c:Collection {uuid: uuid})
+    WITH collect(c) as allowlistNodes
+
+    MATCH (first:Collection{uuid: $uuids[0]})
+
+    WHERE NOT EXISTS {
+        (first)-[:PART_OF]->(:Collection)
+    }
+
+    CALL apoc.path.expandConfig(first, {
+        relationshipFilter: '<PART_OF',
+        allowlistNodes: allowlistNodes
+    }) YIELD path
+
+    WITH collect(path)[-1] as longestPath
+
+    WHERE [x in nodes(longestPath) | x.uuid] = $uuids
+
+    RETURN [n in nodes(longestPath) | {
+        data: n {.*},
+        nodeLabels: [l IN labels(n) WHERE l <> 'Collection']
+    }] as path
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { uuids });
+    const path: Collection[] = result.records[0]?.get('path');
+
+    if (!path) {
+      throw new NotFoundError(`The requested path [${uuids}] does not exist`);
+    }
+
+    return path;
+  }
 }
