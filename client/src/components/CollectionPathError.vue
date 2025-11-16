@@ -1,19 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Router, useRoute, useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
 import Button from 'primevue/button';
+import { useRouter } from 'vue-router';
 
-const router: Router = useRouter();
-const route = useRoute();
+const router = useRouter();
+const hasHistory = ref<boolean>(false);
+
+onMounted(() => {
+  hasHistory.value = window.history.state.back;
+});
+
+function goBack() {
+  router.back();
+}
+
+// Must be outside of vue router for now
+function goHome() {
+  window.location.href = '/';
+}
 </script>
 
 <template>
   <div class="error-container flex flex-column justify-content-center align-items-center gap-4">
-    <div class="text">
-      The provided Collection path does not exist in the database :/ Maybe one of the collections
-      was deleted
+    <div class="text">The provided path does not exist in the database :/</div>
+    <div class="flex gap-2">
+      <Button v-if="hasHistory" @click="goBack" icon="pi pi-arrow-left" label="Go back" />
+      <Button @click="goHome" icon="pi pi-home" label="Go to home" />
     </div>
-    <Button @click="router.back()" aria-label="Go back">Go back</Button>
   </div>
 </template>
 
