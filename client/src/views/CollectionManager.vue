@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import CollectionTopMenu from '../components/CollectionTopMenu.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Splitter from 'primevue/splitter';

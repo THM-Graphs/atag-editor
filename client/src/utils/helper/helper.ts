@@ -6,9 +6,6 @@ import {
   Text,
 } from '../../models/types';
 import ICollection from '../../models/ICollection';
-import { useGuidelinesStore } from '../../store/guidelines';
-
-const { getAllCollectionConfigFields } = useGuidelinesStore();
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string

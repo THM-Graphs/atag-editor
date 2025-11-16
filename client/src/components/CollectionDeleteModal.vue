@@ -1,18 +1,8 @@
 <script setup lang="ts">
-import { computed, ComputedRef, inject, ref, watch } from 'vue';
-import Search from './Search.vue';
+import { computed, inject, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import Card from 'primevue/card';
-import Message from 'primevue/message';
 import { ToastServiceMethods, useToast } from 'primevue';
-import {
-  Collection,
-  CollectionAccessObject,
-  CollectionNetworkActionType,
-  NetworkPostData,
-} from '../models/types';
-import { capitalize } from '../utils/helper/helper';
-import InvalidCollectionTargetError from '../utils/errors/invalidCollectionTarget.error';
+import { CollectionAccessObject } from '../models/types';
 import { useAppStore } from '../store/app';
 import { useRoute } from 'vue-router';
 
