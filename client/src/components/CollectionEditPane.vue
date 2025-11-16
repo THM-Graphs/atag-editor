@@ -417,7 +417,10 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
       </div>
 
       <div class="label-section">
-        <h3>{{ temporaryWorkData.collection.data.label }}</h3>
+        <h3 v-if="temporaryWorkData.collection.data.label">
+          {{ temporaryWorkData.collection.data.label }}
+        </h3>
+        <h3 v-else class="font-italic font-normal">No label provided</h3>
       </div>
 
       <div class="tab-section">
@@ -715,7 +718,11 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 
 .label-section {
   line-break: auto;
-  min-height: 2rem;
+  min-height: 3rem;
+
+  h3 {
+    margin: 0;
+  }
 }
 
 .content {
