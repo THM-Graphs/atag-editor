@@ -35,8 +35,8 @@ const {
   activeCollection,
   canNavigate,
   levels,
+  createNewUrlPath,
   fetchCollectionDetails,
-  getUrlPath,
   setCollectionActive,
   setMode,
   setPathToActiveCollection,
@@ -290,10 +290,7 @@ function showUnsavedChangesWarning() {
 }
 
 function updateUrlPath(uuid: string, index: number): void {
-  const currentUuids: string[] = getUrlPath();
-  const newUuids: string[] = [...currentUuids.slice(0, index), uuid];
-
-  router.push({ query: { path: newUuids.join(',') } });
+  router.push({ query: { path: createNewUrlPath(uuid, index) } });
 }
 
 function scrollToColumn() {

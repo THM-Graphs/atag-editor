@@ -35,7 +35,7 @@ const router = useRouter();
 
 watch(
   () => route.query.path,
-  async (newValue: string, oldValue: string) => {
+  async (newValue: string) => {
     // TODO: This can be refactored...
     // On first page load
     if (isLoading.value) {

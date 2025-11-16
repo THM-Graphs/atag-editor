@@ -338,14 +338,6 @@ function updateView() {
     c => c.data.data.uuid !== temporaryWorkData.value.collection.data.uuid,
   );
 
-  // TODO: Or this approach? Would require type changing and refactor of item display in column. But
-  // const collectionItem = findCollection(
-  //   temporaryWorkData.value.collection.data.uuid,
-  //   newUuids.length,
-  // );
-
-  // collectionItem.status = 'deleted';
-
   setMode('view');
 }
 
