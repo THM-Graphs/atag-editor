@@ -1,0 +1,138 @@
+:root {
+  --commentary-color: #e3dbcc99;
+  --commentary-opacity: 0.9;
+}
+
+/* -------- TEXT ------------------------------------------------------------------------------------------------------------ */
+
+#text > span:has(span.bold) {
+  font-weight: bold;
+}
+
+#text > span:has(span.italic) {
+  font-style: italic;
+}
+
+#text > span:has(span.commentary) {
+  background-color: var(--commentary-color);
+  opacity: var(--commentary-opacity);
+}
+
+#text > span:has(span.person) {
+  text-decoration: underline;
+  text-decoration-color: hsl(358, 83%, 68%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.place) {
+  text-decoration: underline;
+  text-decoration-color: hsl(212, 93%, 54%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.event) {
+  text-decoration: underline;
+  text-decoration-color: hsl(134, 61%, 41%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.example) {
+  text-decoration: underline;
+  text-decoration-color: hsl(298, 61%, 41%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.sentence) {
+  text-decoration: underline;
+  text-decoration-color: hsl(46, 71%, 51%);
+  text-decoration-thickness: 2px;
+}
+#text > span:has(span.argument) {
+  text-decoration: underline;
+  text-decoration-color: hsl(188, 61%, 56%);
+  text-decoration-thickness: 2px;
+}
+#text > span:has(span.term) {
+  text-decoration: underline;
+  text-decoration-color: hsl(29, 78%, 48%);
+  text-decoration-thickness: 2px;
+}
+
+/* TODO: This is a hack since there is a annotion type as well as a subType "correction".
+Fix by changing classlists or annotation types? */
+
+#text > span:has(span.line.end)::after {
+  /* Disable stylings from span element... */
+  background-color: white;
+  color: black;
+  font-weight: normal;
+  opacity: 1;
+  /* Space, curved arrow, newline */
+  content: '\20 \2936 \A';
+  white-space: pre;
+  user-select: none;
+}
+
+/* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
+
+.annotation-type-icon-bold {
+  background-image: url('');
+}
+
+.annotation-type-icon-italic {
+  background-image: url('');
+}
+
+.annotation-type-icon-commentary {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/commentary.svg');
+}
+
+.annotation-type-icon-person {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/ATAG-Editor-Guidlines/refs/heads/main/icons/user-line.svg');
+}
+
+.annotation-type-icon-place {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/ATAG-Editor-Guidlines/refs/heads/main/icons/map-pin-3-line.svg');
+}
+
+.annotation-type-icon-event {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/ATAG-Editor-Guidlines/refs/heads/main/icons/calendar-event-line.svg');
+}
+
+.annotation-type-icon-example {
+  background-image: url('');
+}
+
+.annotation-type-icon-sentence {
+  background-image: url('');
+}
+
+.annotation-type-icon-argument {
+  background-image: url('');
+}
+
+.annotation-type-icon-term {
+  background-image: url('');
+}
+
+.annotation-type-icon-sentPerson {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/sentPerson.svg');
+}
+
+.annotation-type-icon-receivedPerson {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
+}
+
+/* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
+
+#text > span:has(span.paragraph.end)::after {
+  /* This disables inherited styling from span element, must be set at first! */
+  all: initial;
+  content: ' ';
+  width: 100%;
+  height: 1.5rem;
+  /* background-color: rgb(231, 231, 231); */
+  display: block;
+  white-space: pre;
+  user-select: none;
+}

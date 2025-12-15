@@ -1,0 +1,241 @@
+{
+  "texts": {
+    "additionalLabels": []
+  },
+  "collections": {
+    "properties": {
+      "system": [
+        {
+          "name": "label",
+          "type": "string",
+          "required": true,
+          "editable": true,
+          "visible": false
+        }
+      ],
+      "base": []
+    },
+    "types": [
+      {
+        "additionalLabel": "Letter",
+        "level": "primary",
+        "properties": [
+          {
+            "name": "status",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ],
+        "annotations": {
+          "types": [
+            {
+              "type": "sentPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasEntities": true,
+              "hasAdditionalTexts": true
+            },
+            {
+              "type": "receivedPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasEntities": true,
+              "hasAdditionalTexts": true
+            }
+          ],
+          "properties": [
+            {
+              "name": "type",
+              "type": "string",
+              "required": true,
+              "editable": false,
+              "visible": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "editable": true,
+              "visible": true
+            }
+          ],
+          "entities": [],
+          "additionalTexts": []
+        }
+      },
+      {
+        "additionalLabel": "Manuscript",
+        "level": "secondary",
+        "properties": []
+      }
+    ],
+    "annotations": {
+      "properties": {
+        "system": [],
+        "base": []
+      },
+      "types": [],
+      "entities": [],
+      "additionalTexts": []
+    }
+  },
+  "annotations": {
+    "types": [
+      {
+        "type": "bold",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "italic",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "commentary",
+        "category": "project",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "person",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "place",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "event",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "example",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "sentence",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "argument",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "term",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
+        "type": "line",
+        "category": "layout",
+        "defaultSelected": false,
+        "isZeroPoint": false,
+        "shortcut": ["Ctrl", "Shift", "L"],
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "page",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "commentary",
+        "category": "project",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      }
+    ],
+    "properties": {
+      "system": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        }
+      ],
+      "base": []
+    },
+    "entities": [
+      {
+        "category": "arguments",
+        "nodeLabel": "Argument"
+      },
+      {
+        "category": "events",
+        "nodeLabel": "Event"
+      },
+      {
+        "category": "examples",
+        "nodeLabel": "Example"
+      },
+      {
+        "category": "persons",
+        "nodeLabel": "Person"
+      },
+      {
+        "category": "places",
+        "nodeLabel": "Place"
+      },
+      {
+        "category": "sentences",
+        "nodeLabel": "Sentence"
+      },
+      {
+        "category": "terms",
+        "nodeLabel": "Term"
+      }
+    ],
+    "additionalTexts": []
+  }
+}
