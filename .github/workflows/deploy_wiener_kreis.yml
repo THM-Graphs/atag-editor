@@ -9,7 +9,7 @@ jobs:
       - name: Execute remote ssh commands using ssh key
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOST_REGESTA_IMPERII }}
+          host: ${{ secrets.HOST_WIENER_KREIS }}
           key: ${{ secrets.SSH_KEY }}
           username: ${{ secrets.USERNAME }}
           # Images are built locally on the server
