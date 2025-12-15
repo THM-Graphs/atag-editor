@@ -7,7 +7,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/certs.conf:/etc/nginx/certs.conf
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd
-      - ../certificates/:/etc/nginx/certs
+      - /certificates/:/etc/nginx/certs
     ports:
       - '80:80'
       - '443:443'
@@ -19,7 +19,9 @@ services:
   ## Nginx Frontend that serves static files
   frontend:
     container_name: frontend_prod
-    image: ghcr.io/thm-graphs/atag-editor-frontend:latest
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
     restart: always
     depends_on:
       - backend
@@ -29,12 +31,12 @@ services:
   ## NodeJS-Express Backend
   backend:
     container_name: backend_prod
-    image: ghcr.io/thm-graphs/atag-editor-backend:latest
-    # ports:
-    #  - '8080:8080'
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
     restart: always
     volumes:
-      - ../certificates/:/app/certificates
+      - /certificates/:/app/certificates
       - ../logs/:/app/logs
     environment:
       - APP_HOST=${APP_HOST}
@@ -46,6 +48,4 @@ services:
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_USER=${NEO4J_USER}
       - NEO4J_PW=${NEO4J_PW}
-      - NODE_ENV=${NODE_ENV}
-      - PROTOCOL=${PROTOCOL}
-      - STYLESHEET_URL=${STYLESHEET_URL}
+      - NODE_ENV=$
