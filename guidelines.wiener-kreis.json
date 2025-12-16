@@ -17,11 +17,11 @@
     },
     "types": [
       {
-        "additionalLabel": "Letter",
+        "additionalLabel": "Document",
         "level": "primary",
         "properties": [
           {
-            "name": "status",
+            "name": "author",
             "type": "string",
             "required": false,
             "editable": true,
@@ -29,40 +29,8 @@
           }
         ],
         "annotations": {
-          "types": [
-            {
-              "type": "sentPerson",
-              "category": "none",
-              "defaultSelected": true,
-              "isZeroPoint": false,
-              "hasEntities": true,
-              "hasAdditionalTexts": true
-            },
-            {
-              "type": "receivedPerson",
-              "category": "none",
-              "defaultSelected": true,
-              "isZeroPoint": false,
-              "hasEntities": true,
-              "hasAdditionalTexts": true
-            }
-          ],
-          "properties": [
-            {
-              "name": "type",
-              "type": "string",
-              "required": true,
-              "editable": false,
-              "visible": true
-            },
-            {
-              "name": "name",
-              "type": "string",
-              "required": true,
-              "editable": true,
-              "visible": true
-            }
-          ],
+          "types": [],
+          "properties": [],
           "entities": [],
           "additionalTexts": []
         }
