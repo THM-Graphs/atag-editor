@@ -15,5 +15,6 @@ jobs:
           # Images are built locally on the server
           script: |
             cd atag-editor
-            git pull origin wiener-kreis
+            git checkout wiener-kreis
+            git pull
             docker compose -f docker-compose.prod.yml up --build -d
