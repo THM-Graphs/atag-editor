@@ -48,4 +48,6 @@ services:
       - NEO4J_URI=${NEO4J_URI}
       - NEO4J_USER=${NEO4J_USER}
       - NEO4J_PW=${NEO4J_PW}
-      - NODE_ENV=$
+      - NODE_ENV=${NODE_ENV}
+      - PROTOCOL=${PROTOCOL}
+      - STYLESHEET_URL=${STYLESHEET_URL}
