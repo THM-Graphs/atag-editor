@@ -135,6 +135,7 @@
         "category": "layout",
         "defaultSelected": false,
         "isZeroPoint": false,
+        "isSeparator": true,
         "shortcut": ["Ctrl", "Shift", "L"],
         "hasAdditionalTexts": true,
         "properties": [
@@ -146,6 +147,16 @@
             "visible": true
           }
         ]
+      },
+      {
+        "type": "paragraph",
+        "category": "layout",
+        "defaultSelected": false,
+        "isZeroPoint": false,
+        "isSeparator": true,
+        "shortcut": ["Enter"],
+        "hasAdditionalTexts": true,
+        "properties": []
       }
     ],
     "properties": {
