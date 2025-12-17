@@ -7,7 +7,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/certs.conf:/etc/nginx/certs.conf
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd
-      - ../certificates/:/etc/nginx/certs
+      - /certificates/:/etc/nginx/certs
     ports:
       - '80:80'
       - '443:443'
@@ -34,7 +34,7 @@ services:
     #  - '8080:8080'
     restart: always
     volumes:
-      - ../certificates/:/app/certificates
+      - /certificates/:/app/certificates
       - ../logs/:/app/logs
     environment:
       - APP_HOST=${APP_HOST}
