@@ -363,12 +363,12 @@ export function useEditorStore() {
       const entityUuids: Set<string> = new Set(
         Object.values(a.data.entities)
           .flat()
-          .map(m => m.uuid),
+          .map(m => m.data.uuid),
       );
       const initialEntityUuids: Set<string> = new Set(
         Object.values(a.initialData.entities)
           .flat()
-          .map(m => m.uuid),
+          .map(m => m.data.uuid),
       );
 
       const initialAdditionalTextUuids: Set<string> = new Set(

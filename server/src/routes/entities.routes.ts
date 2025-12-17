@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import EntityService from '../services/entity.service.js';
 import { capitalize } from '../utils/helper.js';
-import IEntity from '../models/IEntity.js';
+import { Entity } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -12,7 +12,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const searchStr: string = (req.query.searchStr as string).toLowerCase();
 
   try {
-    const entities: IEntity[] = await entityService.searchByLabel(nodeLabel, searchStr);
+    const entities: Entity[] = await entityService.searchByLabel(nodeLabel, searchStr);
 
     res.status(200).json(entities);
   } catch (error: unknown) {

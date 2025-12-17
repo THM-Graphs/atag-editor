@@ -5,13 +5,13 @@ import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
-import IEntity from '../models/IEntity';
+import { Entity } from '../models/types';
 import { useAppStore } from '../store/app';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
  * */
-type EntityEntry = IEntity & { html: string };
+type EntityEntry = Entity & { html: string };
 
 /**
  * Interface for relevant state information about each entities category
@@ -27,7 +27,7 @@ interface EntitiesSearchObject {
 }
 
 const entities = defineModel<{
-  [index: string]: IEntity[];
+  [index: string]: Entity[];
 }>();
 
 const props = defineProps<{
@@ -104,6 +104,27 @@ function changeEntitiesSelectionMode(category: string, mode: 'view' | 'edit'): v
 }
 
 /**
+ * Creates a new entity item based on the given label and adds it to the given category.
+ *
+ * @param {string} newLabel - The label of the new entity item
+ * @param {string} category - The category to which the new item should be added
+ */
+function handleCreateNewEntity(newLabel: string, category: string): void {
+  const nodeLabel: string | null =
+    guidelines.value.annotations.entities.find(r => r.category === category)?.nodeLabel ?? null;
+
+  const item: EntityEntry = {
+    nodeLabels: nodeLabel ? [nodeLabel] : [],
+    data: {
+      uuid: crypto.randomUUID(),
+      label: newLabel,
+    },
+  } as EntityEntry;
+
+  handleEntityItemSelect(item, category);
+}
+
+/**
  * Handles the selection of a entity item by adding it to the annotation and resetting the search component.
  *  Called on selection of an item from the autocomplete dropdown pane.
  *
@@ -122,7 +143,9 @@ function handleEntityItemSelect(item: EntityEntry, category: string): void {
  * @param {string} category - The category from which the item should be removed.
  */
 function removeEntityItem(item: EntityEntry, category: string): void {
-  entities.value[category] = entities.value[category].filter(entry => entry.uuid !== item.uuid);
+  entities.value[category] = entities.value[category].filter(
+    entry => entry.data.uuid !== item.data.uuid,
+  );
 }
 
 /**
@@ -154,19 +177,21 @@ function renderHTML(text: string, searchStr: string): string {
 async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
 
-  const fetchedEntities: IEntity[] = await api.getEntities(nodeLabel, searchString);
+  const fetchedEntities: Entity[] = await api.getEntities(nodeLabel, searchString);
 
   // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = entities.value[category].map((entry: EntityEntry) => entry.uuid);
+  const existingUuids: string[] = entities.value[category].map(
+    (entry: EntityEntry) => entry.data.uuid,
+  );
 
-  const withoutDuplicates: IEntity[] = fetchedEntities.filter(
-    (entry: IEntity) => !existingUuids.includes(entry.uuid),
+  const withoutDuplicates: Entity[] = fetchedEntities.filter(
+    (entry: Entity) => !existingUuids.includes(entry.data.uuid),
   );
 
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml: EntityEntry[] = withoutDuplicates.map((entry: IEntity) => ({
+  const withHtml: EntityEntry[] = withoutDuplicates.map((entry: Entity) => ({
     ...entry,
-    html: renderHTML(entry.label, searchString),
+    html: renderHTML(entry.data.label, searchString),
   }));
 
   entitiesSearchObject.value[category].fetchedItems = withHtml;
@@ -193,7 +218,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
         v-for="entry in entities[category]"
       >
         <span>
-          {{ entry.label }}
+          {{ entry.data.label }}
         </span>
         <Button
           v-if="props.mode === 'edit'"
@@ -239,6 +264,20 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
         </template>
         <template #option="slotProps">
           <span v-html="slotProps.option.html" :title="slotProps.option.label"></span>
+        </template>
+        <template #empty>
+          <div class="font-italic text-center mb-1">No results found</div>
+          <Button
+            icon="pi pi-plus"
+            class="w-full"
+            size="small"
+            label="Create new entity"
+            severity="secondary"
+            title="Add new entity to annotation"
+            @click="
+              handleCreateNewEntity(entitiesSearchObject[category].elm[0].inputValue, category)
+            "
+          ></Button>
         </template>
       </AutoComplete>
     </div>

@@ -10,13 +10,13 @@ import {
   CollectionPostData,
   CollectionSearchParams,
   CursorData,
+  Entity,
   NetworkPostData,
   NodeAncestry,
   PaginationResult,
   Text,
   TextAccessObject,
 } from '../models/types';
-import IEntity from '../models/IEntity';
 
 /**
  * The ApiService class provides methods for making API requests to the backend server.
@@ -195,7 +195,7 @@ export default class ApiService {
     }
   }
 
-  public async getEntities(nodeLabel: string, searchString: string): Promise<IEntity[]> {
+  public async getEntities(nodeLabel: string, searchString: string): Promise<Entity[]> {
     try {
       const url: string = `${this.baseUrl}/entities?node=${nodeLabel}&searchStr=${searchString}`;
 
