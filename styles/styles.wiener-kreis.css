@@ -76,11 +76,7 @@ Fix by changing classlists or annotation types? */
 /* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
 .annotation-type-icon-bold {
-  background-image: url('');
-}
-
-.annotation-type-icon-italic {
-  background-image: url('');
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/ATAG-Editor-Guidlines/refs/heads/main/icons/bold.svg');
 }
 
 .annotation-type-icon-commentary {
@@ -97,22 +93,6 @@ Fix by changing classlists or annotation types? */
 
 .annotation-type-icon-event {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/ATAG-Editor-Guidlines/refs/heads/main/icons/calendar-event-line.svg');
-}
-
-.annotation-type-icon-example {
-  background-image: url('');
-}
-
-.annotation-type-icon-sentence {
-  background-image: url('');
-}
-
-.annotation-type-icon-argument {
-  background-image: url('');
-}
-
-.annotation-type-icon-term {
-  background-image: url('');
 }
 
 .annotation-type-icon-sentPerson {

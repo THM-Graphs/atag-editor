@@ -146,13 +146,6 @@
             "visible": true
           }
         ]
-      },
-      {
-        "type": "commentary",
-        "category": "project",
-        "defaultSelected": true,
-        "isZeroPoint": false,
-        "hasAdditionalTexts": true
       }
     ],
     "properties": {
