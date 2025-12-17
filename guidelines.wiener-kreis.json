@@ -133,7 +133,7 @@
       {
         "type": "line",
         "category": "layout",
-        "defaultSelected": false,
+        "defaultSelected": true,
         "isZeroPoint": false,
         "isSeparator": true,
         "shortcut": ["Ctrl", "Shift", "L"],
@@ -151,7 +151,7 @@
       {
         "type": "paragraph",
         "category": "layout",
-        "defaultSelected": false,
+        "defaultSelected": true,
         "isZeroPoint": false,
         "isSeparator": true,
         "shortcut": ["Enter"],

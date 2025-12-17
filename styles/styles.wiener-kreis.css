@@ -103,6 +103,10 @@ Fix by changing classlists or annotation types? */
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
 }
 
+.annotation-type-icon-line {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/line.svg');
+}
+
 .annotation-type-icon-paragraph {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/paragraph.svg');
 }
