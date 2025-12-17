@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComputedRef, computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, computed, onUnmounted, ref, watch } from 'vue';
 import {
   RouteLocationNormalizedLoaded,
   useRoute,

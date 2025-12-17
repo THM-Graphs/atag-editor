@@ -22,7 +22,7 @@ export type Annotation = {
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
   entities: {
-    [index: string]: IEntity[];
+    [index: string]: Entity[];
   };
   properties: IAnnotation;
 }
@@ -133,6 +133,8 @@ export type CommandType =
   | 'shiftAnnotationLeft'
   | 'shiftAnnotationRight'
   | 'shrinkAnnotation';
+
+export type Entity = Node<IEntity>;
 
 export type HistoryStack = HistoryRecord[];
 
