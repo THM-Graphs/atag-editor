@@ -131,6 +131,14 @@
         "hasAdditionalTexts": false
       },
       {
+        "type": "concept",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": false
+      },
+      {
         "type": "line",
         "category": "layout",
         "defaultSelected": true,
@@ -182,6 +190,10 @@
       {
         "category": "arguments",
         "nodeLabel": "Argument"
+      },
+      {
+        "category": "concepts",
+        "nodeLabel": "Concept"
       },
       {
         "category": "events",
