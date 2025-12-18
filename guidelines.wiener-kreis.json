@@ -139,30 +139,11 @@
         "hasAdditionalTexts": false
       },
       {
-        "type": "line",
+        "type": "break",
         "category": "layout",
         "defaultSelected": true,
-        "isZeroPoint": false,
-        "isSeparator": true,
-        "shortcut": ["Ctrl", "Shift", "L"],
-        "hasAdditionalTexts": true,
-        "properties": [
-          {
-            "name": "page",
-            "type": "string",
-            "required": false,
-            "editable": true,
-            "visible": true
-          }
-        ]
-      },
-      {
-        "type": "paragraph",
-        "category": "layout",
-        "defaultSelected": true,
-        "isZeroPoint": false,
-        "isSeparator": true,
-        "shortcut": ["Enter"],
+        "isZeroPoint": true,
+        "shortcut": ["Ctrl", "Enter"],
         "hasAdditionalTexts": true,
         "properties": []
       }
