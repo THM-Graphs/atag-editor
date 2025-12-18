@@ -283,8 +283,6 @@ export default class AnnotationService {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
 
-    console.dir(processedAnnotations[0].data.entities, { depth: null });
-
     // TODO: Improve query speed, way too many db hits
     let query: string = `
     WITH $annotations as allAnnotations
