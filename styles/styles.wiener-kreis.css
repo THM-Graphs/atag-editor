@@ -47,14 +47,22 @@
   text-decoration-color: hsl(46, 71%, 51%);
   text-decoration-thickness: 2px;
 }
+
 #text > span:has(span.argument) {
   text-decoration: underline;
   text-decoration-color: hsl(188, 61%, 56%);
   text-decoration-thickness: 2px;
 }
+
 #text > span:has(span.term) {
   text-decoration: underline;
   text-decoration-color: hsl(29, 78%, 48%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.concept) {
+  text-decoration: underline;
+  text-decoration-color: hsl(0, 9%, 34%);
   text-decoration-thickness: 2px;
 }
 
