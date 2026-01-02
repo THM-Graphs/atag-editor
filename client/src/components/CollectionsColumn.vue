@@ -36,7 +36,6 @@ const {
   canNavigate,
   levels,
   createNewUrlPath,
-  fetchCollectionDetails,
   setCollectionActive,
   setMode,
   setPathToActiveCollection,
@@ -195,28 +194,13 @@ async function handleItemSelected(uuid: string): Promise<void> {
     return;
   }
 
-  const isAlreadySelectedInColumn: boolean =
-    uuid === levels.value[props.index].activeCollection?.data.uuid;
+  const isAlreadyActiveInEditPane: boolean = uuid === activeCollection.value.collection.data.uuid;
 
-  const isAlreadyActiveInEditPane: boolean =
-    isAlreadySelectedInColumn && uuid === activeCollection.value.collection.data.uuid;
-
-  // Nothing happens, return;
+  // Nothing happens, return
   if (isAlreadyActiveInEditPane) {
     return;
   }
 
-  // Only update collection in edit pane. Leave navigation path intact
-  if (isAlreadySelectedInColumn) {
-    const cao: CollectionAccessObject = await fetchCollectionDetails(uuid);
-
-    setPathToActiveCollection(levels.value.slice(0, props.index + 1).map(l => l.activeCollection));
-    setCollectionActive(cao);
-
-    return;
-  }
-
-  // Else, change URL and let the watcher handle the rest
   updateUrlPath(uuid, props.index);
 }
 
