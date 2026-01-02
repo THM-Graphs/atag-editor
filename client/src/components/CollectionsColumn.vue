@@ -194,7 +194,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
     return;
   }
 
-  const isAlreadyActiveInEditPane: boolean = uuid === activeCollection.value.collection.data.uuid;
+  const isAlreadyActiveInEditPane: boolean = uuid === activeCollection.value?.collection.data.uuid;
 
   // Nothing happens, return
   if (isAlreadyActiveInEditPane) {
