@@ -17,6 +17,7 @@ import {
   TextAccessObject,
 } from '../models/types';
 import IEntity from '../models/IEntity';
+import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 
 /**
  * The ApiService class provides methods for making API requests to the backend server.
@@ -28,6 +29,29 @@ export default class ApiService {
   constructor() {
     // Earlier built with a function, but now managed by Vite proxy configuration
     this.baseUrl = '/api';
+  }
+
+  /**
+   * Checks the health of the database connection.
+   * Throws a DatabaseConnectionError if the API returns an error.
+   *
+   * @returns {Promise<void>} A promise that resolves when the operation is complete.
+   * @throws {DatabaseConnectionError} If the database connection is unhealthy.
+   */
+  public async checkDatabaseConnection(): Promise<void> {
+    try {
+      const url: string = `${this.baseUrl}/health`;
+
+      const response: Response = await fetch(url);
+
+      if (!response.ok) {
+        throw new DatabaseConnectionError('Database connection error');
+      }
+
+      return await response.json();
+    } catch (error: unknown) {
+      throw error;
+    }
   }
 
   public async createCollection(data: CollectionCreationData): Promise<Collection> {

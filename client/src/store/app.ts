@@ -3,6 +3,7 @@ import ApiService from '../services/api';
 import { useStyleTag } from '@vueuse/core';
 import { useGuidelinesStore } from './guidelines';
 import { DynamicDialogInstance } from 'primevue/dynamicdialogoptions';
+import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 
 const { error: guidelinesError, initializeGuidelines } = useGuidelinesStore();
 
@@ -14,7 +15,7 @@ const activeModal = ref<DynamicDialogInstance>(null);
 
 // Fetch status
 const isFetching = ref<boolean>(false);
-const error = ref<any>(null);
+const error = ref<DatabaseConnectionError | unknown>(null);
 
 /**
  * Returns an object containing methods for fetching data from the API and initializing the application.
@@ -75,8 +76,6 @@ export function useAppStore() {
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
   async function fetchAndInitializeGuidelines(): Promise<void> {
-    isFetching.value = true;
-
     try {
       const guidelines = await api.getGuidelines();
 
@@ -84,9 +83,18 @@ export function useAppStore() {
     } catch (e: unknown) {
       error.value = e as Error;
       console.error('Error fetching guidelines:', e);
-    } finally {
-      isFetching.value = false;
     }
+  }
+
+  /**
+   * Checks the status of the database connection.
+   *
+   * This function is called when the application is mounted.
+   *
+   * @returns {Promise<void>} A promise that resolves when the operation is complete.
+   */
+  async function checkDatabaseStatus(): Promise<void> {
+    await api.checkDatabaseConnection();
   }
 
   /**
@@ -100,6 +108,7 @@ export function useAppStore() {
     isFetching.value = true;
 
     try {
+      await checkDatabaseStatus();
       await fetchAndInitializeGuidelines();
       await fetchAndApplyStyles();
 
@@ -107,7 +116,7 @@ export function useAppStore() {
         throw guidelinesError.value;
       }
     } catch (e: unknown) {
-      error.value = e as Error;
+      error.value = e;
     } finally {
       isFetching.value = false;
     }

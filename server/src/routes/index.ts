@@ -6,9 +6,11 @@ import entityRoutes from './entities.routes.js';
 import stylesRoutes from './styles.routes.js';
 import textRoutes from './text.routes.js';
 import networkRoutes from './network.routes.js';
+import healthRoutes from './health.routes.js';
 
 const router: Router = express.Router();
 
+router.use('/health', healthRoutes);
 router.use('/collections', collectionRoutes);
 router.use('/guidelines', guideLinesRoutes);
 router.use('/entities', entityRoutes);

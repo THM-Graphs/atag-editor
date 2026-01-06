@@ -1,7 +1,32 @@
-import neo4j, { Driver, QueryResult, ServerInfo, Session } from 'neo4j-driver';
+import neo4j, { Driver, Neo4jError, QueryResult, ServerInfo, Session } from 'neo4j-driver';
+import DatabaseConnectionError from '../errors/database-connection.error.js';
 
 export default class Neo4jDriver {
   public static instance: Driver;
+
+  /**
+   * Checks the health of the database connection and returns a ServerInfo object if healthy.
+   * Throws a DatabaseConnectionError if the API returns an error.
+   *
+   * @returns {Promise<ServerInfo | undefined>} A promise that resolves to the server information if the connection is healthy, or undefined if the connection is unhealthy.
+   * @throws {DatabaseConnectionError} If the database connection is unhealthy.
+   */
+  public static async checkDatabaseConnection(): Promise<ServerInfo | undefined> {
+    try {
+      const serverInfo: ServerInfo = await this.instance.getServerInfo();
+
+      return serverInfo;
+    } catch (err: unknown) {
+      // Unlikely, but fallback
+      if (!(err instanceof Neo4jError)) {
+        throw err;
+      }
+
+      if (err.code === 'ServiceUnavailable') {
+        throw new DatabaseConnectionError('Unable to connect to the database.');
+      }
+    }
+  }
 
   /**
    * Initializes the driver by creating a connection to the Neo4j database.
@@ -18,7 +43,7 @@ export default class Neo4jDriver {
         disableLosslessIntegers: true,
       });
 
-      const serverInfo: ServerInfo = await this.instance.getServerInfo();
+      const serverInfo: ServerInfo | undefined = await this.checkDatabaseConnection();
       console.log(`Connection established: ${serverInfo}`);
     } catch (err: unknown) {
       console.log(`Connection error\n${err}\nCause: ${err}`);
@@ -34,15 +59,29 @@ export default class Neo4jDriver {
    * @param {...any[]} params The parameters to pass to the query.
    * @return {Promise<QueryResult>} A promise that resolves to the query result.
    */
-  public static async runQuery(query: string, ...params: any[]): Promise<QueryResult> {
-    const session: Session = this.instance.session({
-      database: process.env.DATABASE_NAME ?? 'neo4j',
-    });
-    // TODO: This should ideally be split up in "exectuteWrite" and "executeRead"
-    const result: QueryResult = await session.executeWrite(tx => {
-      return tx.run(query, ...params);
-    });
-    await session.close();
-    return result;
+  public static async runQuery(query: string, ...params: any[]): Promise<any> {
+    try {
+      const session: Session = this.instance.session({
+        database: process.env.DATABASE_NAME ?? 'neo4j',
+      });
+
+      // TODO: This should ideally be split up in "exectuteWrite" and "executeRead"
+      const result: QueryResult = await session.executeWrite(tx => {
+        return tx.run(query, ...params);
+      });
+
+      await session.close();
+
+      return result;
+    } catch (err: unknown) {
+      // Unlikely, but fallback
+      if (!(err instanceof Neo4jError)) {
+        throw err;
+      }
+
+      if (err.code === 'ServiceUnavailable') {
+        throw new DatabaseConnectionError('Unable to connect to the database.');
+      }
+    }
   }
 }

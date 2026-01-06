@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import NotFoundError from '../errors/not-found.error.js';
 import logger from '../logger.js';
+import DatabaseConnectionError from '../errors/database-connection.error.js';
 
 /**
  * Generic error handler.  Output error details as JSON.
@@ -24,6 +25,9 @@ export default function errorMiddleware(
 
   if (error instanceof NotFoundError) {
     statusCode = 404;
+    message = error.message;
+  } else if (error instanceof DatabaseConnectionError) {
+    statusCode = 503;
     message = error.message;
   }
 
