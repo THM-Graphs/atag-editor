@@ -16,10 +16,9 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { useToast } from 'primevue/usetoast';
 import { Character } from '../models/types';
-import { ToastServiceMethods } from 'primevue/toastservice';
 import { useEventListener } from '@vueuse/core';
+import { useAppStore } from '../store/app';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -32,6 +31,7 @@ onUpdated(() => {
 });
 
 const { keepTextOnPagination, execCommand, placeCaret, redo, undo } = useEditorStore();
+const { addToastMessage } = useAppStore();
 const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
   useCharactersStore();
 const { selectedOptions } = useFilterStore();
@@ -51,8 +51,6 @@ const charCounterMessage: ComputedRef<string> = computed(() => {
 
   return `${current.toLocaleString()} of ${total.toLocaleString()} characters`;
 });
-
-const toast: ToastServiceMethods = useToast();
 
 function handleInput(event: InputEvent) {
   event.preventDefault();
@@ -280,7 +278,7 @@ function handleDeleteWordBackward(): void {
       execCommand('deleteWordBefore', { rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -322,7 +320,7 @@ function handleDeleteWordForward(): void {
       execCommand('deleteWordAfter', { leftUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -363,7 +361,7 @@ function handleDeleteContentBackward(): void {
       execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -378,7 +376,7 @@ function handleDeleteContentBackward(): void {
       execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -426,7 +424,7 @@ function handleDeleteContentForward(): void {
       execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -441,7 +439,7 @@ function handleDeleteContentForward(): void {
       execCommand('deleteText', { leftUuid, rightUuid });
     } catch (e: unknown) {
       if (e instanceof TextOperationError) {
-        toast.add({
+        addToastMessage({
           severity: e.severity,
           summary: 'Invalid Text Operation',
           detail: e.message,
@@ -461,7 +459,7 @@ function handleDeleteByCut(): void {
     execCommand('deleteText', { leftUuid, rightUuid });
   } catch (e: unknown) {
     if (e instanceof TextOperationError) {
-      toast.add({
+      addToastMessage({
         severity: e.severity,
         summary: 'Invalid Text Operation',
         detail: e.message,

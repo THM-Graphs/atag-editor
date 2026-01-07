@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { InputText, Button, useToast } from 'primevue';
+import { InputText, Button } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
@@ -18,7 +18,6 @@ import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
 import { useEventListener, useInfiniteScroll } from '@vueuse/core';
-import Toast from 'primevue/toast';
 import { createNewCollectionAccessObject } from '../utils/helper/helper';
 
 const props = defineProps<{
@@ -26,10 +25,9 @@ const props = defineProps<{
   parentUuid: string | null;
 }>();
 
-const toast = useToast();
 const router = useRouter();
 
-const { api } = useAppStore();
+const { api, addToastMessage } = useAppStore();
 const { getAvailableCollectionLabels } = useGuidelinesStore();
 const {
   activeCollection,
@@ -265,7 +263,7 @@ function setPagination(newPagination: PaginationData) {
 }
 
 function showUnsavedChangesWarning() {
-  toast.add({
+  addToastMessage({
     severity: 'warn',
     summary: 'You have unsaved changes.',
     detail: 'Please save or discard your changes before selecting other collections.',
@@ -379,7 +377,6 @@ function startResize() {
   <div class="resizer" ref="resizer" title="Hold down mouse and drag to resize column">
     <div class="handle"></div>
   </div>
-  <Toast />
 </template>
 
 <style scoped>

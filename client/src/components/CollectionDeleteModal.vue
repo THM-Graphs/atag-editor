@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { ToastServiceMethods, useToast } from 'primevue';
 import { CollectionAccessObject } from '../models/types';
 import { useAppStore } from '../store/app';
 import { useRoute } from 'vue-router';
@@ -10,9 +9,7 @@ const emit = defineEmits(['deleted', 'canceled']);
 
 const route = useRoute();
 
-const { api } = useAppStore();
-const toast: ToastServiceMethods = useToast();
-
+const { api, addToastMessage } = useAppStore();
 const asyncOperationRunning = ref<boolean>(false);
 
 // Must be computed since PrimeVue's Dialog Service does not allow custom props for components
@@ -67,7 +64,7 @@ function closeModal(): void {
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
-  toast.add({
+  addToastMessage({
     severity: result,
     summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
     detail: error?.message ?? '',

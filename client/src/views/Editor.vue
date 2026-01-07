@@ -14,9 +14,6 @@ import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
 import EditorText from '../components/EditorText.vue';
 import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
-import Toast from 'primevue/toast';
-import { ToastServiceMethods } from 'primevue/toastservice';
-import { useToast } from 'primevue/usetoast';
 import EditorAnnotations from '../components/EditorAnnotations.vue';
 import EditorError from '../components/EditorError.vue';
 import EditorFilter from '../components/EditorFilter.vue';
@@ -92,7 +89,7 @@ const isValidText = computed<boolean>(
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
-const { api } = useAppStore();
+const { api, addToastMessage } = useAppStore();
 
 const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
   useEditorStore();
@@ -157,8 +154,6 @@ const activeResizer = ref<string>('');
 const metadataRef = ref(null);
 const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
-
-const toast: ToastServiceMethods = useToast();
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
@@ -323,7 +318,7 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
-  toast.add({
+  addToastMessage({
     severity: result,
     summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
     detail: error?.message ?? '',
@@ -445,7 +440,6 @@ function preventUserFromRouteLeaving(): boolean {
       class="main flex flex-column flex-grow-1 px-3 pb-0 pt-3"
       :style="{ width: mainWidth + 'px' }"
     >
-      <Toast />
       <EditorHeader ref="labelInputRef" />
       <EditorAnnotationButtonPane />
       <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />

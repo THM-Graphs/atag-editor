@@ -4,10 +4,15 @@ import { useAppStore } from './store/app';
 import DatabaseConnectionError from './utils/errors/databaseConnection.error';
 import LoadingSpinner from './components/LoadingSpinner.vue';
 import DynamicDialog from 'primevue/dynamicdialog';
+import Toast from 'primevue/toast';
+import { ToastServiceMethods, useToast } from 'primevue';
 
-const { error: appError, isFetching: isAppFetching, initializeApp } = useAppStore();
+const { error: appError, isFetching: isAppFetching, initializeApp, registerToast } = useAppStore();
+const toast: ToastServiceMethods = useToast();
 
 onMounted(async () => {
+  registerToast(toast);
+
   await initializeApp();
 });
 </script>
@@ -21,8 +26,8 @@ onMounted(async () => {
     </div>
     <div v-else>Error fetching app configurations and/or stylesheets. Reload the page please.</div>
   </template>
-
   <DynamicDialog />
+  <Toast />
 </template>
 
 <style scoped></style>

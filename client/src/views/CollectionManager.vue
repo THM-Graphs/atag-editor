@@ -4,23 +4,22 @@ import CollectionTopMenu from '../components/CollectionTopMenu.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
-import Toast from 'primevue/toast';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionBreadcrumbs from '../components/CollectionBreadcrumbs.vue';
 import CollectionsColumn from '../components/CollectionsColumn.vue';
 import CollectionEditPane from '../components/CollectionEditPane.vue';
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router';
 import { Collection } from '../models/types';
-import { useToast } from 'primevue';
 import CollectionPathError from '../components/CollectionPathError.vue';
+import { useAppStore } from '../store/app';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
 const isPathValid = ref<boolean>(false);
 
-const toast = useToast();
 const route = useRoute();
 
+const { addToastMessage } = useAppStore();
 const {
   canNavigate,
   levels,
@@ -113,7 +112,7 @@ function handleBreadcrumbHomeClick(): void {
 }
 
 function showUnsavedChangesWarning() {
-  toast.add({
+  addToastMessage({
     severity: 'warn',
     summary: 'You have unsaved changes.',
     detail: 'Please save or discard your changes before selecting other collections.',
@@ -127,8 +126,6 @@ function showUnsavedChangesWarning() {
     <CollectionPathError />
   </template>
   <template v-else>
-    <Toast />
-
     <LoadingSpinner v-if="isLoading === true" />
 
     <div v-else class="container flex flex-column h-screen">

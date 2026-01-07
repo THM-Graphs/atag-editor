@@ -28,7 +28,7 @@ import {
 import MultiSelect from 'primevue/multiselect';
 import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
-import { ToastServiceMethods, useConfirm, useDialog, useToast } from 'primevue';
+import { useConfirm, useDialog } from 'primevue';
 import ConfirmPopup from 'primevue/confirmpopup';
 import CollectionAnnotationButton from './CollectionAnnotationButton.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
@@ -44,9 +44,8 @@ import CollectionDeleteModal from './CollectionDeleteModal.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 
 const router = useRouter();
-const { api, createModalInstance, destroyModalInstance } = useAppStore();
+const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 
-const toast: ToastServiceMethods = useToast();
 const dialog: ReturnType<typeof useDialog> = useDialog();
 const form = useTemplateRef<HTMLFormElement>('form');
 
@@ -379,7 +378,7 @@ async function updateCollection(): Promise<Collection> {
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {
-  toast.add({
+  addToastMessage({
     severity: result,
     summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
     detail: error?.message ?? '',

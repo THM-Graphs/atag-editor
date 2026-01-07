@@ -4,6 +4,7 @@ import { useStyleTag } from '@vueuse/core';
 import { useGuidelinesStore } from './guidelines';
 import { DynamicDialogInstance } from 'primevue/dynamicdialogoptions';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
+import { ToastMessageOptions, ToastServiceMethods } from 'primevue';
 
 const { error: guidelinesError, initializeGuidelines } = useGuidelinesStore();
 
@@ -12,6 +13,9 @@ const api: ApiService = new ApiService();
 
 // Modals anywhere in the app are set to this variable
 const activeModal = ref<DynamicDialogInstance>(null);
+
+// App-wide toast service
+const toast = ref<ToastServiceMethods>(null);
 
 // Fetch status
 const isFetching = ref<boolean>(false);
@@ -31,6 +35,21 @@ const error = ref<DatabaseConnectionError | unknown>(null);
  *   - `isFetching`: Whether the store is currently fetching data.
  */
 export function useAppStore() {
+  /**
+   * Adds a toast message to the toast service.
+   *
+   * @param {ToastMessageOptions} params - The options for the toast message to add.
+   * @returns {void} This function does not return any value.
+   */
+  function addToastMessage(params: ToastMessageOptions): void {
+    if (!toast.value) {
+      console.warn('Toast service is not registered yet.');
+      return;
+    }
+
+    toast.value.add(params);
+  }
+
   /**
    * Sets the active modal instance to the provided PrimeVue DynamicDialog instance.
    *
@@ -122,13 +141,28 @@ export function useAppStore() {
     }
   }
 
+  /**
+   * Registers the toast service by setting the store ref to the provided service.
+   *
+   * This function is called when the App.vue component is mounted since the useToast composable (which returns the
+   * toast passed into the function) can only be used inside a component setup function.
+   *
+   * @param {ToastServiceMethods} toastService - The toast service to register.
+   * @returns {void} This function does not return a value.
+   */
+  function registerToast(toastService: ToastServiceMethods): void {
+    toast.value = toastService;
+  }
+
   return {
     activeModal: readonly(activeModal),
     api: readonly(api),
     error: readonly(error),
     isFetching: readonly(isFetching),
+    addToastMessage,
     createModalInstance,
     destroyModalInstance,
     initializeApp,
+    registerToast,
   };
 }

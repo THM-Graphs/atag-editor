@@ -12,7 +12,6 @@ import { useGuidelinesStore } from '../store/guidelines';
 import { useFilterStore } from '../store/filter';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
-import { useToast } from 'primevue/usetoast';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import {
   AdditionalText,
@@ -24,18 +23,18 @@ import {
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
-import { ToastServiceMethods } from 'primevue/toastservice';
 import ShortcutError from '../utils/errors/shortcut.error';
 import { onMounted, ref } from 'vue';
+import { useAppStore } from '../store/app';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
+const { addToastMessage } = useAppStore();
 const { snippetCharacters } = useCharactersStore();
 const { execCommand } = useEditorStore();
 const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
-const toast: ToastServiceMethods = useToast();
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: PropertyConfig[] = getAnnotationFields(annotationType);
@@ -221,14 +220,14 @@ function handleClick(dropdownOption?: string | number): void {
     }
   } catch (error) {
     if (error instanceof AnnotationRangeError) {
-      toast.add({
+      addToastMessage({
         severity: 'warn',
         summary: 'Invalid selection',
         detail: error.message,
         life: 3000,
       });
     } else if (error instanceof ShortcutError) {
-      toast.add({
+      addToastMessage({
         severity: 'warn',
         summary: 'Annotation type not enabled',
         detail: error.message,
