@@ -100,6 +100,7 @@ const {
   initializeHistory,
   resetEditor,
   resetHistory,
+  toggleRedrawMode,
 } = useEditorStore();
 const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
 const {
@@ -309,6 +310,11 @@ function handleKeyDown(event: KeyboardEvent): void {
 
   const keyCombo: string = normalizeKeys(keys);
 
+  // Quick hack to remove backdrop from redraw mode
+  if (keys.length === 1 && keys[0] === 'escape') {
+    toggleRedrawMode(null);
+  }
+
   // Check if the shortcut combo exists, execute callback function
   if (shortcutMap.value.has(keyCombo)) {
     event.preventDefault();
@@ -438,9 +444,13 @@ function preventUserFromRouteLeaving(): boolean {
 
     <div class="absolute overlay-redraw w-full h-full" v-if="redrawData?.direction === 'on'">
       <div class="flex justify-content-center pt-4">
-        <Message class="text-center w-6" severity="info" icon="pi pi-info-circle"
-          >You are now in redraw mode. Select text to annotate it, or click the "cancel" button in
-          the annotation form on the right.
+        <Message class="text-center w-6" severity="info" icon="pi pi-info-circle">
+          <p><strong>Edit annotated text</strong></p>
+          <p>Select the new text that should belong to this annotation.</p>
+          <p>
+            To cancel the operation, click <i class="pi pi-times-circle"></i> button in the
+            annotation panel on the right or press <kbd>Esc</kbd>.
+          </p>
         </Message>
       </div>
     </div>
