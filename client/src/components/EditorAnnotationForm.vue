@@ -30,7 +30,7 @@ const config: AnnotationType = getAnnotationConfig(annotation.data.properties.ty
 // TODO: Maybe give whole config instead of only fields...?
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 
-const panelIsCollapsed = ref<boolean>(false);
+const panelIsCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
 const previewText = computed<string>(() => {
   const sliced: string = annotation.data.properties.text?.slice(0, 10);
@@ -105,7 +105,7 @@ function handleShrink(): void {
     :data-annotation-uuid="annotation.data.properties.uuid"
     toggleable
     @update:collapsed="panelIsCollapsed = !panelIsCollapsed"
-    :collapsed="false"
+    :collapsed="panelIsCollapsed"
     :toggle-button-props="{
       severity: 'secondary',
       title: 'Toggle full view',
