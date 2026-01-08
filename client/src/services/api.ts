@@ -18,6 +18,8 @@ import {
 } from '../models/types';
 import IEntity from '../models/IEntity';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
+import ApiError from '../utils/errors/api.error';
+import NotFoundError from '../utils/errors/notFound.error';
 
 /**
  * The ApiService class provides methods for making API requests to the backend server.
@@ -29,6 +31,36 @@ export default class ApiService {
   constructor() {
     // Earlier built with a function, but now managed by Vite proxy configuration
     this.baseUrl = '/api';
+  }
+
+  /**
+   * Checks API response status  by throwing the appropriate error type if necessary.
+   * Currently handles 404 (NotFound), 500 (Internal Server Error), and 503 (Database Connection Error) status codes.
+   *
+   * @param {Response} response - The response object from the API request.
+   * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+   * @throws {NotFoundError} - If the API returns a 404 status code.
+   * @throws {ApiError} - If the API returns a 500 status code.
+   * @throws {DatabaseConnectionError} - If the API returns a 503 status code.
+   */
+  private async assertResponseOk(response: Response): Promise<void> {
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+
+      switch (response.status) {
+        case 404:
+          throw new NotFoundError(response.status, body?.message || 'Not found');
+        case 500:
+          throw new ApiError(response.status, body?.message || 'Internal server error');
+        case 503:
+          throw new DatabaseConnectionError(
+            response.status,
+            body?.message || 'Database connection error',
+          );
+        default:
+          throw new ApiError(response.status, body?.message || 'API response was not ok');
+      }
+    }
   }
 
   /**
@@ -44,13 +76,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new DatabaseConnectionError('Database connection error');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      throw error;
+      this.handleApiError(error);
     }
   }
 
@@ -69,14 +99,11 @@ export default class ApiService {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error creating collection:', error);
-      throw new Error(`Error creating collection: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -94,14 +121,11 @@ export default class ApiService {
         referrerPolicy: 'no-referrer',
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error deleting collection:', error);
-      throw new Error(`Error deleting collection: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -114,14 +138,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching annotations for collection:', error);
-      throw new Error(`Error fetching annotations: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -131,14 +152,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching characters:', error);
-      throw new Error(`Error fetching characters: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -148,9 +166,7 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
@@ -165,14 +181,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching node ancestry:', error);
-      throw new Error('Error fetching node ancestry:', error);
+      this.handleApiError(error);
     }
   }
 
@@ -208,14 +221,11 @@ export default class ApiService {
     try {
       const response: Response = await fetch(fetchUrl);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching collections:', error);
-      throw new Error(`Error fetching collections: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -225,14 +235,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching entities:', error);
-      throw new Error(`Error fetching entities: ${error}`);
+      this.handleApiError(error);
     }
   }
   public async getGuidelines(): Promise<IGuidelines> {
@@ -241,14 +248,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching guidelines:', error);
-      throw new Error(`Error fetching guidelines: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -258,14 +262,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Failed to load stylesheet');
-      }
+      await this.assertResponseOk(response);
 
       return await response.text();
     } catch (error) {
-      console.error('Error loading stylesheet:', error);
-      throw new Error(`Error loading stylesheet: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -275,14 +276,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching text:', error);
-      throw new Error(`Error fetching text: ${error}`);
+      this.handleApiError(error);
     }
   }
 
@@ -292,15 +290,29 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching texts for collection:', error);
-      throw new Error(`Error fetching texts for collection: ${error}`);
+      this.handleApiError(error);
     }
+  }
+
+  /**
+   * Handles an API error by logging it to the console and rethrowing it.
+   *
+   * Called in every `catch` block of the `ApiService` methods. The rethrowing allows the error
+   * to propagate up the call stack and be caught by a higher-level error handler.
+   *
+   * @param {ApiError | unknown} error - The error object to handle.
+   * @returns {void} This function does not return any value.
+   *
+   * @throws {ApiError} - The API error (either the original or a subclass of it).
+   */
+  private handleApiError(error: ApiError | unknown): void {
+    console.error(error);
+
+    throw error;
   }
 
   public async updateAnnotations(textUuid: string, annotationsToSave: Annotation[]): Promise<void> {
@@ -318,12 +330,9 @@ export default class ApiService {
         body: JSON.stringify(annotationsToSave),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
     } catch (error: unknown) {
-      console.error('Error updating annotations', error);
-      throw new Error('Error updating annotations', error);
+      this.handleApiError(error);
     }
   }
 
@@ -345,12 +354,9 @@ export default class ApiService {
         body: JSON.stringify(characterPostData),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
     } catch (error: unknown) {
-      console.log('Error updating character chain:', error);
-      throw new Error('Error updating character chain:', error);
+      this.handleApiError(error);
     }
   }
 
@@ -369,14 +375,11 @@ export default class ApiService {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.log('Error updating collection:', error);
-      throw new Error('Could not be saved, try again...', error);
+      this.handleApiError(error);
     }
   }
 
@@ -395,14 +398,11 @@ export default class ApiService {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error updating network:', error);
-      throw new Error('Network could not be updated, try again...');
+      this.handleApiError(error);
     }
   }
 
@@ -412,14 +412,11 @@ export default class ApiService {
 
       const response: Response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      await this.assertResponseOk(response);
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error validating path:', error);
-      throw new Error(`Error validating path: ${error}`);
+      this.handleApiError(error);
     }
   }
 }

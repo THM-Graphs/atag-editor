@@ -1,15 +1,13 @@
 import ApiError from './api.error';
 
 /**
- * Represents an error for database connection failures.
- *
- * Thrown when the application is unable to connect to the database during health check on app start.
+ * Represents an error for resources that could not be found in the database.
  *
  * @extends {ApiError} - The base API error class.
  */
-export default class DatabaseConnectionError extends ApiError {
+export default class NotFoundError extends ApiError {
   /**
-   * Creates an instance for DatabaseConnectionError.
+   * Creates an instance of NotFoundError.
    *
    * @param {number} httpStatusCode - The HTTP status code of the error.
    * @param {string} message - The error message.
