@@ -11,6 +11,7 @@ import {
   isCaretAtEnd,
   isEditorElement,
   removeFormatting,
+  getSpansToAnnotate,
 } from '../utils/helper/helper';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
@@ -546,43 +547,6 @@ async function handleCopy(): Promise<void> {
 }
 
 /**
- * Get the HTML span elements that the user wants to annotate. If selection is of type 'Range', all spans between
- * the range's start and end container are returned. If selection is of type 'Caret', the span elements to the left and right
- * of the caret are returned (this is the case for zero-point annotations). The `isSelectionValid` function takes care of the existence
- * of previous and next elements.
- *
- * @returns {HTMLSpanElement[]} An array of HTML span elements to annotate.
- */
-function getSpansToAnnotate(): HTMLSpanElement[] {
-  const { range, type } = getSelectionData();
-  let spans: HTMLSpanElement[] = [];
-
-  if (type === 'Range') {
-    const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-    const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
-    spans = findSpansWithinBoundaries(firstSpan, lastSpan);
-  }
-
-  if (type === 'Caret') {
-    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-    let leftSpan: HTMLSpanElement;
-    let rightSpan: HTMLSpanElement;
-
-    if (range.startOffset === 0) {
-      leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
-      rightSpan = referenceSpanElement;
-    } else {
-      leftSpan = referenceSpanElement;
-      rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
-    }
-
-    spans = [leftSpan, rightSpan];
-  }
-
-  return spans;
-}
-
-/**
  * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
  *
  * @returns {Character[]} The characters that the user wants to annotate.
@@ -595,31 +559,6 @@ function getCharactersToAnnotate(): Character[] {
   );
 
   return characters;
-}
-
-/**
- * Finds all HTML span elements between two given span elements. Used for iterating over the DOM when the selection is of type 'Range'.
- *
- * @param {HTMLSpanElement} firstChar The first span element to include in the result.
- * @param {HTMLSpanElement} lastChar The last span element to include in the result.
- *
- * @returns {HTMLSpanElement[]} An array of all span elements between (and including) the given `firstChar` and `lastChar`.
- */
-function findSpansWithinBoundaries(
-  firstChar: HTMLSpanElement,
-  lastChar: HTMLSpanElement,
-): HTMLSpanElement[] {
-  const spans: HTMLSpanElement[] = [];
-  let current: HTMLSpanElement = firstChar;
-
-  while (current && current !== lastChar) {
-    spans.push(current);
-    current = current.nextElementSibling as HTMLSpanElement;
-  }
-
-  spans.push(lastChar);
-
-  return spans;
 }
 
 function handleMouseUp(): void {
