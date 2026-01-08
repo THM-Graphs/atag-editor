@@ -23,14 +23,14 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const { execCommand } = useEditorStore();
+const { isRedrawMode, redrawData, execCommand, toggleRedrawMode } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
 // TODO: Maybe give whole config instead of only fields...?
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
 
-const panelIsCollapsed = ref<boolean>(true);
+const panelIsCollapsed = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
 const previewText = computed<string>(() => {
   const sliced: string = annotation.data.properties.text?.slice(0, 10);
@@ -39,6 +39,12 @@ const previewText = computed<string>(() => {
     ? sliced + '...'
     : annotation.data.properties.text;
 });
+const redrawButtonicon = computed<string>(() =>
+  redrawData.value?.direction === 'on' ? 'pi pi-times' : 'pi pi-pencil',
+);
+const redrawButtonTitle = computed<string>(() =>
+  isRedrawMode.value ? 'Cancel redraw operation' : 'Redraw annotation',
+);
 
 function handleDeleteAnnotation(event: MouseEvent): void {
   if (annotation.isTruncated) {
@@ -65,6 +71,17 @@ function handleDeleteAnnotation(event: MouseEvent): void {
   });
 }
 
+function handleRedraw(): void {
+  if (isRedrawMode.value) {
+    toggleRedrawMode(null);
+  } else {
+    toggleRedrawMode({
+      direction: 'on',
+      data: { annotationUuid: annotation.data.properties.uuid },
+    });
+  }
+}
+
 function handleShiftLeft(): void {
   execCommand('shiftAnnotationLeft', { annotation });
 }
@@ -88,7 +105,7 @@ function handleShrink(): void {
     :data-annotation-uuid="annotation.data.properties.uuid"
     toggleable
     @update:collapsed="panelIsCollapsed = !panelIsCollapsed"
-    :collapsed="true"
+    :collapsed="false"
     :toggle-button-props="{
       severity: 'secondary',
       title: 'Toggle full view',
@@ -196,6 +213,16 @@ function handleShrink(): void {
         title="Shrink annotation from the right by one character"
         :disabled="annotation.isTruncated || config.isZeroPoint"
         @click="handleShrink"
+      />
+      <Button
+        :icon="redrawButtonicon"
+        :style="{ zIndex: 99999 }"
+        size="small"
+        severity="secondary"
+        rounded
+        :title="redrawButtonTitle"
+        :disabled="annotation.isTruncated"
+        @click="handleRedraw"
       />
     </div>
     <div v-if="!panelIsCollapsed" class="action-buttons flex justify-content-center">

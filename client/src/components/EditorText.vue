@@ -16,9 +16,13 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Character } from '../models/types';
+import { Annotation, AnnotationType, Character } from '../models/types';
 import { useEventListener } from '@vueuse/core';
 import { useAppStore } from '../store/app';
+import { useAnnotationStore } from '../store/annotations';
+import AnnotationRangeError from '../utils/errors/annotationRange.error';
+import { useGuidelinesStore } from '../store/guidelines';
+import ShortcutError from '../utils/errors/shortcut.error';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -30,10 +34,22 @@ onUpdated(() => {
   placeCaret();
 });
 
-const { keepTextOnPagination, execCommand, placeCaret, redo, undo } = useEditorStore();
+const {
+  isContentEditable,
+  isRedrawMode,
+  keepTextOnPagination,
+  redrawData,
+  execCommand,
+  placeCaret,
+  redo,
+  undo,
+  toggleRedrawMode,
+} = useEditorStore();
 const { addToastMessage } = useAppStore();
+const { getAnnotationConfig } = useGuidelinesStore();
 const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
   useCharactersStore();
+const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
 useEventListener(window, 'forceCaretPlacement', placeCaret);
@@ -496,7 +512,11 @@ function handleDeleteHardLineForward(event: InputEvent): void {
   // Handle delete hard line forward logic
 }
 
-function handleKeydown(event: KeyboardEvent) {
+function handleKeydown(event: KeyboardEvent): void {
+  if (!isContentEditable.value) {
+    return;
+  }
+
   if (!event.ctrlKey || event.key.toLowerCase() !== 'z') {
     return;
   }
@@ -523,6 +543,195 @@ async function handleCopy(): Promise<void> {
   } catch (error: unknown) {
     console.error('Failed to copy text to clipboard:', error);
   }
+}
+
+/**
+ * Get the HTML span elements that the user wants to annotate. If selection is of type 'Range', all spans between
+ * the range's start and end container are returned. If selection is of type 'Caret', the span elements to the left and right
+ * of the caret are returned (this is the case for zero-point annotations). The `isSelectionValid` function takes care of the existence
+ * of previous and next elements.
+ *
+ * @returns {HTMLSpanElement[]} An array of HTML span elements to annotate.
+ */
+function getSpansToAnnotate(): HTMLSpanElement[] {
+  const { range, type } = getSelectionData();
+  let spans: HTMLSpanElement[] = [];
+
+  if (type === 'Range') {
+    const firstSpan: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    const lastSpan: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+    spans = findSpansWithinBoundaries(firstSpan, lastSpan);
+  }
+
+  if (type === 'Caret') {
+    const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+    let leftSpan: HTMLSpanElement;
+    let rightSpan: HTMLSpanElement;
+
+    if (range.startOffset === 0) {
+      leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
+      rightSpan = referenceSpanElement;
+    } else {
+      leftSpan = referenceSpanElement;
+      rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
+    }
+
+    spans = [leftSpan, rightSpan];
+  }
+
+  return spans;
+}
+
+/**
+ * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
+ *
+ * @returns {Character[]} The characters that the user wants to annotate.
+ */
+function getCharactersToAnnotate(): Character[] {
+  const spans: HTMLSpanElement[] = getSpansToAnnotate();
+  const uuids: string[] = spans.map((span: HTMLSpanElement) => span.id);
+  const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
+    uuids.includes(c.data.uuid),
+  );
+
+  return characters;
+}
+
+/**
+ * Finds all HTML span elements between two given span elements. Used for iterating over the DOM when the selection is of type 'Range'.
+ *
+ * @param {HTMLSpanElement} firstChar The first span element to include in the result.
+ * @param {HTMLSpanElement} lastChar The last span element to include in the result.
+ *
+ * @returns {HTMLSpanElement[]} An array of all span elements between (and including) the given `firstChar` and `lastChar`.
+ */
+function findSpansWithinBoundaries(
+  firstChar: HTMLSpanElement,
+  lastChar: HTMLSpanElement,
+): HTMLSpanElement[] {
+  const spans: HTMLSpanElement[] = [];
+  let current: HTMLSpanElement = firstChar;
+
+  while (current && current !== lastChar) {
+    spans.push(current);
+    current = current.nextElementSibling as HTMLSpanElement;
+  }
+
+  spans.push(lastChar);
+
+  return spans;
+}
+
+function handleMouseUp(): void {
+  if (!isRedrawMode.value) {
+    return;
+  }
+
+  try {
+    const annotation: Annotation = snippetAnnotations.value.find(
+      anno => anno.data.properties.uuid === redrawData.value.data.annotationUuid,
+    );
+
+    const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
+    isSelectionValid(config);
+
+    const selectedCharacters: Character[] = getCharactersToAnnotate();
+
+    if (!annotation) {
+      throw new Error('Annotation not found, abort');
+    }
+
+    execCommand('redrawAnnotation', {
+      annotation: annotation,
+      characters: selectedCharacters,
+    });
+
+    toggleRedrawMode(null);
+  } catch (error: unknown) {
+    if (error instanceof AnnotationRangeError) {
+      addToastMessage({
+        severity: 'warn',
+        summary: 'Invalid selection',
+        detail: error.message,
+        life: 3000,
+      });
+    } else if (error instanceof ShortcutError) {
+      addToastMessage({
+        severity: 'warn',
+        summary: 'Annotation type not enabled',
+        detail: error.message,
+        life: 3000,
+      });
+    } else {
+      console.error('Unexpected error:', error);
+    }
+  }
+}
+
+function isSelectionValid(config: AnnotationType): boolean {
+  const { range, type } = getSelectionData();
+
+  if (!range || type === 'None') {
+    throw new AnnotationRangeError('No valid text selected.');
+  }
+
+  const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
+
+  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
+    throw new AnnotationRangeError('Selection is outside the text component.');
+  }
+
+  if (
+    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
+    !commonAncestorContainer.parentElement.closest('#text')
+  ) {
+    throw new AnnotationRangeError('Text selection is outside the text component.');
+  }
+
+  if (type === 'Caret' && !config.isZeroPoint && !config.isSeparator) {
+    throw new AnnotationRangeError('Select some text to annotate.');
+  }
+
+  if ((type === 'Caret' && config.isZeroPoint) || config.isSeparator) {
+    if (isEditorElement(range.startContainer)) {
+      throw new AnnotationRangeError(
+        'For creating zero-point annotations, place the caret between two characters',
+      );
+    } else {
+      const parentSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
+      const caretIsAtBeginning: boolean =
+        range.startOffset === 0 && !parentSpanElement.previousElementSibling;
+      const caretIsAtEnd: boolean =
+        range.startOffset === 1 && !parentSpanElement.nextElementSibling;
+
+      if (caretIsAtBeginning || caretIsAtEnd) {
+        if (config.isZeroPoint) {
+          throw new AnnotationRangeError(
+            'To create zero-point annotations, place the caret between two characters',
+          );
+        }
+        if (config.isSeparator) {
+          throw new AnnotationRangeError(
+            `To create ${config.type} annotations, the caret can not be at the start or end`,
+          );
+        }
+      }
+    }
+  }
+
+  if (type === 'Range' && config.isZeroPoint) {
+    throw new AnnotationRangeError(
+      'To create zero-point annotations, place the caret between two characters',
+    );
+  }
+
+  if (type === 'Range' && config.isSeparator) {
+    throw new AnnotationRangeError(
+      `To create ${config.type} annotations, place the caret between two characters`,
+    );
+  }
+
+  return true;
 }
 
 function createNewCharacter(char: string): Character {
@@ -553,10 +762,11 @@ function createNewCharacter(char: string): Character {
           class="min-h-full"
           :class="asyncOperationRunning ? 'async-overlay' : ''"
           ref="editorRef"
-          contenteditable="true"
+          :contenteditable="isContentEditable"
           spellcheck="false"
           @beforeinput="handleInput"
           @copy="handleCopy"
+          @click="handleMouseUp"
           @keydown="handleKeydown"
         >
           <span
@@ -610,8 +820,11 @@ function createNewCharacter(char: string): Character {
 
 #text {
   outline: 0;
+  position: relative;
+  background-color: white;
   line-height: 1.75rem;
   caret-color: black;
+  z-index: 99999;
 }
 
 #text.async-overlay {

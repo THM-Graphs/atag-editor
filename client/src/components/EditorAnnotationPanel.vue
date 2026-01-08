@@ -7,6 +7,7 @@ import { useFilterStore } from '../store/filter';
 import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 import Badge from 'primevue/badge';
+import { useEditorStore } from '../store/editor';
 
 interface SelectionObject {
   startContainer: Node;
@@ -23,6 +24,7 @@ const cachedAnnotationsInSelection = ref<Annotation[]>([]);
 // (see `selectionHasChanged()` documentation)
 let lastSelection: SelectionObject | null = null;
 
+const { isRedrawMode } = useEditorStore();
 const { ranges, selection } = useTextSelection();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
@@ -33,6 +35,10 @@ const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
 
 // TODO: Fix bug, on cancel the counter still shows cached number
 const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
+  if (isRedrawMode.value) {
+    return cachedAnnotationsInSelection.value;
+  }
+
   if (!isValidSelection()) {
     return cachedAnnotationsInSelection.value;
   }

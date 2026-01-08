@@ -1,8 +1,8 @@
-import { ref, unref } from 'vue';
+import { computed, readonly, ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
-import { CommandData, CommandType, HistoryRecord, HistoryStack } from '../models/types';
+import { CommandData, CommandType, HistoryRecord, HistoryStack, RedrawData } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 
@@ -38,6 +38,10 @@ const newRangeAnchorUuid = ref<string | null>(null);
 
 const history = ref<HistoryStack>([]);
 const redoStack = ref<HistoryRecord[]>([]);
+
+const redrawData = ref<RedrawData | null>(null);
+const isRedrawMode = computed<boolean>(() => redrawData.value?.direction === 'on');
+const isContentEditable = computed<boolean>(() => !isRedrawMode.value);
 
 /**
  * Store for editor state and operations (caret placement, change detection etc.). When the component is unmounted,
@@ -113,6 +117,10 @@ export function useEditorStore() {
     } else if (command === 'deleteAnnotation') {
       deleteAnnotation(annotation.data.properties.uuid);
       const { changeSet } = removeAnnotationFromCharacters(annotation.data.properties.uuid);
+      newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
+    } else if (command === 'redrawAnnotation') {
+      removeAnnotationFromCharacters(annotation.data.properties.uuid);
+      const { changeSet } = annotateCharacters(characters, annotation);
       newCaretPosition = changeSet[changeSet.length - 1]?.data.uuid;
     } else if (command === 'shiftAnnotationLeft') {
       const { changeSet } = shiftAnnotationLeft(annotation);
@@ -395,6 +403,7 @@ export function useEditorStore() {
   }
 
   function resetEditor(): void {
+    toggleRedrawMode(null);
     resetHistory();
     setNewRangeAnchorUuid(null);
   }
@@ -422,8 +431,19 @@ export function useEditorStore() {
     newRangeAnchorUuid.value = uuid ?? null;
   }
 
+  function toggleRedrawMode(newData: RedrawData | null): void {
+    if (newData?.direction === 'off') {
+      redrawData.value = null;
+    } else {
+      redrawData.value = newData;
+    }
+  }
+
   return {
     history,
+    isContentEditable,
+    isRedrawMode,
+    redrawData: readonly(redrawData),
     keepTextOnPagination,
     redoStack,
     execCommand,
@@ -435,6 +455,7 @@ export function useEditorStore() {
     resetEditor,
     resetHistory,
     setNewRangeAnchorUuid,
+    toggleRedrawMode,
     undo,
   };
 }
