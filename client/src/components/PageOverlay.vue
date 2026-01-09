@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Teleport, useAttrs } from 'vue';
+import { useAttrs } from 'vue';
 
 // Apply classes, style instructions etc. from parent that uses this component.
 const attrs: ReturnType<typeof useAttrs> = useAttrs();
