@@ -20,6 +20,7 @@ import EditorFilter from '../components/EditorFilter.vue';
 import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import Message from 'primevue/message';
 import { cloneDeep } from '../utils/helper/helper';
 import { Annotation, Character, CharacterPostData } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
@@ -91,8 +92,16 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const { api, addToastMessage } = useAppStore();
 
-const { hasUnsavedChanges, initializeEditor, initializeHistory, resetEditor, resetHistory } =
-  useEditorStore();
+const {
+  isRedrawMode,
+  redrawMode,
+  hasUnsavedChanges,
+  initializeEditor,
+  initializeHistory,
+  resetEditor,
+  resetHistory,
+  toggleRedrawMode,
+} = useEditorStore();
 const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
 const {
   afterEndIndex,
@@ -301,9 +310,19 @@ function handleKeyDown(event: KeyboardEvent): void {
 
   const keyCombo: string = normalizeKeys(keys);
 
+  // Quick hack to remove backdrop from redraw mode
+  if (keys.length === 1 && keys[0] === 'escape') {
+    toggleRedrawMode({ direction: 'off', cause: 'cancel' });
+  }
+
   // Check if the shortcut combo exists, execute callback function
   if (shortcutMap.value.has(keyCombo)) {
     event.preventDefault();
+
+    if (isRedrawMode.value) {
+      return;
+    }
+
     shortcutMap.value.get(keyCombo)();
   }
 }
@@ -418,9 +437,24 @@ function preventUserFromRouteLeaving(): boolean {
   <LoadingSpinner v-if="isLoading === true" />
   <EditorError v-else-if="isValidText === false" :uuid="textUuid" />
   <div v-else class="container flex h-screen">
+    <!-- TODO: Simplify the overlay management -->
     <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
       <LoadingSpinner />
     </div>
+
+    <div class="absolute overlay-redraw w-full h-full" v-if="redrawMode?.direction === 'on'">
+      <div class="flex justify-content-center pt-4">
+        <Message class="text-center w-6" severity="info" icon="pi pi-info-circle">
+          <p><strong>Edit annotated text</strong></p>
+          <p>Select the new text that should belong to this annotation.</p>
+          <p>
+            To cancel the operation, click the <i class="pi pi-times-circle"></i> button in the
+            annotation panel on the right or press <kbd>Esc</kbd>.
+          </p>
+        </Message>
+      </div>
+    </div>
+
     <EditorSidebar
       position="left"
       :isCollapsed="sidebars['left'].isCollapsed === true"
@@ -466,5 +500,10 @@ function preventUserFromRouteLeaving(): boolean {
 <style scoped>
 .overlay {
   z-index: 99999;
+}
+
+.overlay-redraw {
+  background: rgba(0, 0, 0, 0.5); /* Adjust the last value for opacity */
+  z-index: 1000;
 }
 </style>

@@ -128,6 +128,7 @@ export type CommandType =
   | 'deleteWordBefore'
   | 'expandAnnotation'
   | 'insertText'
+  | 'redrawAnnotation'
   | 'replaceText'
   | 'shiftAnnotationLeft'
   | 'shiftAnnotationRight'
@@ -227,6 +228,12 @@ export type PropertyConfigDataType =
   | 'time';
 
 export type PropertyConfigStringTemplate = 'input' | 'textarea';
+
+export type RedrawModeOptions = {
+  direction: 'on' | 'off';
+  cause?: 'success' | 'cancel';
+  annotationUuid?: string;
+};
 
 export type StandoffAnnotation = {
   [key: string]: string | number | boolean;
