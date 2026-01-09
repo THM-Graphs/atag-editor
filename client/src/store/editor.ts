@@ -36,6 +36,9 @@ const {
 const keepTextOnPagination = ref<boolean>(false);
 const newRangeAnchorUuid = ref<string | null>(null);
 
+// This is currently only used for restoring the range after a redraw action is canceled
+const lastRangeSnapshot = ref<Range>(null);
+
 const history = ref<HistoryStack>([]);
 const redoStack = ref<HistoryRecord[]>([]);
 
@@ -87,6 +90,19 @@ export function useEditorStore() {
         characters: cloneDeep(snippetCharacters.value),
       },
     };
+  }
+
+  /**
+   * Creates a snapshot of the current window selection range and clears the selection.
+   * Used for creating a snapshot when redraw mode is toggled on to restore it later if the redraw action is canceled.
+   *
+   * @returns {void} This function does not return any value.
+   */
+  function createRangeSnapshotAndClear(): void {
+    const currentSelection: Selection = window.getSelection();
+
+    lastRangeSnapshot.value = currentSelection?.getRangeAt(0);
+    currentSelection?.removeAllRanges();
   }
 
   function execCommand(command: CommandType, data: CommandData): void {
@@ -420,6 +436,24 @@ export function useEditorStore() {
   }
 
   /**
+   * Restores the selection range snapshot that was created when redraw mode was toggled on.
+   *
+   * Called when the redraw mode is toggled off and the selection range should be restored to its original state.
+   * The function waits for the next animation frame to ensure that the selection range is restored after the `placeCaret` function
+   * is called by the editor's `onUpdated` hook.
+   *
+   * @returns {void} This function does not return any value.
+   */
+  function restoreRangeSnapshot(): void {
+    setTimeout(() => {
+      const currentSelection: Selection | null = window.getSelection();
+
+      currentSelection?.removeAllRanges();
+      currentSelection?.addRange(lastRangeSnapshot.value);
+    }, 0);
+  }
+
+  /**
    * Sets the UUID of the character whose span will be the range start after the next selection change.
    *
    * Called after each text operation. The `placeCaret` function will use this variable to set the caret to the specified element.
@@ -431,11 +465,25 @@ export function useEditorStore() {
     newRangeAnchorUuid.value = uuid ?? null;
   }
 
+  /**
+   * Toggles the redraw mode on or off and creates/restores range snapshots accordingly.
+   *
+   * If the new data specifies 'on' as the direction, the current selection range is cleared and a snapshot is created.
+   * If the new data is null or specifies 'off' as the direction, the redraw data is cleared and the selection range snapshot is restored.
+   *
+   * @param {RedrawData | null} newData - The data to update the redraw mode, containing the direction (`on` or `off`) as well as the UUID
+   * of the annotation that should be redrawn. If `null`, the redraw mode is turned off.
+   * @returns {void} This function does not return any value.
+   */
   function toggleRedrawMode(newData: RedrawData | null): void {
-    if (newData?.direction === 'off') {
-      redrawData.value = null;
-    } else {
+    if (newData?.direction === 'on') {
+      createRangeSnapshotAndClear();
+
       redrawData.value = newData;
+    } else {
+      redrawData.value = null;
+
+      restoreRangeSnapshot();
     }
   }
 
@@ -444,6 +492,7 @@ export function useEditorStore() {
     isContentEditable,
     isRedrawMode,
     redrawData: readonly(redrawData),
+    newRangeAnchorUuid: readonly(newRangeAnchorUuid),
     keepTextOnPagination,
     redoStack,
     execCommand,
