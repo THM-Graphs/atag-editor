@@ -2,7 +2,13 @@ import { computed, readonly, ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
-import { CommandData, CommandType, HistoryRecord, HistoryStack, RedrawData } from '../models/types';
+import {
+  CommandData,
+  CommandType,
+  HistoryRecord,
+  HistoryStack,
+  RedrawModeOptions,
+} from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 
@@ -42,8 +48,8 @@ const lastRangeSnapshot = ref<Range>(null);
 const history = ref<HistoryStack>([]);
 const redoStack = ref<HistoryRecord[]>([]);
 
-const redrawData = ref<RedrawData | null>(null);
-const isRedrawMode = computed<boolean>(() => redrawData.value?.direction === 'on');
+const redrawMode = ref<RedrawModeOptions | null>(null);
+const isRedrawMode = computed<boolean>(() => redrawMode.value?.direction === 'on');
 const isContentEditable = computed<boolean>(() => !isRedrawMode.value);
 
 /**
@@ -419,7 +425,7 @@ export function useEditorStore() {
   }
 
   function resetEditor(): void {
-    toggleRedrawMode(null);
+    toggleRedrawMode({ direction: 'off', cause: 'success' });
     resetHistory();
     setNewRangeAnchorUuid(null);
   }
@@ -466,24 +472,27 @@ export function useEditorStore() {
   }
 
   /**
-   * Toggles the redraw mode on or off and creates/restores range snapshots accordingly.
+   * Toggles the redraw mode on or off.
    *
-   * If the new data specifies 'on' as the direction, the current selection range is cleared and a snapshot is created.
-   * If the new data is null or specifies 'off' as the direction, the redraw data is cleared and the selection range snapshot is restored.
+   * If the direction is 'on', it takes a snapshot of the current selection range and clears it.
+   * If the direction is 'off', it restores the last range snapshot if the mode was actively canceled or sets the snapshot
+   * to `null` otherwise (i. e. when the editor component was unmounted after page leave).
    *
-   * @param {RedrawData | null} newData - The data to update the redraw mode, containing the direction (`on` or `off`) as well as the UUID
-   * of the annotation that should be redrawn. If `null`, the redraw mode is turned off.
-   * @returns {void} This function does not return any value.
+   * @param {RedrawModeOptions} options - An object containing the direction of the redraw mode and the cause of the mode change.
    */
-  function toggleRedrawMode(newData: RedrawData | null): void {
-    if (newData?.direction === 'on') {
+  function toggleRedrawMode(options: RedrawModeOptions): void {
+    if (options?.direction === 'on') {
       createRangeSnapshotAndClear();
 
-      redrawData.value = newData;
+      redrawMode.value = options;
     } else {
-      redrawData.value = null;
+      redrawMode.value = null;
 
-      restoreRangeSnapshot();
+      if (options?.cause === 'cancel') {
+        restoreRangeSnapshot();
+      } else {
+        lastRangeSnapshot.value = null;
+      }
     }
   }
 
@@ -491,9 +500,10 @@ export function useEditorStore() {
     history,
     isContentEditable,
     isRedrawMode,
-    redrawData: readonly(redrawData),
+    redrawMode: readonly(redrawMode),
     newRangeAnchorUuid: readonly(newRangeAnchorUuid),
     keepTextOnPagination,
+    lastRangeSnapshot,
     redoStack,
     execCommand,
     hasUnsavedChanges,

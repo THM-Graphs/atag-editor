@@ -94,7 +94,7 @@ const { api, addToastMessage } = useAppStore();
 
 const {
   isRedrawMode,
-  redrawData,
+  redrawMode,
   hasUnsavedChanges,
   initializeEditor,
   initializeHistory,
@@ -312,7 +312,7 @@ function handleKeyDown(event: KeyboardEvent): void {
 
   // Quick hack to remove backdrop from redraw mode
   if (keys.length === 1 && keys[0] === 'escape') {
-    toggleRedrawMode(null);
+    toggleRedrawMode({ direction: 'off', cause: 'cancel' });
   }
 
   // Check if the shortcut combo exists, execute callback function
@@ -442,13 +442,13 @@ function preventUserFromRouteLeaving(): boolean {
       <LoadingSpinner />
     </div>
 
-    <div class="absolute overlay-redraw w-full h-full" v-if="redrawData?.direction === 'on'">
+    <div class="absolute overlay-redraw w-full h-full" v-if="redrawMode?.direction === 'on'">
       <div class="flex justify-content-center pt-4">
         <Message class="text-center w-6" severity="info" icon="pi pi-info-circle">
           <p><strong>Edit annotated text</strong></p>
           <p>Select the new text that should belong to this annotation.</p>
           <p>
-            To cancel the operation, click <i class="pi pi-times-circle"></i> button in the
+            To cancel the operation, click the <i class="pi pi-times-circle"></i> button in the
             annotation panel on the right or press <kbd>Esc</kbd>.
           </p>
         </Message>

@@ -23,7 +23,7 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const { isRedrawMode, redrawData, execCommand, toggleRedrawMode } = useEditorStore();
+const { isRedrawMode, redrawMode, execCommand, toggleRedrawMode } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -40,7 +40,7 @@ const previewText = computed<string>(() => {
     : annotation.data.properties.text;
 });
 const redrawButtonicon = computed<string>(() =>
-  redrawData.value?.direction === 'on' ? 'pi pi-times' : 'pi pi-pencil',
+  redrawMode.value?.direction === 'on' ? 'pi pi-times' : 'pi pi-pencil',
 );
 const redrawButtonTitle = computed<string>(() =>
   isRedrawMode.value ? 'Cancel redraw operation' : 'Redraw annotation',
@@ -73,12 +73,9 @@ function handleDeleteAnnotation(event: MouseEvent): void {
 
 function handleRedraw(): void {
   if (isRedrawMode.value) {
-    toggleRedrawMode(null);
+    toggleRedrawMode({ direction: 'off', cause: 'cancel' });
   } else {
-    toggleRedrawMode({
-      direction: 'on',
-      data: { annotationUuid: annotation.data.properties.uuid },
-    });
+    toggleRedrawMode({ direction: 'on', annotationUuid: annotation.data.properties.uuid });
   }
 }
 

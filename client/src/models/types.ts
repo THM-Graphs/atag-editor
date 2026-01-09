@@ -229,11 +229,10 @@ export type PropertyConfigDataType =
 
 export type PropertyConfigStringTemplate = 'input' | 'textarea';
 
-export type RedrawData = {
+export type RedrawModeOptions = {
   direction: 'on' | 'off';
-  data: {
-    annotationUuid: string;
-  };
+  cause?: 'success' | 'cancel';
+  annotationUuid?: string;
 };
 
 export type StandoffAnnotation = {

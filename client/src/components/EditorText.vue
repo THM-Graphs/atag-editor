@@ -39,7 +39,7 @@ const {
   isContentEditable,
   isRedrawMode,
   keepTextOnPagination,
-  redrawData,
+  redrawMode,
   execCommand,
   placeCaret,
   redo,
@@ -568,7 +568,7 @@ function handleMouseUp(): void {
 
   try {
     const annotation: Annotation = snippetAnnotations.value.find(
-      anno => anno.data.properties.uuid === redrawData.value.data.annotationUuid,
+      anno => anno.data.properties.uuid === redrawMode.value.annotationUuid,
     );
 
     const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -585,7 +585,7 @@ function handleMouseUp(): void {
       characters: selectedCharacters,
     });
 
-    toggleRedrawMode(null);
+    toggleRedrawMode({ direction: 'off', cause: 'success' });
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
       addToastMessage({
