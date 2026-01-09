@@ -12,6 +12,7 @@ import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vu
 import { Collection } from '../models/types';
 import CollectionPathError from '../components/CollectionPathError.vue';
 import { useAppStore } from '../store/app';
+import PageOverlay from '../components/PageOverlay.vue';
 
 // Initial pageload
 const isLoading = ref<boolean>(true);
@@ -129,11 +130,7 @@ function showUnsavedChangesWarning() {
     <LoadingSpinner v-if="isLoading === true" />
 
     <div v-else class="container flex flex-column h-screen">
-      <div
-        class="absolute overlay w-full h-full"
-        v-if="canNavigate === false"
-        @click="showUnsavedChangesWarning"
-      ></div>
+      <PageOverlay v-if="canNavigate === false" @click="showUnsavedChangesWarning"></PageOverlay>
       <CollectionTopMenu />
       <div class="main flex-grow-1 flex flex-column">
         <CollectionBreadcrumbs
@@ -194,9 +191,5 @@ function showUnsavedChangesWarning() {
 
 .footer {
   height: 30px;
-}
-
-.overlay {
-  z-index: var(--z-index-overlay);
 }
 </style>

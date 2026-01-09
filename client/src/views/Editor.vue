@@ -28,6 +28,7 @@ import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
 import { useAppStore } from '../store/app';
+import PageOverlay from '../components/PageOverlay.vue';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -434,15 +435,19 @@ function preventUserFromRouteLeaving(): boolean {
 </script>
 
 <template>
-  <LoadingSpinner v-if="isLoading === true" />
+  <PageOverlay v-if="isLoading === true">
+    <LoadingSpinner />
+  </PageOverlay>
   <EditorError v-else-if="isValidText === false" :uuid="textUuid" />
   <div v-else class="container flex h-screen">
-    <!-- TODO: Simplify the overlay management -->
-    <div class="absolute overlay w-full h-full" v-if="asyncOperationRunning">
+    <PageOverlay v-if="asyncOperationRunning">
       <LoadingSpinner />
-    </div>
+    </PageOverlay>
 
-    <div class="absolute overlay-redraw w-full h-full" v-if="redrawMode?.direction === 'on'">
+    <PageOverlay
+      v-if="redrawMode?.direction === 'on'"
+      :style="{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1000 }"
+    >
       <div class="flex justify-content-center pt-4">
         <Message class="text-center w-6" severity="info" icon="pi pi-info-circle">
           <p><strong>Edit annotated text</strong></p>
@@ -453,7 +458,7 @@ function preventUserFromRouteLeaving(): boolean {
           </p>
         </Message>
       </div>
-    </div>
+    </PageOverlay>
 
     <EditorSidebar
       position="left"
@@ -497,13 +502,4 @@ function preventUserFromRouteLeaving(): boolean {
   </div>
 </template>
 
-<style scoped>
-.overlay {
-  z-index: 99999;
-}
-
-.overlay-redraw {
-  background: rgba(0, 0, 0, 0.5); /* Adjust the last value for opacity */
-  z-index: 1000;
-}
-</style>
+<style scoped></style>
