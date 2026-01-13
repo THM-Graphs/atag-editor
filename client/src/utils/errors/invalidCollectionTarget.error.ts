@@ -1,10 +1,12 @@
+import AppError from './app.error';
+
 /**
  * Represents an error that occurs when the user tries to select an invalid collection as the new target
  * of a "move" or "copy" operation.
  *
- * @extends Error
+ * @extends {AppError} - The generic `AppError` class.
  */
-export default class InvalidCollectionTargetError extends Error {
+export default class InvalidCollectionTargetError extends AppError {
   /**
    * The severity level of the error.
    * @type {'error'}
@@ -18,7 +20,6 @@ export default class InvalidCollectionTargetError extends Error {
    */
   constructor(message: string) {
     super(message);
-    this.name = 'InvalidCollectionTargetError';
     this.severity = 'warn';
   }
 }

@@ -1,9 +1,11 @@
-/**
-Represents an error when parsing JSON during import.
+import AppError from './app.error';
 
-@extends {Error}
-*/
-export default class JsonParseError extends Error {
+/**
+ * Represents an error when parsing JSON during import.
+ *
+ * @extends {AppError} - The generic `AppError` class.
+ */
+export default class JsonParseError extends AppError {
   /**
    * The severity level of the error.
    * @type {'error'}
@@ -11,13 +13,8 @@ export default class JsonParseError extends Error {
    */
   severity: 'error';
 
-  /**
-   * Creates an instance of JsonParseError.
-   * @param {string} message - The error message.
-   */
   constructor(message: string) {
     super(message);
-    this.name = 'JsonParseError';
     this.severity = 'error';
   }
 }

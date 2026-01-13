@@ -1,9 +1,11 @@
-/**
-Represents an error when reading a provided file during import.
+import AppError from './app.error';
 
-@extends {Error}
-*/
-export default class FileReadingError extends Error {
+/**
+ * Represents an error when reading a provided file during import.
+ *
+ * @extends {AppError} - The generic `AppError` class.
+ */
+export default class FileReadingError extends AppError {
   /**
    * The severity level of the error.
    * @type {'error'}
@@ -11,13 +13,8 @@ export default class FileReadingError extends Error {
    */
   severity: 'error';
 
-  /**
-   * Creates an instance of FileReadingError.
-   * @param {string} message - The error message.
-   */
   constructor(message: string) {
     super(message);
-    this.name = 'FileReadingError';
     this.severity = 'error';
   }
 }

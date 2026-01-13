@@ -1,16 +1,11 @@
-/**
- * Represents an API-related error.
- *
- * @extends {Error}
- */
-export default class ApiError extends Error {
-  /**
-   * The severity level of the error. 'error' by default.
-   *
-   * @type {'error' | 'warn'}
-   */
-  severity: 'error' | 'warn';
+import AppError from './app.error';
 
+/**
+ * Represents an API-related error. Extends the generic `AppError` class by adding an HTTP status code.
+ *
+ * @extends {AppError} - The generic `AppError` class.
+ */
+export default class ApiError extends AppError {
   /**
    * The HTTP status code associated with the error.
    *
@@ -18,15 +13,8 @@ export default class ApiError extends Error {
    */
   statusCode: number;
 
-  /**
-   * Creates an instance of ApiError.
-   * @param {string} message - The error message.
-   */
   constructor(httpStatusCode: number, message: string) {
     super(message);
-
-    this.name = this.constructor.name;
-    this.severity = 'error';
     this.statusCode = httpStatusCode;
   }
 }
