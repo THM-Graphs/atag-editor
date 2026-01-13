@@ -1,24 +1,12 @@
+import AppError from './app.error.js';
+
 /**
  * Represents an error for resources that could not be found in the database.
  *
- * @extends {Error}
+ * @extends {AppError} - The generic `AppError` class.
  */
-export default class NotFoundError extends Error {
-  /**
-   * The HTTP status code associated with the error.
-   * @type {number}
-   * @readonly
-   */
-  public code: number;
-
-  /**
-   * Creates an instance of NotFoundError.
-   *
-   * @param {string} message - The error message.
-   */
+export default class NotFoundError extends AppError {
   constructor(message: string) {
-    super(message);
-    this.name = 'NotFoundError';
-    this.code = 404;
+    super(404, message);
   }
 }

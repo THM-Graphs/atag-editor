@@ -1,5 +1,6 @@
 import neo4j, { Driver, Neo4jError, QueryResult, ServerInfo, Session } from 'neo4j-driver';
 import DatabaseConnectionError from '../errors/database-connection.error.js';
+import InternalServerError from '../errors/server.error.js';
 
 export default class Neo4jDriver {
   public static instance: Driver;
@@ -17,14 +18,7 @@ export default class Neo4jDriver {
 
       return serverInfo;
     } catch (err: unknown) {
-      // Unlikely, but fallback
-      if (!(err instanceof Neo4jError)) {
-        throw err;
-      }
-
-      if (err.code === 'ServiceUnavailable') {
-        throw new DatabaseConnectionError('Unable to connect to the database.');
-      }
+      this.handleNeo4jError(err);
     }
   }
 
@@ -53,6 +47,26 @@ export default class Neo4jDriver {
   }
 
   /**
+   * Handles Neo4j errors by throwing more specific errors.
+   *
+   * @returns {void} This function does not return any value.
+   * @throws {AppError} - An App Error (either the original or a subclass of it).
+   */
+  private static handleNeo4jError(err: unknown): void {
+    // Fallback error throwing
+    if (!(err instanceof Neo4jError)) {
+      throw new InternalServerError('An error occurred while connecting to the database.');
+    }
+
+    // More errors could be added, but this is enough for now
+    if (err.code === 'ServiceUnavailable') {
+      throw new DatabaseConnectionError('Unable to connect to the database.');
+    } else {
+      throw new InternalServerError('An error occurred while connecting to the database.');
+    }
+  }
+
+  /**
    * Runs a query using the provided parameters and returns the result.
    *
    * @param {string} query The query to run.
@@ -74,14 +88,7 @@ export default class Neo4jDriver {
 
       return result;
     } catch (err: unknown) {
-      // Unlikely, but fallback
-      if (!(err instanceof Neo4jError)) {
-        throw err;
-      }
-
-      if (err.code === 'ServiceUnavailable') {
-        throw new DatabaseConnectionError('Unable to connect to the database.');
-      }
+      this.handleNeo4jError(err);
     }
   }
 }

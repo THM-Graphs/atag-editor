@@ -1,24 +1,12 @@
+import AppError from './app.error.js';
+
 /**
  * Represents an error for database connection failures.
  *
- * @extends {Error}
+ * @extends {AppError} - The generic `AppError` class.
  */
-export default class DatabaseConnectionError extends Error {
-  /**
-   * The HTTP status code associated with the error.
-   * @type {number}
-   * @readonly
-   */
-  public code: number;
-
-  /**
-   * Creates an instance of DatabaseConnectionError.
-   *
-   * @param {string} message - The error message.
-   */
+export default class DatabaseConnectionError extends AppError {
   constructor(message: string) {
-    super(message);
-    this.name = 'DatabaseConnectionError';
-    this.code = 503;
+    super(503, message);
   }
 }

@@ -1,7 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import NotFoundError from '../errors/not-found.error.js';
 import logger from '../logger.js';
-import DatabaseConnectionError from '../errors/database-connection.error.js';
 
 /**
  * Generic error handler.  Output error details as JSON.
@@ -20,21 +18,13 @@ export default function errorMiddleware(
 ): void {
   logger.error('error: ', error);
 
-  let statusCode: number = 500;
-  let message: string = 'Internal Server Error';
+  const message: string = error.message ?? 'Internal Server Error';
+  const code: number = error.code ?? 500;
 
-  if (error instanceof NotFoundError) {
-    statusCode = 404;
-    message = error.message;
-  } else if (error instanceof DatabaseConnectionError) {
-    statusCode = 503;
-    message = error.message;
-  }
-
-  res.status(statusCode).json({
+  res.status(error.code).json({
     status: 'error',
-    code: statusCode,
-    message: message,
+    code,
+    message,
     // This would not be ideal for production environment, but since it's commented out, no problem
     // trace: error.trace,
     // details: error.details,
