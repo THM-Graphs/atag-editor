@@ -1,6 +1,6 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
-import NotFoundError from '../errors/not-found.error.js';
+import NotFoundError from '../errors/notFound.error.js';
 import { Text, Collection, NetworkPostData } from '../models/types.js';
 
 /**

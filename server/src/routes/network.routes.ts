@@ -2,7 +2,7 @@
 import express, { Request, Response, Router, NextFunction } from 'express';
 import NetworkService from '../services/network.service.js';
 import { Collection, CollectionNetworkActionType, NetworkPostData } from '../models/types.js';
-import NotFoundError from '../errors/not-found.error.js';
+import NotFoundError from '../errors/notFound.error.js';
 
 const router: Router = express.Router();
 const networkService: NetworkService = new NetworkService();

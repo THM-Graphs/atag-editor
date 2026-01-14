@@ -4,7 +4,7 @@ import GuidelinesService from './guidelines.service.js';
 import { sortDirection } from '../utils/cypher.js';
 import { ancestryPaths } from '../utils/cypher.js';
 import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
-import NotFoundError from '../errors/not-found.error.js';
+import NotFoundError from '../errors/notFound.error.js';
 import ICollection from '../models/ICollection.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import {

@@ -20,6 +20,7 @@ import IEntity from '../models/IEntity';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
 import NotFoundError from '../utils/errors/notFound.error';
+import ExternalServiceError from '../utils/errors/externalService.error';
 
 /**
  * The ApiService class provides methods for making API requests to the backend server.
@@ -41,6 +42,7 @@ export default class ApiService {
    * @returns {Promise<void>} - A promise that resolves when the operation is complete.
    * @throws {NotFoundError} - If the API returns a 404 status code.
    * @throws {ApiError} - If the API returns a 500 status code.
+   * @throws {ExternalServiceError} - If the API returns a 502 status code.
    * @throws {DatabaseConnectionError} - If the API returns a 503 status code.
    */
   private async assertResponseOk(response: Response): Promise<void> {
@@ -52,6 +54,11 @@ export default class ApiService {
           throw new NotFoundError(response.status, body?.message || 'Not found');
         case 500:
           throw new ApiError(response.status, body?.message || 'Internal server error');
+        case 502:
+          throw new ExternalServiceError(
+            response.status,
+            body?.message || 'External service error',
+          );
         case 503:
           throw new DatabaseConnectionError(
             response.status,
@@ -170,8 +177,7 @@ export default class ApiService {
 
       return await response.json();
     } catch (error: unknown) {
-      console.error('Error fetching collection:', error);
-      throw new Error(`Error fetching collection: ${error}`);
+      this.handleApiError(error);
     }
   }
 

@@ -1,5 +1,5 @@
 import neo4j, { Driver, Neo4jError, QueryResult, ServerInfo, Session } from 'neo4j-driver';
-import DatabaseConnectionError from '../errors/database-connection.error.js';
+import DatabaseConnectionError from '../errors/databaseConnection.error.js';
 import InternalServerError from '../errors/server.error.js';
 
 export default class Neo4jDriver {

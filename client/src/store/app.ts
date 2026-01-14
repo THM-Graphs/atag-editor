@@ -3,8 +3,8 @@ import ApiService from '../services/api';
 import { useStyleTag } from '@vueuse/core';
 import { useGuidelinesStore } from './guidelines';
 import { DynamicDialogInstance } from 'primevue/dynamicdialogoptions';
-import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import { ToastMessageOptions, ToastServiceMethods } from 'primevue';
+import AppError from '../utils/errors/app.error';
 
 const { error: guidelinesError, initializeGuidelines } = useGuidelinesStore();
 
@@ -19,7 +19,7 @@ const toast = ref<ToastServiceMethods>(null);
 
 // Fetch status
 const isFetching = ref<boolean>(false);
-const error = ref<DatabaseConnectionError | unknown>(null);
+const error = ref<AppError>(null);
 
 /**
  * Returns an object containing methods for fetching data from the API and initializing the application.
@@ -79,14 +79,9 @@ export function useAppStore() {
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
   async function fetchAndApplyStyles(): Promise<void> {
-    try {
-      const css: string = await api.getStyles();
+    const css: string = await api.getStyles();
 
-      useStyleTag(css, { id: 'custom-styles' });
-    } catch (e: unknown) {
-      error.value = e as Error;
-      console.error('Error loading stylesheet:', error);
-    }
+    useStyleTag(css, { id: 'custom-styles' });
   }
 
   /**
@@ -95,14 +90,9 @@ export function useAppStore() {
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
   async function fetchAndInitializeGuidelines(): Promise<void> {
-    try {
-      const guidelines = await api.getGuidelines();
+    const guidelines = await api.getGuidelines();
 
-      initializeGuidelines(guidelines);
-    } catch (e: unknown) {
-      error.value = e as Error;
-      console.error('Error fetching guidelines:', e);
-    }
+    initializeGuidelines(guidelines);
   }
 
   /**
@@ -135,7 +125,7 @@ export function useAppStore() {
         throw guidelinesError.value;
       }
     } catch (e: unknown) {
-      error.value = e;
+      error.value = e as AppError;
     } finally {
       isFetching.value = false;
     }

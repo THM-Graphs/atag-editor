@@ -1,4 +1,4 @@
-import NotFoundError from '../errors/not-found.error.js';
+import NotFoundError from '../errors/notFound.error.js';
 import { FaviconResponse } from '../models/types.js';
 
 export default class FaviconService {
