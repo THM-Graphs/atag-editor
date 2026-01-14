@@ -42,7 +42,7 @@ const maxLength: number | null | undefined = props.config.maxLength;
     v-else-if="config.type === 'string' && (config.template === 'input' || !config.template)"
     :disabled="!config.editable || mode === 'view'"
     :required="config.required"
-    :invalid="config.required && !modelValue"
+    :invalid="config.required && !modelValue && modelValue?.trim() === ''"
     v-model="modelValue"
     class="w-full"
     spellcheck="false"

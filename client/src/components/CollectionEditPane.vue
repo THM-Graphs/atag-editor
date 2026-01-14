@@ -42,6 +42,7 @@ import { useAppStore } from '../store/app';
 import { useRouter } from 'vue-router';
 import CollectionDeleteModal from './CollectionDeleteModal.vue';
 import ProgressSpinner from 'primevue/progressspinner';
+import AppError from '../utils/errors/app.error';
 
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
@@ -123,6 +124,37 @@ watch(
   },
   { immediate: true },
 );
+
+/**
+ * Checks the validity of the Collection edit pane data and throws errors if criteria are not met.
+ *
+ * @returns {void} This function does not return any value.
+ * @throws {AppError} If the collection data are not valid.
+ */
+function checkValidity(): void {
+  // TODO: This is currently a mix of native HTML form validation and custom validation. Should be refactored
+  // in the future (e.g. use the PrimeVue form validation).
+  form.value.reportValidity();
+
+  // Collections must have and additional node label (if options exist)
+  if (
+    availableCollectionLabels.value.length > 0 &&
+    temporaryWorkData.value.collection.nodeLabels.length === 0
+  ) {
+    throw new AppError('A Collection MUST have an additional node label.');
+  }
+
+  // Label property must always be a meaningful string
+  const labelProp: string = temporaryWorkData.value.collection.data.label;
+
+  if (labelProp === '') {
+    throw new AppError('The "label" property must not be empty.');
+  }
+
+  if (labelProp.trim() === '') {
+    throw new AppError('The "label" property must not consist of only whitespace characters.');
+  }
+}
 
 function clearTemporaryTexts(): void {
   temporaryTexts.value = [];
@@ -257,9 +289,16 @@ function transferDataToListItem(uuid: string, index: number, data: Collection): 
 }
 
 async function handleApplyChanges(): Promise<void> {
-  const isValid: boolean = form.value.reportValidity();
+  try {
+    checkValidity();
+  } catch (error: unknown) {
+    addToastMessage({
+      severity: 'warn',
+      summary: (error as AppError).name,
+      detail: (error as AppError)?.message ?? '',
+      life: 3000,
+    });
 
-  if (!isValid) {
     return;
   }
 
@@ -457,6 +496,10 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
               v-model="temporaryWorkData.collection.nodeLabels"
               :options="availableCollectionLabels"
               display="chip"
+              :invalid="
+                availableCollectionLabels.length > 0 &&
+                temporaryWorkData.collection.nodeLabels.length === 0
+              "
               title="Select node labels"
               placeholder="Select labels"
               :filter="false"
@@ -567,7 +610,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
                 getCollectionAnnotationConfig(
                   temporaryWorkData.collection.nodeLabels,
                   annotation.properties.type,
-                ).hasAdditionalTexts === true
+                )?.hasAdditionalTexts === true
               "
               :mode="formMode"
               v-model="annotation.additionalTexts"
@@ -582,7 +625,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
                 getCollectionAnnotationConfig(
                   temporaryWorkData.collection.nodeLabels,
                   annotation.properties.type,
-                ).hasEntities === true
+                )?.hasEntities === true
               "
               :mode="formMode"
               v-model="annotation.entities"
