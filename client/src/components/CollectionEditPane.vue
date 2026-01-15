@@ -43,6 +43,7 @@ import { useRouter } from 'vue-router';
 import CollectionDeleteModal from './CollectionDeleteModal.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import AppError from '../utils/errors/app.error';
+import ValidationError from '../utils/errors/validation.error';
 
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
@@ -141,18 +142,20 @@ function checkValidity(): void {
     availableCollectionLabels.value.length > 0 &&
     temporaryWorkData.value.collection.nodeLabels.length === 0
   ) {
-    throw new AppError('A Collection MUST have an additional node label.');
+    throw new ValidationError('A Collection MUST have an additional node label.');
   }
 
   // Label property must always be a meaningful string
   const labelProp: string = temporaryWorkData.value.collection.data.label;
 
   if (labelProp === '') {
-    throw new AppError('The "label" property must not be empty.');
+    throw new ValidationError('The "label" property must not be empty.');
   }
 
   if (labelProp.trim() === '') {
-    throw new AppError('The "label" property must not consist of only whitespace characters.');
+    throw new ValidationError(
+      'The "label" property must not consist of only whitespace characters.',
+    );
   }
 }
 
@@ -289,6 +292,7 @@ function transferDataToListItem(uuid: string, index: number, data: Collection): 
 }
 
 async function handleApplyChanges(): Promise<void> {
+  // Handle errors in fronted to show warnings instead of errors coming from server
   try {
     checkValidity();
   } catch (error: unknown) {

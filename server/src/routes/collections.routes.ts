@@ -10,7 +10,6 @@ import {
   Collection,
   CollectionCreationData,
   CollectionPostData,
-  CollectionPreview,
   NodeAncestry,
   PaginationResult,
 } from '../models/types.js';

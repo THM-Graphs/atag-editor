@@ -19,6 +19,7 @@ import {
   CursorData,
 } from '../models/types.js';
 import ICharacter from '../models/ICharacter.js';
+import ValidationError from '../errors/validation.error.js';
 
 type CollectionTextObject = {
   all: Text[];
@@ -31,6 +32,19 @@ type CreatedText = Text & {
 };
 
 export default class CollectionService {
+  /**
+   * Retrieves the available labels that can be assigned to a Collection node.
+   *
+   * Called during creating and updating a collection to check the data validity (specifically, when no additional
+   * node label is provided).
+   *
+   * @param {IGuidelines} guidelines - The guidelines to check against.
+   * @return {string[]} The available labels.
+   */
+  private getAvailableCollectionLabelsFromGuidelines(guidelines: IGuidelines): string[] {
+    return guidelines?.collections.types.map(collection => collection.additionalLabel) ?? [];
+  }
+
   /**
    * Retrieves a paginated list of collections using cursor-based pagination.
    *
@@ -268,6 +282,40 @@ export default class CollectionService {
   }
 
   /**
+   * Checks if the given collection data is valid according to the guidelines. Specifically, it checks if
+   * the collection node has an additional node label if options exist and if the "label" property is not
+   * empty and does not consist of only whitespace characters.
+   *
+   * Called during creating and updating a collection.
+   *
+   * @param {CollectionAccessObject} data - The data to check for validity.
+   * @param {IGuidelines} guidelines - The guidelines to check against.
+   * @returns {void} This function does not return any value.
+   * @throws {ValidationError} If the data is not valid according to the guidelines.
+   */
+  private checkValidity(data: CollectionAccessObject, guidelines: IGuidelines): void {
+    const availableNodeLabels = this.getAvailableCollectionLabelsFromGuidelines(guidelines);
+
+    // Collections must have and additional node label (if options exist)
+    if (availableNodeLabels.length > 0 && data.collection.nodeLabels.length === 0) {
+      throw new ValidationError('A Collection MUST have an additional node label.');
+    }
+
+    // Label property must always be a meaningful string
+    const labelProp: string = data.collection.data.label;
+
+    if (labelProp === '') {
+      throw new ValidationError('The "label" property must not be empty.');
+    }
+
+    if (labelProp.trim() === '') {
+      throw new ValidationError(
+        'The "label" property must not consist of only whitespace characters.',
+      );
+    }
+  }
+
+  /**
    * Creates a new collection node with the given data and attaches it to a parent collection (optionally).
    *
    * While node labels and data of the collection node are mandatory, "texts" will always be an empty array
@@ -280,6 +328,8 @@ export default class CollectionService {
   public async createNewCollection(data: CollectionCreationData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
+
+    this.checkValidity(data, guidelines);
 
     const fields: PropertyConfig[] = guidelineService.getCollectionConfigFieldsFromGuidelines(
       guidelines,
@@ -355,7 +405,12 @@ export default class CollectionService {
    */
   public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
     const guidelineService: GuidelinesService = new GuidelinesService();
-    const fields: PropertyConfig[] = await guidelineService.getCollectionConfigFields(
+    const guidelines = await guidelineService.getGuidelines();
+
+    this.checkValidity(data.data, guidelines);
+
+    const fields: PropertyConfig[] = guidelineService.getCollectionConfigFieldsFromGuidelines(
+      guidelines,
       data.data.collection.nodeLabels,
     );
 
