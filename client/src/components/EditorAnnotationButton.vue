@@ -426,6 +426,15 @@ function getCharactersToAnnotate(): Character[] {
     :disabled="!selectedOptions.includes(annotationType)"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
+    :pt="{
+      pcMenu: {
+        root: {
+          style: {
+            zIndex: 'var(--z-index-max)',
+          },
+        },
+      },
+    }"
   >
     <template #icon>
       <AnnotationTypeIcon :annotationType="annotationType" />

@@ -210,6 +210,15 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     :model="dropdownOptions"
     v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
     @click="handleButtonClick"
+    :pt="{
+      pcMenu: {
+        root: {
+          style: {
+            zIndex: 'var(--z-index-max)',
+          },
+        },
+      },
+    }"
   >
     <template #icon>
       <AnnotationTypeIcon :annotationType="annotationType" />
