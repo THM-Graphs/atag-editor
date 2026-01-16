@@ -19,6 +19,8 @@ export function useTextStore() {
   async function fetchAndInitializeText(uuid: string): Promise<void> {
     isFetching.value = true;
 
+    error.value = false;
+
     try {
       const text: TextAccessObject = await api.getTextAccessObject(uuid);
 

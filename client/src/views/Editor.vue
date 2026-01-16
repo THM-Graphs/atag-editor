@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComputedRef, computed, onMounted, onUnmounted, ref } from 'vue';
+import { ComputedRef, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   RouteLocationNormalizedLoaded,
   useRoute,
@@ -35,34 +35,8 @@ interface SidebarConfig {
   resizerActive: boolean;
   width: number;
 }
-
-onMounted(async (): Promise<void> => {
-  // TODO: This needs refactoring. Centralize fetches, split fetch/initialize logic
-  await fetchAndInitializeText(textUuid);
-
-  if (!isValidText.value) {
-    isLoading.value = false;
-    return;
-  }
-
-  await fetchAndInitializeCharacters(text.value.data.uuid);
-
-  if (charactersFetchError.value) {
-    isLoading.value = false;
-    return;
-  }
-
-  await fetchAndInitializeAnnotations(text.value.data.uuid);
-
-  if (annotationFetchError.value) {
-    isLoading.value = false;
-    return;
-  }
-
-  initializeEditor();
-
-  isLoading.value = false;
-});
+const route: RouteLocationNormalizedLoaded = useRoute();
+const textUuid = computed<string>(() => route.params.uuid as string);
 
 onUnmounted((): void => {
   resetCharacters();
@@ -78,9 +52,6 @@ useEventListener('mouseup', handleMouseUp);
 useEventListener('mousedown', handleMouseDown);
 useEventListener('beforeunload', handleBeforeUnload);
 useEventListener('keydown', handleKeyDown);
-
-const route: RouteLocationNormalizedLoaded = useRoute();
-const textUuid: string = route.params.uuid as string;
 
 // Initial page load
 const isLoading = ref<boolean>(true);
@@ -252,7 +223,7 @@ async function saveCharacters(): Promise<void> {
     text: totalCharacters.value.map(c => c.data.text).join(''),
   };
 
-  await api.updateCharacterChain(textUuid, characterPostData);
+  await api.updateCharacterChain(textUuid.value, characterPostData);
 }
 
 async function saveAnnotations(): Promise<void> {
@@ -264,7 +235,7 @@ async function saveAnnotations(): Promise<void> {
   // Reduce amount of data that need to sent to the backend
   const annotationsToSave: Annotation[] = getAnnotationsToSave();
 
-  await api.updateAnnotations(textUuid, annotationsToSave);
+  await api.updateAnnotations(textUuid.value, annotationsToSave);
 }
 
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {
@@ -432,6 +403,40 @@ function preventUserFromRouteLeaving(): boolean {
     return false;
   }
 }
+
+watch(
+  textUuid,
+  async () => {
+    isLoading.value = true;
+
+    // TODO: This needs refactoring. Centralize fetches, split fetch/initialize logic
+    await fetchAndInitializeText(textUuid.value);
+
+    if (!isValidText.value) {
+      isLoading.value = false;
+      return;
+    }
+
+    await fetchAndInitializeCharacters(text.value.data.uuid);
+
+    if (charactersFetchError.value) {
+      isLoading.value = false;
+      return;
+    }
+
+    await fetchAndInitializeAnnotations(text.value.data.uuid);
+
+    if (annotationFetchError.value) {
+      isLoading.value = false;
+      return;
+    }
+
+    initializeEditor();
+
+    isLoading.value = false;
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -480,6 +485,7 @@ function preventUserFromRouteLeaving(): boolean {
       :style="{ width: mainWidth + 'px' }"
     >
       <EditorHeader ref="labelInputRef" />
+      <RouterLink to="/texts/b21c661d-4213-481d-a107-3326b2e90c12">Here is other text</RouterLink>
       <EditorAnnotationButtonPane />
       <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
