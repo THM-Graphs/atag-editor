@@ -6,7 +6,6 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
   Annotation,
-  AnnotationConfigEntity,
   AnnotationData,
   CollectionPostData,
   Entity,
@@ -91,7 +90,7 @@ export default class AnnotationService {
         initialData:
           initial ??
           ({
-            entities: {},
+            entities: [],
             additionalTexts: [],
             properties: {} as IAnnotation,
           } as AnnotationData),
@@ -104,38 +103,26 @@ export default class AnnotationService {
   }
 
   public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
-    const guidelineService: GuidelinesService = new GuidelinesService();
-    const entities: AnnotationConfigEntity[] =
-      await guidelineService.getAvailableAnnotationEntityConfigs();
-
     const query: string = `
     // Match all annotations for given selection
     MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a
-    UNWIND $entities AS entity
 
+    // Fetch entities
     CALL {
-        WITH a, entity
-        
-        // TODO: This query can be improved (direct label access instead of WHERE filter)
-        CALL apoc.cypher.run(
-            'MATCH (a)-[r:REFERS_TO]->(x) WHERE $nodeLabel IN labels(x) RETURN collect({
-                nodeLabels: [l IN labels(x) WHERE l <> "Entity" | l],
-                data: x {.*}
-            }) AS nodes',
-            {a: a, nodeLabel: entity.nodeLabel}
-        ) YIELD value
+        WITH a
 
-        RETURN entity.category AS key, value.nodes AS nodes
+        MATCH (a)-[r:REFERS_TO]->(e:Entity)
+        
+        RETURN collect({
+            nodeLabels: [l IN labels(e) WHERE l <> "Entity" | l],
+            data: e {.*}
+        }) AS entities
     }
 
-    // Create key-value pair with category and matched nodes
-    WITH a AS annotations, collect({category: key, nodes: nodes}) AS entities
-
-    // Fetch additional text nodes
-    UNWIND annotations AS a
+    WITH a, entities AS entities
 
     CALL {
         WITH a
@@ -159,15 +146,12 @@ export default class AnnotationService {
 
     RETURN collect({
         properties: a {.*},
-        entities: apoc.map.fromPairs([n in entities | [n.category, n.nodes]]),
+        entities: entities,
         additionalTexts: additionalTexts
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      nodeUuid,
-      entities,
-    });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { nodeUuid });
     const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 
     const annotations: AnnotationData[] = rawAnnotations.map(annotation =>

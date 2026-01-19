@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { nextTick, Ref, ref, useTemplateRef } from 'vue';
+import { computed, nextTick, Ref, ref, useTemplateRef } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
-import { Entity } from '../models/types';
+import { AnnotationConfigEntity, Entity } from '../models/types';
 import { useAppStore } from '../store/app';
 
 /**
@@ -26,29 +26,38 @@ interface EntitiesSearchObject {
   };
 }
 
-const entities = defineModel<{
-  [index: string]: Entity[];
-}>();
+const entities = defineModel<Entity[]>();
+
+const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
+const { api } = useAppStore();
+
+const configs: AnnotationConfigEntity[] = getAvailableAnnotationResourceConfigs();
+
+const categorizedEntities = computed<Record<string, Entity[]>>(() => {
+  const obj: Record<string, Entity[]> = {};
+
+  configs.forEach((config: AnnotationConfigEntity) => {
+    obj[config.category] = entities.value.filter(e => e.nodeLabels.includes(config.nodeLabel));
+  });
+
+  return obj;
+});
 
 const props = defineProps<{
   mode?: 'edit' | 'view';
   defaultSearchValue?: string;
 }>();
 
-const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
-const { api } = useAppStore();
-
-const entityCategories: string[] = getAvailableAnnotationResourceConfigs().map(c => c.category);
-
 const entitiesAreCollapsed = ref<boolean>(false);
 const entitiesSearchObject = ref<EntitiesSearchObject>(
-  entityCategories.reduce((object: EntitiesSearchObject, category) => {
-    object[category] = {
-      nodeLabel: guidelines.value.annotations.entities.find(r => r.category === category).nodeLabel,
+  configs.reduce((object: EntitiesSearchObject, config: AnnotationConfigEntity) => {
+    object[config.category] = {
+      nodeLabel: guidelines.value.annotations.entities.find(r => r.category === config.category)
+        .nodeLabel,
       fetchedItems: [],
       currentItem: null,
       mode: 'view',
-      elm: useTemplateRef(`input-${category}`),
+      elm: useTemplateRef(`input-${config.category}`),
     };
 
     return object;
@@ -60,10 +69,10 @@ const entitiesSearchObject = ref<EntitiesSearchObject>(
  *
  * @param {EntityEntry} item - The entity item to be added.
  */
-function addEntityItem(item: EntityEntry, category: string): void {
+function addEntityItem(item: EntityEntry): void {
   // Omit 'html' property from entry since it was only created for rendering purposes
   const { html, ...rest } = item;
-  entities.value[category].push(rest);
+  entities.value.push(rest);
 }
 
 /**
@@ -132,20 +141,17 @@ function handleCreateNewEntity(newLabel: string, category: string): void {
  * @param {string} category - The category to which the item should be added.
  */
 function handleEntityItemSelect(item: EntityEntry, category: string): void {
-  addEntityItem(item, category);
+  addEntityItem(item);
   changeEntitiesSelectionMode(category, 'view');
 }
 
 /**
- * Removes a entity item from the given category in the annotation's data.
+ * Removes a entity item from the annotation's data.
  *
  * @param {EntityEntry} item - The entity item to be removed.
- * @param {string} category - The category from which the item should be removed.
  */
-function removeEntityItem(item: EntityEntry, category: string): void {
-  entities.value[category] = entities.value[category].filter(
-    entry => entry.data.uuid !== item.data.uuid,
-  );
+function removeEntityItem(item: EntityEntry): void {
+  entities.value = entities.value.filter(entry => entry.data.uuid !== item.data.uuid);
 }
 
 /**
@@ -180,9 +186,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
   const fetchedEntities: Entity[] = await api.getEntities(nodeLabel, searchString);
 
   // Show only entries that are not already part of the annotation
-  const existingUuids: string[] = entities.value[category].map(
-    (entry: EntityEntry) => entry.data.uuid,
-  );
+  const existingUuids: string[] = entities.value.map((entry: EntityEntry) => entry.data.uuid);
 
   const withoutDuplicates: Entity[] = fetchedEntities.filter(
     (entry: Entity) => !existingUuids.includes(entry.data.uuid),
@@ -211,11 +215,11 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
       <span :class="`pi pi-chevron-${entitiesAreCollapsed ? 'down' : 'up'}`"></span>
     </template>
 
-    <div v-for="category in entityCategories">
+    <div v-for="category in Object.keys(categorizedEntities)">
       <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
       <div
         class="entities-entry flex justify-content-between align-items-center"
-        v-for="entry in entities[category]"
+        v-for="entry in categorizedEntities[category]"
       >
         <span>
           {{ entry.data.label }}
@@ -225,7 +229,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
           icon="pi pi-times"
           size="small"
           severity="danger"
-          @click="removeEntityItem(entry as EntityEntry, category)"
+          @click="removeEntityItem(entry as EntityEntry)"
         ></Button>
       </div>
       <Button

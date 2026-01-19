@@ -21,9 +21,7 @@ export type Annotation = {
 
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
-  entities: {
-    [index: string]: Entity[];
-  };
+  entities: Entity[];
   properties: IAnnotation;
 }
 

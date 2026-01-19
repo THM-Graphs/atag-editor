@@ -485,7 +485,6 @@ watch(
       :style="{ width: mainWidth + 'px' }"
     >
       <EditorHeader ref="labelInputRef" />
-      <RouterLink to="/texts/b21c661d-4213-481d-a107-3326b2e90c12">Here is other text</RouterLink>
       <EditorAnnotationButtonPane />
       <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
