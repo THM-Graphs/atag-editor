@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, DeepReadonly, ref, useTemplateRef, watch } from 'vue';
 import Button from 'primevue/button';
 import Popover from 'primevue/popover';
 import ButtonGroup from 'primevue/buttongroup';
@@ -8,18 +8,23 @@ import { useBookmarks } from '../composables/useBookmarks';
 import BookmarkItem from './BookmarkItem.vue';
 import { Bookmark } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
+import { RouteLocationNormalized, useRoute } from 'vue-router';
 
 const { bookmarks } = useBookmarks();
 
-const selectedView = ref<'collection' | 'text'>('collection');
-const displayedItems = computed(() =>
-  bookmarks.value.filter(bookmark => bookmark.type === selectedView.value),
+const route: RouteLocationNormalized = useRoute();
+
+watch(route, () => bookmarkPopover.value.hide());
+
+const selectedBookmarkType = ref<'collection' | 'text'>('collection');
+const displayedItems = computed<DeepReadonly<Bookmark[]>>(() =>
+  bookmarks.value.filter(bookmark => bookmark.type === selectedBookmarkType.value),
 );
 
-const collectionCount = computed(
+const collectionCount = computed<number>(
   () => bookmarks.value.filter(bookmark => bookmark.type === 'collection').length,
 );
-const textCount = computed(
+const textCount = computed<number>(
   () => bookmarks.value.filter(bookmark => bookmark.type === 'text').length,
 );
 
@@ -30,7 +35,7 @@ const toggle = event => {
 };
 
 function toggleViewMode(direction: 'collection' | 'text'): void {
-  selectedView.value = direction;
+  selectedBookmarkType.value = direction;
 }
 </script>
 
@@ -55,7 +60,7 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
     <div class="tab-buttons mb-2">
       <ButtonGroup class="w-full flex">
         <ToggleButton
-          :model-value="selectedView === 'collection'"
+          :model-value="selectedBookmarkType === 'collection'"
           class="w-full"
           :onLabel="`Collections (${collectionCount})`"
           :offLabel="`Collections (${collectionCount})`"
@@ -64,7 +69,7 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
           @change="toggleViewMode('collection')"
         />
         <ToggleButton
-          :model-value="selectedView === 'text'"
+          :model-value="selectedBookmarkType === 'text'"
           class="w-full"
           :onLabel="`Texts (${textCount})`"
           :offLabel="`Texts (${textCount})`"
@@ -76,7 +81,7 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
     </div>
     <div class="items-pane">
       <div v-if="displayedItems.length === 0" class="text-sm font-italic text-center">
-        Currently there is no bookmarked {{ capitalize(selectedView) }}.
+        Currently there is no bookmarked {{ capitalize(selectedBookmarkType) }}.
       </div>
       <BookmarkItem
         v-for="item in displayedItems"
@@ -88,8 +93,4 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
   </Popover>
 </template>
 
-<style scoped>
-.drop-area {
-  border: 2px dashed var(--p-primary-500);
-}
-</style>
+<style scoped></style>

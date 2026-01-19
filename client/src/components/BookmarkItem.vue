@@ -18,7 +18,6 @@ const uuid: string = props.data.data.data.uuid;
 const isCollection: boolean = props.data.type === 'collection';
 
 function handleItemClick(): void {
-  // TODO: Or emit?
   router.push(`/${props.data.type}s/${uuid}`);
 }
 
