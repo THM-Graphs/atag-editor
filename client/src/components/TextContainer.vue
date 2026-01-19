@@ -7,6 +7,7 @@ import MultiSelect from 'primevue/multiselect';
 import Textarea from 'primevue/textarea';
 import { useGuidelinesStore } from '../store/guidelines';
 import { computed } from 'vue';
+import { useBookmarks } from '../composables/useBookmarks';
 
 const props = defineProps<{
   status: 'existing' | 'temporary';
@@ -20,6 +21,19 @@ const emit = defineEmits<{
 }>();
 
 const { getAvailableTextLabels } = useGuidelinesStore();
+const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(b => b.data.data.uuid === props.text.data.uuid);
+});
+
+function handleBookmarkAction() {
+  if (!isBookmarked.value) {
+    addBookmark(props.text, 'text');
+  } else {
+    removeBookmark(props.text.data.uuid);
+  }
+}
 
 const PREVIEW_LENGTH: number = 300;
 
@@ -55,42 +69,58 @@ function handleAddTextClick() {
     }"
   >
     <template #title>
-      <div class="header flex justify-content-between">
-        <template v-if="mode === 'view'">
-          <NodeTag v-for="label in props.text.nodeLabels" :content="label" type="Text" />
-        </template>
-
-        <template v-if="mode === 'edit'">
-          <MultiSelect
+      <div class="header">
+        <div class="button-pane flex justify-content-end">
+          <Button
+            type="button"
+            severity="secondary"
+            :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
             size="small"
-            v-model="text.nodeLabels"
-            :options="getAvailableTextLabels()"
-            display="chip"
-            placeholder="Text labels"
-            class="text-center"
-            :filter="false"
+            :title="isBookmarked ? 'Add text to bookmarks' : 'Remove text from bookmarks'"
+            @click="handleBookmarkAction"
             :pt="{
-              root: {
-                title: `Select Text labels`,
+              icon: {
+                style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
               },
             }"
-          >
-            <template #chip="{ value }">
-              <NodeTag type="Text" :content="value" class="mr-1" />
-            </template>
-          </MultiSelect>
-        </template>
+          />
+          <Button
+            v-if="mode === 'edit'"
+            type="button"
+            icon="pi pi-times"
+            severity="danger"
+            outlined
+            size="small"
+            title="Remove text"
+            @click="handleRemoveText"
+          />
+        </div>
+        <div class="node-labels-container">
+          <template v-if="mode === 'view'">
+            <NodeTag v-for="label in props.text.nodeLabels" :content="label" type="Text" />
+          </template>
 
-        <Button
-          v-if="mode === 'edit'"
-          type="button"
-          icon="pi pi-times"
-          severity="danger"
-          outlined
-          size="small"
-          title="Remove text"
-          @click="handleRemoveText"
-        />
+          <template v-if="mode === 'edit'">
+            <MultiSelect
+              size="small"
+              v-model="text.nodeLabels"
+              :options="getAvailableTextLabels()"
+              display="chip"
+              placeholder="Text labels"
+              class="text-center"
+              :filter="false"
+              :pt="{
+                root: {
+                  title: `Select Text labels`,
+                },
+              }"
+            >
+              <template #chip="{ value }">
+                <NodeTag type="Text" :content="value" class="mr-1" />
+              </template>
+            </MultiSelect>
+          </template>
+        </div>
       </div>
     </template>
 

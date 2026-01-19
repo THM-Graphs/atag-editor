@@ -7,6 +7,7 @@ import ToggleButton from 'primevue/togglebutton';
 import { useBookmarks } from '../composables/useBookmarks';
 import BookmarkItem from './BookmarkItem.vue';
 import { Bookmark } from '../models/types';
+import { capitalize } from '../utils/helper/helper';
 
 const { bookmarks } = useBookmarks();
 
@@ -38,7 +39,7 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
     type="button"
     severity="secondary"
     label="Bookmarks"
-    icon="pi pi-bookmark"
+    icon="pi pi-bookmark-fill"
     size="small"
     @click="toggle"
   />
@@ -74,9 +75,13 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
       </ButtonGroup>
     </div>
     <div class="items-pane">
+      <div v-if="displayedItems.length === 0" class="text-sm font-italic text-center">
+        Currently there is no bookmarked {{ capitalize(selectedView) }}.
+      </div>
       <BookmarkItem
         v-for="item in displayedItems"
         :data="item as Bookmark"
+        :type="item.type"
         :key="item.data.data.uuid"
       />
     </div>
