@@ -14,13 +14,7 @@ import { useFilterStore } from '../store/filter';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
-import {
-  AdditionalText,
-  Annotation,
-  PropertyConfig,
-  AnnotationType,
-  Character,
-} from '../models/types';
+import { Annotation, PropertyConfig, AnnotationType, Character } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
@@ -33,7 +27,7 @@ const { annotationType } = defineProps<{ annotationType: string }>();
 const { addToastMessage } = useAppStore();
 const { snippetCharacters } = useCharactersStore();
 const { execCommand } = useEditorStore();
-const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
 
@@ -349,24 +343,17 @@ function createNewAnnotation(
     newAnnotationData.subType = subType ?? subTypeField.options[0];
   }
 
-  // Entities (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const entityCategories: string[] = guidelines.value.annotations.entities.map(r => r.category);
-  const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
-
-  // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const additionalTexts: AdditionalText[] = [];
-
   const newAnnotation: Annotation = {
     characterUuids: characters.map((char: Character) => char.data.uuid),
     data: {
       properties: cloneDeep(newAnnotationData),
-      entities: cloneDeep(newAnnotationEntities),
-      additionalTexts: cloneDeep(additionalTexts),
+      entities: [],
+      additionalTexts: [],
     },
     initialData: {
       properties: cloneDeep(newAnnotationData),
-      entities: cloneDeep(newAnnotationEntities),
-      additionalTexts: cloneDeep(additionalTexts),
+      entities: [],
+      additionalTexts: [],
     },
     isTruncated: false,
     startUuid: characters[0].data.uuid,

@@ -10,13 +10,13 @@ import {
   CollectionPostData,
   CollectionSearchParams,
   CursorData,
+  Entity,
   NetworkPostData,
   NodeAncestry,
   PaginationResult,
   Text,
   TextAccessObject,
 } from '../models/types';
-import IEntity from '../models/IEntity';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
 import NotFoundError from '../utils/errors/notFound.error';
@@ -235,7 +235,7 @@ export default class ApiService {
     }
   }
 
-  public async getEntities(nodeLabel: string, searchString: string): Promise<IEntity[]> {
+  public async getEntities(nodeLabel: string, searchString: string): Promise<Entity[]> {
     try {
       const url: string = `${this.baseUrl}/entities?node=${nodeLabel}&searchStr=${searchString}`;
 

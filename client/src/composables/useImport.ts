@@ -8,7 +8,6 @@ import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 import IAnnotation from '../models/IAnnotation';
 import {
-  AdditionalText,
   Annotation,
   AnnotationData,
   AnnotationType,
@@ -71,7 +70,7 @@ export function useImport(): UseImportReturn {
     initializeCharacters,
   } = useCharactersStore();
 
-  const { guidelines, getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+  const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
   const currentStep = ref<PipelineStep>(null);
   const errorMessages = ref<ErrorMessage[]>([]);
@@ -323,14 +322,6 @@ export function useImport(): UseImportReturn {
         newAnnotationProperties.text = a.text;
         newAnnotationProperties.uuid = crypto.randomUUID();
 
-        // Entities (= connected nodes). Not provided, but needed in Annotation structure -> empty arrays
-        const entityCategories: string[] = guidelines.value.annotations.entities.map(
-          r => r.category,
-        );
-
-        const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
-        const newAdditionalTexts: AdditionalText[] = [];
-
         let index: number = a.start;
 
         // Annotate characters (skipped in the first step since information is stored in annotations)
@@ -348,8 +339,8 @@ export function useImport(): UseImportReturn {
 
         newAnnotations.push({
           properties: newAnnotationProperties,
-          entities: newAnnotationEntities,
-          additionalTexts: newAdditionalTexts,
+          entities: [],
+          additionalTexts: [],
         });
       });
 

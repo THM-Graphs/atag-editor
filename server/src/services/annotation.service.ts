@@ -6,9 +6,9 @@ import IAnnotation from '../models/IAnnotation.js';
 import {
   AdditionalText,
   Annotation,
-  AnnotationConfigEntity,
   AnnotationData,
   CollectionPostData,
+  Entity,
   PropertyConfig,
   Text,
 } from '../models/types.js';
@@ -27,8 +27,8 @@ type ProcessedAnnotation = Omit<Annotation, 'data'> & {
       created: CreatedAdditionalText[];
     };
     entities: {
-      deleted: string[];
-      created: string[];
+      deleted: Entity[];
+      created: Entity[];
     };
   };
 };
@@ -90,7 +90,7 @@ export default class AnnotationService {
         initialData:
           initial ??
           ({
-            entities: {},
+            entities: [],
             additionalTexts: [],
             properties: {} as IAnnotation,
           } as AnnotationData),
@@ -103,35 +103,26 @@ export default class AnnotationService {
   }
 
   public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
-    const guidelineService: GuidelinesService = new GuidelinesService();
-    const entities: AnnotationConfigEntity[] =
-      await guidelineService.getAvailableAnnotationEntityConfigs();
-
     const query: string = `
     // Match all annotations for given selection
     MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Fetch additional nodes by label defined in the guidelines
     WITH a
-    UNWIND $entities AS entity
 
+    // Fetch entities
     CALL {
-        WITH a, entity
-        
-        // TODO: This query can be improved (direct label access instead of WHERE filter)
-        CALL apoc.cypher.run(
-            'MATCH (a)-[r:REFERS_TO]->(x) WHERE $nodeLabel IN labels(x) RETURN collect(x {.*}) AS nodes',
-            {a: a, nodeLabel: entity.nodeLabel}
-        ) YIELD value
+        WITH a
 
-        RETURN entity.category AS key, value.nodes AS nodes
+        MATCH (a)-[r:REFERS_TO]->(e:Entity)
+        
+        RETURN collect({
+            nodeLabels: [l IN labels(e) WHERE l <> "Entity" | l],
+            data: e {.*}
+        }) AS entities
     }
 
-    // Create key-value pair with category and matched nodes
-    WITH a AS annotations, collect({category: key, nodes: nodes}) AS entities
-
-    // Fetch additional text nodes
-    UNWIND annotations AS a
+    WITH a, entities AS entities
 
     CALL {
         WITH a
@@ -155,15 +146,12 @@ export default class AnnotationService {
 
     RETURN collect({
         properties: a {.*},
-        entities: apoc.map.fromPairs([n in entities | [n.category, n.nodes]]),
+        entities: entities,
         additionalTexts: additionalTexts
     }) AS annotations
     `;
 
-    const result: QueryResult = await Neo4jDriver.runQuery(query, {
-      nodeUuid,
-      entities,
-    });
+    const result: QueryResult = await Neo4jDriver.runQuery(query, { nodeUuid });
     const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
 
     const annotations: AnnotationData[] = rawAnnotations.map(annotation =>
@@ -194,20 +182,18 @@ export default class AnnotationService {
           annotation.data!.properties.type,
         );
 
-      const initialEntityUuids: string[] = Object.values(annotation.initialData!.entities)
-        .flat()
-        .map(item => item.uuid);
+      const initialEntities: Entity[] = annotation.initialData!.entities;
+      const newEntities: Entity[] = annotation.data!.entities;
 
-      const newEntityUuids: string[] = Object.values(annotation.data!.entities)
-        .flat()
-        .map(item => item.uuid);
+      const initialEntityUuids: string[] = initialEntities.map(item => item.data.uuid);
+      const newEntityUuids: string[] = newEntities.map(item => item.data.uuid);
 
-      const createdEntityUuids: string[] = newEntityUuids.filter(
-        uuid => !initialEntityUuids.includes(uuid),
+      const createdEntities: Entity[] = newEntities.filter(
+        entity => !initialEntityUuids.includes(entity.data.uuid),
       );
 
-      const deletedEntityUuids: string[] = initialEntityUuids.filter(
-        uuid => !newEntityUuids.includes(uuid),
+      const deletedEntities: Entity[] = initialEntities.filter(
+        entity => !newEntityUuids.includes(entity.data.uuid),
       );
 
       // ------------------------------------------------------------------------------------------------
@@ -261,8 +247,8 @@ export default class AnnotationService {
         data: {
           properties: toNeo4jTypes(annotation.data!.properties, annotationConfigFields),
           entities: {
-            deleted: deletedEntityUuids,
-            created: createdEntityUuids,
+            deleted: deletedEntities,
+            created: createdEntities,
           },
           additionalTexts: {
             created: createdAdditionalTexts,
@@ -280,8 +266,6 @@ export default class AnnotationService {
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
-
-    // console.dir(processedAnnotations, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     let query: string = `
@@ -321,16 +305,18 @@ export default class AnnotationService {
 
     CALL {
         WITH ann, a
-        UNWIND ann.data.entities.deleted AS deleteUuid
-        MATCH (a)-[r:REFERS_TO]->(e:Entity {uuid: deleteUuid})
+        UNWIND ann.data.entities.deleted AS entityToDelete
+        MATCH (a)-[r:REFERS_TO]->(e:Entity {uuid: entityToDelete.data.uuid})
         DELETE r
     }
 
     // Create edges to nodes that were added to the annotation data
     CALL {
         WITH ann, a
-        UNWIND ann.data.entities.created AS createdUuid
-        MATCH (e:Entity {uuid: createdUuid})
+        UNWIND ann.data.entities.created AS entityToCreate
+        MERGE (e:Entity {uuid: entityToCreate.data.uuid, label: entityToCreate.data.label})
+        WITH e, entityToCreate, a
+        CALL apoc.create.addLabels(e, entityToCreate.nodeLabels) YIELD node AS updatedEntityNode
         MERGE (a)-[r:REFERS_TO]->(e)
     }
 

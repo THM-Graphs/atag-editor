@@ -4,7 +4,7 @@ import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
-import { AdditionalText, PropertyConfig, AnnotationType, AnnotationData } from '../models/types';
+import { PropertyConfig, AnnotationType, AnnotationData } from '../models/types';
 import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
@@ -20,8 +20,7 @@ const { annotationType, collectionNodeLabels, mode } = defineProps<{
 
 const emit = defineEmits(['addAnnotation']);
 
-const { guidelines, getCollectionAnnotationFields, getCollectionAnnotationConfig } =
-  useGuidelinesStore();
+const { getCollectionAnnotationFields, getCollectionAnnotationConfig } = useGuidelinesStore();
 const { addToastMessage } = useAppStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
 
@@ -161,17 +160,10 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     newAnnotationData.subType = subType ?? subTypeField.options[0];
   }
 
-  // Entities (= connected Entity nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const entityCategories: string[] = guidelines.value.annotations.entities.map(r => r.category);
-  const newAnnotationEntities = Object.fromEntries(entityCategories.map(m => [m, []]));
-
-  // Additional texts (= connected Collection->Text nodes). Empty when created, but needed in Annotation structure -> empty arrays
-  const additionalTexts: AdditionalText[] = [];
-
   const newAnnotation: AnnotationData = {
     properties: cloneDeep(newAnnotationData),
-    entities: cloneDeep(newAnnotationEntities),
-    additionalTexts: cloneDeep(additionalTexts),
+    entities: [],
+    additionalTexts: [],
   };
 
   return newAnnotation;

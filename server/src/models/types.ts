@@ -21,9 +21,7 @@ export type Annotation = {
 
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
-  entities: {
-    [index: string]: IEntity[];
-  };
+  entities: Entity[];
   properties: IAnnotation;
 }
 
@@ -99,6 +97,8 @@ export type CollectionPreview = {
     collections: number;
   };
 };
+
+export type Entity = Node<IEntity>;
 
 export type FaviconResponse = {
   contentType: string;
