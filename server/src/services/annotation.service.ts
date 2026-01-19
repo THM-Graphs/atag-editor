@@ -182,8 +182,8 @@ export default class AnnotationService {
           annotation.data!.properties.type,
         );
 
-      const initialEntities: Entity[] = Object.values(annotation.initialData!.entities).flat();
-      const newEntities: Entity[] = Object.values(annotation.data!.entities).flat();
+      const initialEntities: Entity[] = annotation.initialData!.entities;
+      const newEntities: Entity[] = annotation.data!.entities;
 
       const initialEntityUuids: string[] = initialEntities.map(item => item.data.uuid);
       const newEntityUuids: string[] = newEntities.map(item => item.data.uuid);
@@ -266,8 +266,6 @@ export default class AnnotationService {
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
       await this.processAnnotationsBeforeSaving(annotations);
-
-    console.dir(processedAnnotations[0].data.entities, { depth: null });
 
     // TODO: Improve query speed, way too many db hits
     let query: string = `

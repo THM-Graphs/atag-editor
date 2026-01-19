@@ -390,16 +390,8 @@ export function useEditorStore() {
 
     // Check annotation status and data
     for (const a of snippetAnnotations.value.values()) {
-      const entityUuids: Set<string> = new Set(
-        Object.values(a.data.entities)
-          .flat()
-          .map(m => m.data.uuid),
-      );
-      const initialEntityUuids: Set<string> = new Set(
-        Object.values(a.initialData.entities)
-          .flat()
-          .map(m => m.data.uuid),
-      );
+      const entityUuids: Set<string> = new Set(a.data.entities.map(m => m.data.uuid));
+      const initialEntityUuids: Set<string> = new Set(a.initialData.entities.map(m => m.data.uuid));
 
       const initialAdditionalTextUuids: Set<string> = new Set(
         a.initialData.additionalTexts.map(at => at.collection.data.uuid),
