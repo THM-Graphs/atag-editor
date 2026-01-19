@@ -7,6 +7,7 @@ import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
 import NodeTag from './NodeTag.vue';
+import BookmarkButton from './BookmarkButton.vue';
 
 const { text, correspondingCollection } = useTextStore();
 
@@ -34,6 +35,7 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
         <EditorHistoryButton action="undo" />
         <EditorHistoryButton action="redo" />
         <EditorImportButton />
+        <BookmarkButton />
       </div>
     </div>
 

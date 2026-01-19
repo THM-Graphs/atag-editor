@@ -44,6 +44,7 @@ import CollectionDeleteModal from './CollectionDeleteModal.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import AppError from '../utils/errors/app.error';
 import ValidationError from '../utils/errors/validation.error';
+import { useBookmarks } from '../composables/useBookmarks';
 
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
@@ -432,6 +433,22 @@ function showMessage(result: 'success' | 'error', error?: Error) {
 function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
   selectedView.value = direction;
 }
+
+const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+
+function handleBookmarkAction() {
+  if (!isBookmarked.value) {
+    addBookmark(temporaryWorkData.value.collection, 'collection');
+  } else {
+    removeBookmark(temporaryWorkData.value.collection.data.uuid);
+  }
+}
+
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(
+    b => b.data.data.uuid === temporaryWorkData.value?.collection.data.uuid,
+  );
+});
 </script>
 
 <template>
@@ -440,6 +457,21 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
     class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
     <div class="main flex-grow-1 flex flex-column w-full">
+      <div class="buttons text-right">
+        <Button
+          type="button"
+          severity="secondary"
+          :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
+          size="small"
+          :title="isBookmarked ? 'Add collection to bookmarks' : 'Remove collection from bookmarks'"
+          @click="handleBookmarkAction"
+          :pt="{
+            icon: {
+              style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
+            },
+          }"
+        />
+      </div>
       <div class="status-section h-2rem relative text-right">
         <Tag
           v-if="globalMode === 'create'"

@@ -57,6 +57,13 @@ export type BaseNodeData = {
 
 export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
 
+export type Bookmark = {
+  data: Collection | Text;
+  type: 'collection' | 'text';
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type Character = {
   data: ICharacter;
   annotations: AnnotationReference[];
