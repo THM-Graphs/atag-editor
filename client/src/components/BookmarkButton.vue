@@ -1,41 +1,20 @@
 <script setup lang="ts">
-import { computed, DeepReadonly, ref, useTemplateRef, watch } from 'vue';
+import { useTemplateRef } from 'vue';
 import Button from 'primevue/button';
-import Popover from 'primevue/popover';
-import ButtonGroup from 'primevue/buttongroup';
-import ToggleButton from 'primevue/togglebutton';
-import { useBookmarks } from '../composables/useBookmarks';
-import BookmarkItem from './BookmarkItem.vue';
-import { Bookmark } from '../models/types';
-import { capitalize } from '../utils/helper/helper';
-import { RouteLocationNormalized, useRoute } from 'vue-router';
+import BookmarkPopover from './BookmarkPopover.vue';
 
-const { bookmarks } = useBookmarks();
+const popover = useTemplateRef<InstanceType<typeof BookmarkPopover>>('popover');
 
-const route: RouteLocationNormalized = useRoute();
-
-watch(route, () => bookmarkPopover.value.hide());
-
-const selectedBookmarkType = ref<'collection' | 'text'>('collection');
-const displayedItems = computed<DeepReadonly<Bookmark[]>>(() =>
-  bookmarks.value.filter(bookmark => bookmark.type === selectedBookmarkType.value),
-);
-
-const collectionCount = computed<number>(
-  () => bookmarks.value.filter(bookmark => bookmark.type === 'collection').length,
-);
-const textCount = computed<number>(
-  () => bookmarks.value.filter(bookmark => bookmark.type === 'text').length,
-);
-
-const bookmarkPopover = useTemplateRef('op');
-
-const toggle = event => {
-  bookmarkPopover.value.toggle(event);
-};
-
-function toggleViewMode(direction: 'collection' | 'text'): void {
-  selectedBookmarkType.value = direction;
+/**
+ * Toggle the visibility of the bookmark popover.
+ *
+ * Calls the toggle method of the popover instance.
+ *
+ * @param {PointerEvent} event - The event that triggered the toggle.
+ * @returns {void} This function does not return any value.
+ */
+function togglePopoverVisibility(event: PointerEvent): void {
+  popover.value.toggle(event);
 }
 </script>
 
@@ -46,61 +25,10 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
     label="Bookmarks"
     icon="pi pi-bookmark-fill"
     size="small"
-    @click="toggle"
+    @click="togglePopoverVisibility"
   />
 
-  <!-- TODO: Put popover in separate component? -->
-
-  <Popover
-    ref="op"
-    :pt="{
-      root: 'w-25rem',
-    }"
-  >
-    <div class="tab-buttons mb-2">
-      <ButtonGroup class="w-full flex">
-        <ToggleButton
-          :model-value="selectedBookmarkType === 'collection'"
-          class="w-full"
-          :onLabel="`Collections (${collectionCount})`"
-          :offLabel="`Collections (${collectionCount})`"
-          title="Show collections"
-          badge="2"
-          @change="toggleViewMode('collection')"
-        />
-        <ToggleButton
-          :model-value="selectedBookmarkType === 'text'"
-          class="w-full"
-          :onLabel="`Texts (${textCount})`"
-          :offLabel="`Texts (${textCount})`"
-          title="Show texts"
-          badge="2"
-          @change="toggleViewMode('text')"
-        />
-      </ButtonGroup>
-    </div>
-    <div class="items-pane">
-      <div v-if="displayedItems.length === 0" class="text-sm font-italic text-center">
-        Currently there is no bookmarked {{ capitalize(selectedBookmarkType) }}.
-      </div>
-      <BookmarkItem
-        v-for="item in displayedItems"
-        :data="item as Bookmark"
-        :type="item.type"
-        :key="item.data.data.uuid"
-      />
-
-      <div
-        v-if="displayedItems.length > 0"
-        class="disclaimer mt-4 text-xs font-italic flex align-items-center gap-2"
-      >
-        <i class="pi pi-exclamation-circle"></i>
-        <span>
-          The bookmarks are stored in your browser. If you change you device, they will be lost.
-        </span>
-      </div>
-    </div>
-  </Popover>
+  <BookmarkPopover ref="popover" />
 </template>
 
 <style scoped></style>
