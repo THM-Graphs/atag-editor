@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUpdated, ref } from 'vue';
+import { computed, ComputedRef, onMounted, onUpdated, ref, useTemplateRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import EditorTextNavigation from './EditorTextNavigation.vue';
+import Card from 'primevue/card';
+
 import {
   getCharacterUuidFromSpan,
   getParentCharacterSpan,
@@ -13,6 +15,7 @@ import {
   removeFormatting,
   getSpansToAnnotate,
 } from '../utils/helper/helper';
+import Popover from 'primevue/popover';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
@@ -48,8 +51,13 @@ const {
 } = useEditorStore();
 const { addToastMessage } = useAppStore();
 const { getAnnotationConfig } = useGuidelinesStore();
-const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
-  useCharactersStore();
+const {
+  afterEndIndex,
+  beforeStartIndex,
+  snippetCharacters,
+  totalCharacters,
+  sliceSnippetByIndizes,
+} = useCharactersStore();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
@@ -673,6 +681,36 @@ function isSelectionValid(config: AnnotationType): boolean {
   return true;
 }
 
+function getIndexInTotalCharacters(uuid: string): number | null {
+  const index = totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuid);
+
+  return index ?? null;
+}
+const popover = useTemplateRef('op');
+
+function onMouseRelease(event: MouseEvent) {
+  popover.value.hide();
+  const { range } = getSelectionData();
+
+  const startUuid = getParentCharacterSpan(range.startContainer).id;
+  const endUuid = getParentCharacterSpan(range.endContainer).id;
+
+  const startIndex = getIndexInTotalCharacters(startUuid) ?? 0;
+  const endIndex = getIndexInTotalCharacters(endUuid) ?? totalCharacters.value.length;
+
+  appendTarget.value = `#text > span[data-uuid="${getParentCharacterSpan(range.startContainer).dataset.uuid}"]`;
+
+  sliceSnippetByIndizes(startIndex, endIndex);
+
+  setTimeout(() => {
+    console.log(document.querySelector(appendTarget.value));
+
+    popover.value.show(event);
+  }, 500);
+
+  // console.log(popover.value);
+}
+
 function createNewCharacter(char: string): Character {
   return {
     data: {
@@ -682,9 +720,42 @@ function createNewCharacter(char: string): Character {
     annotations: [],
   };
 }
+
+const appendTarget = ref('body');
 </script>
 
 <template>
+  <Popover ref="op" :append-to="appendTarget">
+    <Card>
+      <template #content>
+        <div id="text">
+          <span
+            v-for="character in snippetCharacters"
+            :key="character.data.uuid"
+            :id="character.data.uuid"
+            :data-uuid="character.data.uuid"
+          >
+            {{ character.data.text
+            }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+              <span
+                v-if="selectedOptions.includes(annotation.type)"
+                :class="[
+                  'anno',
+                  annotation.isFirstCharacter ? 'start' : '',
+                  annotation.isLastCharacter ? 'end' : '',
+                  annotation.type,
+                  annotation.subType,
+                ]"
+                :data-anno-uuid="annotation.uuid"
+              >
+              </span>
+            </template>
+          </span>
+        </div>
+      </template>
+    </Card>
+  </Popover>
+
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch title="Switch pagination mode" v-model="keepTextOnPagination" />
@@ -701,17 +772,16 @@ function createNewCharacter(char: string): Character {
           class="min-h-full"
           :class="asyncOperationRunning ? 'async-overlay' : ''"
           ref="editorRef"
-          :contenteditable="isContentEditable"
+          :contenteditable="false"
           spellcheck="false"
-          @beforeinput="handleInput"
           @copy="handleCopy"
-          @click="handleMouseUp"
-          @keydown="handleKeydown"
+          @mouseup="onMouseRelease"
         >
           <span
-            v-for="character in snippetCharacters"
+            v-for="character in totalCharacters"
             :key="character.data.uuid"
             :id="character.data.uuid"
+            :data-uuid="character.data.uuid"
           >
             {{ character.data.text
             }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
@@ -731,7 +801,6 @@ function createNewCharacter(char: string): Character {
           </span>
         </div>
       </div>
-      <EditorTextNavigation />
     </div>
   </div>
 </template>
@@ -743,18 +812,23 @@ function createNewCharacter(char: string): Character {
   outline: 1px solid var(--color-focus);
 
   /* IE, Edge and Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
 
   /* Chrome, Safari and Opera */
   &::-webkit-scrollbar {
-    display: none;
+    /* display: none; */
   }
 
   &:has(:focus-visible) {
     box-shadow: var(--box-shadow-focus);
     outline: 0;
   }
+}
+
+.snippet-container {
+  position: absolute;
+  z-index: 9999999;
+  top: 30;
+  left: 50;
 }
 
 #text {

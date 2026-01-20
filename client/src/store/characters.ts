@@ -255,6 +255,16 @@ export function useCharactersStore() {
     sliceCharactersSnippet();
   }
 
+  function sliceSnippetByIndizes(start: number, end: number): void {
+    // Return if out of scope
+
+    console.log(start, end);
+
+    snippetCharacters.value = totalCharacters.value.slice(start, end + 1);
+
+    resetInitialBoundaryCharacters();
+  }
+
   /**
    * Paginates character array to the next characters. The mode parameter determines whether the currently displayed characters
    * should stay rendered or replaced by the next characters.
@@ -1015,5 +1025,6 @@ export function useCharactersStore() {
     resetInitialBoundaryCharacters,
     setAfterEndCharacter,
     setBeforeStartCharacter,
+    sliceSnippetByIndizes,
   };
 }
