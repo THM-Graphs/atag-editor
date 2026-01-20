@@ -80,12 +80,16 @@ function onShowPopover(): void {
 }
 
 /**
- * Resets the search value to an empty string. Called when the user clicks on the clear button of the search bar.
+ * Resets the search value to an empty string and focuses the search bar again.
+ *
+ * Called when the user clicks on the clear button of the search bar.
  *
  * @returns {void} This function does not return any value.
  */
 function resetSearch(): void {
   searchValue.value = '';
+
+  focusSearchBar();
 }
 
 /**
@@ -161,7 +165,10 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
           size="small"
           :style="searchBarStylingOptions"
           title="Clear search"
+          tabindex="0"
           @click="resetSearch"
+          @keydown.enter.prevent="resetSearch"
+          @keydown.space.prevent="resetSearch"
         />
       </IconField>
     </div>
