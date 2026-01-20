@@ -56,8 +56,14 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
 <template>
   <Popover
     ref="popover"
+    :auto-z-index="false"
     :pt="{
-      root: 'w-25rem',
+      root: {
+        class: 'w-25rem',
+        style: {
+          zIndex: 'var(--z-index-max)',
+        },
+      },
     }"
   >
     <div class="tab-buttons mb-2">
