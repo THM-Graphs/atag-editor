@@ -92,7 +92,7 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
       </div>
       <BookmarkItem
         v-for="item in displayedItems"
-        :data="item as Bookmark"
+        :bookmarkData="item as Bookmark"
         :type="item.type"
         :key="item.data.data.uuid"
       />

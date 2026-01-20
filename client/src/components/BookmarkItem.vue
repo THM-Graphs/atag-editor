@@ -7,21 +7,21 @@ import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
 
 const props = defineProps<{
-  data: Bookmark;
+  bookmarkData: Bookmark;
 }>();
 
 const { removeBookmark } = useBookmarks();
 
-const uuid: string = props.data.data.data.uuid;
-const isCollection: boolean = props.data.type === 'collection';
+const uuid: string = props.bookmarkData.data.data.uuid;
+const isCollection: boolean = props.bookmarkData.type === 'collection';
 
 function handleItemClick(): void {
-  router.push(`/${props.data.type}s/${uuid}`);
+  router.push(`/${props.bookmarkData.type}s/${uuid}`);
 }
 
 const htmlTitle = computed<string>(
   () =>
-    `Go go ${props.data.type} ${isCollection ? (props.data.data as Collection).data.label : 'with UUID ' + props.data.data.data.uuid}`,
+    `Go go ${props.bookmarkData.type} ${isCollection ? (props.bookmarkData.data as Collection).data.label : 'with UUID ' + props.bookmarkData.data.data.uuid}`,
 );
 
 // TODO: This should be in a helper function
@@ -29,8 +29,8 @@ const PREVIEW_LENGTH: number = 100;
 
 const displayedText = computed<string>(
   () =>
-    props.data.data.data?.text.slice(0, PREVIEW_LENGTH) +
-    (props.data.data.data?.text.length > PREVIEW_LENGTH ? '...' : ''),
+    props.bookmarkData.data.data?.text.slice(0, PREVIEW_LENGTH) +
+    (props.bookmarkData.data.data?.text.length > PREVIEW_LENGTH ? '...' : ''),
 );
 </script>
 
@@ -49,14 +49,14 @@ const displayedText = computed<string>(
             border: '1px solid black',
           }"
           class="test mr-1"
-          v-for="label in props.data.data.nodeLabels"
+          v-for="label in props.bookmarkData.data.nodeLabels"
           :content="label"
           type="Collection"
         />
       </div>
       <template v-if="isCollection">
         <div class="label font-bold">
-          {{ (props.data.data as Collection).data.label }}
+          {{ (props.bookmarkData.data as Collection).data.label }}
         </div>
       </template>
       <template v-else>
