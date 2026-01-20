@@ -27,6 +27,8 @@ const searchValue = ref<string>('');
 
 watch(route, () => popover.value.hide());
 
+watch(selectedBookmarkType, () => focusSearchBar());
+
 const displayedItems = computed<DeepReadonly<Bookmark[]>>(() =>
   bookmarks.value.filter(bookmark => {
     const stringToCheck: string =
@@ -56,14 +58,25 @@ const searchBarStylingOptions: Partial<CSSStyleDeclaration> = {
 };
 
 /**
- * Focuses and sets caret in the search bar element of the popover.
+ * Focus the searchbar HTML Input element.
+ *
+ * Called when the popover is toggled on or the category is switched to keep the caret in the input element.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function focusSearchBar(): void {
+  searchbar.value.$el?.focus();
+}
+
+/**
+ * Focuses the search bar element of the popover.
  *
  * Called when the popover is shown (by emitting the component's `show` event).
  *
  * @returns {void} This function does not return any value.
  */
 function onShowPopover(): void {
-  searchbar.value.$el?.focus();
+  focusSearchBar();
 }
 
 /**
@@ -77,6 +90,8 @@ function resetSearch(): void {
 
 /**
  * Toggle the visibility of the popover.
+ *
+ * Exposed to and called by the button component to which the popover is attached.
  *
  * @param {PointerEvent} event - The event that triggered the toggle.
  * @returns {void} This function does not return any value.
