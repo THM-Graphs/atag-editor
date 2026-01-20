@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref, useTemplateRef, watch } from 'vue';
 import Button from 'primevue/button';
-
 import ButtonGroup from 'primevue/buttongroup';
 import ToggleButton from 'primevue/togglebutton';
 import { useCollectionManagerStore } from '../store/collectionManager';
@@ -76,6 +75,8 @@ const {
   updateLevelsAndFetchData,
 } = useCollectionManagerStore();
 
+const { bookmarks, toggleBookmark } = useBookmarks();
+
 const confirm = useConfirm();
 
 const temporaryWorkData = ref<CollectionAccessObject | null>(null);
@@ -94,6 +95,12 @@ const formMode = computed<'view' | 'edit'>(() => {
 });
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
+
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(
+    b => b.data.data.uuid === temporaryWorkData.value?.collection.data.uuid,
+  );
+});
 
 const selectedView = ref<'texts' | 'details' | 'annotations'>('details');
 const isTextsSelected = computed<boolean>(() => selectedView.value === 'texts');
@@ -340,6 +347,10 @@ async function handleApplyChanges(): Promise<void> {
   }
 }
 
+function handleBookmarkAction(): void {
+  toggleBookmark({ data: temporaryWorkData.value.collection, type: 'collection' });
+}
+
 async function handleDeleteColletion() {
   createModalInstance(
     dialog.open(CollectionDeleteModal, {
@@ -433,18 +444,6 @@ function showMessage(result: 'success' | 'error', error?: Error) {
 function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
   selectedView.value = direction;
 }
-
-const { bookmarks, toggleBookmark } = useBookmarks();
-
-function handleBookmarkAction() {
-  toggleBookmark({ data: temporaryWorkData.value.collection, type: 'collection' });
-}
-
-const isBookmarked = computed<boolean>(() => {
-  return bookmarks.value.some(
-    b => b.data.data.uuid === temporaryWorkData.value?.collection.data.uuid,
-  );
-});
 </script>
 
 <template>
