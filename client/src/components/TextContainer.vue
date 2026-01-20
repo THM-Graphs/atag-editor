@@ -76,7 +76,7 @@ function handleAddTextClick() {
             severity="secondary"
             :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
             size="small"
-            :title="isBookmarked ? 'Add text to bookmarks' : 'Remove text from bookmarks'"
+            :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
             @click="handleBookmarkAction"
             :pt="{
               icon: {

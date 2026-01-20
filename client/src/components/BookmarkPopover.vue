@@ -105,7 +105,8 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
       >
         <i class="pi pi-exclamation-circle"></i>
         <span>
-          The bookmarks are stored in your browser. If you change you device, they will be lost.
+          The bookmarks are stored in your browser. If you change you device, they won't be
+          available there.
         </span>
       </div>
     </div>

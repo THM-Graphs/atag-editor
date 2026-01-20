@@ -6,8 +6,6 @@ import router from '../router';
 import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
 
-// const emit = defineEmits(['itemSelected']);
-
 const props = defineProps<{
   data: Bookmark;
 }>();

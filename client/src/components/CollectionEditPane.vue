@@ -463,7 +463,7 @@ const isBookmarked = computed<boolean>(() => {
           severity="secondary"
           :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
           size="small"
-          :title="isBookmarked ? 'Add collection to bookmarks' : 'Remove collection from bookmarks'"
+          :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
           @click="handleBookmarkAction"
           :pt="{
             icon: {
