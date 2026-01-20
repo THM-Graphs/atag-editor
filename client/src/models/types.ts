@@ -60,8 +60,8 @@ export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity'
 export type Bookmark = {
   data: Collection | Text;
   type: 'collection' | 'text';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string; // ISO 8601 string
+  updatedAt: string; // ISO 8601 string
 };
 
 export type Character = {

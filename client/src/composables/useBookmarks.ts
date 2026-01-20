@@ -31,13 +31,13 @@ export function useBookmarks(): UseBookmarksReturnType {
   function addBookmark(params: BookmarkParams): void {
     const { data, type } = params;
 
-    const date: Date = new Date();
+    const dateString: string = new Date().toISOString();
 
     bookmarks.value.push({
       data,
       type,
-      createdAt: date,
-      updatedAt: date,
+      createdAt: dateString,
+      updatedAt: dateString,
     });
   }
 
