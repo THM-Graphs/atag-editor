@@ -74,7 +74,6 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
           :onLabel="`Collections (${collectionCount})`"
           :offLabel="`Collections (${collectionCount})`"
           title="Show collections"
-          badge="2"
           @change="toggleBookmarkTypeView('collection')"
         />
         <ToggleButton
@@ -83,7 +82,6 @@ function toggleBookmarkTypeView(direction: 'collection' | 'text'): void {
           :onLabel="`Texts (${textCount})`"
           :offLabel="`Texts (${textCount})`"
           title="Show texts"
-          badge="2"
           @change="toggleBookmarkTypeView('text')"
         />
       </ButtonGroup>

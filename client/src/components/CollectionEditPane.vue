@@ -434,14 +434,10 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
   selectedView.value = direction;
 }
 
-const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+const { bookmarks, toggleBookmark } = useBookmarks();
 
 function handleBookmarkAction() {
-  if (!isBookmarked.value) {
-    addBookmark(temporaryWorkData.value.collection, 'collection');
-  } else {
-    removeBookmark(temporaryWorkData.value.collection.data.uuid);
-  }
+  toggleBookmark({ data: temporaryWorkData.value.collection, type: 'collection' });
 }
 
 const isBookmarked = computed<boolean>(() => {

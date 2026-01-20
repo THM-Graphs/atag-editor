@@ -12,7 +12,7 @@ import { useBookmarks } from '../composables/useBookmarks';
 import { MenuItem } from 'primevue/menuitem';
 
 const { text, correspondingCollection } = useTextStore();
-const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+const { bookmarks, toggleBookmark } = useBookmarks();
 
 const breadcrumbRoot = ref<MenuItem>({
   role: 'Collection',
@@ -26,11 +26,7 @@ const isBookmarked = computed<boolean>(() => {
 });
 
 function handleBookmarkAction() {
-  if (!isBookmarked.value) {
-    addBookmark(text.value, 'text');
-  } else {
-    removeBookmark(text.value.data.uuid);
-  }
+  toggleBookmark({ data: text.value, type: 'text' });
 }
 </script>
 

@@ -21,18 +21,14 @@ const emit = defineEmits<{
 }>();
 
 const { getAvailableTextLabels } = useGuidelinesStore();
-const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+const { bookmarks, toggleBookmark } = useBookmarks();
 
 const isBookmarked = computed<boolean>(() => {
   return bookmarks.value.some(b => b.data.data.uuid === props.text.data.uuid);
 });
 
 function handleBookmarkAction() {
-  if (!isBookmarked.value) {
-    addBookmark(props.text, 'text');
-  } else {
-    removeBookmark(props.text.data.uuid);
-  }
+  toggleBookmark({ data: props.text, type: 'text' });
 }
 
 const PREVIEW_LENGTH: number = 300;
