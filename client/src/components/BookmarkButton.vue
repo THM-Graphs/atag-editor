@@ -89,6 +89,16 @@ function toggleViewMode(direction: 'collection' | 'text'): void {
         :type="item.type"
         :key="item.data.data.uuid"
       />
+
+      <div
+        v-if="displayedItems.length > 0"
+        class="disclaimer mt-4 text-xs font-italic flex align-items-center gap-2"
+      >
+        <i class="pi pi-exclamation-circle"></i>
+        <span>
+          The bookmarks are stored in your browser. If you change you device, they will be lost.
+        </span>
+      </div>
     </div>
   </Popover>
 </template>
