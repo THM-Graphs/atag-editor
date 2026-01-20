@@ -1,0 +1,109 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useBookmarks } from '../composables/useBookmarks';
+import { Bookmark, Collection } from '../models/types';
+import router from '../router';
+import NodeTag from './NodeTag.vue';
+import Button from 'primevue/button';
+import Card from 'primevue/card';
+
+const props = defineProps<{
+  bookmarkData: Bookmark;
+}>();
+
+const { removeBookmark } = useBookmarks();
+
+const uuid: string = props.bookmarkData.data.data.uuid;
+const isCollection: boolean = props.bookmarkData.type === 'collection';
+
+function handleItemClick(): void {
+  router.push(`/${props.bookmarkData.type}s/${uuid}`);
+}
+
+const htmlTitle = computed<string>(
+  () =>
+    `Go go ${props.bookmarkData.type} ${isCollection ? (props.bookmarkData.data as Collection).data.label : 'with UUID ' + props.bookmarkData.data.data.uuid}`,
+);
+
+// TODO: This should be in a helper function
+const PREVIEW_LENGTH: number = 120;
+
+const displayedText = computed<string>(
+  () =>
+    props.bookmarkData.data.data?.text.slice(0, PREVIEW_LENGTH) +
+    (props.bookmarkData.data.data?.text.length > PREVIEW_LENGTH ? '...' : ''),
+);
+</script>
+
+<template>
+  <Card :title="htmlTitle" class="container" :pt="{ body: { class: 'p-1' } }">
+    <template #content>
+      <div class="flex align-items-center p-1" @click="handleItemClick">
+        <div class="data flex-grow-1">
+          <div class="labels">
+            <NodeTag
+              :style="{
+                fontSize: '0.7rem',
+                backgroundColor: 'white',
+                fontWeight: 'normal',
+                color: 'black',
+                padding: '2px 2px',
+                lineHeight: '100%',
+                border: '1px solid black',
+              }"
+              class="test mr-1"
+              v-for="label in props.bookmarkData.data.nodeLabels"
+              :content="label"
+              type="Collection"
+            />
+          </div>
+          <template v-if="isCollection">
+            <div class="label font-bold">
+              {{ (props.bookmarkData.data as Collection).data.label }}
+            </div>
+          </template>
+          <template v-else>
+            <div class="text text-sm">
+              {{ displayedText }}
+            </div>
+          </template>
+        </div>
+        <Button
+          title="Remove bookmark"
+          severity="primary"
+          icon="pi pi-bookmark-fill"
+          size="small"
+          outlined
+          class="w-2rem h-2rem"
+          @click.stop="removeBookmark(uuid)"
+        />
+      </div>
+    </template>
+  </Card>
+</template>
+
+<style scoped>
+.container {
+  cursor: pointer;
+  margin-bottom: 5px;
+  box-shadow:
+    rgba(0, 0, 0, 0.02) 0px 1px 3px 0px,
+    rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+  transition: background-color 0.1s;
+
+  &:hover {
+    background-color: hsl(0, 0%, 90%);
+  }
+
+  .label {
+    height: 1.5rem;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .active {
+    background-color: hsl(0, 0%, 75%);
+  }
+}
+</style>

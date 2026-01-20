@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref, useTemplateRef, watch } from 'vue';
 import Button from 'primevue/button';
-
 import ButtonGroup from 'primevue/buttongroup';
 import ToggleButton from 'primevue/togglebutton';
 import { useCollectionManagerStore } from '../store/collectionManager';
@@ -44,6 +43,7 @@ import CollectionDeleteModal from './CollectionDeleteModal.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import AppError from '../utils/errors/app.error';
 import ValidationError from '../utils/errors/validation.error';
+import { useBookmarks } from '../composables/useBookmarks';
 
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
@@ -75,6 +75,8 @@ const {
   updateLevelsAndFetchData,
 } = useCollectionManagerStore();
 
+const { bookmarks, toggleBookmark } = useBookmarks();
+
 const confirm = useConfirm();
 
 const temporaryWorkData = ref<CollectionAccessObject | null>(null);
@@ -93,6 +95,12 @@ const formMode = computed<'view' | 'edit'>(() => {
 });
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
+
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(
+    b => b.data.data.uuid === temporaryWorkData.value?.collection.data.uuid,
+  );
+});
 
 const selectedView = ref<'texts' | 'details' | 'annotations'>('details');
 const isTextsSelected = computed<boolean>(() => selectedView.value === 'texts');
@@ -339,6 +347,10 @@ async function handleApplyChanges(): Promise<void> {
   }
 }
 
+function handleBookmarkAction(): void {
+  toggleBookmark({ data: temporaryWorkData.value.collection, type: 'collection' });
+}
+
 async function handleDeleteColletion() {
   createModalInstance(
     dialog.open(CollectionDeleteModal, {
@@ -440,6 +452,21 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
     class="edit-pane-container h-full flex flex-column align-items-center text-center p-2"
   >
     <div class="main flex-grow-1 flex flex-column w-full">
+      <div class="buttons text-right">
+        <Button
+          type="button"
+          severity="secondary"
+          :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
+          size="small"
+          :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
+          @click="handleBookmarkAction"
+          :pt="{
+            icon: {
+              style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
+            },
+          }"
+        />
+      </div>
       <div class="status-section h-2rem relative text-right">
         <Tag
           v-if="globalMode === 'create'"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
 import FulltextSearchbar from './FulltextSearchbar.vue';
@@ -7,15 +7,27 @@ import { useTextStore } from '../store/text';
 import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
 import NodeTag from './NodeTag.vue';
+import BookmarkButton from './BookmarkButton.vue';
+import { useBookmarks } from '../composables/useBookmarks';
+import { MenuItem } from 'primevue/menuitem';
 
 const { text, correspondingCollection } = useTextStore();
+const { bookmarks, toggleBookmark } = useBookmarks();
 
-const breadcrumbRoot = ref({
+const breadcrumbRoot = ref<MenuItem>({
   role: 'Collection',
   label: correspondingCollection.value.data.label,
   uuid: correspondingCollection.value.data.uuid,
 });
-const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
+const breadcrumbItems = ref<MenuItem[]>([{ role: 'Text', labels: text.value.nodeLabels }]);
+
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(b => b.data.data.uuid === text.value.data.uuid);
+});
+
+function handleBookmarkAction() {
+  toggleBookmark({ data: text.value, type: 'text' });
+}
 </script>
 
 <template>
@@ -34,10 +46,11 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
         <EditorHistoryButton action="undo" />
         <EditorHistoryButton action="redo" />
         <EditorImportButton />
+        <BookmarkButton />
       </div>
     </div>
 
-    <div class="flex justify-content-center">
+    <div class="flex justify-content-center align-items-center">
       <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
         <template #item="{ item }">
           <div v-if="item.role === 'Collection'">
@@ -63,6 +76,19 @@ const breadcrumbItems = ref([{ role: 'Text', labels: text.value.nodeLabels }]);
           </div>
         </template>
       </Breadcrumb>
+      <Button
+        type="button"
+        severity="secondary"
+        :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
+        size="small"
+        :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
+        @click="handleBookmarkAction"
+        :pt="{
+          icon: {
+            style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
+          },
+        }"
+      />
     </div>
   </div>
 </template>
