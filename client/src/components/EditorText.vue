@@ -59,7 +59,7 @@ const {
   totalCharacters,
   sliceSnippetByIndizes,
 } = useCharactersStore();
-const { snippetAnnotations } = useAnnotationStore();
+const { snippetAnnotations, extractSnippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
 useEventListener(window, 'forceCaretPlacement', placeCaret);
@@ -718,6 +718,8 @@ function onMouseRelease(event: MouseEvent) {
 
   sliceSnippetByIndizes(startIndex, endIndex);
 
+  extractSnippetAnnotations();
+
   setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid);
 
   // setTimeout(() => {
@@ -895,7 +897,7 @@ function createNewCharacter(char: string): Character {
 
 .before-snippet,
 .after-snippet {
-  opacity: 0.3;
+  opacity: 0.4;
 }
 
 .edit-area {
