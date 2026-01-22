@@ -8,7 +8,6 @@ const { hasOpenModal, redirectToCollectionPath } = useNavigationGuard();
 
 const allRoutes = [
   { path: '/', component: CollectionManager },
-  { path: '/test', component: CollectionManager },
   {
     path: '/collections/:uuid',
     component: CollectionSingleView,
@@ -17,7 +16,7 @@ const allRoutes = [
   { path: '/texts/:uuid', component: Editor },
 ];
 
-const prodRoutes = allRoutes.filter(r => r.path !== '/playground');
+const prodRoutes = allRoutes.filter(r => ['/test', '/playground'].includes(r.path));
 
 const usedRoutes = import.meta.env.DEV ? allRoutes : prodRoutes;
 
