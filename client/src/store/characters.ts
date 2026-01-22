@@ -255,14 +255,24 @@ export function useCharactersStore() {
     sliceCharactersSnippet();
   }
 
-  function sliceSnippetByIndizes(start: number, end: number): void {
+  function sliceSnippetByIndizes(start: number, end: number | null): void {
+    // Return if out of scope
+    beforeStartIndex.value = start - 1;
+
+    afterEndIndex.value = end
+      ? end + 1
+      : Math.min(beforeStartIndex.value + PAGINATION_SIZE, totalCharacters.value.length - 1);
     // Return if out of scope
 
-    console.log(start, end);
+    // console.time('slice');
 
-    snippetCharacters.value = totalCharacters.value.slice(start, end + 1);
+    snippetCharacters.value = totalCharacters.value.slice(
+      beforeStartIndex.value,
+      afterEndIndex.value,
+    );
+    // console.timeEnd('slice');
 
-    resetInitialBoundaryCharacters();
+    // resetInitialBoundaryCharacters();
   }
 
   /**

@@ -43,6 +43,7 @@ const {
   isRedrawMode,
   keepTextOnPagination,
   redrawMode,
+  setNewRangeAnchorUuid,
   execCommand,
   placeCaret,
   redo,
@@ -64,6 +65,19 @@ const { selectedOptions } = useFilterStore();
 useEventListener(window, 'forceCaretPlacement', placeCaret);
 
 const editorRef = ref<HTMLDivElement>(null);
+
+const charactersBeforeSnippet = computed(() => {
+  console.time('before');
+  const sliced = totalCharacters.value.slice(0, beforeStartIndex.value);
+  console.timeEnd('before');
+  return sliced;
+});
+const charactersAfterSnippet = computed(() => {
+  console.time('after');
+  const sliced = totalCharacters.value.slice(afterEndIndex.value);
+  console.timeEnd('after');
+  return sliced;
+});
 
 // This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
 const charCounterMessage: ComputedRef<string> = computed(() => {
@@ -686,27 +700,31 @@ function getIndexInTotalCharacters(uuid: string): number | null {
 
   return index ?? null;
 }
-const popover = useTemplateRef('op');
+// const popover = useTemplateRef('op');
 
 function onMouseRelease(event: MouseEvent) {
-  popover.value.hide();
-  const { range } = getSelectionData();
+  // popover.value.hide();
+  const { range, type } = getSelectionData();
 
   const startUuid = getParentCharacterSpan(range.startContainer).id;
-  const endUuid = getParentCharacterSpan(range.endContainer).id;
+  const endUuid = type === 'Range' ? getParentCharacterSpan(range.endContainer).id : null;
 
   const startIndex = getIndexInTotalCharacters(startUuid) ?? 0;
-  const endIndex = getIndexInTotalCharacters(endUuid) ?? totalCharacters.value.length;
+  const endIndex = endUuid
+    ? getIndexInTotalCharacters(endUuid) ?? totalCharacters.value.length
+    : null;
 
-  appendTarget.value = `#text > span[data-uuid="${getParentCharacterSpan(range.startContainer).dataset.uuid}"]`;
+  // appendTarget.value = `#text > span[data-uuid="${getParentCharacterSpan(range.startContainer).dataset.uuid}"]`;
 
   sliceSnippetByIndizes(startIndex, endIndex);
 
-  setTimeout(() => {
-    console.log(document.querySelector(appendTarget.value));
+  setNewRangeAnchorUuid(snippetCharacters.value[snippetCharacters.value.length - 1].data.uuid);
 
-    popover.value.show(event);
-  }, 500);
+  // setTimeout(() => {
+  //   console.log(document.querySelector(appendTarget.value));
+
+  //   popover.value.show(event);
+  // }, 500);
 
   // console.log(popover.value);
 }
@@ -720,12 +738,10 @@ function createNewCharacter(char: string): Character {
     annotations: [],
   };
 }
-
-const appendTarget = ref('body');
 </script>
 
 <template>
-  <Popover ref="op" :append-to="appendTarget">
+  <!-- <Popover ref="op">
     <Card>
       <template #content>
         <div id="text">
@@ -754,7 +770,7 @@ const appendTarget = ref('body');
         </div>
       </template>
     </Card>
-  </Popover>
+  </Popover> -->
 
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
@@ -772,33 +788,90 @@ const appendTarget = ref('body');
           class="min-h-full"
           :class="asyncOperationRunning ? 'async-overlay' : ''"
           ref="editorRef"
-          :contenteditable="false"
           spellcheck="false"
           @copy="handleCopy"
-          @mouseup="onMouseRelease"
         >
-          <span
-            v-for="character in totalCharacters"
-            :key="character.data.uuid"
-            :id="character.data.uuid"
-            :data-uuid="character.data.uuid"
-          >
-            {{ character.data.text
-            }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
-              <span
-                v-if="selectedOptions.includes(annotation.type)"
-                :class="[
-                  'anno',
-                  annotation.isFirstCharacter ? 'start' : '',
-                  annotation.isLastCharacter ? 'end' : '',
-                  annotation.type,
-                  annotation.subType,
-                ]"
-                :data-anno-uuid="annotation.uuid"
-              >
+          <div id="text" class="before-snippet" @mouseup="onMouseRelease">
+            <template
+              v-for="(character, index) in charactersBeforeSnippet"
+              :key="character.data.uuid"
+            >
+              <span :id="character.data.uuid" :data-uuid="character.data.uuid">
+                {{ character.data.text
+                }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+                  <span
+                    v-if="selectedOptions.includes(annotation.type)"
+                    :class="[
+                      'anno',
+                      annotation.isFirstCharacter ? 'start' : '',
+                      annotation.isLastCharacter ? 'end' : '',
+                      annotation.type,
+                      annotation.subType,
+                    ]"
+                    :data-anno-uuid="annotation.uuid"
+                  >
+                  </span>
+                </template>
               </span>
             </template>
-          </span>
+          </div>
+          <div class="break start" />
+          <div class="edit-area" id="text" :contenteditable="true">
+            <template v-for="(character, index) in snippetCharacters" :key="character.data.uuid">
+              <span :id="character.data.uuid" :data-uuid="character.data.uuid">
+                {{ character.data.text
+                }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+                  <span
+                    v-if="selectedOptions.includes(annotation.type)"
+                    :class="[
+                      'anno',
+                      annotation.isFirstCharacter ? 'start' : '',
+                      annotation.isLastCharacter ? 'end' : '',
+                      annotation.type,
+                      annotation.subType,
+                    ]"
+                    :data-anno-uuid="annotation.uuid"
+                  >
+                  </span>
+                </template>
+              </span>
+            </template>
+          </div>
+          <div class="break end" />
+          <div id="text" class="after-snippet" @mouseup="onMouseRelease">
+            <template
+              v-for="(character, index) in charactersAfterSnippet"
+              :key="character.data.uuid"
+            >
+              <div
+                class="break start"
+                v-if="character.data.uuid === snippetCharacters[0].data.uuid"
+              />
+              <span :id="character.data.uuid" :data-uuid="character.data.uuid">
+                {{ character.data.text
+                }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
+                  <span
+                    v-if="selectedOptions.includes(annotation.type)"
+                    :class="[
+                      'anno',
+                      annotation.isFirstCharacter ? 'start' : '',
+                      annotation.isLastCharacter ? 'end' : '',
+                      annotation.type,
+                      annotation.subType,
+                    ]"
+                    :data-anno-uuid="annotation.uuid"
+                  >
+                  </span>
+                </template>
+              </span>
+              <div
+                class="break end"
+                v-if="
+                  character.data.uuid === snippetCharacters[snippetCharacters.length - 1].data.uuid
+                "
+              />
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -806,10 +879,30 @@ const appendTarget = ref('body');
 </template>
 
 <style scoped>
-.scroll-container {
+.break {
+  display: block;
+  width: 100%;
+  height: 5px;
+
+  &.start {
+    /* background-color: lightgreen; */
+  }
+
+  &.end {
+    /* background-color: pink; */
+  }
+}
+
+.before-snippet,
+.after-snippet {
+  opacity: 0.3;
+}
+
+.edit-area {
   background-color: white;
   border-radius: 3px;
-  outline: 1px solid var(--color-focus);
+  border: 1px solid var(--color-focus);
+  margin: 10px;
 
   /* IE, Edge and Firefox */
 
@@ -818,7 +911,7 @@ const appendTarget = ref('body');
     /* display: none; */
   }
 
-  &:has(:focus-visible) {
+  &:focus-visible {
     box-shadow: var(--box-shadow-focus);
     outline: 0;
   }
