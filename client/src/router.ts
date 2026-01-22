@@ -1,6 +1,7 @@
 import { RouteRecordRaw, Router, createWebHistory, createRouter } from 'vue-router';
 import Editor from './views/Editor.vue';
 import CollectionManager from './views/CollectionManager.vue';
+import CollectionSingleView from './views/CollectionSingleView.vue';
 import { useNavigationGuard } from './composables/useNavigationGuard';
 
 const { hasOpenModal, redirectToCollectionPath } = useNavigationGuard();
@@ -10,7 +11,7 @@ const allRoutes = [
   { path: '/test', component: CollectionManager },
   {
     path: '/collections/:uuid',
-    component: { template: '</div>' },
+    component: CollectionSingleView,
     beforeEnter: redirectToCollectionPath,
   },
   { path: '/texts/:uuid', component: Editor },

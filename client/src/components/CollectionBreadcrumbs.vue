@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import Breadcrumb from 'primevue/breadcrumb';
-import { Collection } from '../models/types';
+import { NodeAncestry } from '../models/types';
 import { MenuItem } from 'primevue/menuitem';
 
 const props = defineProps<{
-  path: Collection[];
+  path: NodeAncestry;
 }>();
 
 const emit = defineEmits(['itemClicked', 'homeClicked']);
