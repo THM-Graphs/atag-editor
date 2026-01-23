@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUpdated, ref, useTemplateRef } from 'vue';
+import { computed, ComputedRef, nextTick, onMounted, onUpdated, ref, useTemplateRef } from 'vue';
 import { useCharactersStore } from '../store/characters';
 import EditorTextNavigation from './EditorTextNavigation.vue';
 import Card from 'primevue/card';
@@ -21,7 +21,7 @@ import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationType, Character } from '../models/types';
-import { useEventListener } from '@vueuse/core';
+import { breakpointsAntDesign, useEventListener } from '@vueuse/core';
 import { useAppStore } from '../store/app';
 import { useAnnotationStore } from '../store/annotations';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
@@ -67,17 +67,52 @@ useEventListener(window, 'forceCaretPlacement', placeCaret);
 const editorRef = ref<HTMLDivElement>(null);
 
 const charactersBeforeSnippet = computed(() => {
-  console.time('before');
+  console.time('characters before');
   const sliced = totalCharacters.value.slice(0, beforeStartIndex.value);
-  console.timeEnd('before');
+  console.timeEnd('characters before');
+
   return sliced;
 });
 const charactersAfterSnippet = computed(() => {
-  console.time('after');
+  console.time('characters after');
   const sliced = totalCharacters.value.slice(afterEndIndex.value);
-  console.timeEnd('after');
+  console.timeEnd('characters after');
+
   return sliced;
 });
+
+const textBeforeSnippet = computed(() => {
+  console.time('text before');
+
+  let textBefore = '';
+
+  for (const character of totalCharacters.value) {
+    if (character.data.uuid === snippetCharacters.value[0].data.uuid) {
+      break;
+    }
+
+    textBefore += character.data.text;
+  }
+
+  console.timeEnd('text before');
+
+  return textBefore;
+});
+const textAfterSnippet = computed(() => {
+  console.time('text after');
+
+  let textAfter = '';
+
+  for (let i = afterEndIndex.value; i < totalCharacters.value.length; i++) {
+    textAfter += totalCharacters.value[i].data.text;
+  }
+
+  console.timeEnd('text after');
+
+  return textAfter;
+});
+
+const editArea = useTemplateRef<HTMLDivElement>('edit-area');
 
 // This calculation is needed since totalCharacters is decoupled and only updated just before saving changes.
 const charCounterMessage: ComputedRef<string> = computed(() => {
@@ -706,6 +741,9 @@ function onMouseRelease(event: MouseEvent) {
   // popover.value.hide();
   const { range, type } = getSelectionData();
 
+  alert('hi');
+  return;
+
   const startUuid = getParentCharacterSpan(range.startContainer).id;
   const endUuid = type === 'Range' ? getParentCharacterSpan(range.endContainer).id : null;
 
@@ -743,37 +781,6 @@ function createNewCharacter(char: string): Character {
 </script>
 
 <template>
-  <!-- <Popover ref="op">
-    <Card>
-      <template #content>
-        <div id="text">
-          <span
-            v-for="character in snippetCharacters"
-            :key="character.data.uuid"
-            :id="character.data.uuid"
-            :data-uuid="character.data.uuid"
-          >
-            {{ character.data.text
-            }}<template v-for="annotation in character.annotations" :key="annotation.uuid">
-              <span
-                v-if="selectedOptions.includes(annotation.type)"
-                :class="[
-                  'anno',
-                  annotation.isFirstCharacter ? 'start' : '',
-                  annotation.isLastCharacter ? 'end' : '',
-                  annotation.type,
-                  annotation.subType,
-                ]"
-                :data-anno-uuid="annotation.uuid"
-              >
-              </span>
-            </template>
-          </span>
-        </div>
-      </template>
-    </Card>
-  </Popover> -->
-
   <div class="flex justify-content-end">
     <label class="label">Keep text on pagination</label>
     <ToggleSwitch title="Switch pagination mode" v-model="keepTextOnPagination" />
@@ -816,9 +823,11 @@ function createNewCharacter(char: string): Character {
                 </template>
               </span>
             </template>
+
+            {{ textBeforeSnippet }}
           </div>
           <div class="break start" />
-          <div class="edit-area" id="text" :contenteditable="true">
+          <div ref="edit-area" class="edit-area" id="text" :contenteditable="true">
             <template v-for="(character, index) in snippetCharacters" :key="character.data.uuid">
               <span :id="character.data.uuid" :data-uuid="character.data.uuid">
                 {{ character.data.text
@@ -841,7 +850,7 @@ function createNewCharacter(char: string): Character {
           </div>
           <div class="break end" />
           <div id="text" class="after-snippet" @mouseup="onMouseRelease">
-            <template
+            <!-- <template
               v-for="(character, index) in charactersAfterSnippet"
               :key="character.data.uuid"
             >
@@ -872,7 +881,8 @@ function createNewCharacter(char: string): Character {
                   character.data.uuid === snippetCharacters[snippetCharacters.length - 1].data.uuid
                 "
               />
-            </template>
+            </template> -->
+            {{ textAfterSnippet }}
           </div>
         </div>
       </div>
