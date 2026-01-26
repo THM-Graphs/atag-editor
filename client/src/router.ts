@@ -16,7 +16,7 @@ const allRoutes = [
   { path: '/texts/:uuid', component: Editor },
 ];
 
-const prodRoutes = allRoutes.filter(r => ['/test', '/playground'].includes(r.path));
+const prodRoutes = allRoutes.filter(r => !['/test', '/playground'].includes(r.path));
 
 const usedRoutes = import.meta.env.DEV ? allRoutes : prodRoutes;
 
