@@ -1,7 +1,7 @@
 /**
  * Default character snippet length to be displayed
  */
-export const PAGINATION_SIZE: number = 1000;
+export const PAGINATION_SIZE: number = 300;
 
 /**
  * Delay in miliseconds before a new entry is pushed to the edit history stack (reduces overhead on rapid typing)
