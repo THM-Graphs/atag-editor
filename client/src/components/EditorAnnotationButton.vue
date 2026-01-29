@@ -19,14 +19,16 @@ import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import ShortcutError from '../utils/errors/shortcut.error';
-import { onMounted, ref } from 'vue';
+import { computed, inject, onMounted, ref, ShallowRef } from 'vue';
 import { useAppStore } from '../store/app';
+import { Editor, Mark, mergeAttributes } from '@tiptap/vue-3';
+import { useAnnotationStore } from '../store/annotations';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
 const { addToastMessage } = useAppStore();
+const { snippetAnnotations, addAnnotation } = useAnnotationStore();
 const { snippetCharacters } = useCharactersStore();
-const { execCommand } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
@@ -41,6 +43,8 @@ const dropdownOptions = options.map((option: string | number) => {
     command: () => handleDropdownClick(option),
   };
 });
+
+const editor = inject('editor') as ShallowRef<Editor, Editor>;
 
 const hasIcon = ref<boolean>(true);
 const buttonElm = ref(null);
@@ -131,106 +135,49 @@ function handleButtonClick(): void {
 function handleClick(dropdownOption?: string | number): void {
   try {
     isAnnotationTypeEnabled();
-    isSelectionValid();
 
-    // TODO: This needs to be overhauled completely
-    // For paragraph annotations
-    if (config.isSeparator) {
-      // const { range } = getSelectionData();
-      // const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      // let leftSpan: HTMLSpanElement;
-      // let rightSpan: HTMLSpanElement;
-      // let previousCharacters: Character[] = [];
-      // let nextCharacters: Character[] = [];
-      // if (range.startOffset === 0) {
-      //   leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
-      //   rightSpan = referenceSpanElement;
-      // } else {
-      //   leftSpan = referenceSpanElement;
-      //   rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
-      // }
-      // const leftCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === leftSpan.id);
-      // const rightCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === rightSpan.id);
-      // const leftChar = snippetCharacters.value[leftCharIndex];
-      // const rightChar = snippetCharacters.value[rightCharIndex];
-      // if (isBetweenAnnotations(leftChar, rightChar)) {
-      //   throw new AnnotationRangeError(
-      //     `An empty ${annotationType} annotation cannot be created between two existing annotations`,
-      //   );
-      // }
-      // // Indicates whether to split the annotation the caret is currently inside of
-      // const annotationToSplit: Annotation | null = findAnnotationToSplit(leftChar, rightChar);
-      // // Throw error if annotation is truncated (whole annotated text must be loaded)
-      // if (annotationToSplit?.isTruncated) {
-      //   throw new AnnotationRangeError(
-      //     'The annotation is truncated. Please load the full annotation first.',
-      //   );
-      // }
-      // // Remove annotation that is being split
-      // if (annotationToSplit) {
-      //   removeAnnotationFromCharacters(annotationToSplit.data.properties.uuid);
-      //   deleteAnnotation(annotationToSplit.data.properties.uuid);
-      // }
-      // let current: Character = leftChar;
-      // let index: number = leftCharIndex;
-      // let newAnnotation: Annotation = null;
-      // // Annotate previous characters
-      // while (current && !current.annotations.some(a => a.type === annotationType) && index >= 0) {
-      //   previousCharacters.unshift(current);
-      //   index--;
-      //   current = snippetCharacters.value[index];
-      // }
-      // newAnnotation = createNewAnnotation(annotationType, dropdownOption, previousCharacters);
-      // addAnnotation(newAnnotation);
-      // annotateCharacters(previousCharacters, newAnnotation);
-      // // Annotate next characters
-      // current = rightChar;
-      // index = rightCharIndex;
-      // while (
-      //   current &&
-      //   !current.annotations.some(a => a.type === annotationType) &&
-      //   index <= snippetCharacters.value.length - 1
-      // ) {
-      //   nextCharacters.push(current);
-      //   index++;
-      //   current = snippetCharacters.value[index];
-      // }
-      // newAnnotation = createNewAnnotation(annotationType, dropdownOption, nextCharacters);
-      // addAnnotation(newAnnotation);
-      // annotateCharacters(nextCharacters, newAnnotation);
-      // setNewRangeAnchorUuid(previousCharacters[previousCharacters.length - 1].data.uuid);
-    } else {
-      const selectedCharacters: Character[] = getCharactersToAnnotate();
-      // TODO: All logic should be moved to the store...soon
-      const newAnnotation: Annotation = createNewAnnotation(
-        annotationType,
-        dropdownOption,
-        selectedCharacters,
-      );
-
-      execCommand('createAnnotation', {
-        annotation: newAnnotation,
-        characters: selectedCharacters,
-      });
+    // Check if editor exists and has a selection
+    if (!editor?.value) {
+      throw new AnnotationRangeError('Editor not available');
     }
+
+    const { from, to, empty } = editor.value.state.selection;
+
+    // Validation for selection
+    if (empty && !config.isZeroPoint && !config.isSeparator) {
+      throw new AnnotationRangeError('Select some text to annotate.');
+    }
+
+    if (empty && config.isZeroPoint) {
+      // Handle zero-point annotations
+      // You might need special handling here
+      throw new AnnotationRangeError('Zero-point annotations not yet implemented with Tiptap');
+    }
+
+    // Get selected text
+    const selectedText = editor.value.state.doc.textBetween(from, to, ' ');
+
+    // Create annotation data
+    const annotationData = {
+      type: annotationType,
+      uuid: crypto.randomUUID(),
+      subType: dropdownOption ?? subTypeField?.options[0],
+      text: selectedText,
+      // Add other properties from your fields
+    };
+
+    // console.log(annotationData);
+    console.log('before: ', snippetAnnotations.value.length);
+    // You might want to sync this with your character-based store
+    addAnnotation(newAnnotation);
+    console.log('after: ', snippetAnnotations.value.length);
+
+    // Apply the annotation mark
+    editor.value.chain().focus().setAnnotation(annotationData).setTextSelection(to).run();
+    const newAnnotation = createNewAnnotation(annotationType, dropdownOption, []);
+    // Store annotation in your store if needed
   } catch (error) {
-    if (error instanceof AnnotationRangeError) {
-      addToastMessage({
-        severity: 'warn',
-        summary: 'Invalid selection',
-        detail: error.message,
-        life: 3000,
-      });
-    } else if (error instanceof ShortcutError) {
-      addToastMessage({
-        severity: 'warn',
-        summary: 'Annotation type not enabled',
-        detail: error.message,
-        life: 3000,
-      });
-    } else {
-      console.error('Unexpected error:', error);
-    }
+    // ... your error handling
   }
 }
 

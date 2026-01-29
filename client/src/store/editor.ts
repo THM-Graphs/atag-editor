@@ -1,4 +1,4 @@
-import { computed, readonly, ref, unref } from 'vue';
+import { computed, readonly, Ref, ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
@@ -11,6 +11,9 @@ import {
 } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
+
+import { Editor, EditorContent, Mark, mergeAttributes, useEditor } from '@tiptap/vue-3';
+import StarterKit from '@tiptap/starter-kit';
 
 const { text, initialText } = useTextStore();
 const {
@@ -52,6 +55,8 @@ const redrawMode = ref<RedrawModeOptions | null>(null);
 const isRedrawMode = computed<boolean>(() => redrawMode.value?.direction === 'on');
 const isContentEditable = computed<boolean>(() => !isRedrawMode.value);
 
+const editor: Ref<Editor | null> = ref(null);
+
 /**
  * Store for editor state and operations (caret placement, change detection etc.). When the component is unmounted,
  * the store is reset.
@@ -65,6 +70,10 @@ export function useEditorStore() {
    */
   function initializeEditor(): void {
     initializeHistory();
+  }
+
+  function setEditorInstance(instance): void {
+    editor.value = instance;
   }
 
   /**
@@ -508,5 +517,7 @@ export function useEditorStore() {
     setNewRangeAnchorUuid,
     toggleRedrawMode,
     undo,
+    editor,
+    setEditorInstance,
   };
 }

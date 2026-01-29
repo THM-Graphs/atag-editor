@@ -79,7 +79,8 @@ export function useAppStore() {
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
   async function fetchAndApplyStyles(): Promise<void> {
-    const css: string = `:root {
+    const css: string = `
+    :root {
   --aboveLine-clr: hsl(22, 81%, 35%);
   --additionLaterHand-color: hsla(91, 59%, 64%, 0.3);
   --belowLine-clr: hsl(22, 81%, 35%);
@@ -105,102 +106,88 @@ export function useAppStore() {
 
 /* -------- TEXT ------------------------------------------------------------------------------------------------------------ */
 
-#text span.emphasis {
-  &:has(.rubricated) {
-    font-weight: var(--rubricated-font-weight);
-    color: var(--rubricated-clr);
-  }
-
-  &:has(.bold) {
-    font-weight: bold;
-    color: unset;
-  }
-
-  &:has(.bold) {
-    font-weight: bold;
-    color: unset;
-  }
-
-  &:has(.initial) {
-    color: var(--initial-clr);
-    font-weight: bold;
-  }
-
-  &:has(.italic) {
-    font-style: italic;
-  }
-
-  &:has(.smallCaps) {
-    text-decoration: dotted underline;
-  }
-
-  &:has(.underlined) {
-    text-decoration: underline;
-  }
+#text [data-annotation-type="emphasised"][data-annotation-subtype="rubricated"] {
+  font-weight: var(--rubricated-font-weight);
+  color: var(--rubricated-clr);
 }
 
-#text span:has(.emphasised:where(.bold, .initial, .italic, .underlined, .smallCaps)) {
-  font-weight: normal;
-  color: unset;
+#text [data-annotation-type="emphasised"][data-annotation-subtype="bold"] {
+  font-weight: bold;
 }
 
-#text span.expansion {
+#text [data-annotation-type="emphasised"][data-annotation-subtype="initial"] {
+  color: var(--initial-clr);
+  font-weight: bold;
+}
+
+#text [data-annotation-type="emphasised"][data-annotation-subtype="italic"] {
+  font-style: italic;
+}
+
+#text [data-annotation-type="emphasised"][data-annotation-subtype="smallCaps"] {
+  text-decoration: dotted underline;
+}
+
+#text [data-annotation-type="emphasised"][data-annotation-subtype="underlined"] {
+  text-decoration: underline;
+}
+
+#text [data-annotation-type="expansion"] {
   background-color: var(--expansion-clr);
   opacity: var(--expansion-opacity);
 }
 
-#text span:has(.nonLinear) {
-  &:has(.aboveLine) {
-    color: var(--aboveLine-clr);
-  }
-
-  &:has(.belowLine) {
-    color: var(--belowLine-clr);
-  }
-
-  &:has(.marginNote) {
-    color: var(--marginNote-clr);
-  }
+#text [data-annotation-type="nonLinear"][data-annotation-subtype="aboveLine"] {
+  color: var(--aboveLine-clr);
 }
 
-#text span:has(.correction) {
+#text [data-annotation-type="nonLinear"][data-annotation-subtype="belowLine"] {
+  color: var(--belowLine-clr);
+}
+
+#text [data-annotation-type="nonLinear"][data-annotation-subtype="marginNote"] {
+  color: var(--marginNote-clr);
+}
+
+#text [data-annotation-type="correction"] {
   background-color: var(--correction-clr);
 }
 
-#text span:has(.deleted.start) {
+#text [data-annotation-type="deleted"][data-annotation-position="start"] {
   border-right: 2px solid var(--deleted-clr);
 }
-#text span:has(.deleted.end) {
+
+#text [data-annotation-type="deleted"][data-annotation-position="end"] {
   border-left: 2px solid var(--deleted-clr);
 }
 
-#text span:has(.unclear) {
+#text [data-annotation-type="unclear"] {
   color: var(--unclear-clr);
 }
 
-#text span:has(.repeated) {
+#text [data-annotation-type="repeated"] {
   background-color: var(--repeated-clr);
   text-decoration: var(--repeated-text-decoration);
 }
 
-#text span:has(.gap) {
+#text [data-annotation-type="gap"] {
   text-decoration: var(--gap-text-decoration);
 }
 
-#text span:has(.additionLaterHand) {
+#text [data-annotation-type="additionLaterHand"] {
   background-color: var(--additionLaterHand-color);
 }
 
-#text span:has(.head) {
+#text [data-annotation-type="head"] {
   font-weight: var(--head-font-weight);
 }
 
-#text span:has(.commentary) {
+#text [data-annotation-type="commentary"] {
   background-color: var(--commentary-color);
   opacity: var(--commentary-opacity);
 }
 
-#text span:has(.line.start)::before {
+#text [data-annotation-type="line"][data-annotation-position="start"]::before {
   /* Disable stylings from span element... */
   background-color: white;
   color: black;
@@ -212,7 +199,7 @@ export function useAppStore() {
   user-select: none;
 }
 
-#text span:has(.line.end)::after {
+#text [data-annotation-type="line"][data-annotation-position="end"]::after {
   /* Disable stylings from span element... */
   background-color: white;
   color: black;
@@ -224,47 +211,45 @@ export function useAppStore() {
   user-select: none;
 }
 
-#text span.person {
+#text [data-annotation-type="entity"][data-annotation-subtype="person"] {
   text-decoration: underline;
   text-decoration-color: hsl(358, 83%, 68%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.entity.place) {
+#text [data-annotation-type="entity"][data-annotation-subtype="place"] {
   text-decoration: underline;
   text-decoration-color: hsl(212, 93%, 54%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.entity.concept) {
+#text [data-annotation-type="entity"][data-annotation-subtype="concept"] {
   text-decoration: underline;
   text-decoration-color: hsl(45, 90%, 60%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.entity.event) {
+#text [data-annotation-type="entity"][data-annotation-subtype="event"] {
   text-decoration: underline;
   text-decoration-color: hsl(134, 61%, 41%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.entity.imagery) {
+#text [data-annotation-type="entity"][data-annotation-subtype="imagery"] {
   text-decoration: underline;
   text-decoration-color: hsl(296, 72%, 66%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.entity.reference) {
+#text [data-annotation-type="entity"][data-annotation-subtype="reference"] {
   text-decoration: underline;
   text-decoration-color: hsl(17, 22%, 50%);
   text-decoration-thickness: 2px;
 }
 
-#text span:has(.sic) {
+#text [data-annotation-type="sic"] {
   color: var(--sic-clr);
 }
-
-/* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
 .annotation-type-icon-entity {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/entity.svg');
@@ -332,24 +317,6 @@ export function useAppStore() {
 
 .annotation-type-icon-receivedPerson {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
-}
-
-/* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
-
-#text span:has(.paragraph.end)::after {
-  /* This disables inherited styling from span element, must be set at first! */
-  all: initial;
-  content: ' ';
-  width: 100%;
-  height: 1.5rem;
-  /* background-color: rgb(231, 231, 231); */
-  display: block;
-  white-space: pre;
-  user-select: none;
-}
-
-#text span:has(.transposition) {
-  background-color: var(--transposition-clr);
 }
 `;
 

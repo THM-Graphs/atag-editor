@@ -2,8 +2,19 @@
 import { useGuidelinesStore } from '../store/guidelines';
 import EditorAnnotationButton from './EditorAnnotationButton.vue';
 import { capitalize } from '../utils/helper/helper';
+import { Button } from 'primevue';
+import { Editor } from '@tiptap/vue-3';
+import { inject, ShallowRef } from 'vue';
 
 const { groupedAnnotationTypes } = useGuidelinesStore();
+
+const editor = inject<ShallowRef<Editor>>('editor');
+
+function handleClick() {
+  console.log('click');
+
+  const result = editor.value.chain().focus().setMark('highlight').run();
+}
 </script>
 
 <template>
@@ -22,6 +33,14 @@ const { groupedAnnotationTypes } = useGuidelinesStore();
         />
       </div>
     </div>
+    <Button
+      icon="pi pi-star"
+      severity="secondary"
+      outlined
+      raised
+      :style="{ height: '35px', width: '35px' }"
+      @click="handleClick"
+    />
   </div>
 </template>
 
