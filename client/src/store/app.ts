@@ -153,8 +153,12 @@ export function useAppStore() {
   background-color: var(--correction-clr);
 }
 
-#text [data-annotation-type="deleted"][data-annotation-position="start"] {
-  border-right: 2px solid var(--deleted-clr);
+#text [data-annotation-type="deleted"] {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  border: 2px solid var(--deleted-clr);
 }
 
 #text [data-annotation-type="deleted"][data-annotation-position="end"] {

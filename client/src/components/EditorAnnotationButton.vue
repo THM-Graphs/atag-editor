@@ -23,6 +23,7 @@ import { computed, inject, onMounted, ref, ShallowRef } from 'vue';
 import { useAppStore } from '../store/app';
 import { Editor, Mark, mergeAttributes } from '@tiptap/vue-3';
 import { useAnnotationStore } from '../store/annotations';
+import { AnnotationAttributes } from '../services/marks';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -136,48 +137,102 @@ function handleClick(dropdownOption?: string | number): void {
   try {
     isAnnotationTypeEnabled();
 
-    // Check if editor exists and has a selection
     if (!editor?.value) {
       throw new AnnotationRangeError('Editor not available');
     }
 
     const { from, to, empty } = editor.value.state.selection;
 
-    // Validation for selection
+    // Validation based on annotation type
     if (empty && !config.isZeroPoint && !config.isSeparator) {
       throw new AnnotationRangeError('Select some text to annotate.');
     }
 
-    if (empty && config.isZeroPoint) {
-      // Handle zero-point annotations
-      // You might need special handling here
-      throw new AnnotationRangeError('Zero-point annotations not yet implemented with Tiptap');
+    if (!empty && (config.isZeroPoint || config.isSeparator)) {
+      throw new AnnotationRangeError(
+        `To create ${config.isZeroPoint ? 'zero-point' : config.type} annotations, place the caret between two characters`,
+      );
     }
 
-    // Get selected text
+    // Handle zero-point annotations
+    if (config.isZeroPoint) {
+      if (from === 0 || from >= editor.value.state.doc.content.size) {
+        throw new AnnotationRangeError(
+          'Cannot create zero-point annotation at the beginning or end of the text',
+        );
+      }
+
+      // Create annotation for store
+      const fakeCharacters: Character[] = [
+        { data: { text: '', uuid: crypto.randomUUID() }, annotations: [] },
+      ];
+
+      const newAnnotation = createNewAnnotation(annotationType, dropdownOption, fakeCharacters);
+      addAnnotation(newAnnotation);
+
+      // Create FLAT attributes for Tiptap
+      const annotationAttributes: AnnotationAttributes = {
+        type: newAnnotation.data.properties.type,
+        uuid: newAnnotation.data.properties.uuid,
+        subType: newAnnotation.data.properties.subType,
+        text: '',
+        isZeroPoint: true,
+      };
+
+      // Insert zero-width space and mark it
+      editor.value
+        .chain()
+        .focus()
+        .insertContent('\u200B') // Insert zero-width space
+        .setTextSelection({ from: from, to: from + 1 }) // Select the inserted character
+        .setAnnotation(annotationAttributes) // Apply the mark
+        .setTextSelection(from + 1) // Move cursor after
+        .run();
+
+      return;
+    }
+
+    // Handle regular annotations
     const selectedText = editor.value.state.doc.textBetween(from, to, ' ');
 
-    // Create annotation data
-    const annotationData = {
-      type: annotationType,
-      uuid: crypto.randomUUID(),
-      subType: dropdownOption ?? subTypeField?.options[0],
+    // Create annotation for store
+    const fakeCharacters: Character[] = [
+      { data: { text: 'a', uuid: '123' }, annotations: [] },
+      { data: { text: 'b', uuid: '456' }, annotations: [] },
+    ];
+
+    const newAnnotation = createNewAnnotation(annotationType, dropdownOption, fakeCharacters);
+    addAnnotation(newAnnotation);
+
+    // Create FLAT attributes for Tiptap
+    const annotationAttributes: AnnotationAttributes = {
+      type: newAnnotation.data.properties.type,
+      uuid: newAnnotation.data.properties.uuid,
+      subType: newAnnotation.data.properties.subType,
       text: selectedText,
-      // Add other properties from your fields
+      isZeroPoint: false,
     };
 
-    // console.log(annotationData);
-    console.log('before: ', snippetAnnotations.value.length);
-    // You might want to sync this with your character-based store
-    addAnnotation(newAnnotation);
-    console.log('after: ', snippetAnnotations.value.length);
-
-    // Apply the annotation mark
-    editor.value.chain().focus().setAnnotation(annotationData).setTextSelection(to).run();
-    const newAnnotation = createNewAnnotation(annotationType, dropdownOption, []);
-    // Store annotation in your store if needed
+    // Apply the annotation mark with flat attributes
+    editor.value.chain().focus().setAnnotation(annotationAttributes).setTextSelection(to).run();
   } catch (error) {
-    // ... your error handling
+    if (error instanceof AnnotationRangeError) {
+      addToastMessage({
+        severity: 'warn',
+        summary: 'Invalid selection',
+        detail: error.message,
+        life: 3000,
+      });
+    } else if (error instanceof ShortcutError) {
+      addToastMessage({
+        severity: 'warn',
+        summary: 'Annotation type not enabled',
+        detail: error.message,
+        life: 3000,
+      });
+    } else {
+      console.error('Unexpected error:', error);
+    }
   }
 }
 

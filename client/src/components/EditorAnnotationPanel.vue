@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import { computed, ComputedRef, inject, ref, ShallowRef } from 'vue';
 import { useTextSelection } from '@vueuse/core';
 import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
-import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../utils/helper/helper';
+import { useEditorStore } from '../store/editor';
+import { areObjectsEqual, isEditorElement } from '../utils/helper/helper';
 import { Annotation } from '../models/types';
 import Badge from 'primevue/badge';
-import { useEditorStore } from '../store/editor';
+import { Editor } from '@tiptap/vue-3';
 
 interface SelectionObject {
   startContainer: Node;
@@ -17,11 +18,7 @@ interface SelectionObject {
   type: string;
 }
 
-// Last annotations in selection. Is used when new selection is not valid (e.g. outside of text)
 const cachedAnnotationsInSelection = ref<Annotation[]>([]);
-
-// Snapshot of last valid selection. Used to prevent multiple computings and rerenders
-// (see `selectionHasChanged()` documentation)
 let lastSelection: SelectionObject | null = null;
 
 const { isRedrawMode } = useEditorStore();
@@ -29,11 +26,12 @@ const { ranges, selection } = useTextSelection();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
+const editor = inject('editor') as ShallowRef<Editor, Editor>;
+
 const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
   snippetAnnotations.value.filter(a => a.status !== 'deleted'),
 );
 
-// TODO: Fix bug, on cancel the counter still shows cached number
 const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
   if (isRedrawMode.value) {
     return cachedAnnotationsInSelection.value;
@@ -47,64 +45,17 @@ const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
     return cachedAnnotationsInSelection.value;
   }
 
-  let firstSpan: HTMLSpanElement;
-  let lastSpan: HTMLSpanElement;
-  let annotationUuids: Set<string>;
+  // Get annotation UUIDs from Tiptap editor
+  const annotationUuids = findAnnotationUuidsInSelection();
+  console.log(annotationUuids);
 
-  if (selection.value.type === 'Caret') {
-    if (
-      isEditorElement(ranges.value[0].startContainer) ||
-      isEditorElement(ranges.value[0].endContainer)
-    ) {
-      firstSpan = document.querySelector('#text > span');
-      lastSpan = firstSpan;
-    } else {
-      firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
-      lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
-
-      if (firstSpan === lastSpan) {
-        if (ranges.value[0].startOffset === 0) {
-          firstSpan = (firstSpan.previousElementSibling as HTMLSpanElement) ?? firstSpan;
-        } else if (ranges.value[0].endOffset === 1) {
-          lastSpan = (lastSpan.nextElementSibling as HTMLSpanElement) ?? lastSpan;
-        }
-      }
-    }
-  } else {
-    if (
-      isEditorElement(ranges.value[0].startContainer) ||
-      isEditorElement(ranges.value[0].endContainer)
-    ) {
-      firstSpan = document.querySelector('#text > span');
-      lastSpan = document.querySelector('#text > span:last-of-type');
-    } else {
-      firstSpan = getParentCharacterSpan(ranges.value[0].startContainer);
-      lastSpan = getParentCharacterSpan(ranges.value[0].endContainer);
-    }
-  }
-
-  if (!firstSpan && !lastSpan) {
-    // Text element is empty
-    cachedAnnotationsInSelection.value = [];
-  } else {
-    annotationUuids = findAnnotationUuids(firstSpan, lastSpan);
-
-    cachedAnnotationsInSelection.value = snippetAnnotations.value.filter(a =>
-      annotationUuids.has(a.data.properties.uuid),
-    );
-  }
+  cachedAnnotationsInSelection.value = snippetAnnotations.value.filter(a =>
+    annotationUuids.has(a.data.properties.uuid),
+  );
 
   return cachedAnnotationsInSelection.value;
 });
 
-/**
- * Checks if the current text selection has changed compared to the last selection.
- *
- * Used to prevent multiple computings and rerenders of AnnotationForm components since the creation
- * of the input fields triggers new `selectionchange` events.
- *
- * @return {boolean} True if the selection has changed, false otherwise
- */
 function selectionHasChanged(): boolean {
   const newSelection: SelectionObject = {
     startContainer: ranges.value[0].startContainer,
@@ -119,15 +70,9 @@ function selectionHasChanged(): boolean {
   }
 
   lastSelection = newSelection;
-
   return true;
 }
 
-/**
- * Checks if the current selection is valid (= inside the text component).
- *
- * @return {boolean} True if the selection is valid, false otherwise
- */
 function isValidSelection(): boolean {
   if (ranges.value.length < 1 || selection.value.type === 'None') {
     return false;
@@ -136,7 +81,6 @@ function isValidSelection(): boolean {
   const commonAncestorContainer: Node | undefined | Element =
     ranges.value[0].commonAncestorContainer;
 
-  // Selection is outside of text component (with element node as container)
   if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
     return false;
   }
@@ -151,24 +95,82 @@ function isValidSelection(): boolean {
   return true;
 }
 
-function findAnnotationUuids(firstChar: HTMLSpanElement, lastChar: HTMLSpanElement): Set<string> {
-  const annoUuids: Set<string> = new Set();
+/**
+ * Find all annotation UUIDs in the current selection using Tiptap's editor state
+ */
+function findAnnotationUuidsInSelection(): Set<string> {
+  const uuids = new Set<string>();
 
-  let current: HTMLSpanElement = firstChar;
-
-  while (current && current !== lastChar) {
-    [...current.children].forEach(c => {
-      annoUuids.add((c as HTMLSpanElement).dataset.annoUuid || '');
-    });
-
-    current = current.nextElementSibling as HTMLSpanElement;
+  if (!editor?.value) {
+    return uuids;
   }
 
-  [...lastChar.children].forEach(c => {
-    annoUuids.add((c as HTMLSpanElement).dataset.annoUuid || '');
+  const { from, to } = editor.value.state.selection;
+
+  // Traverse the document between selection positions
+  editor.value.state.doc.nodesBetween(from, to, (node, pos) => {
+    node.marks.forEach(mark => {
+      console.log(mark);
+      if (mark.type.name === 'annotation' && mark.attrs.uuid) {
+        uuids.add(mark.attrs.uuid);
+      }
+    });
   });
 
-  return annoUuids;
+  return uuids;
+}
+
+/**
+ * Alternative: Find annotation UUIDs from the DOM
+ * Use this if you need to work with the rendered HTML instead of editor state
+ */
+function findAnnotationUuidsFromDOM(): Set<string> {
+  const uuids = new Set<string>();
+
+  if (ranges.value.length < 1) {
+    return uuids;
+  }
+
+  const range = ranges.value[0];
+  const container = range.commonAncestorContainer;
+
+  // Get the container element
+  let containerElement: Element;
+  if (container.nodeType === Node.TEXT_NODE) {
+    containerElement = container.parentElement;
+  } else {
+    containerElement = container as Element;
+  }
+
+  // Find all annotation spans within or around the selection
+  const annotationSpans = containerElement.querySelectorAll('span[data-annotation-uuid]');
+
+  annotationSpans.forEach((span: HTMLSpanElement) => {
+    const uuid = span.getAttribute('data-annotation-uuid');
+    if (uuid) {
+      uuids.add(uuid);
+    }
+  });
+
+  // Also check if the container itself is an annotation
+  if (containerElement instanceof HTMLElement) {
+    const uuid = containerElement.getAttribute('data-annotation-uuid');
+    if (uuid) {
+      uuids.add(uuid);
+    }
+  }
+
+  // Walk up the tree to catch parent annotations
+  let parent = containerElement.parentElement;
+  while (parent && parent.closest('#text')) {
+    const uuid = parent.getAttribute('data-annotation-uuid');
+    if (uuid) {
+      uuids.add(uuid);
+    }
+    parent = parent.parentElement;
+  }
+
+  return uuids;
 }
 </script>
 

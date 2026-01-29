@@ -1,6 +1,5 @@
 import { Mark, mergeAttributes } from '@tiptap/vue-3';
 import { Annotation } from '../models/types';
-
 export interface AnnotationOptions {
   HTMLAttributes: Record<string, any>;
 }
@@ -9,51 +8,42 @@ export interface AnnotationAttributes {
   type: string;
   uuid: string;
   subType?: string | number;
+  text?: string;
+  // Add other flat properties you need
   [key: string]: any;
 }
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     annotation: {
-      /**
-       * Set an annotation mark
-       */
-      setAnnotation: (newAnnotation: Annotation) => ReturnType;
-      /**
-       * Unset an annotation mark
-       */
+      setAnnotation: (attributes: AnnotationAttributes) => ReturnType;
       unsetAnnotation: () => ReturnType;
     };
   }
 }
 
-export const AnnotationMark = Mark.create<AnnotationOptions>({
+export const AnnotationMark = Mark.create({
   name: 'annotation',
 
-  addOptions() {
-    return {
-      HTMLAttributes: {},
-    };
-  },
+  inclusive: false,
+  excludes: '', // Allow overlapping
 
   addAttributes() {
     return {
       type: {
         default: null,
         parseHTML: element => element.getAttribute('data-annotation-type'),
-        renderHTML: (newAnnotation: Annotation) => {
-          if (!newAnnotation.data.properties.type) return {};
-          return {
-            'data-annotation-type': newAnnotation.data.properties.type,
-          };
+        renderHTML: attributes => {
+          if (!attributes.type) return {};
+          return { 'data-annotation-type': attributes.type };
         },
       },
       uuid: {
         default: null,
         parseHTML: element => element.getAttribute('data-annotation-uuid'),
-        renderHTML: (newAnnotation: Annotation) => {
-          if (!newAnnotation.data.properties.uuid) return {};
-          return { 'data-annotation-uuid': newAnnotation.data.properties.uuid };
+        renderHTML: attributes => {
+          if (!attributes.uuid) return {};
+          return { 'data-annotation-uuid': attributes.uuid };
         },
       },
       subType: {
@@ -64,26 +54,32 @@ export const AnnotationMark = Mark.create<AnnotationOptions>({
           return { 'data-annotation-subtype': attributes.subType };
         },
       },
-      // Add other annotation properties as needed
+      isZeroPoint: {
+        default: false,
+        parseHTML: element => element.getAttribute('data-zero-point') === 'true',
+        renderHTML: attributes => {
+          if (!attributes.isZeroPoint) return {};
+          return { 'data-zero-point': 'true' };
+        },
+      },
     };
   },
 
   parseHTML() {
-    console.log(this);
     return [
       {
-        tag: 'span[data-annotation-type]',
+        tag: 'span[data-annotation-uuid]',
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    console.log('create');
+    const isZeroPoint = HTMLAttributes.isZeroPoint === true;
 
     return [
       'span',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: 'annotation',
+        class: isZeroPoint ? 'annotation zero-point-annotation' : 'annotation',
       }),
       0,
     ];
@@ -92,14 +88,32 @@ export const AnnotationMark = Mark.create<AnnotationOptions>({
   addCommands() {
     return {
       setAnnotation:
-        newAnnotation =>
+        (attributes: AnnotationAttributes) =>
         ({ commands }) => {
-          return commands.setMark(this.name, newAnnotation);
+          return commands.setMark(this.name, attributes);
         },
       unsetAnnotation:
-        () =>
-        ({ commands }) => {
-          return commands.unsetMark(this.name);
+        (uuid?: string) =>
+        ({ commands, state, tr, dispatch }) => {
+          if (!uuid) {
+            return commands.unsetMark(this.name);
+          }
+
+          const { from, to } = state.selection;
+
+          if (dispatch) {
+            state.doc.nodesBetween(from, to, (node, pos) => {
+              if (node.isText) {
+                node.marks.forEach(mark => {
+                  if (mark.type.name === this.name && mark.attrs.uuid === uuid) {
+                    tr.removeMark(pos, pos + node.nodeSize, mark);
+                  }
+                });
+              }
+            });
+          }
+
+          return true;
         },
     };
   },
