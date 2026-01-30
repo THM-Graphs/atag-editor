@@ -135,7 +135,10 @@ async function fetchMoreData(): Promise<void> {
   setIsLoading(true);
 
   const { data, pagination } = await fetchData();
-  addData(data);
+
+  const filteredData: Collection[] = removeDuplicatesAfterFetching(data);
+
+  addData(filteredData);
   setPagination(pagination);
 
   setIsLoading(false);
@@ -243,6 +246,27 @@ function handleSearchInputChange(newInput: string) {
 async function handleSearchParamsChange() {
   resetPagination();
   fetchInitialData();
+}
+
+/**
+ * Removes collections from the given data that already exist in the current column. Called after fetching more data on scrolling.
+ *
+ * A duplicate is the case when the user created a new collection which gets added on top of the list for UX reasons.
+ * When data are fetched alphabetically, it might be loaded again.
+ *
+ * @param {Collection[]} data - The collection data to filter.
+ * @returns {Collection[]} The filtered data.
+ */
+function removeDuplicatesAfterFetching(data: Collection[]): Collection[] {
+  const existingUuids: Set<string> = new Set(
+    levels.value[props.index].collections.map((c: CollectionStatusObject) => c.data.data.uuid),
+  );
+
+  const filteredData: Collection[] = data.filter(
+    (c: Collection) => !existingUuids.has(c.data.uuid),
+  );
+
+  return filteredData;
 }
 
 function replaceData(data: Collection[]) {
