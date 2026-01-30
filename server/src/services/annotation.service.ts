@@ -208,6 +208,10 @@ export default class AnnotationService {
         entity => !initialEntityUuids.includes(entity.data.uuid),
       );
 
+      // When entities are created from the editor, remove leading and trailing whitespace
+      // TODO: When entities can contain more than just label, use the toNeo4jTypes function?
+      createdEntities.forEach(e => (e.data.label = e.data.label.trim()));
+
       const deletedEntities: Entity[] = initialEntities.filter(
         entity => !newEntityUuids.includes(entity.data.uuid),
       );
