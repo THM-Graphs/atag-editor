@@ -763,7 +763,7 @@ function createNewCharacter(char: string): Character {
   background-color: white;
   line-height: 1.75rem;
   caret-color: black;
-  z-index: 99999;
+  z-index: var(--z-index-text-container);
 }
 
 #text.async-overlay {

@@ -11,6 +11,7 @@
   --z-index-overlay: 100;
   --z-index-gutter: 200;
   --z-index-edit-pane: 1000;
+  --z-index-text-container: 1000;
   --z-index-max: 99999;
 }
 

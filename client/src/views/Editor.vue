@@ -451,7 +451,7 @@ watch(
 
     <PageOverlay
       v-if="redrawMode?.direction === 'on'"
-      :style="{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1000 }"
+      :style="{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 'var(--z-index-overlay)' }"
     >
       <div class="flex justify-content-center pt-4">
         <Message class="text-center w-6" severity="info" icon="pi pi-info-circle">
