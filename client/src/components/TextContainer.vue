@@ -46,6 +46,22 @@ function handleRemoveText() {
 function handleAddTextClick() {
   emit('textAdded', props.text);
 }
+
+/**
+ * Handles a click event on the Card component, which will the corresponding text in a new tab. The click event is ignored
+ * if the click target is part of the MultiSelect component, to prevent interference with label editing.
+ *
+ * @param {PointerEvent} event - The click event.
+ * @returns {void} This function does not return any value.
+ */
+function handleClickContainer(event: PointerEvent): void {
+  // TODO: Change this when multiselect is moved to its own component
+  if ((event.target as HTMLElement).closest('.multiselect')) {
+    return;
+  }
+
+  window.open(`/texts/${props.text.data.uuid}`, '_blank', 'noopener noreferrer');
+}
 </script>
 
 <template>
@@ -55,6 +71,7 @@ function handleAddTextClick() {
       root: {
         style: {
           border: '1px solid gray',
+          cursor: 'pointer',
         },
       },
       body: {
@@ -63,6 +80,7 @@ function handleAddTextClick() {
         },
       },
     }"
+    @click="handleClickContainer"
   >
     <template #title>
       <div class="header">
@@ -73,7 +91,7 @@ function handleAddTextClick() {
             :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
             size="small"
             :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
-            @click="handleBookmarkAction"
+            @click.stop="handleBookmarkAction"
             :pt="{
               icon: {
                 style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
@@ -88,7 +106,7 @@ function handleAddTextClick() {
             outlined
             size="small"
             title="Remove text"
-            @click="handleRemoveText"
+            @click.stop="handleRemoveText"
           />
         </div>
         <div class="node-labels-container">
@@ -103,7 +121,7 @@ function handleAddTextClick() {
               :options="getAvailableTextLabels()"
               display="chip"
               placeholder="Text labels"
-              class="text-center"
+              class="multiselect text-center"
               :filter="false"
               :pt="{
                 root: {
@@ -123,9 +141,7 @@ function handleAddTextClick() {
     <template #content>
       <div v-if="props.status === 'existing'">
         <div class="text" title="Open text in Editor">
-          <a :href="`/texts/${props.text.data.uuid}`" target="_blank" rel="noopener noreferrer">
-            {{ displayedText }}
-          </a>
+          {{ displayedText }}
         </div>
       </div>
       <div v-else>
@@ -140,7 +156,7 @@ function handleAddTextClick() {
           class="w-2"
           icon="pi pi-check"
           title="Add new text to Collection"
-          @click="handleAddTextClick"
+          @click.stop="handleAddTextClick"
         />
       </div>
     </template>
