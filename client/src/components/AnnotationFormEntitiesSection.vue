@@ -229,6 +229,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
           icon="pi pi-times"
           size="small"
           severity="danger"
+          title="Remove entity"
           @click="removeEntityItem(entry as EntityEntry)"
         ></Button>
       </div>
@@ -239,7 +240,8 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
         icon="pi pi-plus"
         size="small"
         severity="secondary"
-        label="Add item"
+        label="Add entity"
+        :title="`Add ${entitiesSearchObject[category].nodeLabel} entity`"
         @click="changeEntitiesSelectionMode(category, 'edit')"
       />
       <AutoComplete
