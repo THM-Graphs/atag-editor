@@ -55,6 +55,11 @@ function handleAddTextClick() {
  * @returns {void} This function does not return any value.
  */
 function handleClickContainer(event: PointerEvent): void {
+  // Temporary texts can not be opened in the editor, obviously
+  if (props.status === 'temporary') {
+    return;
+  }
+
   // TODO: Change this when multiselect is moved to its own component
   if ((event.target as HTMLElement).closest('.multiselect')) {
     return;
@@ -100,7 +105,7 @@ function handleClickContainer(event: PointerEvent): void {
             }"
           />
           <Button
-            v-if="mode === 'edit'"
+            v-if="mode === 'edit' && props.status !== 'temporary'"
             type="button"
             icon="pi pi-times"
             severity="danger"
@@ -151,13 +156,23 @@ function handleClickContainer(event: PointerEvent): void {
     </template>
 
     <template #footer>
-      <div class="flex justify-content-center">
+      <div class="flex justify-content-center gap-2">
         <Button
           v-if="props.status === 'temporary'"
           class="w-2"
           icon="pi pi-check"
           title="Add new text to Collection"
           @click.stop="handleAddTextClick"
+        />
+
+        <Button
+          v-if="props.status === 'temporary'"
+          severity="secondary"
+          outlined
+          class="w-2"
+          icon="pi pi-times"
+          title="Discard text draft"
+          @click.stop="handleRemoveText"
         />
       </div>
     </template>
