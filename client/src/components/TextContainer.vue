@@ -88,6 +88,7 @@ function handleClickContainer(event: PointerEvent): void {
           <Button
             type="button"
             severity="secondary"
+            v-if="props.status === 'existing'"
             :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
             size="small"
             :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
