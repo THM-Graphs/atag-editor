@@ -458,7 +458,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
           severity="secondary"
           :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
           size="small"
-          :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
+          :title="isBookmarked ? 'Remove collection from bookmarks' : 'Add collection to bookmarks'"
           @click="handleBookmarkAction"
           :pt="{
             icon: {
