@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { Editor } from '@tiptap/vue-3';
 import Button from 'primevue/button';
+import { inject, ShallowRef } from 'vue';
 
 const emit = defineEmits(['save', 'cancel']);
+
+const editor: ShallowRef<Editor, Editor> = inject('editor');
 
 function handleSave(): void {
   emit('save');
@@ -9,6 +13,10 @@ function handleSave(): void {
 
 function handleCancel(): void {
   emit('cancel');
+}
+
+async function handleCopy() {
+  await navigator.clipboard.writeText(editor.value.getHTML());
 }
 </script>
 
@@ -24,6 +32,7 @@ function handleCancel(): void {
       @click="handleCancel"
       >Cancel</Button
     >
+    <Button aria-label="" title="Copy HTML" @click="handleCopy">Copy HTML</Button>
   </div>
 </template>
 
