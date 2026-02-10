@@ -24,6 +24,7 @@ import { useAnnotationStore } from '../store/annotations';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { useGuidelinesStore } from '../store/guidelines';
 import ShortcutError from '../utils/errors/shortcut.error';
+import { useValidateTextSelection } from '../composables/useValidateTextSelection';
 
 const { asyncOperationRunning } = defineProps<{ asyncOperationRunning: boolean }>();
 
@@ -52,6 +53,8 @@ const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
   useCharactersStore();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
+
+const { isValid: isSelectionValid } = useValidateTextSelection();
 
 useEventListener(window, 'forceCaretPlacement', placeCaret);
 
@@ -605,72 +608,6 @@ function handleMouseUp(): void {
       console.error('Unexpected error:', error);
     }
   }
-}
-
-function isSelectionValid(config: AnnotationType): boolean {
-  const { range, type } = getSelectionData();
-
-  if (!range || type === 'None') {
-    throw new AnnotationRangeError('No valid text selected.');
-  }
-
-  const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
-
-  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
-    throw new AnnotationRangeError('Selection is outside the text component.');
-  }
-
-  if (
-    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
-    !commonAncestorContainer.parentElement.closest('#text')
-  ) {
-    throw new AnnotationRangeError('Text selection is outside the text component.');
-  }
-
-  if (type === 'Caret' && !config.isZeroPoint && !config.isSeparator) {
-    throw new AnnotationRangeError('Select some text to annotate.');
-  }
-
-  if ((type === 'Caret' && config.isZeroPoint) || config.isSeparator) {
-    if (isEditorElement(range.startContainer)) {
-      throw new AnnotationRangeError(
-        'For creating zero-point annotations, place the caret between two characters',
-      );
-    } else {
-      const parentSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      const caretIsAtBeginning: boolean =
-        range.startOffset === 0 && !parentSpanElement.previousElementSibling;
-      const caretIsAtEnd: boolean =
-        range.startOffset === 1 && !parentSpanElement.nextElementSibling;
-
-      if (caretIsAtBeginning || caretIsAtEnd) {
-        if (config.isZeroPoint) {
-          throw new AnnotationRangeError(
-            'To create zero-point annotations, place the caret between two characters',
-          );
-        }
-        if (config.isSeparator) {
-          throw new AnnotationRangeError(
-            `To create ${config.type} annotations, the caret can not be at the start or end`,
-          );
-        }
-      }
-    }
-  }
-
-  if (type === 'Range' && config.isZeroPoint) {
-    throw new AnnotationRangeError(
-      'To create zero-point annotations, place the caret between two characters',
-    );
-  }
-
-  if (type === 'Range' && config.isSeparator) {
-    throw new AnnotationRangeError(
-      `To create ${config.type} annotations, place the caret between two characters`,
-    );
-  }
-
-  return true;
 }
 
 function createNewCharacter(char: string): Character {

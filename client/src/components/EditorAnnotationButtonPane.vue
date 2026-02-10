@@ -16,6 +16,7 @@ import { useFilterStore } from '../store/filter';
 import ShortcutError from '../utils/errors/shortcut.error';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { useAppStore } from '../store/app';
+import { useValidateTextSelection } from '../composables/useValidateTextSelection';
 
 const { groupedAnnotationTypes, getAnnotationConfig } = useGuidelinesStore();
 const { addToastMessage } = useAppStore();
@@ -23,6 +24,7 @@ const { execCommand } = useEditorStore();
 const { snippetCharacters } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
+const { isValid: isSelectionValid } = useValidateTextSelection();
 
 /**
  * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
@@ -55,78 +57,12 @@ function isAnnotationTypeEnabled(type: string): boolean {
   return true;
 }
 
-function isSelectionValid(annotationType: string): boolean {
-  const { range, type } = getSelectionData();
-
-  const config: AnnotationType = getAnnotationConfig(annotationType);
-
-  if (!range || type === 'None') {
-    throw new AnnotationRangeError('No valid text selected.');
-  }
-
-  const commonAncestorContainer: Node | undefined | Element = range.commonAncestorContainer;
-
-  if (commonAncestorContainer instanceof Element && !commonAncestorContainer.closest('#text')) {
-    throw new AnnotationRangeError('Selection is outside the text component.');
-  }
-
-  if (
-    commonAncestorContainer.nodeType === Node.TEXT_NODE &&
-    !commonAncestorContainer.parentElement.closest('#text')
-  ) {
-    throw new AnnotationRangeError('Text selection is outside the text component.');
-  }
-
-  if (type === 'Caret' && !config.isZeroPoint && !config.isSeparator) {
-    throw new AnnotationRangeError('Select some text to annotate.');
-  }
-
-  if ((type === 'Caret' && config.isZeroPoint) || config.isSeparator) {
-    if (isEditorElement(range.startContainer)) {
-      throw new AnnotationRangeError(
-        'For creating zero-point annotations, place the caret between two characters',
-      );
-    } else {
-      const parentSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      const caretIsAtBeginning: boolean =
-        range.startOffset === 0 && !parentSpanElement.previousElementSibling;
-      const caretIsAtEnd: boolean =
-        range.startOffset === 1 && !parentSpanElement.nextElementSibling;
-
-      if (caretIsAtBeginning || caretIsAtEnd) {
-        if (config.isZeroPoint) {
-          throw new AnnotationRangeError(
-            'To create zero-point annotations, place the caret between two characters',
-          );
-        }
-        if (config.isSeparator) {
-          throw new AnnotationRangeError(
-            `To create ${annotationType} annotations, the caret can not be at the start or end`,
-          );
-        }
-      }
-    }
-  }
-
-  if (type === 'Range' && config.isZeroPoint) {
-    throw new AnnotationRangeError(
-      'To create zero-point annotations, place the caret between two characters',
-    );
-  }
-
-  if (type === 'Range' && config.isSeparator) {
-    throw new AnnotationRangeError(
-      `To create ${annotationType} annotations, place the caret between two characters`,
-    );
-  }
-
-  return true;
-}
-
 function handleClick(data: { type: string; subType?: string | number }) {
   try {
+    const config: AnnotationType = getAnnotationConfig(data.type);
+
     isAnnotationTypeEnabled(data.type);
-    isSelectionValid(data.type);
+    isSelectionValid(config);
 
     const selectedCharacters: Character[] = getCharactersToAnnotate();
     const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
