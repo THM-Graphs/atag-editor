@@ -2,8 +2,6 @@
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import { useCharactersStore } from '../store/characters';
 import {
-  cloneDeep,
-  getDefaultValueForProperty,
   getParentCharacterSpan,
   getSelectionData,
   getSpansToAnnotate,
@@ -15,12 +13,12 @@ import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { Annotation, PropertyConfig, AnnotationType, Character } from '../models/types';
-import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import ShortcutError from '../utils/errors/shortcut.error';
 import { onMounted, ref } from 'vue';
 import { useAppStore } from '../store/app';
+import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 
 const { annotationType } = defineProps<{ annotationType: string }>();
 
@@ -30,6 +28,7 @@ const { execCommand } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 const { selectedOptions } = useFilterStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
+const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 
 const config: AnnotationType = getAnnotationConfig(annotationType);
 const fields: PropertyConfig[] = getAnnotationFields(annotationType);
@@ -121,12 +120,12 @@ function handleClick(dropdownOption?: string | number): void {
       return;
     } else {
       const selectedCharacters: Character[] = getCharactersToAnnotate();
-      // TODO: All logic should be moved to the store...soon
-      const newAnnotation: Annotation = createNewAnnotation(
-        annotationType,
-        dropdownOption,
-        selectedCharacters,
-      );
+
+      const newAnnotation: Annotation = createAnnotation({
+        type: annotationType,
+        subType: dropdownOption,
+        characters: selectedCharacters,
+      });
 
       execCommand('createAnnotation', {
         annotation: newAnnotation,
@@ -234,54 +233,6 @@ function isSelectionValid(): boolean {
   }
 
   return true;
-}
-
-function createNewAnnotation(
-  type: string,
-  subType: string | number | undefined,
-  characters: Character[],
-): Annotation {
-  const newAnnotationData: IAnnotation = {} as IAnnotation;
-
-  // Base properties
-  fields.forEach((field: PropertyConfig) => {
-    newAnnotationData[field.name] =
-      field?.required === true ? getDefaultValueForProperty(field.type) : null;
-  });
-
-  // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
-  newAnnotationData.type = type;
-  newAnnotationData.startIndex = 0;
-  newAnnotationData.endIndex = 0;
-  newAnnotationData.text = characters.map((char: Character) => char.data.text).join('');
-  newAnnotationData.uuid = crypto.randomUUID();
-
-  // If a subType field exists (filled with a default value just before), but not subType was provided
-  // (= the user clicked the button directly instead of selecting an entry from the dropdown),
-  // set the first option as default value
-  if (subTypeField) {
-    newAnnotationData.subType = subType ?? subTypeField.options[0];
-  }
-
-  const newAnnotation: Annotation = {
-    characterUuids: characters.map((char: Character) => char.data.uuid),
-    data: {
-      properties: cloneDeep(newAnnotationData),
-      entities: [],
-      additionalTexts: [],
-    },
-    initialData: {
-      properties: cloneDeep(newAnnotationData),
-      entities: [],
-      additionalTexts: [],
-    },
-    isTruncated: false,
-    startUuid: characters[0].data.uuid,
-    endUuid: characters[characters.length - 1].data.uuid,
-    status: 'created',
-  };
-
-  return newAnnotation;
 }
 
 /**

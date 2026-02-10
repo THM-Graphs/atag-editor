@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
-import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { PropertyConfig, AnnotationType, AnnotationData } from '../models/types';
-import IAnnotation from '../models/IAnnotation';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
 import ShortcutError from '../utils/errors/shortcut.error';
 import { onMounted, ref } from 'vue';
 import { useAppStore } from '../store/app';
+import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 
 const { annotationType, collectionNodeLabels, mode } = defineProps<{
   annotationType: string;
@@ -23,6 +22,7 @@ const emit = defineEmits(['addAnnotation']);
 const { getCollectionAnnotationFields, getCollectionAnnotationConfig } = useGuidelinesStore();
 const { addToastMessage } = useAppStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
+const { createCollectionAnnotation: createAnnotation } = useCreateAnnotation('Collection');
 
 const config: AnnotationType = getCollectionAnnotationConfig(collectionNodeLabels, annotationType);
 const fields: PropertyConfig[] = getCollectionAnnotationFields(
@@ -108,7 +108,11 @@ function handleButtonClick(): void {
 
 function handleClick(dropdownOption?: string | number): void {
   try {
-    const newAnnotation: AnnotationData = createNewAnnotation(annotationType, dropdownOption);
+    const newAnnotation: AnnotationData = createAnnotation({
+      type: annotationType,
+      subType: dropdownOption,
+      nodeLabels: collectionNodeLabels,
+    });
 
     // TODO: Push to store instead of emitting
     emit('addAnnotation', newAnnotation);
@@ -132,41 +136,6 @@ function handleClick(dropdownOption?: string | number): void {
       console.error('Unexpected error:', error);
     }
   }
-}
-
-function createNewAnnotation(type: string, subType: string | number | undefined): AnnotationData {
-  const newAnnotationData: IAnnotation = {} as IAnnotation;
-
-  // Base properties
-  fields.forEach((field: PropertyConfig) => {
-    newAnnotationData[field.name] =
-      field?.required === true ? getDefaultValueForProperty(field.type) : null;
-  });
-
-  // TODO: This should come from the guidelines. When annotations
-  // are generic, do this
-  // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
-  newAnnotationData.type = type;
-  // newAnnotationData.startIndex = 0;
-  // newAnnotationData.endIndex = 0;
-  // TODO: the text property is different...
-  // newAnnotationData.text = '';
-  newAnnotationData.uuid = crypto.randomUUID();
-
-  // If a subType field exists (filled with a default value just before), but not subType was provided
-  // (= the user clicked the button directly instead of selecting an entry from the dropdown),
-  // set the first option as default value
-  if (subTypeField) {
-    newAnnotationData.subType = subType ?? subTypeField.options[0];
-  }
-
-  const newAnnotation: AnnotationData = {
-    properties: cloneDeep(newAnnotationData),
-    entities: [],
-    additionalTexts: [],
-  };
-
-  return newAnnotation;
 }
 </script>
 
