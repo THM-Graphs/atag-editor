@@ -29,7 +29,6 @@ import DataInputComponent from './DataInputComponent.vue';
 import DataInputGroup from './DataInputGroup.vue';
 import { useConfirm, useDialog } from 'primevue';
 import ConfirmPopup from 'primevue/confirmpopup';
-import CollectionAnnotationButton from './CollectionAnnotationButton.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import Panel from 'primevue/panel';
 import Fieldset from 'primevue/fieldset';
@@ -44,6 +43,8 @@ import ProgressSpinner from 'primevue/progressspinner';
 import AppError from '../utils/errors/app.error';
 import ValidationError from '../utils/errors/validation.error';
 import { useBookmarks } from '../composables/useBookmarks';
+import AnnotationButton from './AnnotationButton.vue';
+import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
@@ -76,6 +77,7 @@ const {
 } = useCollectionManagerStore();
 
 const { bookmarks, toggleBookmark } = useBookmarks();
+const { createCollectionAnnotation: createAnnotation } = useCreateAnnotation('Collection');
 
 const confirm = useConfirm();
 
@@ -196,7 +198,12 @@ function enrichCollectionData(): void {
   });
 }
 
-function handleAddNewAnnotation(newAnnotation: AnnotationData): void {
+function handleAnnotationButtonClick(data: { type: string; subType?: string | number }) {
+  const newAnnotation: AnnotationData = createAnnotation({
+    ...data,
+    nodeLabels: temporaryWorkData.value.collection.nodeLabels,
+  });
+
   temporaryWorkData.value.annotations.push(newAnnotation);
 }
 
@@ -579,12 +586,15 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 
         <div v-show="isAnnotationsSelected" class="annotations-pane">
           <div v-if="formMode === 'edit'" class="annotation-button-pane flex flex-wrap gap-3 py-3">
-            <CollectionAnnotationButton
+            <AnnotationButton
               v-for="type in availabeAnnotationTypes"
-              :annotationType="type.type"
-              :collection-node-labels="temporaryWorkData.collection.nodeLabels"
-              :mode="formMode"
-              @add-annotation="handleAddNewAnnotation"
+              :type="type.type"
+              :key="type.type"
+              :disabled="(formMode as 'view' | 'edit') === 'view'"
+              :config="
+                getCollectionAnnotationConfig(temporaryWorkData.collection.nodeLabels, type.type)
+              "
+              @clicked="handleAnnotationButtonClick($event)"
             />
           </div>
 
