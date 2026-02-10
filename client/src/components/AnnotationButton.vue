@@ -1,34 +1,22 @@
 <script setup lang="ts">
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
-import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useShortcutsStore } from '../store/shortcuts';
-import AnnotationRangeError from '../utils/errors/annotationRange.error';
-import { PropertyConfig, AnnotationType, AnnotationData } from '../models/types';
-import IAnnotation from '../models/IAnnotation';
+import { PropertyConfig, AnnotationType } from '../models/types';
 import Button from 'primevue/button';
 import SplitButton from 'primevue/splitbutton';
-import ShortcutError from '../utils/errors/shortcut.error';
 import { onMounted, ref } from 'vue';
-import { useAppStore } from '../store/app';
 
-const { annotationType, collectionNodeLabels, mode } = defineProps<{
-  annotationType: string;
-  collectionNodeLabels: string[];
-  mode: 'edit' | 'view';
+const props = defineProps<{ type: string; disabled: boolean; config: AnnotationType }>();
+
+const emit = defineEmits<{
+  (e: 'clicked', data: { type: string; subType?: string | number }): void;
 }>();
 
-const emit = defineEmits(['addAnnotation']);
-
-const { getCollectionAnnotationFields, getCollectionAnnotationConfig } = useGuidelinesStore();
-const { addToastMessage } = useAppStore();
+const { getAnnotationFields } = useGuidelinesStore();
 const { normalizeKeys, registerShortcut } = useShortcutsStore();
 
-const config: AnnotationType = getCollectionAnnotationConfig(collectionNodeLabels, annotationType);
-const fields: PropertyConfig[] = getCollectionAnnotationFields(
-  collectionNodeLabels,
-  annotationType,
-);
+const fields: PropertyConfig[] = getAnnotationFields(props.type);
 const subTypeField: PropertyConfig = fields.find(field => field.name === 'subType');
 const options: string[] | number[] = subTypeField?.options ?? [];
 const dropdownOptions = options.map((option: string | number) => {
@@ -41,8 +29,10 @@ const dropdownOptions = options.map((option: string | number) => {
 const hasIcon = ref<boolean>(true);
 const buttonElm = ref(null);
 
-if (config.shortcut?.length > 0) {
-  const shortcutCombo: string = normalizeKeys(config.shortcut?.map(key => key.toLowerCase()) ?? []);
+if (props.config.shortcut?.length > 0) {
+  const shortcutCombo: string = normalizeKeys(
+    props.config.shortcut?.map(key => key.toLowerCase()) ?? [],
+  );
   registerShortcut(shortcutCombo, handleClick);
 }
 
@@ -54,7 +44,7 @@ function setButtonStylingManually(): void {
   // This function examines the DOM nodes of the annotation icon span. If the background image could not be loaded
   // (since it wasn't provided, bad internet connection etc.), the buttons shows the annotation type as string
   const iconElement: HTMLSpanElement = buttonElm.value.$el.querySelector(
-    `.annotation-type-icon-${annotationType}`,
+    `.annotation-type-icon-${props.type}`,
   );
 
   // Return if element was not found
@@ -107,66 +97,7 @@ function handleButtonClick(): void {
 }
 
 function handleClick(dropdownOption?: string | number): void {
-  try {
-    const newAnnotation: AnnotationData = createNewAnnotation(annotationType, dropdownOption);
-
-    // TODO: Push to store instead of emitting
-    emit('addAnnotation', newAnnotation);
-    // addAnnotation(newAnnotation);
-  } catch (error) {
-    if (error instanceof AnnotationRangeError) {
-      addToastMessage({
-        severity: 'warn',
-        summary: 'Invalid selection',
-        detail: error.message,
-        life: 3000,
-      });
-    } else if (error instanceof ShortcutError) {
-      addToastMessage({
-        severity: 'warn',
-        summary: 'Annotation type not enabled',
-        detail: error.message,
-        life: 3000,
-      });
-    } else {
-      console.error('Unexpected error:', error);
-    }
-  }
-}
-
-function createNewAnnotation(type: string, subType: string | number | undefined): AnnotationData {
-  const newAnnotationData: IAnnotation = {} as IAnnotation;
-
-  // Base properties
-  fields.forEach((field: PropertyConfig) => {
-    newAnnotationData[field.name] =
-      field?.required === true ? getDefaultValueForProperty(field.type) : null;
-  });
-
-  // TODO: This should come from the guidelines. When annotations
-  // are generic, do this
-  // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
-  newAnnotationData.type = type;
-  // newAnnotationData.startIndex = 0;
-  // newAnnotationData.endIndex = 0;
-  // TODO: the text property is different...
-  // newAnnotationData.text = '';
-  newAnnotationData.uuid = crypto.randomUUID();
-
-  // If a subType field exists (filled with a default value just before), but not subType was provided
-  // (= the user clicked the button directly instead of selecting an entry from the dropdown),
-  // set the first option as default value
-  if (subTypeField) {
-    newAnnotationData.subType = subType ?? subTypeField.options[0];
-  }
-
-  const newAnnotation: AnnotationData = {
-    properties: cloneDeep(newAnnotationData),
-    entities: [],
-    additionalTexts: [],
-  };
-
-  return newAnnotation;
+  emit('clicked', { type: props.type, subType: dropdownOption });
 }
 </script>
 
@@ -179,16 +110,16 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     raised
     :style="{ height: '35px', width: '35px' }"
     :class="hasIcon ? '' : 'button-empty'"
-    :data-annotation-type="annotationType"
-    :disabled="mode === 'view'"
-    v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
+    :disabled="disabled"
+    :data-annotation-type="props.type"
+    v-tooltip.hover.top="{ value: props.type, showDelay: 50 }"
     @click="handleButtonClick"
   >
     <template #icon>
-      <AnnotationTypeIcon v-if="hasIcon" :annotationType="annotationType" />
+      <AnnotationTypeIcon v-if="hasIcon" :annotationType="props.type" />
     </template>
     <template #default>
-      <span v-if="!hasIcon"> {{ annotationType }} </span>
+      <span v-if="!hasIcon"> {{ props.type }} </span>
     </template>
   </Button>
   <SplitButton
@@ -200,7 +131,8 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     :style="{ height: '35px' }"
     :class="hasIcon ? '' : 'w-auto'"
     :model="dropdownOptions"
-    v-tooltip.hover.top="{ value: annotationType, showDelay: 50 }"
+    :disabled="disabled"
+    v-tooltip.hover.top="{ value: props.type, showDelay: 50 }"
     @click="handleButtonClick"
     :pt="{
       pcMenu: {
@@ -213,10 +145,10 @@ function createNewAnnotation(type: string, subType: string | number | undefined)
     }"
   >
     <template #icon>
-      <AnnotationTypeIcon :annotationType="annotationType" />
+      <AnnotationTypeIcon :annotationType="props.type" />
     </template>
     <template #default>
-      <span v-if="!hasIcon"> {{ annotationType }} </span>
+      <span v-if="!hasIcon"> {{ props.type }} </span>
     </template>
 
     <template #item="{ label }">
