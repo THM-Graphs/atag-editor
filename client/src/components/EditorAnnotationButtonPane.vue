@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { useGuidelinesStore } from '../store/guidelines';
-import {
-  capitalize,
-  getParentCharacterSpan,
-  getSelectionData,
-  getSpansToAnnotate,
-  isEditorElement,
-} from '../utils/helper/helper';
+import { capitalize, getSpansToAnnotate } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
 import { Annotation, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
