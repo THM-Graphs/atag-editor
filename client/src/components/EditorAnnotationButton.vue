@@ -110,24 +110,6 @@ function handleButtonClick(): void {
   handleClick();
 }
 
-// function isBetweenAnnotations(leftChar: Character, rightChar: Character): boolean {
-//   const leftUuid: string = leftChar.annotations.find(a => a.type === annotationType)?.uuid;
-//   const rightUuid: string = rightChar.annotations.find(a => a.type === annotationType)?.uuid;
-
-//   return leftUuid && rightUuid && leftUuid !== rightUuid;
-// }
-
-// function findAnnotationToSplit(leftChar: Character, rightChar: Character): Annotation | null {
-//   const leftUuid: string = leftChar.annotations.find(a => a.type === annotationType)?.uuid;
-//   const rightUuid: string = rightChar.annotations.find(a => a.type === annotationType)?.uuid;
-
-//   if (leftUuid && rightUuid && leftUuid === rightUuid) {
-//     return annotations.value.find(a => a.data.properties.uuid === leftUuid);
-//   }
-
-//   return null;
-// }
-
 function handleClick(dropdownOption?: string | number): void {
   try {
     isAnnotationTypeEnabled();
@@ -136,69 +118,7 @@ function handleClick(dropdownOption?: string | number): void {
     // TODO: This needs to be overhauled completely
     // For paragraph annotations
     if (config.isSeparator) {
-      // const { range } = getSelectionData();
-      // const referenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-      // let leftSpan: HTMLSpanElement;
-      // let rightSpan: HTMLSpanElement;
-      // let previousCharacters: Character[] = [];
-      // let nextCharacters: Character[] = [];
-      // if (range.startOffset === 0) {
-      //   leftSpan = referenceSpanElement.previousElementSibling as HTMLSpanElement;
-      //   rightSpan = referenceSpanElement;
-      // } else {
-      //   leftSpan = referenceSpanElement;
-      //   rightSpan = referenceSpanElement.nextElementSibling as HTMLSpanElement;
-      // }
-      // const leftCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === leftSpan.id);
-      // const rightCharIndex = snippetCharacters.value.findIndex(c => c.data.uuid === rightSpan.id);
-      // const leftChar = snippetCharacters.value[leftCharIndex];
-      // const rightChar = snippetCharacters.value[rightCharIndex];
-      // if (isBetweenAnnotations(leftChar, rightChar)) {
-      //   throw new AnnotationRangeError(
-      //     `An empty ${annotationType} annotation cannot be created between two existing annotations`,
-      //   );
-      // }
-      // // Indicates whether to split the annotation the caret is currently inside of
-      // const annotationToSplit: Annotation | null = findAnnotationToSplit(leftChar, rightChar);
-      // // Throw error if annotation is truncated (whole annotated text must be loaded)
-      // if (annotationToSplit?.isTruncated) {
-      //   throw new AnnotationRangeError(
-      //     'The annotation is truncated. Please load the full annotation first.',
-      //   );
-      // }
-      // // Remove annotation that is being split
-      // if (annotationToSplit) {
-      //   removeAnnotationFromCharacters(annotationToSplit.data.properties.uuid);
-      //   deleteAnnotation(annotationToSplit.data.properties.uuid);
-      // }
-      // let current: Character = leftChar;
-      // let index: number = leftCharIndex;
-      // let newAnnotation: Annotation = null;
-      // // Annotate previous characters
-      // while (current && !current.annotations.some(a => a.type === annotationType) && index >= 0) {
-      //   previousCharacters.unshift(current);
-      //   index--;
-      //   current = snippetCharacters.value[index];
-      // }
-      // newAnnotation = createNewAnnotation(annotationType, dropdownOption, previousCharacters);
-      // addAnnotation(newAnnotation);
-      // annotateCharacters(previousCharacters, newAnnotation);
-      // // Annotate next characters
-      // current = rightChar;
-      // index = rightCharIndex;
-      // while (
-      //   current &&
-      //   !current.annotations.some(a => a.type === annotationType) &&
-      //   index <= snippetCharacters.value.length - 1
-      // ) {
-      //   nextCharacters.push(current);
-      //   index++;
-      //   current = snippetCharacters.value[index];
-      // }
-      // newAnnotation = createNewAnnotation(annotationType, dropdownOption, nextCharacters);
-      // addAnnotation(newAnnotation);
-      // annotateCharacters(nextCharacters, newAnnotation);
-      // setNewRangeAnchorUuid(previousCharacters[previousCharacters.length - 1].data.uuid);
+      return;
     } else {
       const selectedCharacters: Character[] = getCharactersToAnnotate();
       // TODO: All logic should be moved to the store...soon
