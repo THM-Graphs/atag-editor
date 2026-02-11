@@ -46,6 +46,8 @@ import { useBookmarks } from '../composables/useBookmarks';
 import AnnotationButton from './AnnotationButton.vue';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 
+type TabView = 'annotations' | 'details' | 'texts';
+
 const router = useRouter();
 const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 
@@ -104,7 +106,7 @@ const isBookmarked = computed<boolean>(() => {
   );
 });
 
-const selectedView = ref<'texts' | 'details' | 'annotations'>('details');
+const selectedView = ref<TabView>('details');
 const isTextsSelected = computed<boolean>(() => selectedView.value === 'texts');
 const isDetailsSelected = computed<boolean>(() => selectedView.value === 'details');
 const isAnnotationsSelected = computed<boolean>(() => selectedView.value === 'annotations');
@@ -448,7 +450,7 @@ function showMessage(result: 'success' | 'error', error?: Error) {
   });
 }
 
-function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
+function toggleViewMode(direction: TabView): void {
   selectedView.value = direction;
 }
 </script>
@@ -491,7 +493,7 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
         <h3 v-else class="font-italic font-normal">No label provided</h3>
       </div>
 
-      <div class="tab-section">
+      <div class="tab-section pb-2">
         <ButtonGroup class="w-full flex">
           <ToggleButton
             :model-value="isDetailsSelected"
@@ -787,6 +789,10 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
 <style scoped>
 .edit-pane-container {
   outline: 1px solid grey;
+}
+
+.annotation-form {
+  border: 1px solid grey;
 }
 
 .edit-pane-container,
