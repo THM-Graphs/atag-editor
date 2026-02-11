@@ -773,6 +773,15 @@ function toggleViewMode(direction: 'texts' | 'details' | 'annotations'): void {
       }"
     />
   </div>
+
+  <div
+    v-if="!activeCollection"
+    class="w-full h-full flex justify-content-center align-items-center font-italic"
+  >
+    <div class="text-center">
+      <p>No Collection selected</p>
+    </div>
+  </div>
 </template>
 
 <style scoped>
