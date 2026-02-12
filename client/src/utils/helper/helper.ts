@@ -186,8 +186,10 @@ export function getOuterRangeBoundaries(range: Range): {
   const { startSpan, endSpan } = getRangeBoundaries(range);
 
   const leftSpan: HTMLSpanElement | null =
-    (startSpan.previousElementSibling as HTMLSpanElement) ?? null;
-  const rightSpan: HTMLSpanElement | null = (endSpan.nextElementSibling as HTMLSpanElement) ?? null;
+    (startSpan?.previousElementSibling as HTMLSpanElement) ?? null;
+  const rightSpan: HTMLSpanElement | null =
+    (endSpan?.nextElementSibling as HTMLSpanElement) ?? null;
+
   const leftUuid: string | null = leftSpan?.id ?? null;
   const rightUuid: string | null = rightSpan?.id ?? null;
 
@@ -262,18 +264,30 @@ export function findSpansWithinBoundaries(
 }
 
 /**
- * Extracts the start and end span elements from a given Range and return an object with two properties,
+ * Extracts the start and end span elements from a given Range, if possible, and returns an object with two properties,
  * `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
  *
- * @param {Range} range A Range object
- * @returns {Object} An object with two properties, `startSpan` and `endSpan`, which contain the start and end span elements, respectively.
+ * Both can be `null` if the range covers the whole text container div (this is the case when all text is selected with Ctrl + A).
+ *
+ * @param {Range} range A Range object.
+ * @returns {Object} An object with two properties, `startSpan` and `endSpan`, which contain the start and end span elements or `null`, respectively.
  */
 export function getRangeBoundaries(range: Range): {
-  startSpan: HTMLSpanElement;
-  endSpan: HTMLSpanElement;
+  startSpan: HTMLSpanElement | null;
+  endSpan: HTMLSpanElement | null;
 } {
-  const startReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.startContainer);
-  const endReferenceSpanElement: HTMLSpanElement = getParentCharacterSpan(range.endContainer);
+  let startReferenceSpanElement: HTMLSpanElement | null = null;
+  let endReferenceSpanElement: HTMLSpanElement | null = null;
+
+  if (isEditorElement(range.startContainer) && isEditorElement(range.endContainer)) {
+    startReferenceSpanElement = (range.startContainer as HTMLDivElement)
+      .firstElementChild as HTMLSpanElement;
+    endReferenceSpanElement = (range.endContainer as HTMLDivElement)
+      .lastElementChild as HTMLSpanElement;
+  } else {
+    startReferenceSpanElement = getParentCharacterSpan(range.startContainer);
+    endReferenceSpanElement = getParentCharacterSpan(range.endContainer);
+  }
 
   return { startSpan: startReferenceSpanElement, endSpan: endReferenceSpanElement };
 }
