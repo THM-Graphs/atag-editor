@@ -9,7 +9,6 @@ import { Annotation, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
-import Tag from 'primevue/tag';
 import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
