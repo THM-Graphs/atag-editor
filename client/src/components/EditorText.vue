@@ -11,7 +11,6 @@ import {
   isCaretAtEnd,
   isEditorElement,
   removeFormatting,
-  getSpansToAnnotate,
 } from '../utils/helper/helper';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
@@ -49,8 +48,13 @@ const {
 } = useEditorStore();
 const { addToastMessage } = useAppStore();
 const { getAnnotationConfig } = useGuidelinesStore();
-const { afterEndIndex, beforeStartIndex, snippetCharacters, totalCharacters } =
-  useCharactersStore();
+const {
+  afterEndIndex,
+  beforeStartIndex,
+  snippetCharacters,
+  totalCharacters,
+  getCharactersInSelection,
+} = useCharactersStore();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
@@ -169,13 +173,6 @@ function handleInsertText(event: InputEvent): void {
 
 function handleInsertReplacementText(event: InputEvent): void {
   console.log('Replacement event:', event);
-
-  // const newCharacter: ICharacter = {
-  //   uuid: crypto.randomUUID(),
-  //   text: event.data || '',
-  // };
-  // characters.value.push(newCharacter);
-  // Additional logic for replacement can be added here
 }
 
 async function handleInsertFromPaste(): Promise<void> {
@@ -549,21 +546,6 @@ async function handleCopy(): Promise<void> {
   }
 }
 
-/**
- * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
- *
- * @returns {Character[]} The characters that the user wants to annotate.
- */
-function getCharactersToAnnotate(): Character[] {
-  const spans: HTMLSpanElement[] = getSpansToAnnotate();
-  const uuids: string[] = spans.map((span: HTMLSpanElement) => span.id);
-  const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
-    uuids.includes(c.data.uuid),
-  );
-
-  return characters;
-}
-
 function handleMouseUp(): void {
   if (!isRedrawMode.value) {
     return;
@@ -577,7 +559,7 @@ function handleMouseUp(): void {
     const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
     isSelectionValid(config);
 
-    const selectedCharacters: Character[] = getCharactersToAnnotate();
+    const selectedCharacters: Character[] = getCharactersInSelection();
 
     if (!annotation) {
       throw new Error('Annotation not found, abort');

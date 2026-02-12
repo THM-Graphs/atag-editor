@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGuidelinesStore } from '../store/guidelines';
-import { capitalize, getSpansToAnnotate } from '../utils/helper/helper';
+import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
 import { Annotation, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
@@ -15,25 +15,10 @@ import { useValidateTextSelection } from '../composables/useValidateTextSelectio
 const { groupedAnnotationTypes, getAnnotationConfig } = useGuidelinesStore();
 const { addToastMessage } = useAppStore();
 const { execCommand } = useEditorStore();
-const { snippetCharacters } = useCharactersStore();
+const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 const { isValid: isSelectionValid } = useValidateTextSelection();
-
-/**
- * Return the characters that the user wants to annotate. This is the selection as an array of Character objects.
- *
- * @returns {Character[]} The characters that the user wants to annotate.
- */
-function getCharactersToAnnotate(): Character[] {
-  const spans: HTMLSpanElement[] = getSpansToAnnotate();
-  const uuids: string[] = spans.map((span: HTMLSpanElement) => span.id);
-  const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
-    uuids.includes(c.data.uuid),
-  );
-
-  return characters;
-}
 
 /**
  * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
@@ -58,7 +43,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
     isAnnotationTypeEnabled(data.type);
     isSelectionValid(config);
 
-    const selectedCharacters: Character[] = getCharactersToAnnotate();
+    const selectedCharacters: Character[] = getCharactersInSelection();
     const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
 
     execCommand('createAnnotation', {

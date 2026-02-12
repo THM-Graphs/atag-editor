@@ -3,7 +3,7 @@ import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
 import { Annotation, AnnotationReference, Character, TextOperationResult } from '../models/types';
-import { cloneDeep, isWordBoundary } from '../utils/helper/helper';
+import { cloneDeep, getSpansToAnnotate, isWordBoundary } from '../utils/helper/helper';
 import { useAppStore } from './app';
 
 type CharacterInfo = {
@@ -128,6 +128,23 @@ export function useCharactersStore() {
 
   function getBeforeStartCharacter(): Character | null {
     return beforeStartIndex.value ? totalCharacters.value[beforeStartIndex.value] : null;
+  }
+
+  /**
+   * Return the characters that are rendered as span elements in the current text selection.
+   *
+   * Used for annotating text (either via button click or `mouseUp` in redraw mode).
+   *
+   * @returns {Character[]} The characters that the user wants to annotate.
+   */
+  function getCharactersInSelection(): Character[] {
+    const spans: HTMLSpanElement[] = getSpansToAnnotate();
+    const uuids: string[] = spans.map((span: HTMLSpanElement) => span.id);
+    const characters: Character[] = snippetCharacters.value.filter((c: Character) =>
+      uuids.includes(c.data.uuid),
+    );
+
+    return characters;
   }
 
   function setAfterEndCharacter(character: Character | null): void {
@@ -997,6 +1014,7 @@ export function useCharactersStore() {
     fetchAndInitializeCharacters,
     getAfterEndCharacter,
     getBeforeStartCharacter,
+    getCharactersInSelection,
     createFullTextFromCharacters,
     lastCharacters,
     findUuidAfterWordEnd,
