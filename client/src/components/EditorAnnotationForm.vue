@@ -7,13 +7,13 @@ import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
-import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import FormPropertiesSection from './FormPropertiesSection.vue';
+import TruncatedBadge from './TruncatedBadge.vue';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -132,13 +132,7 @@ function handleShrink(): void {
           @mouseleave="toggleTextHightlighting(annotation, 'off')"
         ></div>
       </div>
-      <div v-if="annotation.isTruncated" class="truncated-indicator">
-        <Tag
-          severity="warn"
-          title="Annotation extends beyond the displayed text snippet"
-          value="Truncated"
-        ></Tag>
-      </div>
+      <TruncatedBadge v-if="annotation.isTruncated" :icon="false" :text="true" />
     </template>
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>

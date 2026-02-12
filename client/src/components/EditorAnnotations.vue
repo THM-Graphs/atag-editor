@@ -13,6 +13,7 @@ import Tag from 'primevue/tag';
 import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
+import TruncatedBadge from './TruncatedBadge.vue';
 
 export interface TreeNode {
   annotationCount?: number;
@@ -258,11 +259,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
                 :data-annotation-uuid="slotProps.node.data.data.properties.uuid"
               >
                 <!-- TODO: Fix overflow -->
-                <Tag
-                  v-if="slotProps.node.data.isTruncated"
-                  icon="pi pi-exclamation-triangle"
-                  severity="warn"
-                ></Tag>
+                <TruncatedBadge :icon="true" :text="false" />
                 {{ slotProps.node.label }}
               </div>
             </div>
