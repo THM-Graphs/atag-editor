@@ -704,7 +704,7 @@ function toggleViewMode(direction: TabView): void {
             @text-removed="handleRemoveText(text, 'temporary')"
           />
           <Button
-            v-if="formMode === 'edit'"
+            v-if="formMode === 'edit' && temporaryTexts.length === 0"
             class="mt-2 w-full h-2rem"
             icon="pi pi-plus"
             size="small"
