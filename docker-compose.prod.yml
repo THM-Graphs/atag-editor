@@ -37,6 +37,7 @@ services:
     volumes:
       - /certificates/:/app/certificates
       - ../logs/:/app/logs
+      - ../config/:/app/config:ro
     environment:
       - APP_HOST=${APP_HOST}
       - APP_PORT=${APP_PORT}
