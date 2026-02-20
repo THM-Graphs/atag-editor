@@ -90,6 +90,26 @@ export function getPagination(req: Request): Record<string, any> {
 }
 
 /**
+ * Checks if a given string is a valid HTTP URL.
+ *
+ * Currently only used to determine whether the provided URLs for
+ * guidelines and styles are a remote URL that needs to be fetched
+ * or a local file path that can be read from the file system directly.
+ *
+ * @param {string} string The string to check.
+ * @return {boolean} True if the string is a valid HTTP URL, false otherwise.
+ */
+export function isValidHttpUrl(string: string): boolean {
+  try {
+    const newUrl: URL = new URL(string);
+
+    return newUrl.protocol === 'http:' || newUrl.protocol === 'https:';
+  } catch (err: unknown) {
+    return false;
+  }
+}
+
+/**
  * Convert Neo4j Properties back into JavaScript types.
  *
  * Copied from the official Neo4j Graphacademy repo: https://github.com/neo4j-graphacademy/app-nodejs/blob/main/src/utils.js

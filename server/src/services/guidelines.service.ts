@@ -1,6 +1,9 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { IGuidelines } from '../models/IGuidelines.js';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types.js';
 import ExternalServiceError from '../errors/externalService.error.js';
+import { isValidHttpUrl } from '../utils/helper.js';
 
 export default class GuidelinesService {
   /**
@@ -201,27 +204,49 @@ export default class GuidelinesService {
   }
 
   /**
-   * Retrieves the guidelines from the URL defined in the GUIDELINES_URL environment variable.
+   * Retrieves the guidelines from the URL defined in the GUIDELINES_URL environment variable. Can be either loaded
+   * from a remote location or from the file system.
    *
    * @throws {ExternalServiceError} If the URL is not provided or if the guidelines could not be loaded.
    * @return {Promise<IGuidelines>} The retrieved guidelines.
    */
   public async getGuidelines(): Promise<IGuidelines> {
-    // TODO: Improve error handling...
+    // TODO: Improve error handling...technically a local file read error is not a external service error
     const url: string | undefined = process.env.GUIDELINES_URL;
 
     if (!url) {
-      throw new ExternalServiceError(`URL to guidelines is not provided...`);
+      throw new ExternalServiceError(`URL to guidelines is not provided`);
     }
 
-    const response: Response = await fetch(url);
+    // If it starts with http/https, fetch it
+    if (isValidHttpUrl(url)) {
+      try {
+        const response: Response = await fetch(url);
 
-    if (!response.ok) {
-      throw new ExternalServiceError(`Guidelines could not be loaded`);
+        if (!response.ok) {
+          throw new ExternalServiceError(`Guidelines could not be loaded from remote url ${url}`);
+        }
+
+        return await response.json();
+      } catch (error: unknown) {
+        throw error;
+      }
     }
 
-    const guidelines: IGuidelines = await response.json();
+    // Else, read from local file system
+    const filePath: string = path.resolve(url);
+    let fileContent: string;
 
-    return guidelines;
+    try {
+      fileContent = await fs.readFile(filePath, 'utf-8');
+    } catch (err: unknown) {
+      throw new ExternalServiceError(`Failed to read guidelines from file at ${filePath}`);
+    }
+
+    try {
+      return JSON.parse(fileContent);
+    } catch (err: unknown) {
+      throw new ExternalServiceError(`Invalid JSON in guidelines file at ${filePath}`);
+    }
   }
 }

@@ -1,28 +1,48 @@
+import fs from 'fs/promises';
+import path from 'path';
 import ExternalServiceError from '../errors/externalService.error.js';
+import { isValidHttpUrl } from '../utils/helper.js';
 
 export default class StylesService {
   /**
-   * Retrieves the stylesheet from the URL defined in the STYLESHEET_URL environment variable.
+   * Retrieves the stylesheet from the URL defined in the STYLESHEET_URL environment variable. Can be either loaded
+   * from a remote location or from the file system.
    *
    * @throws {ExternalServiceError} If the URL is not provided or if the stylesheet could not be loaded.
    * @return {Promise<string>} The retrieved stylesheet as raw CSS.
    */
   public async getStyles(): Promise<string> {
-    // TODO: Improve error handling...
+    // TODO: Improve error handling...technically a local file read error is not a external service error
     const url: string | undefined = process.env.STYLESHEET_URL;
 
     if (!url) {
-      throw new ExternalServiceError(`URL to stylesheet is not provided...`);
+      throw new ExternalServiceError(`URL to stylesheet is not provided`);
     }
 
-    const response: Response = await fetch(url);
+    // If it starts with http/https, fetch it
+    if (isValidHttpUrl(url)) {
+      try {
+        const response: Response = await fetch(url);
 
-    if (!response.ok) {
-      throw new ExternalServiceError(`Styles could not be loaded`);
+        if (!response.ok) {
+          throw new ExternalServiceError(`Styles could not be loaded`);
+        }
+
+        const styles: string = await response.text();
+
+        return styles;
+      } catch (error: unknown) {
+        throw new ExternalServiceError(`Styles could not be loaded from remote url: ${url}`);
+      }
     }
 
-    const styles: string = await response.text();
+    // Else, read from local file system
+    const filePath: string = path.resolve(url);
 
-    return styles;
+    try {
+      return await fs.readFile(filePath, 'utf-8');
+    } catch (err: unknown) {
+      throw new ExternalServiceError(`Failed to read styles from file at ${filePath}`);
+    }
   }
 }
