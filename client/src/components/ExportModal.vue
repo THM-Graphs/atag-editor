@@ -7,12 +7,16 @@ import Textarea from 'primevue/textarea';
 import { useExport } from '../composables/useExport';
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
 import { useEditorStore } from '../store/editor';
+import { useCharactersStore } from '../store/characters';
+import { useAnnotationStore } from '../store/annotations';
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 
 const { exportedJson, status, errorMessages, buildJson, copyToClipboard, downloadJson, reset } =
   useExport();
 const { hasUnsavedChanges } = useEditorStore();
+const { totalCharacters } = useCharactersStore();
+const { totalAnnotations } = useAnnotationStore();
 
 const textHasUnsavedChanges = hasUnsavedChanges();
 
@@ -63,9 +67,19 @@ function closeModal(): void {
       exporting to ensure everything is exported correctly.
     </Message>
 
+    <Message v-if="status !== 'error'" icon="pi pi-info-circle" class="my-2 w-full" severity="info">
+      <div class="info">
+        Export contains:
+        <ul class="m-0 pl-5">
+          <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
+          <li class="list-disc">{{ totalAnnotations.length.toLocaleString() }} annotations</li>
+        </ul>
+      </div>
+    </Message>
+
     <Textarea
-      :model-value="exportedJson"
-      rows="14"
+      v-model="exportedJson"
+      rows="10"
       class="w-full"
       readonly
       spellcheck="false"
@@ -77,7 +91,7 @@ function closeModal(): void {
         <Button
           :label="copyLabel"
           :icon="copyIcon"
-          severity="success"
+          severity="primary"
           title="Copy JSON to clipboard"
           :disabled="!exportedJson"
           @click="handleCopyClick"
@@ -85,7 +99,7 @@ function closeModal(): void {
         <Button
           label="Download"
           icon="pi pi-download"
-          severity="success"
+          severity="primary"
           title="Download as standoff-export.json"
           :disabled="!exportedJson"
           @click="handleDownloadClick"
