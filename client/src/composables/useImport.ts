@@ -301,7 +301,6 @@ export function useImport(): UseImportReturn {
         }
 
         const fields: PropertyConfig[] = getAnnotationFields(a.type);
-        const subTypeField: PropertyConfig = fields.find(field => field.name === 'subType');
 
         const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
