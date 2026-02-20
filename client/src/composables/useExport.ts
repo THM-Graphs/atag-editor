@@ -24,8 +24,10 @@ export type UseExportReturn = {
 
 /**
  * A composable that handles exporting editor data (text and annotations) as Standoff JSON.
- * Provides functionality to build the JSON string, copy it to the clipboard,
- * or download it as a `.json` file.
+ * Provides functionality to build the JSON string, copy it to the clipboard, or download it as a `.json` file.
+ *
+ * IMPORTANT: Exported text and annotations refers to the TOTAL characters and annotations arrays.
+ * Unsaved changes in the snippet will NOT be exported, but a warning will be shown to the user.
  *
  * @returns {UseExportReturn}
  */
