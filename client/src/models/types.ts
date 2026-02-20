@@ -243,11 +243,12 @@ export type RedrawModeOptions = {
 };
 
 export type StandoffAnnotation = {
-  [key: string]: string | number | boolean;
-  start: number;
-  end: number;
+  [key: string]: any;
+  startIndex: number;
+  endIndex: number;
   text: string;
   type: string;
+  subType?: string | number;
 };
 
 export type StandoffJson = {

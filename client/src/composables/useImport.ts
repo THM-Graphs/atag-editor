@@ -280,11 +280,11 @@ export function useImport(): UseImportReturn {
       // Create annotation objects and annotate characters
       parsedJson.value.annotations.forEach(a => {
         const indicesAreInvalid: boolean =
-          a.start < 0 ||
-          a.end < 0 ||
-          a.start > a.end ||
-          a.start > newCharacters.length ||
-          a.end > newCharacters.length;
+          a.startIndex < 0 ||
+          a.endIndex < 0 ||
+          a.startIndex > a.endIndex ||
+          a.startIndex > newCharacters.length ||
+          a.endIndex > newCharacters.length;
 
         // Catch annotations with invalid indices
         if (indicesAreInvalid) {
@@ -301,35 +301,42 @@ export function useImport(): UseImportReturn {
         }
 
         const fields: PropertyConfig[] = getAnnotationFields(a.type);
+        const subTypeField: PropertyConfig = fields.find(field => field.name === 'subType');
+
         const newAnnotationProperties: IAnnotation = {} as IAnnotation;
 
-        // Base properties
+        // Fill base properties with annotation data or set default values
         fields.forEach((field: PropertyConfig) => {
-          newAnnotationProperties[field.name] =
-            field?.required === true ? getDefaultValueForProperty(field.type) : null;
+          if (field.name in a) {
+            newAnnotationProperties[field.name] = a[field.name];
+          } else {
+            newAnnotationProperties[field.name] =
+              field?.required === true ? getDefaultValueForProperty(field.type) : null;
+          }
         });
 
         // Other fields (can only be set during save (indizes), must be set explicitly (uuid, text) etc.)
         newAnnotationProperties.type = a.type;
-        newAnnotationProperties.startIndex = a.start;
-        newAnnotationProperties.endIndex = a.end;
+        newAnnotationProperties.subType = a.subType;
+        newAnnotationProperties.startIndex = a.startIndex;
+        newAnnotationProperties.endIndex = a.endIndex;
         newAnnotationProperties.text = a.text;
         newAnnotationProperties.uuid = crypto.randomUUID();
 
-        let index: number = a.start;
+        let index: number = a.startIndex;
 
         // Annotate characters (skipped in the first step since information is stored in annotations)
         do {
           newCharacters[index].annotations.push({
             uuid: newAnnotationProperties.uuid,
-            isFirstCharacter: index === a.start,
-            isLastCharacter: index === a.end,
+            isFirstCharacter: index === a.startIndex,
+            isLastCharacter: index === a.endIndex,
             type: a.type,
-            subType: '',
+            subType: (a.subType as string) || '',
           });
 
           index++;
-        } while (index <= a.end);
+        } while (index <= a.endIndex);
 
         newAnnotations.push({
           properties: newAnnotationProperties,
