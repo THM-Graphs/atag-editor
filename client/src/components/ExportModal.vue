@@ -69,7 +69,7 @@ function closeModal(): void {
 
     <Message v-if="status !== 'error'" icon="pi pi-info-circle" class="my-2 w-full" severity="info">
       <div class="info">
-        Your export will contain:
+        You are going to export
         <ul class="m-0 pl-5">
           <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
           <li class="list-disc">{{ totalAnnotations.length.toLocaleString() }} annotations</li>
