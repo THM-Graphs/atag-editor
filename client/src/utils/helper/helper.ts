@@ -1,6 +1,7 @@
 import { Ref } from 'vue';
 import {
   Annotation,
+  Character,
   CollectionAccessObject,
   PropertyConfigDataType,
   Text,
@@ -57,6 +58,16 @@ export function cloneDeep<T>(input: T): T {
 
   // Default for primitive types like string, number, boolean, etc.
   return input;
+}
+
+export function createNewCharacter(char: string): Character {
+  return {
+    data: {
+      uuid: crypto.randomUUID(),
+      text: char,
+    },
+    annotations: [],
+  };
 }
 
 export function createNewCollectionAccessObject(

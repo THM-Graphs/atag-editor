@@ -2,7 +2,7 @@ import { ref, readonly, Ref, DeepReadonly } from 'vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useCharactersStore } from '../store/characters';
 import { useGuidelinesStore } from '../store/guidelines';
-import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
+import { cloneDeep, createNewCharacter, getDefaultValueForProperty } from '../utils/helper/helper';
 import JsonParseError from '../utils/errors/parse.error';
 import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
@@ -272,13 +272,7 @@ export function useImport(): UseImportReturn {
     try {
       // Create character chain (without annotation references)
       parsedJson.value.text.split('').forEach((c: string) => {
-        const char: Character = {
-          data: {
-            uuid: crypto.randomUUID(),
-            text: c,
-          },
-          annotations: [],
-        };
+        const char: Character = createNewCharacter(c);
 
         newCharacters.push(char);
       });

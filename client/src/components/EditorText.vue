@@ -11,6 +11,7 @@ import {
   isCaretAtEnd,
   isEditorElement,
   removeFormatting,
+  createNewCharacter,
 } from '../utils/helper/helper';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
@@ -590,16 +591,6 @@ function handleMouseUp(): void {
       console.error('Unexpected error:', error);
     }
   }
-}
-
-function createNewCharacter(char: string): Character {
-  return {
-    data: {
-      uuid: crypto.randomUUID(),
-      text: char,
-    },
-    annotations: [],
-  };
 }
 </script>
 
