@@ -12,7 +12,7 @@ import { useAnnotationStore } from '../store/annotations';
 
 const route: RouteLocationNormalizedLoaded = useRoute();
 
-const { exportedJson, status, errorMessages, buildJson, copyToClipboard, downloadJson, reset } =
+const { jsonToExport, status, errorMessages, buildJson, copyToClipboard, downloadJson, reset } =
   useExport();
 const { hasUnsavedChanges } = useEditorStore();
 const { totalCharacters } = useCharactersStore();
@@ -82,7 +82,7 @@ function closeModal(): void {
     </Message>
 
     <Textarea
-      v-model="exportedJson"
+      v-model="jsonToExport"
       rows="10"
       class="w-full"
       readonly
@@ -97,7 +97,7 @@ function closeModal(): void {
           :icon="copyIcon"
           severity="primary"
           title="Copy JSON to clipboard"
-          :disabled="!exportedJson"
+          :disabled="!jsonToExport"
           @click="handleCopyClick"
         />
         <Button
@@ -105,7 +105,7 @@ function closeModal(): void {
           icon="pi pi-download"
           severity="primary"
           title="Download as standoff-export.json"
-          :disabled="!exportedJson"
+          :disabled="!jsonToExport"
           @click="handleDownloadClick"
         />
       </ButtonGroup>

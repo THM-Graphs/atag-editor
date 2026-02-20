@@ -13,7 +13,7 @@ type ErrorMessage = {
 };
 
 export type UseExportReturn = {
-  exportedJson: Readonly<Ref<string>>;
+  jsonToExport: Readonly<Ref<string>>;
   status: Readonly<Ref<ExportStatus>>;
   errorMessages: DeepReadonly<Ref<ErrorMessage[]>>;
   buildJson: () => void;
@@ -46,7 +46,7 @@ export function useExport(): UseExportReturn {
   }
 
   /**
-   * Builds the Standoff JSON string from the current store state and stores it in `exportedJson`.
+   * Builds the Standoff JSON string from the current store state and stores it in `jsonToExport`.
    * Resets any previous error state before building.
    *
    * @returns {void} This function does not return any value.
@@ -69,7 +69,7 @@ export function useExport(): UseExportReturn {
   }
 
   /**
-   * Copies the current exportedJson string to the clipboard.
+   * Copies the current jsonToExport string to the clipboard.
    * Sets status to `copied` on success, `error` on failure.
    *
    * @returns {Promise<void>} This function does not return any value.
@@ -93,7 +93,7 @@ export function useExport(): UseExportReturn {
   }
 
   /**
-   * Triggers a browser download of the exportedJson string as a `.json` file.
+   * Triggers a browser download of the jsonToExport string as a `.json` file.
    *
    * @param {string} filename - The name of the downloaded file (default: 'export.json').
    */
@@ -156,7 +156,7 @@ export function useExport(): UseExportReturn {
   }
 
   return {
-    exportedJson: readonly(jsonToExport),
+    jsonToExport: readonly(jsonToExport),
     status: readonly(status),
     errorMessages: readonly(errorMessages),
     buildJson,
