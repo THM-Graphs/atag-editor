@@ -10,6 +10,7 @@ import NodeTag from './NodeTag.vue';
 import BookmarkButton from './BookmarkButton.vue';
 import { useBookmarks } from '../composables/useBookmarks';
 import { MenuItem } from 'primevue/menuitem';
+import EditorExportButton from './EditorExportButton.vue';
 
 const { text, correspondingCollection } = useTextStore();
 const { bookmarks, toggleBookmark } = useBookmarks();
@@ -46,6 +47,7 @@ function handleBookmarkAction() {
         <EditorHistoryButton action="undo" />
         <EditorHistoryButton action="redo" />
         <EditorImportButton />
+        <EditorExportButton />
         <BookmarkButton />
       </div>
     </div>

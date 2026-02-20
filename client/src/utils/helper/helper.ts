@@ -4,9 +4,31 @@ import {
   Character,
   CollectionAccessObject,
   PropertyConfigDataType,
+  StandoffAnnotation,
+  StandoffJson,
   Text,
 } from '../../models/types';
 import ICollection from '../../models/ICollection';
+
+/**
+ * Converts the given characters and annotations into a single StandoffJson object.
+ *
+ * @param characters - The list of characters.
+ * @param annotations - The list of annotations.
+ * @returns {StandoffJson} The assembled Standoff JSON object.
+ */
+export function buildStandoffJson(
+  characters: Character[],
+  annotations: Annotation[],
+): StandoffJson {
+  const text: string = characters.map(c => c.data.text).join('');
+  const standoffAnnotations: StandoffAnnotation[] = annotations.map(a => a.data.properties);
+
+  return {
+    text,
+    annotations: standoffAnnotations,
+  };
+}
 
 /**
  * Converts a camelCase or PascalCase string into a space-separated title case string
