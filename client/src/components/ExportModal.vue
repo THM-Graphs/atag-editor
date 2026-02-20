@@ -74,6 +74,10 @@ function closeModal(): void {
           <li class="list-disc">{{ totalCharacters.length.toLocaleString() }} characters</li>
           <li class="list-disc">{{ totalAnnotations.length.toLocaleString() }} annotations</li>
         </ul>
+        <p>
+          Please note that other nodes connected to the annotations (entities, more texts etc.) can
+          not yet be exported.
+        </p>
       </div>
     </Message>
 
