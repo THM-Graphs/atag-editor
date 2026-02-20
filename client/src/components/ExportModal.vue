@@ -12,7 +12,6 @@ const route: RouteLocationNormalizedLoaded = useRoute();
 
 const { exportedJson, status, errorMessages, buildJson, copyToClipboard, downloadJson, reset } =
   useExport();
-
 const { hasUnsavedChanges } = useEditorStore();
 
 const textHasUnsavedChanges = hasUnsavedChanges();

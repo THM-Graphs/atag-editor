@@ -23,9 +23,9 @@ export type UseExportReturn = {
 };
 
 /**
- * A composable that handles exporting editor data as Standoff JSON.
+ * A composable that handles exporting editor data (text and annotations) as Standoff JSON.
  * Provides functionality to build the JSON string, copy it to the clipboard,
- * or download it as a .json file.
+ * or download it as a `.json` file.
  *
  * @returns {UseExportReturn}
  */
@@ -37,14 +37,14 @@ export function useExport(): UseExportReturn {
   const status = ref<ExportStatus>('idle');
 
   const errorMessages = ref<ErrorMessage[]>([]);
-  let errorCount = 0;
+  let errorCount: number = 0;
 
   function addErrorMessage(content: string): void {
     errorMessages.value.push({ severity: 'error', content, id: errorCount++ });
   }
 
   /**
-   * Builds the Standoff JSON string from the current store state and stores it in exportedJson.
+   * Builds the Standoff JSON string from the current store state and stores it in `exportedJson`.
    * Resets any previous error state before building.
    *
    * @returns {void} This function does not return any value.
@@ -68,7 +68,7 @@ export function useExport(): UseExportReturn {
 
   /**
    * Copies the current exportedJson string to the clipboard.
-   * Sets status to 'copied' on success, 'error' on failure.
+   * Sets status to `copied` on success, `error` on failure.
    *
    * @returns {Promise<void>} This function does not return any value.
    */
@@ -91,7 +91,7 @@ export function useExport(): UseExportReturn {
   }
 
   /**
-   * Triggers a browser download of the exportedJson string as a .json file.
+   * Triggers a browser download of the exportedJson string as a `.json` file.
    *
    * @param {string} filename - The name of the downloaded file (default: 'export.json').
    */
@@ -119,6 +119,13 @@ export function useExport(): UseExportReturn {
     }
   }
 
+  /**
+   * Resets the error message list and count back to their initial values.
+   *
+   * Called whenever the pipeline status changes back to `idle` or when the `reset()` function is called.
+   *
+   * @returns {void} This function does not return any value.
+   */
   function clearErrorMessages(): void {
     errorCount = 0;
     errorMessages.value = [];
@@ -126,6 +133,8 @@ export function useExport(): UseExportReturn {
 
   /**
    * Resets the composable back to its initial state.
+   *
+   * @returns {void} This function does not return any value.
    */
   function reset(): void {
     jsonToExport.value = '';
@@ -134,6 +143,12 @@ export function useExport(): UseExportReturn {
     clearErrorMessages();
   }
 
+  /**
+   * Sets the current pipeline status to the given status.
+   *
+   * @param {ExportStatus} newStatus The new status of the pipeline.
+   * @returns {void} This function does not return any value.
+   */
   function setPipelineStatus(newStatus: ExportStatus): void {
     status.value = newStatus;
   }
