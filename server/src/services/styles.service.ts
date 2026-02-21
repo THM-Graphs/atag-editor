@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import ExternalServiceError from '../errors/externalService.error.js';
 import { isValidHttpUrl } from '../utils/helper.js';
+import { CONFIG_DIR } from '../constants.js';
 
 export default class StylesService {
   /**
@@ -25,24 +26,24 @@ export default class StylesService {
         const response: Response = await fetch(url);
 
         if (!response.ok) {
-          throw new ExternalServiceError(`Styles could not be loaded`);
+          throw new ExternalServiceError(`Styles could not be loaded from remote url`);
         }
 
         const styles: string = await response.text();
 
         return styles;
       } catch (error: unknown) {
-        throw new ExternalServiceError(`Styles could not be loaded from remote url: ${url}`);
+        throw new ExternalServiceError(`Styles could not be loaded from remote url`);
       }
     }
 
     // Else, read from local file system
-    const filePath: string = path.resolve(url);
+    const filePath: string = path.join(CONFIG_DIR, url);
 
     try {
       return await fs.readFile(filePath, 'utf-8');
     } catch (err: unknown) {
-      throw new ExternalServiceError(`Failed to read styles from file at ${filePath}`);
+      throw new ExternalServiceError(`Failed to read styles from file from the provided file `);
     }
   }
 }

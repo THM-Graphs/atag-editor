@@ -3,6 +3,7 @@ import path from 'path';
 import { IGuidelines } from '../models/IGuidelines.js';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types.js';
 import ExternalServiceError from '../errors/externalService.error.js';
+import { CONFIG_DIR } from '../constants.js';
 import { isValidHttpUrl } from '../utils/helper.js';
 
 export default class GuidelinesService {
@@ -224,29 +225,29 @@ export default class GuidelinesService {
         const response: Response = await fetch(url);
 
         if (!response.ok) {
-          throw new ExternalServiceError(`Guidelines could not be loaded from remote url ${url}`);
+          throw new ExternalServiceError(`Guidelines could not be loaded from remote url`);
         }
 
         return await response.json();
       } catch (error: unknown) {
-        throw error;
+        throw new ExternalServiceError(`Guidelines could not be loaded from remote url`);
       }
     }
 
     // Else, read from local file system
-    const filePath: string = path.resolve(url);
+    const filePath: string = path.join(CONFIG_DIR, url);
     let fileContent: string;
 
     try {
       fileContent = await fs.readFile(filePath, 'utf-8');
     } catch (err: unknown) {
-      throw new ExternalServiceError(`Failed to read guidelines from file at ${filePath}`);
+      throw new ExternalServiceError(`Failed to read guidelines from the provided file`);
     }
 
     try {
       return JSON.parse(fileContent);
     } catch (err: unknown) {
-      throw new ExternalServiceError(`Invalid JSON in guidelines file at ${filePath}`);
+      throw new ExternalServiceError(`Invalid JSON in the provided guidelines file`);
     }
   }
 }
