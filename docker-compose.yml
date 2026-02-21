@@ -28,6 +28,7 @@ services:
       - '8080:8080'
     volumes:
       - ./server:/app
+      - ./config/:/app/config:ro
     restart: on-failure
     environment:
       - APP_HOST=${APP_HOST}
