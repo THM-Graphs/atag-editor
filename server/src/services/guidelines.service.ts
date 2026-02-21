@@ -4,7 +4,7 @@ import { IGuidelines } from '../models/IGuidelines.js';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types.js';
 import ExternalServiceError from '../errors/externalService.error.js';
 import { CONFIG_DIR } from '../constants.js';
-import { isValidHttpUrl } from '../utils/helper.js';
+import { isValidConfigFile, isValidHttpUrl } from '../utils/helper.js';
 
 export default class GuidelinesService {
   /**
@@ -232,6 +232,10 @@ export default class GuidelinesService {
       } catch (error: unknown) {
         throw new ExternalServiceError(`Guidelines could not be loaded from remote url`);
       }
+    }
+
+    if (!isValidConfigFile(url)) {
+      throw new ExternalServiceError(`Provided guidelines URL is not a valid file name.`);
     }
 
     // Else, read from local file system

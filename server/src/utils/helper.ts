@@ -90,6 +90,29 @@ export function getPagination(req: Request): Record<string, any> {
 }
 
 /**
+ * Checks if a given file name is a valid configuration file.
+ *
+ * Currently used to validate the provided file name for guidelines and stylesheet when the provided URL
+ * is not a valid HTTP URL, to prevent path traversal and only allow JSON and CSS files in the config directory.
+ *
+ * @param {string} fileName The file name (maybe including a path) to check.
+ * @return {boolean} True if the file name is a valid configuration file, false otherwise.
+ */
+export function isValidConfigFile(fileName: string): boolean {
+  // No path traversal should be allowed, only the file name
+  if (fileName.includes('/') || fileName.includes('..')) {
+    return false;
+  }
+
+  // Files in the directry are either JSON (guidelines) or CSS (stylesheet) files, so only these should be allowed
+  if (!fileName.endsWith('.json') && !fileName.endsWith('.css')) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Checks if a given string is a valid HTTP URL.
  *
  * Currently only used to determine whether the provided URLs for

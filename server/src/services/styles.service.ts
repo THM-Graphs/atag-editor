@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import ExternalServiceError from '../errors/externalService.error.js';
-import { isValidHttpUrl } from '../utils/helper.js';
+import { isValidConfigFile, isValidHttpUrl } from '../utils/helper.js';
 import { CONFIG_DIR } from '../constants.js';
 
 export default class StylesService {
@@ -35,6 +35,10 @@ export default class StylesService {
       } catch (error: unknown) {
         throw new ExternalServiceError(`Styles could not be loaded from remote url`);
       }
+    }
+
+    if (!isValidConfigFile(url)) {
+      throw new ExternalServiceError(`Provided stylesheet URL is not a valid file name.`);
     }
 
     // Else, read from local file system
