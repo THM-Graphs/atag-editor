@@ -141,13 +141,19 @@ watch(
 /**
  * Checks the validity of the Collection edit pane data and throws errors if criteria are not met.
  *
- * @returns {void} This function does not return any value.
+ * This function returns `true` when everything is ok, `false` if the native HTML form validation fails
+ * and throws an error if the custom validation fails.
+ *
+ * @returns {boolean} Whether the collection data are valid.
  * @throws {AppError} If the collection data are not valid.
  */
-function checkValidity(): void {
+function checkValidity(): boolean {
   // TODO: This is currently a mix of native HTML form validation and custom validation. Should be refactored
   // in the future (e.g. use the PrimeVue form validation).
-  form.value.reportValidity();
+
+  if (!form.value.reportValidity()) {
+    return false;
+  }
 
   // Collections must have and additional node label (if options exist)
   if (
@@ -169,6 +175,8 @@ function checkValidity(): void {
       'The "label" property must not consist of only whitespace characters.',
     );
   }
+
+  return true;
 }
 
 function clearTemporaryTexts(): void {
@@ -310,8 +318,11 @@ function transferDataToListItem(uuid: string, index: number, data: Collection): 
 
 async function handleApplyChanges(): Promise<void> {
   // Handle errors in fronted to show warnings instead of errors coming from server
+
   try {
-    checkValidity();
+    if (!checkValidity()) {
+      return;
+    }
   } catch (error: unknown) {
     addToastMessage({
       severity: 'warn',
