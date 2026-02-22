@@ -611,6 +611,13 @@ function toggleViewMode(direction: TabView): void {
             />
           </div>
 
+          <div
+            v-if="formMode === 'view' && temporaryWorkData.annotations.length === 0"
+            class="pt-4 font-italic"
+          >
+            This collection has no annotations yet.
+          </div>
+
           <Panel
             v-for="annotation in temporaryWorkData.annotations"
             class="annotation-form mb-3"
@@ -698,7 +705,13 @@ function toggleViewMode(direction: TabView): void {
             <ConfirmPopup></ConfirmPopup>
           </Panel>
         </div>
-        <div v-show="isTextsSelected" class="texts-pane text-left">
+        <div v-show="isTextsSelected" class="texts-pane">
+          <div
+            v-if="formMode === 'view' && temporaryWorkData.texts.length === 0"
+            class="pt-4 font-italic"
+          >
+            This collection has no texts yet.
+          </div>
           <TextContainer
             v-for="text in temporaryWorkData.texts"
             :text="text"

@@ -71,7 +71,7 @@ function handleClickContainer(event: PointerEvent): void {
 
 <template>
   <Card
-    class="my-2"
+    class="my-2 text-left"
     :pt="{
       root: {
         style: {
