@@ -258,7 +258,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
                 :data-annotation-uuid="slotProps.node.data.data.properties.uuid"
               >
                 <!-- TODO: Fix overflow -->
-                <TruncatedBadge :icon="true" :text="false" />
+                <TruncatedBadge v-if="slotProps.node.data.isTruncated" :icon="true" :text="false" />
                 {{ slotProps.node.label }}
               </div>
             </div>
