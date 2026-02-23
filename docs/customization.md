@@ -76,9 +76,14 @@ Annotations define how text can be marked up.
 
 ```json
 "entities": [
-  {"category": "places", // Category, is used to group linked entities in the annotation form
-   "nodeLabel": "Place" // additional node label of the entity. Mainly used to fetch autocomplete data when typing in the input field
-   },
+  {
+    "category": "places", // Category, is used to group linked entities in the annotation form
+    "nodeLabel": "Place" // additional node label of the entity. Mainly used to fetch autocomplete data when typing in the input field
+  },
+  {
+    "category": "persons",
+    "nodeLabel": "Person"
+  },
 ]
 ```
 
@@ -95,24 +100,31 @@ Each property supports these options:
 | `visible`  | boolean                                                                        | Is ivsible in interface. For example, the annotation type should NOT be editable - when an annotation is created, it is fix forever. |
 | `options`  | array                                                                          | Predefined values for dropdowns                                                                                                      |
 
-Go to the the [Data types instructions](./dataTypes.md) to see what specific keywords are allowd in the property configuration for each `type`.
+Go to the the [Data types instructions](./dataTypes.md) to see what specific keywords are allowed in the property configuration for each `type`.
 
 ## 2. Styles
 
-With the CSS stylesheet provided by `STYLESHEET_URL` you can style the appearance of the annotations inside the text as well as icons for each annotation type. You can refer to the [`annotations.css`](https://github.com/THM-Graphs/atag-editor/blob/main/client/src/styles/annotations.css) stylesheet in this repository to see how the styling is done. The class name of the span element must match the annotation type exactly.
+With the CSS stylesheet provided by the `STYLESHEET_URL` environment variable you can style the appearance of the annotations inside the text as well as icons for each annotation type. You can refer to the [`annotations.css`](https://github.com/THM-Graphs/atag-editor/blob/main/client/src/styles/annotations.css) stylesheet in this repository to see how the styling is done.
+
+### Annotations in text
+
+Since each character of the text is wrapped in a `span` element, and inside of it there are nested `span` elements for each annotation of this character, these elements need to be targeted. The class name must match the annotation type exactly:
 
 ```css
+/* Styles characters with the annotation type "myCustomAnnotationType" */
 #text > span:has(span.myCustomAnnotationType) {
   background-color: lightgreen;
   opacity: 0.7;
 }
 ```
 
+### Icons
+
 Icons for annotation types are displayed in every place an annotation is referenced (toolbar, overview, details panel):
 
 ![image](https://gitlab.rlp.net/maxmiche/atag-assets/-/raw/main/ATAG_editor_screenshot_2025.png?ref_type=heads)
 
-The icons can be embedded via [`background`](https://developer.mozilla.org/en-US/docs/Web/CSS/background) or [`background-image`](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image) CSS property. It uses the native [`url`](https://developer.mozilla.org/en-US/docs/Web/CSS/url_function) CSS function to apply the icon. The icon container is an HTML element with the base class `annotation-type-icon-`, so to apply your own style rules, add the annotation type to the class (like `annotation-type-icon-myCustomAnnotationType`)
+Each place where the icons are displayed the icon container is an HTML element with the base class `annotation-type-icon-`. So to apply your own style rules, add the annotation type to the class (like `annotation-type-icon-myCustomAnnotationType`) The icons can be embedded via [`background`](https://developer.mozilla.org/en-US/docs/Web/CSS/background) or [`background-image`](https://developer.mozilla.org/en-US/docs/Web/CSS/background-image) CSS property. It uses the native [`url`](https://developer.mozilla.org/en-US/docs/Web/CSS/url_function) CSS function to apply the icon.
 
 You have two possiblitities here:
 

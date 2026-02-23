@@ -35,5 +35,5 @@
 
 You can now access the editor and the database:
 
-- Editor start page with text overview: http://localhost:5173
+- Editor start page: http://localhost:5173
 - Neo4j database: http://localhost:7474
