@@ -19,6 +19,10 @@ app
   .use(PrimeVue, {
     theme: {
       preset: Aura,
+      options: {
+        // Force light mode; use a selector that never matches so dark mode never activates
+        darkModeSelector: '.primevue-dark-only',
+      },
     },
   })
   .use(DialogService)
