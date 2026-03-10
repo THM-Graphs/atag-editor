@@ -1,0 +1,357 @@
+{
+  "texts": {
+    "additionalLabels": []
+  },
+  "collections": {
+    "properties": {
+      "system": [
+        {
+          "name": "label",
+          "type": "string",
+          "required": true,
+          "editable": true,
+          "visible": false
+        }
+      ],
+      "base": []
+    },
+    "types": [
+      {
+        "additionalLabel": "Letter",
+        "level": "primary",
+        "properties": [
+          {
+            "name": "status",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ],
+        "annotations": {
+          "types": [
+            {
+              "type": "sentPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasEntities": true,
+              "hasAdditionalTexts": true
+            },
+            {
+              "type": "receivedPerson",
+              "category": "none",
+              "defaultSelected": true,
+              "isZeroPoint": false,
+              "hasEntities": true,
+              "hasAdditionalTexts": true
+            }
+          ],
+          "properties": [
+            {
+              "name": "type",
+              "type": "string",
+              "required": true,
+              "editable": false,
+              "visible": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "editable": true,
+              "visible": true
+            }
+          ],
+          "entities": [],
+          "additionalTexts": []
+        }
+      },
+      {
+        "additionalLabel": "Comment",
+        "level": "secondary",
+        "properties": []
+      },
+      {
+        "additionalLabel": "CommentInternal",
+        "level": "secondary",
+        "properties": []
+      },
+      {
+        "additionalLabel": "Manuscript",
+        "level": "secondary",
+        "properties": []
+      }
+    ],
+    "annotations": {
+      "properties": {
+        "system": [],
+        "base": []
+      },
+      "types": [],
+      "entities": [],
+      "additionalTexts": []
+    }
+  },
+  "annotations": {
+    "types": [
+      {
+        "type": "emphasised",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "subType",
+            "type": "string",
+            "options": ["rubricated", "initial", "underlined", "italic", "bold", "smallCaps"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "expansion",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true,
+        "shortcut": ["Ctrl", "Shift", "E"]
+      },
+      {
+        "type": "nonLinear",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "subType",
+            "type": "string",
+            "options": ["aboveLine", "belowLine", "marginNote"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "correction",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "subType",
+            "type": "string",
+            "options": ["inPlace", "inRasura"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "deleted",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": true,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "unclear",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "repeated",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "gap",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "additionLaterHand",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "head",
+        "category": "layout",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "line",
+        "category": "layout",
+        "defaultSelected": false,
+        "isZeroPoint": false,
+        "shortcut": ["Ctrl", "Shift", "L"],
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "page",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "url",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "firstLineOfColumn",
+            "type": "boolean",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "lastLineOfColumn",
+            "type": "boolean",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "firstLineOfPage",
+            "type": "boolean",
+            "required": true,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "lastLineOfPage",
+            "type": "boolean",
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "transposition",
+        "category": "layout",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "commentary",
+        "category": "project",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "sic",
+        "category": "edition",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": false,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "subType",
+            "type": "string",
+            "options": ["corr", "conj", "reg"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "entity",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "subType",
+            "type": "string",
+            "options": ["concept", "event", "imagery", "person", "place", "reference"],
+            "required": true,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      }
+    ],
+    "properties": {
+      "system": [
+        {
+          "name": "type",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "editable": false,
+          "visible": true
+        }
+      ],
+      "base": [
+        {
+          "name": "originalText",
+          "type": "string",
+          "required": false,
+          "editable": true,
+          "visible": true
+        }
+      ]
+    },
+    "entities": [
+      {
+        "category": "concepts",
+        "nodeLabel": "Concept"
+      },
+      {
+        "category": "events",
+        "nodeLabel": "Event"
+      },
+      {
+        "category": "persons",
+        "nodeLabel": "Person"
+      },
+      {
+        "category": "groups",
+        "nodeLabel": "Group"
+      },
+      {
+        "category": "places",
+        "nodeLabel": "Place"
+      },
+      {
+        "category": "roles",
+        "nodeLabel": "Role"
+      }
+    ],
+    "additionalTexts": ["Comment", "CommentInternal"]
+  }
+}
