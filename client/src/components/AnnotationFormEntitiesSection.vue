@@ -5,9 +5,9 @@ import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
-import Tag from 'primevue/tag';
 import { AnnotationConfigEntity, Entity } from '../models/types';
 import { useAppStore } from '../store/app';
+import EntityItem from './EntityItem.vue';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
@@ -150,10 +150,10 @@ function handleEntityItemSelect(item: EntityEntry, category: string): void {
 /**
  * Removes a entity item from the annotation's data.
  *
- * @param {EntityEntry} item - The entity item to be removed.
+ * @param {Entity} entity - The entity item to be removed.
  */
-function removeEntityItem(item: EntityEntry): void {
-  entities.value = entities.value.filter(entry => entry.data.uuid !== item.data.uuid);
+function handleRemoveEntity(entity: Entity): void {
+  entities.value = entities.value.filter(entry => entry.data.uuid !== entity.data.uuid);
 }
 
 /**
@@ -219,29 +219,17 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
 
     <div v-for="category in Object.keys(categorizedEntities)">
       <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
-      <div class="entities-entry" v-for="entry in categorizedEntities[category]">
-        <div class="button-pane flex justify-content-end">
-          <Tag
-            v-if="!props.initialEntities.map(e => e.data.uuid).includes(entry.data.uuid)"
-            size="small"
-            icon="pi pi-clock"
-            severity="warn"
-            class="mr-1"
-            title="This entity is temporary, save changes to add it to the database"
-          ></Tag>
-          <Button
-            v-if="props.mode === 'edit'"
-            icon="pi pi-times"
-            size="small"
-            severity="danger"
-            title="Remove entity"
-            @click="removeEntityItem(entry as EntityEntry)"
-          ></Button>
-        </div>
-        <span>
-          {{ entry.data.label }}
-        </span>
-      </div>
+      <EntityItem
+        v-for="entry in categorizedEntities[category]"
+        :key="entry.data.uuid"
+        :entity="entry"
+        :status="
+          props.initialEntities.map(e => e.data.uuid).includes(entry.data.uuid)
+            ? 'existing'
+            : 'temporary'
+        "
+        @remove-entity="handleRemoveEntity(entry)"
+      />
       <Button
         v-if="props.mode === 'edit'"
         v-show="entitiesSearchObject[category].mode === 'view'"
@@ -310,19 +298,6 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
 .preview.expanded {
   max-height: auto;
   max-height: calc-size(auto);
-}
-
-.entities-entry {
-  border: 1px solid gray;
-  border-radius: 5px;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-
-  & button {
-    width: 1rem;
-    height: 1rem;
-    padding: 10px;
-  }
 }
 
 .hidden {
