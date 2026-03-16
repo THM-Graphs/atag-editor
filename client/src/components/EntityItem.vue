@@ -53,11 +53,14 @@ const tableData = Object.entries(props.entity.data).map(([property, value]) => {
     <span>
       {{ props.entity.data.label }}
     </span>
-    <span
-      class="pi pi-info-circle ml-2 cursor-pointer"
-      @mouseenter="togglePopover"
-      @mouseleave="togglePopover"
-    ></span>
+    <Button
+      icon="pi pi-info-circle"
+      size="small"
+      severity="secondary"
+      class="ml-2"
+      title="Click to show preview of entity data"
+      @click="togglePopover"
+    ></Button>
 
     <Popover
       ref="info-icon"
