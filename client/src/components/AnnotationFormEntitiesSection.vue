@@ -115,6 +115,17 @@ function changeEntitiesSelectionMode(category: string, mode: 'view' | 'edit'): v
 }
 
 /**
+ * Caculates the html titel attribute for the "Create new annotation" button. Takes the current input
+ * of the autocomplete and a generic message.
+ *
+ * @param {string} currentUserInput - Takes the current input of the autocomplete
+ * @returns {string} The html title attribute string for the button.
+ */
+function getHtmlTitleForButton(currentUserInput: string): string {
+  return `Add new entity with label "${currentUserInput}" to annotation`;
+}
+
+/**
  * Creates a new entity item based on the given label and adds it to the given category.
  *
  * @param {string} newLabel - The label of the new entity item
@@ -270,17 +281,21 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
         </template>
         <template #empty>
           <div class="font-italic text-center mb-1">No results found</div>
-          <Button
-            icon="pi pi-plus"
-            class="w-full"
-            size="small"
-            label="Create new entity"
-            severity="secondary"
-            title="Add new entity to annotation"
-            @click="
-              handleCreateNewEntity(entitiesSearchObject[category].elm[0].inputValue, category)
-            "
-          ></Button>
+        </template>
+        <template #footer>
+          <div class="w p-2">
+            <Button
+              icon="pi pi-plus"
+              class="w-full"
+              size="small"
+              label="Create new entity"
+              severity="secondary"
+              :title="getHtmlTitleForButton(entitiesSearchObject[category].elm[0].inputValue)"
+              @click="
+                handleCreateNewEntity(entitiesSearchObject[category].elm[0].inputValue, category)
+              "
+            />
+          </div>
         </template>
       </AutoComplete>
     </div>
