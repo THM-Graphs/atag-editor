@@ -147,7 +147,7 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
       // Both can be 0 since the real values are created in the backend on save
       nodeData.startIndex = 0;
       nodeData.endIndex = 0;
-      // Empty string since value will be calculated on save (connected characters)
+      // Empty string since value is added in createTextAnnotation() and will be calculated on save anyway (connected characters).
       nodeData.text = '';
     }
 
@@ -190,6 +190,11 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
     const fields: PropertyConfig[] = getAnnotationFields(type);
 
     const annotationObject: AnnotationData = createAnnotationObject({ ...params, fields });
+
+    // TODO: Initial text property computed from characters. Refactor later.
+    // This initial setting is not important since it will be recomputed in backend during save operation,
+    // but useful for autocomplete for entity search.
+    annotationObject.properties.text = characters.map((char: Character) => char.data.text).join('');
 
     // TODO: Special metadata for text annotations. Refactor later
     const metadata: TextAnnotationMetadata = createSpecificTextAnnotationMetadata({ characters });
