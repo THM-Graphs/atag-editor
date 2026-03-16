@@ -690,6 +690,11 @@ function toggleViewMode(direction: TabView): void {
               "
               :mode="formMode"
               v-model="annotation.entities"
+              :initialEntities="
+                initialTemporaryWorkData.annotations.find(
+                  a => a.properties.uuid === annotation.properties.uuid,
+                ).entities ?? []
+              "
             />
             <div class="action-buttons flex justify-content-center">
               <Button

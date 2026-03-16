@@ -5,6 +5,7 @@ import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
+import Tag from 'primevue/tag';
 import { AnnotationConfigEntity, Entity } from '../models/types';
 import { useAppStore } from '../store/app';
 
@@ -46,6 +47,7 @@ const categorizedEntities = computed<Record<string, Entity[]>>(() => {
 const props = defineProps<{
   mode?: 'edit' | 'view';
   defaultSearchValue?: string;
+  initialEntities: Entity[];
 }>();
 
 const entitiesAreCollapsed = ref<boolean>(false);
@@ -217,21 +219,28 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
 
     <div v-for="category in Object.keys(categorizedEntities)">
       <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
-      <div
-        class="entities-entry flex justify-content-between align-items-center"
-        v-for="entry in categorizedEntities[category]"
-      >
+      <div class="entities-entry" v-for="entry in categorizedEntities[category]">
+        <div class="button-pane flex justify-content-end">
+          <Tag
+            v-if="!props.initialEntities.map(e => e.data.uuid).includes(entry.data.uuid)"
+            size="small"
+            icon="pi pi-clock"
+            severity="warn"
+            class="mr-1"
+            title="This entity is temporary, save changes to add it to the database"
+          ></Tag>
+          <Button
+            v-if="props.mode === 'edit'"
+            icon="pi pi-times"
+            size="small"
+            severity="danger"
+            title="Remove entity"
+            @click="removeEntityItem(entry as EntityEntry)"
+          ></Button>
+        </div>
         <span>
           {{ entry.data.label }}
         </span>
-        <Button
-          v-if="props.mode === 'edit'"
-          icon="pi pi-times"
-          size="small"
-          severity="danger"
-          title="Remove entity"
-          @click="removeEntityItem(entry as EntityEntry)"
-        ></Button>
       </div>
       <Button
         v-if="props.mode === 'edit'"

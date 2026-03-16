@@ -166,6 +166,7 @@ function handleShrink(): void {
       v-model="annotation.data.entities"
       mode="edit"
       :default-search-value="annotation.data.properties.text"
+      :initialEntities="annotation.initialData.entities"
     />
 
     <div v-if="!panelIsCollapsed" class="edit-buttons flex justify-content-center">
