@@ -173,6 +173,24 @@
   text-decoration-thickness: 2px;
 }
 
+#text > span:has(span.selfReference) {
+  text-decoration: underline;
+  text-decoration-color: hsl(55, 78%, 44%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.biblePassage) {
+  text-decoration: underline;
+  text-decoration-color: hsl(37, 61%, 51%);
+  text-decoration-thickness: 2px;
+}
+
+#text > span:has(span.literatureReference) {
+  text-decoration: underline;
+  text-decoration-color: hsl(32, 92%, 47%);
+  text-decoration-thickness: 2px;
+}
+
 #text > span:has(span.sic) {
   color: var(--sic-clr);
 }
@@ -197,6 +215,18 @@
 
 .annotation-type-icon-imagery {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/imagery.svg');
+}
+
+.annotation-type-icon-selfReference {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/selfReference.svg');
+}
+
+.annotation-type-icon-biblePassage {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/biblePassage.svg');
+}
+
+.annotation-type-icon-literatureReference {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/literatureReference.svg');
 }
 
 .annotation-type-icon-emphasised {

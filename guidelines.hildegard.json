@@ -324,6 +324,48 @@
         "hasEntities": true,
         "hasAdditionalTexts": true,
         "properties": []
+      },
+      {
+        "type": "selfReference",
+        "category": "sources",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "citation",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "biblePassage",
+        "category": "sources",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "literatureReference",
+        "category": "sources",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": [
+          {
+            "name": "citation",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ]
       }
     ],
     "properties": {
@@ -377,6 +419,14 @@
       {
         "category": "roles",
         "nodeLabel": "Role"
+      },
+      {
+        "category": "biblePassages",
+        "nodeLabel": "BiblePassage"
+      },
+      {
+        "category": "literatureTitles",
+        "nodeLabel": "LiteratureTitle"
       }
     ],
     "additionalTexts": ["Comment", "CommentInternal"]
