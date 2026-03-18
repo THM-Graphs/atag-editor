@@ -281,22 +281,49 @@
         ]
       },
       {
-        "type": "entity",
+        "type": "person",
         "category": "entities",
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
         "hasAdditionalTexts": true,
-        "properties": [
-          {
-            "name": "subType",
-            "type": "string",
-            "options": ["concept", "event", "imagery", "person", "place", "reference"],
-            "required": true,
-            "editable": true,
-            "visible": true
-          }
-        ]
+        "properties": []
+      },
+      {
+        "type": "place",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": []
+      },
+      {
+        "type": "event",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": []
+      },
+      {
+        "type": "concept",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": []
+      },
+      {
+        "type": "imagery",
+        "category": "entities",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "hasAdditionalTexts": true,
+        "properties": []
       }
     ],
     "properties": {

@@ -143,39 +143,33 @@
   user-select: none;
 }
 
-#text > span:has(span.entity.person) {
+#text > span:has(span.person) {
   text-decoration: underline;
   text-decoration-color: hsl(358, 83%, 68%);
   text-decoration-thickness: 2px;
 }
 
-#text > span:has(span.entity.place) {
+#text > span:has(span.place) {
   text-decoration: underline;
   text-decoration-color: hsl(212, 93%, 54%);
   text-decoration-thickness: 2px;
 }
 
-#text > span:has(span.entity.concept) {
+#text > span:has(span.concept) {
   text-decoration: underline;
   text-decoration-color: hsl(45, 90%, 60%);
   text-decoration-thickness: 2px;
 }
 
-#text > span:has(span.entity.event) {
+#text > span:has(span.event) {
   text-decoration: underline;
   text-decoration-color: hsl(134, 61%, 41%);
   text-decoration-thickness: 2px;
 }
 
-#text > span:has(span.entity.imagery) {
+#text > span:has(span.imagery) {
   text-decoration: underline;
   text-decoration-color: hsl(296, 72%, 66%);
-  text-decoration-thickness: 2px;
-}
-
-#text > span:has(span.entity.reference) {
-  text-decoration: underline;
-  text-decoration-color: hsl(17, 22%, 50%);
   text-decoration-thickness: 2px;
 }
 
@@ -185,8 +179,24 @@
 
 /* -------- ICONS ------------------------------------------------------------------------------------------------------------ */
 
-.annotation-type-icon-entity {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/entity.svg');
+.annotation-type-icon-person {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/person.svg');
+}
+
+.annotation-type-icon-place {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/place.svg');
+}
+
+.annotation-type-icon-event {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/event.svg');
+}
+
+.annotation-type-icon-concept {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/concept.svg');
+}
+
+.annotation-type-icon-imagery {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/imagery.svg');
 }
 
 .annotation-type-icon-emphasised {
