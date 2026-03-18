@@ -277,6 +277,21 @@
             "required": true,
             "editable": true,
             "visible": true
+          },
+          {
+            "name": "corrected",
+            "type": "string",
+            "required": false,
+            "editable": false,
+            "visible": true
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "template": "textarea",
+            "required": false,
+            "editable": false,
+            "visible": true
           }
         ]
       },
