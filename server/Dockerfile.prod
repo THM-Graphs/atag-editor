@@ -1,5 +1,5 @@
 # Compile JS files in the first step
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run compile
 
 # Serve compiled JS files in second step
-FROM node:24-alpine AS production
+FROM node:25-alpine AS production
 
 # Set working directory
 WORKDIR /app

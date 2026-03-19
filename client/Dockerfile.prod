@@ -1,5 +1,5 @@
 # Create JS bundle in the first step
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 
 # Set working directory
 WORKDIR /app
