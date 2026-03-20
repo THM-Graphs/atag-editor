@@ -5,7 +5,7 @@ import IEntity from './IEntity';
 import IText from './IText';
 
 export type AdditionalText = {
-  collection: Collection;
+  annotation: IAnnotation;
   text: Text;
 };
 
