@@ -193,7 +193,7 @@ export type StandoffJson = {
 export type Text = Node<IText>;
 
 export type TextAccessObject = {
-  collection: Collection;
+  collection: Collection | null;
   paths: NodeAncestry[];
   text: Text;
 };

@@ -22,9 +22,13 @@ const { getCollectionConfigFields } = useGuidelinesStore();
 
 const tableData: CollectionTableEntry[] = getCollectionTableData();
 
-function getCollectionTableData() {
+function getCollectionTableData(): CollectionTableEntry[] | null {
+  if (!correspondingCollection.value) {
+    return null;
+  }
+
   const fields: PropertyConfig[] = getCollectionConfigFields(
-    correspondingCollection.value.nodeLabels as string[],
+    correspondingCollection.value?.nodeLabels as string[],
   );
 
   return fields.map(field => ({
@@ -83,7 +87,7 @@ async function handleCopy(): Promise<void> {
           <NodeTag :content="label" type="Text" class="mr-1" />
         </div>
         <div v-else>
-          <i
+          <i v-if="correspondingCollection"
             >This text has no labels yet. To add some, go to the
             <RouterLink :to="`/collections/${correspondingCollection.data.uuid}`"
               >Collection page.<i class="pi pi-external-link ml-2"></i></RouterLink
@@ -134,7 +138,7 @@ async function handleCopy(): Promise<void> {
       </template>
     </Fieldset>
 
-    <Fieldset legend="Collection" toggleable>
+    <Fieldset legend="Collection" toggleable v-if="tableData">
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
