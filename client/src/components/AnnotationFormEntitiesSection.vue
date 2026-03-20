@@ -5,7 +5,7 @@ import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
-import { AnnotationConfigEntity, Entity } from '../models/types';
+import { AnnotationConfigEntity, AnnotationType, Entity } from '../models/types';
 import { useAppStore } from '../store/app';
 import EntityItem from './EntityItem.vue';
 
@@ -29,30 +29,47 @@ interface EntitiesSearchObject {
 
 const entities = defineModel<Entity[]>();
 
+const props = defineProps<{
+  mode?: 'edit' | 'view';
+  defaultSearchValue?: string;
+  initialEntities: Entity[];
+  annotationConfig: AnnotationType;
+}>();
+
 const { guidelines, getAvailableAnnotationResourceConfigs } = useGuidelinesStore();
 const { api } = useAppStore();
 
-const configs: AnnotationConfigEntity[] = getAvailableAnnotationResourceConfigs();
+// TODO: Everything concerning the configuration of allowed entites is currently a hack and will be cleaned up
+// as soon as RAMEN is implemented
+const entityConfigs: AnnotationConfigEntity[] = getAvailableAnnotationResourceConfigs();
 
+// This is only for the template. The data are computed further down
+const visibleEntityCategories = computed<string[]>(() => {
+  const allowedNodeLabels: string[] | null = props.annotationConfig.entityNodes ?? null;
+
+  if (allowedNodeLabels) {
+    return entityConfigs
+      .filter(config => allowedNodeLabels.includes(config.nodeLabel))
+      .map(config => config.category);
+  } else {
+    return entityConfigs.map(config => config.category);
+  }
+});
+
+// This is the computed function for the data
 const categorizedEntities = computed<Record<string, Entity[]>>(() => {
   const obj: Record<string, Entity[]> = {};
 
-  configs.forEach((config: AnnotationConfigEntity) => {
+  entityConfigs.forEach((config: AnnotationConfigEntity) => {
     obj[config.category] = entities.value.filter(e => e.nodeLabels.includes(config.nodeLabel));
   });
 
   return obj;
 });
 
-const props = defineProps<{
-  mode?: 'edit' | 'view';
-  defaultSearchValue?: string;
-  initialEntities: Entity[];
-}>();
-
 const entitiesAreCollapsed = ref<boolean>(false);
 const entitiesSearchObject = ref<EntitiesSearchObject>(
-  configs.reduce((object: EntitiesSearchObject, config: AnnotationConfigEntity) => {
+  entityConfigs.reduce((object: EntitiesSearchObject, config: AnnotationConfigEntity) => {
     object[config.category] = {
       nodeLabel: guidelines.value.annotations.entities.find(r => r.category === config.category)
         .nodeLabel,
@@ -228,7 +245,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
       <span :class="`pi pi-chevron-${entitiesAreCollapsed ? 'down' : 'up'}`"></span>
     </template>
 
-    <div v-for="category in Object.keys(categorizedEntities)">
+    <div v-for="category in visibleEntityCategories">
       <p class="font-bold">{{ camelCaseToTitleCase(category) }}:</p>
       <EntityItem
         v-for="entry in categorizedEntities[category]"

@@ -165,6 +165,7 @@ function handleShrink(): void {
       v-if="config.hasEntities === true && !panelIsCollapsed"
       v-model="annotation.data.entities"
       mode="edit"
+      :annotation-config="config"
       :default-search-value="annotation.data.properties.text"
       :initialEntities="annotation.initialData.entities"
     />

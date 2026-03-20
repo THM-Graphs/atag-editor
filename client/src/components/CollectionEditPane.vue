@@ -688,6 +688,12 @@ function toggleViewMode(direction: TabView): void {
                   annotation.properties.type,
                 )?.hasEntities === true
               "
+              :annotation-config="
+                getCollectionAnnotationConfig(
+                  temporaryWorkData.collection.nodeLabels,
+                  annotation.properties.type,
+                )
+              "
               :mode="formMode"
               v-model="annotation.entities"
               :initialEntities="

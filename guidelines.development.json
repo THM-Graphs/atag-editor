@@ -36,6 +36,7 @@
               "defaultSelected": true,
               "isZeroPoint": false,
               "hasEntities": true,
+              "entityNodes": ["Person"],
               "hasAdditionalTexts": true
             },
             {
@@ -44,6 +45,7 @@
               "defaultSelected": true,
               "isZeroPoint": false,
               "hasEntities": true,
+              "entityNodes": ["Person"],
               "hasAdditionalTexts": true
             }
           ],
@@ -301,6 +303,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["Person", "Group", "Role"],
         "hasAdditionalTexts": true,
         "properties": []
       },
@@ -310,6 +313,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["Place"],
         "hasAdditionalTexts": true,
         "properties": []
       },
@@ -319,6 +323,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["Event"],
         "hasAdditionalTexts": true,
         "properties": []
       },
@@ -328,6 +333,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["Concept"],
         "hasAdditionalTexts": true,
         "properties": []
       },
@@ -337,6 +343,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["Imagery"],
         "hasAdditionalTexts": true,
         "properties": []
       },
@@ -346,6 +353,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["LiteratureTitle"],
         "hasAdditionalTexts": true,
         "properties": [
           {
@@ -363,6 +371,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["BiblePassage"],
         "hasAdditionalTexts": true
       },
       {
@@ -371,6 +380,7 @@
         "defaultSelected": true,
         "isZeroPoint": false,
         "hasEntities": true,
+        "entityNodes": ["LiteratureTitle"],
         "hasAdditionalTexts": true,
         "properties": [
           {
