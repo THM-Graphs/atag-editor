@@ -348,7 +348,16 @@
         "properties": []
       },
       {
-        "type": "selfReference",
+        "type": "biblePassage",
+        "category": "sources",
+        "defaultSelected": true,
+        "isZeroPoint": false,
+        "hasEntities": true,
+        "entityNodes": ["BiblePassage"],
+        "hasAdditionalTexts": true
+      },
+      {
+        "type": "literatureReference",
         "category": "sources",
         "defaultSelected": true,
         "isZeroPoint": false,
@@ -366,16 +375,7 @@
         ]
       },
       {
-        "type": "biblePassage",
-        "category": "sources",
-        "defaultSelected": true,
-        "isZeroPoint": false,
-        "hasEntities": true,
-        "entityNodes": ["BiblePassage"],
-        "hasAdditionalTexts": true
-      },
-      {
-        "type": "literatureReference",
+        "type": "selfReference",
         "category": "sources",
         "defaultSelected": true,
         "isZeroPoint": false,
