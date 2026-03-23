@@ -189,7 +189,7 @@ function togglePreviewMode(uuid: string): void {
     <template v-for="additionalText in additionalTexts" :key="additionalText.annotation.uuid">
       <div class="additional-text-entry">
         <div class="button-pane flex justify-content-center mb-2">
-          <div class="annotation-type-tag-container w-full">
+          <div class="annotation-type-tag-container flex justify-content-start w-full">
             <NodeTag type="Collection" :content="additionalText.annotation.type" />
           </div>
           <div class="flex">

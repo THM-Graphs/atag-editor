@@ -699,7 +699,7 @@ function toggleViewMode(direction: TabView): void {
               :initialEntities="
                 initialTemporaryWorkData.annotations.find(
                   a => a.properties.uuid === annotation.properties.uuid,
-                ).entities ?? []
+                )?.entities ?? []
               "
             />
             <div class="action-buttons flex justify-content-center">
