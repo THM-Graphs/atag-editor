@@ -5,7 +5,7 @@ import IEntity from './IEntity.js';
 import IText from './IText.js';
 
 export type AdditionalText = {
-  collection: Collection;
+  annotation: IAnnotation;
   text: Text;
 };
 
@@ -193,7 +193,7 @@ export type StandoffJson = {
 export type Text = Node<IText>;
 
 export type TextAccessObject = {
-  collection: Collection;
+  collection: Collection | null;
   paths: NodeAncestry[];
   text: Text;
 };

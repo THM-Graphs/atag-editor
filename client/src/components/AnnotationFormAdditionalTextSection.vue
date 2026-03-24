@@ -1,29 +1,24 @@
 <script setup lang="ts">
 import { nextTick, Ref, ref, watch, useTemplateRef, ComponentPublicInstance } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
-import { getDefaultValueForProperty } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Fieldset from 'primevue/fieldset';
-import Message from 'primevue/message';
-import { MultiSelect } from 'primevue';
-import { AdditionalText, PropertyConfig } from '../models/types';
+import Select from 'primevue/select';
+import { AdditionalText } from '../models/types';
 import InputGroup from 'primevue/inputgroup';
-import ICollection from '../models/ICollection';
 import IText from '../models/IText';
 import NodeTag from './NodeTag.vue';
+import IAnnotation from '../models/IAnnotation';
+import Tag from 'primevue/tag';
 
 /**
  * Interface for relevant state information about additional texts of the annotation
  */
 interface InputObject {
-  labelOptions: {
-    collection: string[];
-    text: string[];
-  };
+  annotationTypeOptions: string[];
   input: {
-    collectionLabels: string[];
-    textLabels: string[];
+    annotationType: string;
     text: string;
   };
 }
@@ -35,17 +30,13 @@ const props = defineProps<{
   mode?: 'edit' | 'view';
 }>();
 
-const { guidelines, getAvailableTextLabels, getCollectionConfigFields } = useGuidelinesStore();
+const { guidelines } = useGuidelinesStore();
 
 const sectionIsCollapsed = ref<boolean>(false);
 const inputObject: Ref<InputObject> = ref<InputObject>({
-  labelOptions: {
-    collection: guidelines.value.annotations.additionalTexts,
-    text: getAvailableTextLabels(),
-  },
+  annotationTypeOptions: guidelines.value.annotations.additionalTexts,
   input: {
-    collectionLabels: [],
-    textLabels: [],
+    annotationType: guidelines.value.annotations.additionalTexts[0] ?? null,
     text: '',
   },
 });
@@ -61,20 +52,16 @@ watch(
   (newTexts, oldTexts) => {
     // Add new text if it doesn't already exist
     newTexts.value.forEach(text => {
-      if (!textPreviewHandler.value.has(text.collection.data.uuid)) {
-        textPreviewHandler.value.set(text.collection.data.uuid, 'collapsed');
+      if (!textPreviewHandler.value.has(text.annotation.uuid)) {
+        textPreviewHandler.value.set(text.annotation.uuid, 'collapsed');
       }
     });
 
     // Remove texts that no longer exist
     if (oldTexts) {
       oldTexts.value.forEach(text => {
-        if (
-          !newTexts.value.some(
-            newText => newText.collection.data.uuid === text.collection.data.uuid,
-          )
-        ) {
-          textPreviewHandler.value.delete(text.collection.data.uuid);
+        if (!newTexts.value.some(newText => newText.annotation.uuid === text.annotation.uuid)) {
+          textPreviewHandler.value.delete(text.annotation.uuid);
         }
       });
     }
@@ -84,7 +71,7 @@ watch(
 
 /**
  * Adds a new additional text entry to the list of additional texts. The entry is based on the
- * current input values for collection labels, text labels, and text content.
+ * current input values for annotation type and text content.
  *
  * After adding the entry, the input form is reset and the mode is changed to 'view'.
  *
@@ -92,28 +79,15 @@ watch(
  */
 
 function addAdditionalText(): void {
-  const collectionLabels: string[] = inputObject.value.input.collectionLabels;
-  const textLabels: string[] = inputObject.value.input.textLabels;
-  const defaultCollectionFields: PropertyConfig[] = getCollectionConfigFields(collectionLabels);
-  const newCollectionProperties: ICollection = {} as ICollection;
-
-  defaultCollectionFields.forEach((field: PropertyConfig) => {
-    newCollectionProperties[field.name] =
-      field?.required === true ? getDefaultValueForProperty(field.type) : null;
-  });
+  const annotationType: string = inputObject.value.input.annotationType;
 
   additionalTexts.value.push({
-    collection: {
-      nodeLabels: collectionLabels,
-      data: {
-        ...newCollectionProperties,
-        uuid: crypto.randomUUID(),
-        // Create empty label property (is required, but should not contain any default data)
-        label: '',
-      } as ICollection,
-    },
+    annotation: {
+      type: annotationType ?? 'commentary',
+      uuid: crypto.randomUUID(),
+    } as IAnnotation,
     text: {
-      nodeLabels: textLabels,
+      nodeLabels: [],
       data: {
         uuid: crypto.randomUUID(),
         text: inputObject.value.input.text,
@@ -168,13 +142,11 @@ function finishInputOperation(): void {
 /**
  * Deletes an additional text entry from the list of additional texts of the annotation.
  *
- * @param {string} collectionUuid - The UUID of the collection of the additional text to be deleted.
+ * @param {string} annotationUuid - The UUID of the annotation of the additional text to be deleted.
  * @returns {void} This function does not return any value.
  */
-function handleDeleteAdditionalText(collectionUuid: string): void {
-  additionalTexts.value = additionalTexts.value.filter(
-    t => t.collection.data.uuid !== collectionUuid,
-  );
+function handleDeleteAdditionalText(annotationUuid: string): void {
+  additionalTexts.value = additionalTexts.value.filter(t => t.annotation.uuid !== annotationUuid);
 }
 
 /**
@@ -185,8 +157,7 @@ function handleDeleteAdditionalText(collectionUuid: string): void {
  */
 function resetInputForm(): void {
   inputObject.value.input = {
-    collectionLabels: [],
-    textLabels: [],
+    annotationType: null,
     text: '',
   };
 }
@@ -215,36 +186,35 @@ function togglePreviewMode(uuid: string): void {
     <template #toggleicon>
       <span :class="`pi pi-chevron-${sectionIsCollapsed ? 'down' : 'up'}`"></span>
     </template>
-    <template v-for="additionalText in additionalTexts" :key="additionalText.collection.data.uuid">
+    <template v-for="additionalText in additionalTexts" :key="additionalText.annotation.uuid">
       <div class="additional-text-entry">
-        <div class="button-pane flex justify-content-center">
-          <div class="label-container w-full">
-            <div class="collection-labels font-semibold">
-              <NodeTag
-                v-for="label in additionalText.collection.nodeLabels"
-                type="Collection"
-                :content="label"
-                class="mr-1 mb-4"
-              />
-            </div>
-            <div class="text-labels font-semibold">
-              <NodeTag
-                v-for="label in additionalText.text.nodeLabels"
-                :content="label"
-                type="Text"
-                class="mr-1 mb-1"
-              />
-            </div>
+        <div class="button-pane flex justify-content-center mb-2">
+          <div class="annotation-type-tag-container flex justify-content-start w-full">
+            <NodeTag type="Collection" :content="additionalText.annotation.type" />
           </div>
-          <Button
-            v-if="props.mode === 'edit'"
-            icon="pi pi-times"
-            severity="danger"
-            title="Remove this text from annotation"
-            @click="handleDeleteAdditionalText(additionalText.collection.data.uuid)"
-          />
+          <div class="flex">
+            <Tag
+              v-if="
+                !props.initialAdditionalTexts
+                  .map(t => t.annotation.uuid)
+                  .includes(additionalText.annotation.uuid)
+              "
+              size="small"
+              icon="pi pi-clock"
+              severity="warn"
+              class="mr-1"
+              :style="{ height: '1rem', padding: '10px' }"
+              title="This additional text is temporary, save changes to add it to the database"
+            ></Tag>
+            <Button
+              v-if="props.mode === 'edit'"
+              icon="pi pi-times"
+              severity="danger"
+              title="Remove this text from annotation"
+              @click="handleDeleteAdditionalText(additionalText.annotation.uuid)"
+            />
+          </div>
         </div>
-
         <div class="text-container flex align-items-center gap-2 overflow">
           <a
             :href="`/texts/${additionalText.text.data.uuid}`"
@@ -252,7 +222,7 @@ function togglePreviewMode(uuid: string): void {
             class="flex align-items-center gap-1"
             target="_blank"
           >
-            <div :class="`preview ${textPreviewHandler.get(additionalText.collection.data.uuid)}`">
+            <div :class="`preview ${textPreviewHandler.get(additionalText.annotation.uuid)}`">
               {{ additionalText.text.data.text }}
             </div>
             <i class="pi pi-external-link"></i>
@@ -260,7 +230,7 @@ function togglePreviewMode(uuid: string): void {
         </div>
         <Button
           :icon="
-            textPreviewHandler.get(additionalText.collection.data.uuid) === 'collapsed'
+            textPreviewHandler.get(additionalText.annotation.uuid) === 'collapsed'
               ? 'pi pi-angle-double-down'
               : 'pi pi-angle-double-up'
           "
@@ -268,22 +238,12 @@ function togglePreviewMode(uuid: string): void {
           size="small"
           class="w-full"
           :title="
-            textPreviewHandler.get(additionalText.collection.data.uuid) === 'collapsed'
+            textPreviewHandler.get(additionalText.annotation.uuid) === 'collapsed'
               ? 'Show full text'
               : 'Hide full text'
           "
-          @click="togglePreviewMode(additionalText.collection.data.uuid)"
+          @click="togglePreviewMode(additionalText.annotation.uuid)"
         />
-        <Message
-          v-if="
-            !props.initialAdditionalTexts
-              .map(t => t.collection.data.uuid)
-              .includes(additionalText.collection.data.uuid)
-          "
-          severity="warn"
-        >
-          Save changes to edit new text...
-        </Message>
       </div>
 
       <hr />
@@ -302,42 +262,21 @@ function togglePreviewMode(uuid: string): void {
       />
       <form v-show="inputMode === 'edit'" @submit.prevent="addAdditionalText">
         <InputGroup>
-          <MultiSelect
-            v-if="inputObject.labelOptions.collection.length > 0"
-            v-model="inputObject.input.collectionLabels"
-            :options="inputObject.labelOptions.collection"
+          <Select
+            v-if="inputObject.annotationTypeOptions.length > 0"
+            v-model="inputObject.input.annotationType"
+            :options="inputObject.annotationTypeOptions"
             display="chip"
-            placeholder="Collection labels"
+            required
+            placeholder="Annotation type"
             class="text-center"
             :filter="false"
             :pt="{
               root: {
-                title: `Select Collection labels`,
+                title: `Select Annotation type`,
               },
             }"
-          >
-            <template #chip="{ value }">
-              <NodeTag type="Collection" :content="value" class="mr-1" />
-            </template>
-          </MultiSelect>
-          <MultiSelect
-            v-if="inputObject.labelOptions.text.length > 0"
-            v-model="inputObject.input.textLabels"
-            :options="inputObject.labelOptions.text"
-            display="chip"
-            placeholder="Text labels"
-            class="text-center"
-            :filter="false"
-            :pt="{
-              root: {
-                title: `Select Text labels`,
-              },
-            }"
-          >
-            <template #chip="{ value }">
-              <NodeTag type="Text" :content="value" class="mr-1" />
-            </template>
-          </MultiSelect>
+          />
           <InputText
             ref="additional-text-input"
             required
@@ -379,7 +318,7 @@ function togglePreviewMode(uuid: string): void {
   max-height: calc-size(auto);
 }
 
-.label-container {
+.annotation-type-tag-container {
   cursor: default;
 }
 

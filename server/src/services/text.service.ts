@@ -48,7 +48,7 @@ export default class TextService {
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
     const query: string = `
     MATCH (t:Text {uuid: $uuid})
-    MATCH (t)-[:PART_OF]->(c:Collection)
+    OPTIONAL MATCH (t)-[:PART_OF]->(c:Collection)
     
     CALL (t) {
         ${ancestryPaths('t')}
@@ -59,10 +59,13 @@ export default class TextService {
             nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
             data: t {.*}
         },
-        collection: {
-            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
-            data: c {.*}
-        },
+        collection: CASE 
+                        WHEN c IS NULL THEN null 
+                        ELSE {
+                            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+                            data: c {.*}
+                        }
+                    END,
         paths: paths
     } as text
     `;

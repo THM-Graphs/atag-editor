@@ -17,8 +17,8 @@ const { bookmarks, toggleBookmark } = useBookmarks();
 
 const breadcrumbRoot = ref<MenuItem>({
   role: 'Collection',
-  label: correspondingCollection.value.data.label,
-  uuid: correspondingCollection.value.data.uuid,
+  label: correspondingCollection.value?.data.label,
+  uuid: correspondingCollection.value?.data.uuid,
 });
 const breadcrumbItems = ref<MenuItem[]>([{ role: 'Text', labels: text.value.nodeLabels }]);
 

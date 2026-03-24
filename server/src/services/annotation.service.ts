@@ -14,7 +14,6 @@ import {
 } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import ICharacter from '../models/ICharacter.js';
-import ICollection from '../models/ICollection.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
@@ -124,16 +123,14 @@ export default class AnnotationService {
 
     WITH a, entities AS entities
 
+    // Fetch additional texts
     CALL {
         WITH a
 
-        MATCH (a)-[r:REFERS_TO]->(x:Collection)<-[:PART_OF]-(t2:Text)
+        MATCH (a)-[r:HAS_ANNOTATION]->(aComment:Annotation)-[:REFERS_TO]->(t2:Text)
 
         RETURN collect({
-            collection: {
-                nodeLabels: [l IN labels(x) WHERE l <> 'Collection' | l],
-                data: x {.*}
-            }, 
+            annotation: aComment {.*}, 
             text: {
                 nodeLabels: [l IN labels(t2) WHERE l <> 'Text' | l],
                 data: t2 {.*}
@@ -207,30 +204,15 @@ export default class AnnotationService {
       const deletedAdditionalTexts: AdditionalText[] = [];
 
       const oldTextUuids: string[] = annotation.initialData!.additionalTexts.map(
-        t => t.collection.data.uuid,
+        t => t.annotation.uuid,
       );
-      const newTextUuids: string[] = annotation.data!.additionalTexts.map(
-        t => t.collection.data.uuid,
-      );
+      const newTextUuids: string[] = annotation.data!.additionalTexts.map(t => t.annotation.uuid);
 
       // Characters need to be created to be saved in the query
       annotation.data!.additionalTexts.forEach(additionalText => {
-        if (!oldTextUuids.includes(additionalText.collection.data.uuid)) {
-          // Done here because collection field configuration may be different for each additional text
-          const collectionConfigFields: PropertyConfig[] =
-            guidelineService.getCollectionConfigFieldsFromGuidelines(
-              guidelines,
-              additionalText.collection.nodeLabels,
-            );
-
+        if (!oldTextUuids.includes(additionalText.annotation.uuid)) {
           createdAdditionalTexts.push({
-            collection: {
-              nodeLabels: additionalText.collection.nodeLabels,
-              data: toNeo4jTypes(
-                additionalText.collection.data,
-                collectionConfigFields,
-              ) as ICollection,
-            },
+            annotation: additionalText.annotation,
             text: {
               nodeLabels: additionalText.text.nodeLabels,
               data: additionalText.text.data,
@@ -241,7 +223,7 @@ export default class AnnotationService {
       });
 
       annotation.initialData!.additionalTexts.forEach(additionalText => {
-        if (!newTextUuids.includes(additionalText.collection.data.uuid)) {
+        if (!newTextUuids.includes(additionalText.annotation.uuid)) {
           deletedAdditionalTexts.push(additionalText);
         }
       });
@@ -282,7 +264,7 @@ export default class AnnotationService {
         WHERE delAnnotation.status = 'deleted'
         MATCH (a:Annotation {uuid: delAnnotation.data.properties.uuid})
 
-        // Delete only Annotation node - additional texts (Collection-Text) are kept for now
+        // Delete only Annotation node - additional texts (Annotation-Text) are kept for now
         DETACH DELETE a
     }
 
@@ -329,10 +311,10 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.deleted as textToDelete
 
-        // Match Collection node that is the entry point into subgraph
-        OPTIONAL MATCH (a)-[r:REFERS_TO]->(c:Collection {uuid: textToDelete.collection.data.uuid})
+        // Match Annotation node that is the entry point into subgraph
+        OPTIONAL MATCH (a)-[r:HAS_ANNOTATION]->(:Annotation {uuid: textToDelete.annotation.uuid})
 
-        // Detach Collection node, but keep it in the database for now.
+        // Detach Annotation node, but keep it in the database for now.
         DELETE r
     }
 
@@ -341,19 +323,15 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.created as textToCreate
         
-        CREATE (a)-[:REFERS_TO]->(c:Collection)<-[:PART_OF]-(t:Text)
+        CREATE (a)-[:HAS_ANNOTATION]->(aCommentary:Annotation)-[:REFERS_TO]->(t:Text)
 
-        WITH textToCreate, a, c, t
-
-        // Set labels
-        CALL apoc.create.addLabels(c, textToCreate.collection.nodeLabels) YIELD node AS collectionNode
-        CALL apoc.create.addLabels(t, textToCreate.text.nodeLabels) YIELD node AS textNode
+        WITH textToCreate, a, aCommentary, t
 
         // Set properties
-        SET c += textToCreate.collection.data
+        SET aCommentary += textToCreate.annotation
         SET t += textToCreate.text.data
 
-        WITH textToCreate, a, c, t
+        WITH textToCreate, a, aCommentary, t
 
         CALL atag.chains.update(t.uuid, null, null, textToCreate.text.characters, {
           textLabel: "Text",

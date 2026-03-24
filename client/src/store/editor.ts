@@ -394,11 +394,11 @@ export function useEditorStore() {
       const initialEntityUuids: Set<string> = new Set(a.initialData.entities.map(m => m.data.uuid));
 
       const initialAdditionalTextUuids: Set<string> = new Set(
-        a.initialData.additionalTexts.map(at => at.collection.data.uuid),
+        a.initialData.additionalTexts.map(at => at.annotation.uuid),
       );
 
       const additionalTextUuids: Set<string> = new Set(
-        a.data.additionalTexts.map(at => at.collection.data.uuid),
+        a.data.additionalTexts.map(at => at.annotation.uuid),
       );
 
       if (

@@ -70,16 +70,6 @@
         }
       },
       {
-        "additionalLabel": "Comment",
-        "level": "secondary",
-        "properties": []
-      },
-      {
-        "additionalLabel": "CommentInternal",
-        "level": "secondary",
-        "properties": []
-      },
-      {
         "additionalLabel": "Manuscript",
         "level": "secondary",
         "properties": []
@@ -454,6 +444,6 @@
         "nodeLabel": "LiteratureTitle"
       }
     ],
-    "additionalTexts": ["Comment", "CommentInternal"]
+    "additionalTexts": ["commentary"]
   }
 }
