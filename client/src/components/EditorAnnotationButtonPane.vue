@@ -11,14 +11,18 @@ import ShortcutError from '../utils/errors/shortcut.error';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { useAppStore } from '../store/app';
 import { useValidateTextSelection } from '../composables/useValidateTextSelection';
+import { useDialog } from 'primevue';
+import AnnotationCreateModal from './AnnotationCreateModal.vue';
 
 const { groupedAnnotationTypes, getAnnotationConfig } = useGuidelinesStore();
-const { addToastMessage } = useAppStore();
+const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { execCommand } = useEditorStore();
 const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 const { isValid: isSelectionValid } = useValidateTextSelection();
+
+const dialog: ReturnType<typeof useDialog> = useDialog();
 
 /**
  * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
@@ -46,10 +50,37 @@ function handleClick(data: { type: string; subType?: string | number }) {
     const selectedCharacters: Character[] = getCharactersInSelection();
     const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
 
-    execCommand('createAnnotation', {
-      annotation: newAnnotation,
-      characters: selectedCharacters,
-    });
+    if (config.hasEntities === true) {
+      createModalInstance(
+        dialog.open(AnnotationCreateModal, {
+          props: {
+            modal: true,
+            closable: false,
+            closeOnEscape: false,
+            style: { width: '25rem' },
+          },
+          data: {
+            annotation: newAnnotation,
+          },
+          emits: {
+            onCreated: () => {
+              execCommand('createAnnotation', {
+                annotation: newAnnotation,
+                characters: selectedCharacters,
+              });
+
+              destroyModalInstance();
+            },
+          },
+          onClose: destroyModalInstance,
+        }),
+      );
+    } else {
+      execCommand('createAnnotation', {
+        annotation: newAnnotation,
+        characters: selectedCharacters,
+      });
+    }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
       addToastMessage({
