@@ -35,6 +35,27 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Checks if an annotation type has constraints such as required properties, entities etc.
+   *
+   * Currently used for when the user clicks on an annotation button to enforce constraints.
+   *
+   * @param {AnnotationType} config The annotation type to check.
+   * @returns {boolean} True if the annotation type has constraints.
+   */
+  function annotationHasConstraints(config: AnnotationType): boolean {
+    // TODO: The subType field requires a lot of hacks -> Refactor later
+    if (config.properties?.some(p => p.required === true && p.name !== 'subType')) {
+      return true;
+    }
+
+    if (config.hasEntities === true) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Retrieves the configuration for an annotation of given type. The configuration is an object containing internal information
    * as well as information about rendering behaviour (input type in forms, selection status etc.).
    *
@@ -273,6 +294,7 @@ export function useGuidelinesStore() {
     guidelines,
     isFetching: readonly(isFetching),
     isInitialized: readonly(isInitialized),
+    annotationHasConstraints,
     getAllCollectionConfigFields,
     getAnnotationConfig,
     getAnnotationFields,

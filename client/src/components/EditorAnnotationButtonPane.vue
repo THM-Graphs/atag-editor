@@ -14,7 +14,8 @@ import { useValidateTextSelection } from '../composables/useValidateTextSelectio
 import { useDialog } from 'primevue';
 import AnnotationCreateModal from './AnnotationCreateModal.vue';
 
-const { groupedAnnotationTypes, getAnnotationConfig } = useGuidelinesStore();
+const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
+  useGuidelinesStore();
 const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { execCommand } = useEditorStore();
 const { getCharactersInSelection } = useCharactersStore();
@@ -50,20 +51,20 @@ function handleClick(data: { type: string; subType?: string | number }) {
     const selectedCharacters: Character[] = getCharactersInSelection();
     const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
 
-    if (config.hasEntities === true) {
+    if (annotationHasConstraints(config)) {
       createModalInstance(
         dialog.open(AnnotationCreateModal, {
           props: {
             modal: true,
             closable: false,
-            closeOnEscape: false,
+            closeOnEscape: true,
             style: { width: '25rem' },
           },
           data: {
             annotation: newAnnotation,
           },
           emits: {
-            onCreated: () => {
+            onCreate: () => {
               execCommand('createAnnotation', {
                 annotation: newAnnotation,
                 characters: selectedCharacters,

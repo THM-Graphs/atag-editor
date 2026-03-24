@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref, toRef, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { useAppStore } from '../store/app';
 import { useRoute } from 'vue-router';
 import Fieldset from 'primevue/fieldset';
 import FormPropertiesSection from './FormPropertiesSection.vue';
@@ -15,10 +14,9 @@ const dialogRef: any = inject('dialogRef');
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'created'): void;
+  (e: 'create'): void;
 }>();
 
-const { addToastMessage } = useAppStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const annotationToCreate: Annotation = dialogRef.value.data.annotation;
@@ -30,52 +28,44 @@ const propertyFields: PropertyConfig[] = getAnnotationFields(
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
 
+const inputIsValid = computed<boolean>(checkAnnotationValidity);
+
 watch(() => route.path, closeModal);
 
-// function closeModal(): void {
-//   emit('close');
-// }
+// TODO: Move this to helper or something
+function checkAnnotationValidity() {
+  // For properties. Will be extended when rules for connected entites etc. are applied
+  return propertyFields.every((field: PropertyConfig) => {
+    if (!field.required) {
+      return true;
+    }
+
+    const value = annotationToCreate.data.properties[field.name];
+
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    if (field.type === 'string' && value.trim().length === 0) {
+      return false;
+    }
+
+    return true;
+  });
+}
 
 function closeModal(): void {
   dialogRef.value.close();
 }
 
-// function showMessage(result: 'success' | 'error', error?: Error) {
-//   addToastMessage({
-//     severity: result,
-//     summary: result === 'success' ? 'Changes saved successfully' : 'Error saving changes',
-//     detail: error?.message ?? '',
-//     life: 2000,
-//   });
-// }
-// const isMounted = computed(() => {
-//   if (annotationToCreate.value !== null) {
-//     console.log('exists');
-//     return true;
-//   } else {
-//     console.log('DOJES NOT EXIST');
-//     return false;
-//   }
-// });
-
 function handleCancelClick(): void {
   closeModal();
 }
 
-async function handleSubmitClick(): Promise<void> {
-  asyncOperationRunning.value = true;
+function handleSubmitClick(): void {
+  closeModal();
 
-  try {
-    // await api.deleteCollection(collection.value.collection.data.uuid);
-
-    closeModal();
-
-    emit('created');
-  } catch (error: unknown) {
-    // showMessage('error', error as Error);
-  } finally {
-    asyncOperationRunning.value = false;
-  }
+  emit('create');
 }
 </script>
 
@@ -121,6 +111,7 @@ async function handleSubmitClick(): Promise<void> {
 
   <div class="button-container flex justify-content-end gap-2">
     <Button
+      :disabled="!inputIsValid"
       type="submit"
       label="Create"
       severity="success"
@@ -137,4 +128,8 @@ async function handleSubmitClick(): Promise<void> {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.content {
+  overflow-y: scroll;
+}
+</style>
