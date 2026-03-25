@@ -6,7 +6,7 @@ import Fieldset from 'primevue/fieldset';
 import FormPropertiesSection from './FormPropertiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
-import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
+import { AnnotationData, AnnotationType, PropertyConfig } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
 const route = useRoute();
@@ -14,16 +14,14 @@ const dialogRef: any = inject('dialogRef');
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'create'): void;
+  (e: 'submit', annotation: AnnotationData): void;
 }>();
 
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
-const annotationToCreate: Annotation = dialogRef.value.data.annotation;
-const config: AnnotationType = getAnnotationConfig(annotationToCreate.data.properties.type);
-const propertyFields: PropertyConfig[] = getAnnotationFields(
-  annotationToCreate.data.properties.type,
-);
+const annotationTemplate: AnnotationData = dialogRef.value.data.annotation;
+const config: AnnotationType = getAnnotationConfig(annotationTemplate.properties.type);
+const propertyFields: PropertyConfig[] = getAnnotationFields(annotationTemplate.properties.type);
 
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
@@ -40,7 +38,7 @@ function checkAnnotationValidity() {
       return true;
     }
 
-    const value = annotationToCreate.data.properties[field.name];
+    const value = annotationTemplate.properties[field.name];
 
     if (value === null || value === undefined) {
       return false;
@@ -65,71 +63,81 @@ function handleCancelClick(): void {
 function handleSubmitClick(): void {
   closeModal();
 
-  emit('create');
+  emit('submit', annotationTemplate);
 }
 </script>
 
 <template>
-  <h2 class="w-full text-center m-0">
-    Create new
-    <span class="font-italic">{{ annotationToCreate.data.properties.type }}</span> Annotation
-  </h2>
+  <div class="container flex flex-column">
+    <h2 class="w-full m-0 text-center">
+      Add new <span class="font-italic">{{ annotationTemplate.properties.type }}</span> Annotation
+    </h2>
 
-  <div class="content text-center mb-2" v-if="annotationToCreate">
-    <Fieldset
-      legend="Properties"
-      :toggle-button-props="{
-        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
-      }"
-      :toggleable="true"
-      @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
-    >
-      <template #toggleicon>
-        <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
-      </template>
-      <FormPropertiesSection
-        v-model="annotationToCreate.data.properties"
-        :fields="propertyFields"
+    <div class="content mb-2" v-if="annotationTemplate">
+      <Fieldset
+        legend="Properties"
+        :toggle-button-props="{
+          title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
+        }"
+        :toggleable="true"
+        @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
+      >
+        <template #toggleicon>
+          <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
+        </template>
+        <FormPropertiesSection
+          v-model="annotationTemplate.properties"
+          :fields="propertyFields"
+          mode="edit"
+        />
+      </Fieldset>
+      <AnnotationFormAdditionalTextSection
+        v-if="config.hasAdditionalTexts === true"
+        v-model="annotationTemplate.additionalTexts"
+        :initial-additional-texts="[]"
         mode="edit"
       />
-    </Fieldset>
-    <AnnotationFormAdditionalTextSection
-      v-if="config.hasAdditionalTexts === true"
-      v-model="annotationToCreate.data.additionalTexts"
-      :initial-additional-texts="annotationToCreate.initialData.additionalTexts"
-      mode="edit"
-    />
-    <AnnotationFormEntitiesSection
-      v-if="config.hasEntities === true"
-      v-model="annotationToCreate.data.entities"
-      mode="edit"
-      :annotation-config="config"
-      :default-search-value="annotationToCreate.data.properties.text"
-      :initialEntities="annotationToCreate.initialData.entities"
-    />
-  </div>
+      <AnnotationFormEntitiesSection
+        v-if="config.hasEntities === true"
+        v-model="annotationTemplate.entities"
+        mode="edit"
+        :annotation-config="config"
+        :default-search-value="annotationTemplate.properties.text"
+        :initialEntities="[]"
+      />
+    </div>
 
-  <div class="button-container flex justify-content-end gap-2">
-    <Button
-      :disabled="!inputIsValid"
-      type="submit"
-      label="Create"
-      severity="success"
-      :loading="asyncOperationRunning"
-      @click="handleSubmitClick"
-    ></Button>
-    <Button
-      type="button"
-      label="Cancel"
-      title="Cancel"
-      severity="secondary"
-      @click="handleCancelClick"
-    ></Button>
+    <div class="footer flex justify-content-center gap-2">
+      <Button
+        type="button"
+        label="Cancel"
+        icon="pi pi-times"
+        title="Cancel"
+        severity="secondary"
+        @click="handleCancelClick"
+      ></Button>
+      <Button
+        :disabled="!inputIsValid"
+        type="submit"
+        icon="pi pi-plus"
+        label="Add"
+        title="Add annotation"
+        severity="primary"
+        :loading="asyncOperationRunning"
+        @click="handleSubmitClick"
+      ></Button>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.container {
+  height: 100%;
+}
+
 .content {
-  overflow-y: scroll;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  flex-grow: 1;
 }
 </style>

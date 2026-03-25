@@ -2,7 +2,7 @@
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
-import { Annotation, AnnotationType, Character } from '../models/types';
+import { Annotation, AnnotationData, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 import { useEditorStore } from '../store/editor';
@@ -49,7 +49,10 @@ function handleClick(data: { type: string; subType?: string | number }) {
     isSelectionValid(config);
 
     const selectedCharacters: Character[] = getCharactersInSelection();
-    const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
+    const newAnnotationTemplate: Annotation = createAnnotation({
+      ...data,
+      characters: selectedCharacters,
+    });
 
     if (annotationHasConstraints(config)) {
       createModalInstance(
@@ -58,18 +61,28 @@ function handleClick(data: { type: string; subType?: string | number }) {
             modal: true,
             closable: false,
             closeOnEscape: true,
-            style: { width: '25rem' },
+            dismissableMask: true,
+            style: { width: '25rem', height: '35rem' },
+            pt: {
+              content: {
+                style: {
+                  flexGrow: 1,
+                },
+              },
+            },
           },
           data: {
-            annotation: newAnnotation,
+            annotation: newAnnotationTemplate.data,
           },
           emits: {
-            onCreate: () => {
-              execCommand('createAnnotation', {
-                annotation: newAnnotation,
+            onSubmit: (editedAnnotationData: AnnotationData) => {
+              addAnnotationToStore({
+                annotation: {
+                  ...newAnnotationTemplate,
+                  data: editedAnnotationData,
+                },
                 characters: selectedCharacters,
               });
-
               destroyModalInstance();
             },
           },
@@ -77,10 +90,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
         }),
       );
     } else {
-      execCommand('createAnnotation', {
-        annotation: newAnnotation,
-        characters: selectedCharacters,
-      });
+      addAnnotationToStore({ annotation: newAnnotationTemplate, characters: selectedCharacters });
     }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
@@ -101,6 +111,21 @@ function handleClick(data: { type: string; subType?: string | number }) {
       console.error('Unexpected error:', error);
     }
   }
+}
+
+/**
+ * Adds a new annotation to the store by executing the `createAnnotation` command.
+ *
+ * @param {Object} params - Object with two properties: `annotation` and `characters`.
+ * @param {Annotation} params.annotation - The annotation to add to the store.
+ * @param {Character[]} params.characters - The characters associated with the annotation.
+ * @returns {void} This function does not return any value.
+ */
+function addAnnotationToStore(params: { annotation: Annotation; characters: Character[] }): void {
+  execCommand('createAnnotation', {
+    annotation: params.annotation,
+    characters: params.characters,
+  });
 }
 </script>
 
