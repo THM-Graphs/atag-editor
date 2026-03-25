@@ -2,7 +2,7 @@
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
-import { Annotation, AnnotationType, Character } from '../models/types';
+import { Annotation, AnnotationData, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 import { useEditorStore } from '../store/editor';
@@ -11,14 +11,19 @@ import ShortcutError from '../utils/errors/shortcut.error';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { useAppStore } from '../store/app';
 import { useValidateTextSelection } from '../composables/useValidateTextSelection';
+import { useDialog } from 'primevue';
+import AnnotationCreateModal from './AnnotationCreateModal.vue';
 
-const { groupedAnnotationTypes, getAnnotationConfig } = useGuidelinesStore();
-const { addToastMessage } = useAppStore();
+const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
+  useGuidelinesStore();
+const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { execCommand } = useEditorStore();
 const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 const { isValid: isSelectionValid } = useValidateTextSelection();
+
+const dialog: ReturnType<typeof useDialog> = useDialog();
 
 /**
  * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
@@ -44,12 +49,49 @@ function handleClick(data: { type: string; subType?: string | number }) {
     isSelectionValid(config);
 
     const selectedCharacters: Character[] = getCharactersInSelection();
-    const newAnnotation: Annotation = createAnnotation({ ...data, characters: selectedCharacters });
-
-    execCommand('createAnnotation', {
-      annotation: newAnnotation,
+    const newAnnotationTemplate: Annotation = createAnnotation({
+      ...data,
       characters: selectedCharacters,
     });
+
+    if (annotationHasConstraints(config)) {
+      createModalInstance(
+        dialog.open(AnnotationCreateModal, {
+          props: {
+            modal: true,
+            closable: false,
+            closeOnEscape: true,
+            dismissableMask: true,
+            style: { width: '25rem', height: '35rem' },
+            pt: {
+              content: {
+                style: {
+                  flexGrow: 1,
+                },
+              },
+            },
+          },
+          data: {
+            annotation: newAnnotationTemplate.data,
+          },
+          emits: {
+            onSubmit: (editedAnnotationData: AnnotationData) => {
+              addAnnotationToStore({
+                annotation: {
+                  ...newAnnotationTemplate,
+                  data: editedAnnotationData,
+                },
+                characters: selectedCharacters,
+              });
+              destroyModalInstance();
+            },
+          },
+          onClose: destroyModalInstance,
+        }),
+      );
+    } else {
+      addAnnotationToStore({ annotation: newAnnotationTemplate, characters: selectedCharacters });
+    }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
       addToastMessage({
@@ -69,6 +111,21 @@ function handleClick(data: { type: string; subType?: string | number }) {
       console.error('Unexpected error:', error);
     }
   }
+}
+
+/**
+ * Adds a new annotation to the store by executing the `createAnnotation` command.
+ *
+ * @param {Object} params - Object with two properties: `annotation` and `characters`.
+ * @param {Annotation} params.annotation - The annotation to add to the store.
+ * @param {Character[]} params.characters - The characters associated with the annotation.
+ * @returns {void} This function does not return any value.
+ */
+function addAnnotationToStore(params: { annotation: Annotation; characters: Character[] }): void {
+  execCommand('createAnnotation', {
+    annotation: params.annotation,
+    characters: params.characters,
+  });
 }
 </script>
 
