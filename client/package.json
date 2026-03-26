@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.0-rc.2",
+    "@tiptap/pm": "^3.20.5",
+    "@tiptap/starter-kit": "^3.20.5",
+    "@tiptap/vue-3": "^3.20.5",
     "@vueuse/core": "^10.10.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",

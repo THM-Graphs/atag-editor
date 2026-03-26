@@ -3,6 +3,8 @@ import Editor from './views/Editor.vue';
 import CollectionManager from './views/CollectionManager.vue';
 import CollectionSingleView from './views/CollectionSingleView.vue';
 import { useNavigationGuard } from './composables/useNavigationGuard';
+import NewEditor from './views/NewEditor.vue';
+import Playground from './views/Playground.vue';
 
 const { hasOpenModal, redirectToCollectionPath } = useNavigationGuard();
 
@@ -14,6 +16,8 @@ const allRoutes = [
     beforeEnter: redirectToCollectionPath,
   },
   { path: '/texts/:uuid', component: Editor },
+  { path: '/editor/:uuid', component: NewEditor },
+  { path: '/playground', component: Playground },
 ];
 
 const prodRoutes = allRoutes.filter(r => !['/test', '/playground'].includes(r.path));

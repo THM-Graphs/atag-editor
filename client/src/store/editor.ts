@@ -1,4 +1,4 @@
-import { computed, readonly, ref, unref } from 'vue';
+import { computed, readonly, ref, shallowRef, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
@@ -11,6 +11,8 @@ import {
 } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
+import { Editor } from '@tiptap/vue-3';
+import StarterKit from '@tiptap/starter-kit';
 
 const { text, initialText } = useTextStore();
 const {
@@ -38,6 +40,20 @@ const {
   shiftAnnotationRight,
   shrinkAnnotation,
 } = useAnnotationStore();
+
+const tiptap = shallowRef<Editor | null>(null);
+
+function initializeTiptap(): void {
+  tiptap.value = new Editor({
+    content: "<p>I'm running Tiptap with Vue.js. 🎉</p>",
+    extensions: [StarterKit],
+  });
+}
+
+function destroyTiptap(): void {
+  tiptap.value?.destroy();
+  tiptap.value = null;
+}
 
 const keepTextOnPagination = ref<boolean>(false);
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -497,6 +513,9 @@ export function useEditorStore() {
     keepTextOnPagination,
     lastRangeSnapshot,
     redoStack,
+    tiptap,
+    destroyTiptap,
+    initializeTiptap,
     execCommand,
     hasUnsavedChanges,
     initializeEditor,

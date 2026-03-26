@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
 import FulltextSearchbar from './FulltextSearchbar.vue';
@@ -11,6 +11,7 @@ import BookmarkButton from './BookmarkButton.vue';
 import { useBookmarks } from '../composables/useBookmarks';
 import { MenuItem } from 'primevue/menuitem';
 import EditorExportButton from './EditorExportButton.vue';
+import EditorSwitchButton from './EditorSwitchButton.vue';
 
 const { text, correspondingCollection } = useTextStore();
 const { bookmarks, toggleBookmark } = useBookmarks();
@@ -49,6 +50,7 @@ function handleBookmarkAction() {
         <EditorImportButton />
         <EditorExportButton />
         <BookmarkButton />
+        <EditorSwitchButton />
       </div>
     </div>
 
