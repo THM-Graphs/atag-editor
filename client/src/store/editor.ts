@@ -12,8 +12,9 @@ import {
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 import { Editor } from '@tiptap/vue-3';
-import StarterKit from '@tiptap/starter-kit';
+import { useGuidelinesStore } from './guidelines';
 
+const { getConfiguredExtensions } = useGuidelinesStore();
 const { text, initialText } = useTextStore();
 const {
   snippetCharacters,
@@ -45,8 +46,10 @@ const tiptap = shallowRef<Editor | null>(null);
 
 function initializeTiptap(): void {
   tiptap.value = new Editor({
-    content: "<p>I'm running Tiptap with Vue.js. 🎉</p>",
-    extensions: [StarterKit],
+    // TODO: Content comes dynamically
+    content: "<h1>I'm running Tiptap with Vue.js. 🎉</h1> <h1>Second heading</h1>",
+    extensions: [...getConfiguredExtensions()],
+    autofocus: 'end',
   });
 }
 

@@ -2,6 +2,23 @@ import { computed, readonly, ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
+import { Extension } from '@tiptap/vue-3';
+import Heading from '@tiptap/extension-heading';
+import Document from '@tiptap/extension-document';
+import Paragraph from '@tiptap/extension-paragraph';
+import Text from '@tiptap/extension-text';
+import UniqueID from '@tiptap/extension-unique-id';
+import { Bold } from '@tiptap/extension-bold';
+import { TextAlign } from './TextAlign';
+import { LineHeight } from './LineHeight';
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    customHeading: {
+      toggleCustomHeading: () => ReturnType;
+    };
+  }
+}
 
 const guidelines = ref<IGuidelines>();
 const isFetching = ref<boolean>(false);
@@ -286,6 +303,98 @@ export function useGuidelinesStore() {
     );
   }
 
+  function getConfiguredExtensions(): Extension[] {
+    const CustomHeading = Heading.extend({
+      name: 'customHeading',
+
+      addCommands() {
+        return {
+          toggleCustomHeading:
+            () =>
+            ({ commands, tr }) => {
+              return commands.updateAttributes('customHeading', { level: 2 });
+            },
+        };
+      },
+      addOptions() {
+        return {
+          ...this.parent?.(),
+          // levels: [1, 2, 3],
+          hola: [],
+        };
+      },
+
+      addAttributes() {
+        // console.log(this);
+        // console.log(this.parent?.());
+        return {
+          ...this.parent?.(), // keep existing heading attrs like "level"
+          teiType: {
+            default: 'div',
+            // rendered: false,
+            parseHTML(element) {
+              element.getAttribute('teiType');
+            },
+          },
+          color: {
+            default: 'green',
+            // rendered: false,
+            renderHTML(attributes) {
+              return {
+                'data-bg-color': attributes.color,
+                style: `background-color: ${attributes.color}`,
+              };
+            },
+          },
+        };
+      },
+
+      parseHTML() {
+        return [
+          {
+            tag: 'h1',
+          },
+        ];
+      },
+
+      renderHTML({ HTMLAttributes, node }) {
+        // console.log(node.attrs);
+        // console.log(HTMLAttributes);
+        console.log(HTMLAttributes);
+        return [
+          'h' + node.attrs.level,
+          {
+            ...HTMLAttributes,
+            // teiType: HTMLAttributes.teiType + '' + node.attrs.level,
+            lineHeight: HTMLAttributes.lineHeight,
+          },
+          0,
+        ];
+      },
+    });
+
+    return [
+      Document,
+      Paragraph,
+      Text,
+      CustomHeading,
+      Heading,
+      Bold,
+      LineHeight.configure({
+        types: ['paragraph', 'heading', 'customHeading'],
+        lineHeight: 1,
+      }),
+      TextAlign.configure({
+        types: ['paragraph', 'heading', 'customHeading'],
+      }),
+      UniqueID.configure({
+        types: 'all',
+        attributeName: 'anno-uuid',
+        generateID: () => crypto.randomUUID(),
+      }),
+    ];
+  }
+
   return {
     availableCollectionLabels,
     error: readonly(error),
@@ -305,6 +414,7 @@ export function useGuidelinesStore() {
     getCollectionAnnotationFields,
     getCollectionAnnotationConfig,
     getCollectionConfigFields,
+    getConfiguredExtensions,
     initializeGuidelines,
   };
 }
