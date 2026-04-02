@@ -27,6 +27,10 @@ type UseCreateAnnotationReturnType = {
     subType?: string | number;
     type: string;
   }) => Annotation;
+  createNewEditorTextAnnotation: (params: {
+    subType?: string | number;
+    type: string;
+  }) => Annotation;
 };
 
 /**
@@ -206,8 +210,39 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
     };
   }
 
+  function createNewEditorTextAnnotation(params: {
+    type: string;
+    subType?: string | number;
+  }): Annotation {
+    const { type } = params;
+
+    const fields: PropertyConfig[] = getAnnotationFields(type);
+
+    const annotationObject: AnnotationData = createAnnotationObject({ ...params, fields });
+
+    // TODO: This will not be used
+    const metadata: TextAnnotationMetadata = createSpecificTextAnnotationMetadata({
+      characters: [
+        {
+          data: {
+            uuid: '123',
+            text: ' ',
+          },
+          annotations: [],
+        },
+      ],
+    });
+
+    return {
+      data: cloneDeep(annotationObject),
+      initialData: cloneDeep(annotationObject),
+      ...metadata,
+    };
+  }
+
   return {
     createCollectionAnnotation,
     createTextAnnotation,
+    createNewEditorTextAnnotation,
   };
 }

@@ -11,6 +11,8 @@ import UniqueID from '@tiptap/extension-unique-id';
 import { Bold } from '@tiptap/extension-bold';
 import { TextAlign } from './TextAlign';
 import { LineHeight } from './LineHeight';
+import { AnnotationMark } from '../services/annotationMark';
+import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -377,21 +379,15 @@ export function useGuidelinesStore() {
       Document,
       Paragraph,
       Text,
-      CustomHeading,
+      ZeroPointAnnotation,
       Heading,
       Bold,
-      LineHeight.configure({
-        types: ['paragraph', 'heading', 'customHeading'],
-        lineHeight: 1,
-      }),
-      TextAlign.configure({
-        types: ['paragraph', 'heading', 'customHeading'],
-      }),
-      UniqueID.configure({
-        types: 'all',
-        attributeName: 'anno-uuid',
-        generateID: () => crypto.randomUUID(),
-      }),
+      AnnotationMark,
+      // UniqueID.configure({
+      //   types: 'all',
+      //   attributeName: 'anno-uuid',
+      //   generateID: () => crypto.randomUUID(),
+      // }),
     ];
   }
 

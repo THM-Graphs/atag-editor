@@ -3,6 +3,7 @@ import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
 import {
+  Annotation,
   CommandData,
   CommandType,
   HistoryRecord,
@@ -43,6 +44,8 @@ const {
 } = useAnnotationStore();
 
 const tiptap = shallowRef<Editor | null>(null);
+
+const tiptapAnnotations = ref<Annotation[]>([]);
 
 function initializeTiptap(): void {
   tiptap.value = new Editor({
@@ -517,6 +520,7 @@ export function useEditorStore() {
     lastRangeSnapshot,
     redoStack,
     tiptap,
+    tiptapAnnotations,
     destroyTiptap,
     initializeTiptap,
     execCommand,
