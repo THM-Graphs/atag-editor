@@ -7,6 +7,7 @@ import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonP
 import { Annotation } from '../models/types';
 import { Card } from 'primevue';
 import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
+import Button from 'primevue/button';
 
 const { tiptap, initializeTiptap, destroyTiptap, tiptapAnnotations } = useEditorStore();
 
@@ -156,6 +157,7 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
         </Card>
       </div>
     </div>
+    <Button label="JSON" @click="() => console.log(tiptap.getJSON())" />
   </div>
 </template>
 
@@ -283,6 +285,10 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
 
   span.unclear {
     color: var(--unclear-clr);
+  }
+
+  span.transposition {
+    background-color: var(--transposition-clr);
   }
 
   span.repeated {

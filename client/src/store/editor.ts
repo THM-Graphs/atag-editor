@@ -14,6 +14,8 @@ import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
 import { Editor } from '@tiptap/vue-3';
 import { useGuidelinesStore } from './guidelines';
+import StandoffConverter from '../services/standoffConverter';
+import { standoffJson } from '../services/standoffJson';
 
 const { getConfiguredExtensions } = useGuidelinesStore();
 const { text, initialText } = useTextStore();
@@ -47,10 +49,13 @@ const tiptap = shallowRef<Editor | null>(null);
 
 const tiptapAnnotations = ref<Annotation[]>([]);
 
+const converter: StandoffConverter = new StandoffConverter(standoffJson);
+const tiptapContent = converter.convertStandoffToTipTap();
+
 function initializeTiptap(): void {
   tiptap.value = new Editor({
     // TODO: Content comes dynamically
-    content: "<h1>I'm running Tiptap with Vue.js. 🎉</h1> <h1>Second heading</h1>",
+    content: tiptapContent,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'end',
   });
