@@ -52,6 +52,27 @@ export type AnnotationConfigEntity = {
   nodeLabel: string;
 };
 
+export type ApiJson = {
+  text: string;
+  annotations: AnnotationData[];
+};
+
+export type TiptapMark = {
+  type: string;
+  attrs: Record<string, any>;
+};
+
+export type AllowedTiptapNodeTypes = 'doc' | 'paragraph' | 'text' | 'hardBreak';
+
+export type TiptapNode = {
+  type: AllowedTiptapNodeTypes;
+  content?: TiptapNode[];
+  marks?: TiptapMark[];
+  text?: string;
+};
+
+export type TiptapJson = TiptapNode;
+
 export type BaseNodeData = {
   uuid: string;
 };

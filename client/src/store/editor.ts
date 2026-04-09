@@ -4,11 +4,13 @@ import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
 import {
   Annotation,
+  ApiJson,
   CommandData,
   CommandType,
   HistoryRecord,
   HistoryStack,
   RedrawModeOptions,
+  TiptapJson,
 } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
@@ -49,8 +51,8 @@ const tiptap = shallowRef<Editor | null>(null);
 
 const tiptapAnnotations = ref<Annotation[]>([]);
 
-const converter: StandoffConverter = new StandoffConverter(standoffJson);
-const tiptapContent = converter.convertStandoffToTipTap();
+const converter: StandoffConverter = new StandoffConverter(standoffJson as ApiJson);
+const tiptapContent: TiptapJson = converter.convertStandoffToTipTap();
 
 function initializeTiptap(): void {
   tiptap.value = new Editor({
