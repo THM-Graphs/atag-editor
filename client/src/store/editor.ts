@@ -1,25 +1,17 @@
-import { computed, readonly, ref, shallowRef, unref } from 'vue';
+import { computed, readonly, ref, unref } from 'vue';
 import { useAnnotationStore } from './annotations';
 import { useCharactersStore } from './characters';
 import { areSetsEqual, cloneDeep } from '../utils/helper/helper';
 import {
-  Annotation,
-  ApiJson,
   CommandData,
   CommandType,
   HistoryRecord,
   HistoryStack,
   RedrawModeOptions,
-  TiptapJson,
 } from '../models/types';
 import { useTextStore } from './text';
 import { HISTORY_MAX_SIZE } from '../config/constants';
-import { Editor } from '@tiptap/vue-3';
-import { useGuidelinesStore } from './guidelines';
-import StandoffConverter from '../services/standoffConverter';
-import { standoffJson } from '../services/standoffJson';
 
-const { getConfiguredExtensions } = useGuidelinesStore();
 const { text, initialText } = useTextStore();
 const {
   snippetCharacters,
@@ -46,27 +38,6 @@ const {
   shiftAnnotationRight,
   shrinkAnnotation,
 } = useAnnotationStore();
-
-const tiptap = shallowRef<Editor | null>(null);
-
-const tiptapAnnotations = ref<Annotation[]>([]);
-
-const converter: StandoffConverter = new StandoffConverter(standoffJson as ApiJson);
-const tiptapContent: TiptapJson = converter.convertStandoffToTipTap();
-
-function initializeTiptap(): void {
-  tiptap.value = new Editor({
-    // TODO: Content comes dynamically
-    content: tiptapContent,
-    extensions: [...getConfiguredExtensions()],
-    autofocus: 'end',
-  });
-}
-
-function destroyTiptap(): void {
-  tiptap.value?.destroy();
-  tiptap.value = null;
-}
 
 const keepTextOnPagination = ref<boolean>(false);
 const newRangeAnchorUuid = ref<string | null>(null);
@@ -526,10 +497,6 @@ export function useEditorStore() {
     keepTextOnPagination,
     lastRangeSnapshot,
     redoStack,
-    tiptap,
-    tiptapAnnotations,
-    destroyTiptap,
-    initializeTiptap,
     execCommand,
     hasUnsavedChanges,
     initializeEditor,

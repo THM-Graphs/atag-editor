@@ -1,10 +1,12 @@
 import { AnnotationData, ApiJson, TiptapMark, TiptapNode, TiptapJson } from '../models/types';
 
 export default class StandoffConverter {
-  private annotationUuidMap: Map<string, AnnotationData>;
+  private annotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
+  private structuralAnnotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
   private standoffJson: ApiJson;
   private indexMap: Map<number, Set<string>> = new Map<number, Set<string>>();
   private runs: TiptapNode[] = [];
+  private tiptapJson: TiptapJson | null = null;
   // TODO: This should come from guidelines, config etc.
   private structuralAnnotationTypes: Set<string> = new Set([
     'p',
@@ -17,20 +19,31 @@ export default class StandoffConverter {
   ]);
 
   constructor(newStandoffJson: ApiJson) {
-    this.annotationUuidMap = new Map<string, AnnotationData>();
     this.standoffJson = newStandoffJson;
 
     this.convertStandoffToTipTap();
   }
 
-  public createIndexMap(): void {
+  public getData(): {
+    annotations: Map<string, AnnotationData>;
+    structuralAnnotations: Map<string, AnnotationData>;
+    tipTapJson: TiptapJson;
+  } {
+    return {
+      annotations: this.annotations,
+      structuralAnnotations: this.structuralAnnotations,
+      tipTapJson: this.tiptapJson as TiptapJson,
+    };
+  }
+
+  private createIndexMap(): void {
     const map: Map<number, Set<string>> = new Map();
 
     for (let i = 0; i < this.standoffJson.text.length; i++) {
       map.set(i, new Set<string>());
     }
 
-    this.annotationUuidMap.values().forEach(annotation => {
+    this.annotations.values().forEach(annotation => {
       const { startIndex, endIndex, uuid, type } = annotation.properties;
 
       // The index map is only for non-structural annotations,
@@ -49,7 +62,7 @@ export default class StandoffConverter {
     this.indexMap = map;
   }
 
-  public createRuns(): void {
+  private createRuns(): void {
     const runs: TiptapNode[] = [];
 
     let currentRun: TiptapNode | null = null;
@@ -58,7 +71,7 @@ export default class StandoffConverter {
       const textAtIndex: string = this.standoffJson.text[i];
       const uuidsAtIndex: Set<string> = this.indexMap.get(i) ?? new Set<string>();
       const annosAtIndex: TiptapMark[] = [...uuidsAtIndex].map(uuid => {
-        const annotation = this.annotationUuidMap.get(uuid);
+        const annotation = this.annotations.get(uuid);
 
         const markData: TiptapMark = {
           type: 'annotation',
@@ -110,19 +123,23 @@ export default class StandoffConverter {
     this.runs = runs;
   }
 
-  public createAnnotationUuidMap(): void {
+  private createAnnotationUuidMaps(): void {
     this.standoffJson.annotations.forEach(a => {
-      this.annotationUuidMap.set(a.properties.uuid, a as AnnotationData);
+      if (this.structuralAnnotationTypes.has(a.properties.type)) {
+        this.structuralAnnotations.set(a.properties.uuid, a as AnnotationData);
+      } else {
+        this.annotations.set(a.properties.uuid, a as AnnotationData);
+      }
     });
   }
 
-  public convertStandoffToTipTap(): TiptapJson {
-    const baseTree: TiptapJson = {
+  public convertStandoffToTipTap(): void {
+    let baseTree: TiptapJson = {
       type: 'doc',
       content: [],
     };
 
-    this.createAnnotationUuidMap();
+    this.createAnnotationUuidMaps();
     this.createIndexMap();
 
     this.createRuns();
@@ -140,6 +157,6 @@ export default class StandoffConverter {
     // 2. Create runs from marks
     // 2.1 Set Map with key = index and value = Set<annotation uuid>
 
-    return baseTree;
+    this.tiptapJson = baseTree;
   }
 }

@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { EditorContent, Extension } from '@tiptap/vue-3';
-import { onMounted, onUnmounted, provide } from 'vue';
-
-import { useEditorStore } from '../store/editor';
+import { EditorContent } from '@tiptap/vue-3';
+import { onMounted, onUnmounted } from 'vue';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
 import { Annotation } from '../models/types';
 import { Card } from 'primevue';
 import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
 import Button from 'primevue/button';
+import { useTiptapStore } from '../store/tiptap';
 
-const { tiptap, initializeTiptap, destroyTiptap, tiptapAnnotations } = useEditorStore();
+const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
 
 onMounted(() => initializeTiptap());
 onUnmounted(() => destroyTiptap());
@@ -124,11 +123,11 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
     </div>
     <EditorAnnotationButtonPaneNew />
     <div class="flex">
-      <editor-content id="editor" :editor="tiptap" />
+      <editor-content id="editor" :editor="tiptap" spellcheck="false" />
       <div>
-        <h3>Annotations</h3>
+        <h3>Annotations ({{ annotations?.size }})</h3>
 
-        <Card v-for="annotation in tiptapAnnotations" :key="annotation.data.properties.uuid">
+        <Card v-for="annotation in annotations?.values()" :key="annotation.data.properties.uuid">
           <template #title>
             <div class="flex items-center gap-1 align-items-center">
               <div class="icon-container" style="width: 20px; height: 20px">

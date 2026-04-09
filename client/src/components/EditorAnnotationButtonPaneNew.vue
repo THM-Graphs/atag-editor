@@ -5,14 +5,13 @@ import AnnotationButton from './AnnotationButton.vue';
 import { Annotation, AnnotationData, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
-import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import ShortcutError from '../utils/errors/shortcut.error';
 import AnnotationRangeError from '../utils/errors/annotationRange.error';
 import { useAppStore } from '../store/app';
-import { useValidateTextSelection } from '../composables/useValidateTextSelection';
 import { useDialog } from 'primevue';
 import AnnotationCreateModal from './AnnotationCreateModal.vue';
+import { useTiptapStore } from '../store/tiptap';
 
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
   useGuidelinesStore();
@@ -20,9 +19,8 @@ const { addToastMessage, createModalInstance, destroyModalInstance } = useAppSto
 const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
 const { createNewEditorTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
-const { isValid: isSelectionValid } = useValidateTextSelection();
 
-const { tiptap, tiptapAnnotations } = useEditorStore();
+const { tiptap, annotations } = useTiptapStore();
 
 const dialog: ReturnType<typeof useDialog> = useDialog();
 
@@ -134,7 +132,7 @@ function addAnnotationToStore(params: { annotation: Annotation; characters: Char
     })
     .run();
 
-  tiptapAnnotations.value.push(params.annotation);
+  annotations.value?.set(params.annotation.data.properties.uuid, params.annotation);
 
   // execCommand('createAnnotation', {
   //   annotation: params.annotation,
