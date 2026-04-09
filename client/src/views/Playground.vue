@@ -3,8 +3,7 @@ import { EditorContent } from '@tiptap/vue-3';
 import { onMounted, onUnmounted } from 'vue';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
 import { Annotation } from '../models/types';
-import { Card } from 'primevue';
-import AnnotationTypeIcon from '../components/AnnotationTypeIcon.vue';
+import EditorAnnotationFormNew from '../components/EditorAnnotationFormNew.vue';
 import Button from 'primevue/button';
 import { useTiptapStore } from '../store/tiptap';
 
@@ -36,12 +35,11 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
 }
 </script>
 <template>
-  <div class="container text-center">
-    <h2>Tiptap Editor</h2>
+  <div class="container">
+    <h2 class="text-center">Tiptap Editor</h2>
 
-    <button @click="handleClick">Log stuff</button>
-
-    <div class="button-group">
+    <div class="button-group text-center">
+      <button @click="handleClick">Log stuff</button>
       <button
         @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
         :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
@@ -123,37 +121,21 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
     </div>
     <EditorAnnotationButtonPaneNew />
     <div class="flex">
+      <div class="table-of-contents">
+        <template v-if="tiptap">
+          <ToC :editor="tiptap" :items="items" />
+        </template>
+      </div>
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
       <div>
         <h3>Annotations ({{ annotations?.size }})</h3>
 
-        <Card v-for="annotation in annotations?.values()" :key="annotation.data.properties.uuid">
-          <template #title>
-            <div class="flex items-center gap-1 align-items-center">
-              <div class="icon-container" style="width: 20px; height: 20px">
-                <AnnotationTypeIcon
-                  :annotationType="
-                    annotation.data.properties.subType ?? annotation.data.properties.type
-                  "
-                />
-              </div>
-              <div class="annotation-type-container">
-                <span class="font-bold">{{
-                  annotation.data.properties.subType ?? annotation.data.properties.type
-                }}</span>
-              </div>
-              <div
-                class="spy pi pi-eye cursor-pointer"
-                title="Show annotated text"
-                @mouseover="toggleTextHightlighting(annotation, 'on')"
-                @mouseleave="toggleTextHightlighting(annotation, 'off')"
-              ></div>
-            </div>
-          </template>
-          <template #content>
-            <p class="m-0"></p>
-          </template>
-        </Card>
+        <template
+          v-for="annotation in annotations?.values()"
+          :key="annotation.data.properties.uuid"
+        >
+          <EditorAnnotationFormNew :annotation="annotation" />
+        </template>
       </div>
     </div>
     <Button label="JSON" @click="() => console.log(tiptap.getJSON())" />

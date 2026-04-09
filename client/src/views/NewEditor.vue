@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { ComputedRef, computed, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   RouteLocationNormalizedLoaded,
   useRoute,
   onBeforeRouteUpdate,
   onBeforeRouteLeave,
 } from 'vue-router';
+import { EditorContent } from '@tiptap/vue-3';
 import { useEventListener, useTitle } from '@vueuse/core';
-import { useCharactersStore } from '../store/characters';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
-import EditorText from '../components/EditorText.vue';
 import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
 import EditorAnnotations from '../components/EditorAnnotations.vue';
 import EditorError from '../components/EditorError.vue';
@@ -21,14 +20,13 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
-import { cloneDeep } from '../utils/helper/helper';
-import { Annotation, Character, CharacterPostData } from '../models/types';
-import { useAnnotationStore } from '../store/annotations';
+import { AnnotationData, TextAccessObject } from '../models/types';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
 import { useAppStore } from '../store/app';
 import PageOverlay from '../components/PageOverlay.vue';
+import { useTiptapStore } from '../store/tiptap';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -38,12 +36,9 @@ interface SidebarConfig {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid = computed<string>(() => route.params.uuid as string);
 
-onUnmounted((): void => {
-  resetCharacters();
-  resetAnnotations();
-  resetEditor();
-  resetHistory();
-});
+const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
+
+onUnmounted(() => destroyTiptap());
 
 onBeforeRouteUpdate(() => preventUserFromRouteLeaving());
 onBeforeRouteLeave(() => preventUserFromRouteLeaving());
@@ -55,55 +50,44 @@ useEventListener('keydown', handleKeyDown);
 
 // Initial page load
 const isLoading = ref<boolean>(true);
-const isValidText = computed<boolean>(
-  () => !textFetchError.value && !annotationFetchError.value && !charactersFetchError.value,
-);
+const isValidText = computed<boolean>(() => !textFetchError.value);
 
 // For fetch during save/cancel action
 const asyncOperationRunning = ref<boolean>(false);
 
 const { api, addToastMessage } = useAppStore();
 
-const {
-  isRedrawMode,
-  redrawMode,
-  hasUnsavedChanges,
-  initializeEditor,
-  initializeHistory,
-  resetEditor,
-  resetHistory,
-  toggleRedrawMode,
-} = useEditorStore();
+const { isRedrawMode, redrawMode, hasUnsavedChanges, toggleRedrawMode } = useEditorStore();
 const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
-const {
-  afterEndIndex,
-  beforeStartIndex,
-  error: charactersFetchError,
-  initialAfterEndCharacter,
-  initialBeforeStartCharacter,
-  initialSnippetCharacters,
-  snippetCharacters,
-  totalCharacters,
-  fetchAndInitializeCharacters,
-  insertSnippetIntoChain,
-  resetCharacters,
-  resetInitialBoundaryCharacters,
-} = useCharactersStore();
-const {
-  error: annotationFetchError,
-  initialSnippetAnnotations,
-  initialTotalAnnotations,
-  snippetAnnotations,
-  totalAnnotations,
-  extractSnippetAnnotations,
-  fetchAndInitializeAnnotations,
-  insertSnippetIntoTotalAnnotations,
-  getAnnotationsToSave,
-  resetAnnotations,
-  updateAnnotationsBeforeSave,
-  updateAnnotationStatuses,
-  updateTruncationStatus,
-} = useAnnotationStore();
+// const {
+//   afterEndIndex,
+//   beforeStartIndex,
+//   error: charactersFetchError,
+//   initialAfterEndCharacter,
+//   initialBeforeStartCharacter,
+//   initialSnippetCharacters,
+//   snippetCharacters,
+//   totalCharacters,
+//   fetchAndInitializeCharacters,
+//   insertSnippetIntoChain,
+//   resetCharacters,
+//   resetInitialBoundaryCharacters,
+// } = useCharactersStore();
+// const {
+//   error: annotationFetchError,
+//   initialSnippetAnnotations,
+//   initialTotalAnnotations,
+//   snippetAnnotations,
+//   totalAnnotations,
+//   extractSnippetAnnotations,
+//   fetchAndInitializeAnnotations,
+//   insertSnippetIntoTotalAnnotations,
+//   getAnnotationsToSave,
+//   resetAnnotations,
+//   updateAnnotationsBeforeSave,
+//   updateAnnotationStatuses,
+//   updateTruncationStatus,
+// } = useAnnotationStore();
 const { shortcutMap, normalizeKeys } = useShortcutsStore();
 
 useTitle(computed(() => `Text | ${text.value?.nodeLabels.join(', ') ?? ''}`));
@@ -138,104 +122,83 @@ const editorRef = ref<HTMLDivElement>(null);
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
-  if (!hasUnsavedChanges()) {
-    console.log('no changes made, no request needed');
-    return;
-  }
-
-  asyncOperationRunning.value = true;
-
-  try {
-    // TODO: Text needs to be saved to when labels are changed
-    // await saveText();
-    await saveCharacters();
-    await saveAnnotations();
-
-    // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
-    updateAnnotationStatuses();
-
-    // Reset initial values of all state components
-    initialText.value = cloneDeep(text.value);
-    initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
-    initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
-
-    // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
-    // since the new snippetAnnotations will be extracted from the new totalAnnotations state
-    extractSnippetAnnotations();
-
-    // Store function is used, combines boundaries resettings
-    resetInitialBoundaryCharacters();
-
-    showMessage('success');
-  } catch (error: unknown) {
-    showMessage('error', error as Error);
-    console.error('Error updating text:', error);
-  } finally {
-    asyncOperationRunning.value = false;
-  }
+  // if (!hasUnsavedChanges()) {
+  //   console.log('no changes made, no request needed');
+  //   return;
+  // }
+  // asyncOperationRunning.value = true;
+  // try {
+  //   // TODO: Text needs to be saved to when labels are changed
+  //   // await saveText();
+  //   await saveCharacters();
+  //   await saveAnnotations();
+  //   // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
+  //   updateAnnotationStatuses();
+  //   // Reset initial values of all state components
+  //   initialText.value = cloneDeep(text.value);
+  //   initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+  //   initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
+  //   // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
+  //   // since the new snippetAnnotations will be extracted from the new totalAnnotations state
+  //   extractSnippetAnnotations();
+  //   // Store function is used, combines boundaries resettings
+  //   resetInitialBoundaryCharacters();
+  //   showMessage('success');
+  // } catch (error: unknown) {
+  //   showMessage('error', error as Error);
+  //   console.error('Error updating text:', error);
+  // } finally {
+  //   asyncOperationRunning.value = false;
+  // }
 }
 
 async function handleCancelChanges(): Promise<void> {
-  text.value = cloneDeep(initialText.value);
-  snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
-  snippetAnnotations.value = cloneDeep(initialSnippetAnnotations.value);
-
-  // TODO: Combine this with extractSnippetAnnotations.
-  updateTruncationStatus();
-
-  totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
-  totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
-
-  initializeHistory();
+  // text.value = cloneDeep(initialText.value);
+  // snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
+  // snippetAnnotations.value = cloneDeep(initialSnippetAnnotations.value);
+  // // TODO: Combine this with extractSnippetAnnotations.
+  // updateTruncationStatus();
+  // totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
+  // totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
+  // initializeHistory();
 }
 
 async function saveCharacters(): Promise<void> {
-  // This can be done within the snippet since changes in the chain can only occur here
-  const { uuidStart, uuidEnd } = findChangesetBoundaries();
-
-  // Insert the snippet into the whole chain to simplify index finding -> only one chain to consider
-  // TODO: This might take a while on longer texts...fix?
-  insertSnippetIntoChain();
-
-  const startNodeIndex = uuidStart
-    ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidStart)
-    : -1;
-
-  let endNodeIndex = uuidEnd
-    ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidEnd)
-    : totalCharacters.value.length;
-
-  if (endNodeIndex === -1) {
-    endNodeIndex = totalCharacters.value.length;
-  }
-
-  const sliceStart: number = startNodeIndex + 1;
-  const sliceEnd: number = endNodeIndex;
-
-  const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
-
-  // TODO: textUuid is not really needed since it is parsed from the url parameter
-  const characterPostData: CharacterPostData = {
-    textUuid: text.value.data.uuid,
-    uuidStart: uuidStart,
-    uuidEnd: uuidEnd,
-    characters: snippetToUpdate.map((c: Character) => c.data),
-    text: totalCharacters.value.map(c => c.data.text).join(''),
-  };
-
-  await api.updateCharacterChain(textUuid.value, characterPostData);
+  // // This can be done within the snippet since changes in the chain can only occur here
+  // const { uuidStart, uuidEnd } = findChangesetBoundaries();
+  // // Insert the snippet into the whole chain to simplify index finding -> only one chain to consider
+  // // TODO: This might take a while on longer texts...fix?
+  // insertSnippetIntoChain();
+  // const startNodeIndex = uuidStart
+  //   ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidStart)
+  //   : -1;
+  // let endNodeIndex = uuidEnd
+  //   ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidEnd)
+  //   : totalCharacters.value.length;
+  // if (endNodeIndex === -1) {
+  //   endNodeIndex = totalCharacters.value.length;
+  // }
+  // const sliceStart: number = startNodeIndex + 1;
+  // const sliceEnd: number = endNodeIndex;
+  // const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
+  // // TODO: textUuid is not really needed since it is parsed from the url parameter
+  // const characterPostData: CharacterPostData = {
+  //   textUuid: text.value.data.uuid,
+  //   uuidStart: uuidStart,
+  //   uuidEnd: uuidEnd,
+  //   characters: snippetToUpdate.map((c: Character) => c.data),
+  //   text: totalCharacters.value.map(c => c.data.text).join(''),
+  // };
+  // await api.updateCharacterChain(textUuid.value, characterPostData);
 }
 
 async function saveAnnotations(): Promise<void> {
-  // Insert into total map since next operations are executed on the total map
-  insertSnippetIntoTotalAnnotations();
-
-  updateAnnotationsBeforeSave();
-
-  // Reduce amount of data that need to sent to the backend
-  const annotationsToSave: Annotation[] = getAnnotationsToSave();
-
-  await api.updateAnnotations(textUuid.value, annotationsToSave);
+  // // Insert into total map since next operations are executed on the total map
+  // insertSnippetIntoTotalAnnotations();
+  // updateAnnotationsBeforeSave();
+  // // Reduce amount of data that need to sent to the backend
+  // const annotationsToSave: Annotation[] = getAnnotationsToSave();
+  // await api.updateAnnotations(textUuid.value, annotationsToSave);
 }
 
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {
@@ -317,57 +280,57 @@ function showMessage(result: 'success' | 'error', error?: Error) {
   });
 }
 
-function findChangesetBoundaries(): {
-  uuidStart: string | null;
-  uuidEnd: string | null;
-} {
-  let uuidStart: string | null = beforeStartIndex.value
-    ? totalCharacters.value[beforeStartIndex.value].data.uuid
-    : null;
+// function findChangesetBoundaries(): {
+//   uuidStart: string | null;
+//   uuidEnd: string | null;
+// } {
+//   let uuidStart: string | null = beforeStartIndex.value
+//     ? totalCharacters.value[beforeStartIndex.value].data.uuid
+//     : null;
 
-  let uuidEnd: string | null = afterEndIndex.value
-    ? totalCharacters.value[afterEndIndex.value].data.uuid
-    : null;
+//   let uuidEnd: string | null = afterEndIndex.value
+//     ? totalCharacters.value[afterEndIndex.value].data.uuid
+//     : null;
 
-  for (let index = 0; index < snippetCharacters.value.length; index++) {
-    if (
-      snippetCharacters.value[index].data.uuid !== initialSnippetCharacters.value[index]?.data.uuid
-    ) {
-      break;
-    }
+//   for (let index = 0; index < snippetCharacters.value.length; index++) {
+//     if (
+//       snippetCharacters.value[index].data.uuid !== initialSnippetCharacters.value[index]?.data.uuid
+//     ) {
+//       break;
+//     }
 
-    uuidStart = snippetCharacters.value[index].data.uuid;
+//     uuidStart = snippetCharacters.value[index].data.uuid;
 
-    if (
-      index === snippetCharacters.value.length - 1 &&
-      snippetCharacters.value.length >= initialSnippetCharacters.value.length
-    ) {
-      uuidStart = beforeStartIndex.value
-        ? totalCharacters.value[beforeStartIndex.value].data.uuid
-        : null;
-    }
-  }
+//     if (
+//       index === snippetCharacters.value.length - 1 &&
+//       snippetCharacters.value.length >= initialSnippetCharacters.value.length
+//     ) {
+//       uuidStart = beforeStartIndex.value
+//         ? totalCharacters.value[beforeStartIndex.value].data.uuid
+//         : null;
+//     }
+//   }
 
-  const reversedCharacters: Character[] = [...snippetCharacters.value].reverse();
-  const reversedInitialCharacters: Character[] = [...initialSnippetCharacters.value].reverse();
+//   const reversedCharacters: Character[] = [...snippetCharacters.value].reverse();
+//   const reversedInitialCharacters: Character[] = [...initialSnippetCharacters.value].reverse();
 
-  for (let index = 0; index < reversedCharacters.length; index++) {
-    if (reversedCharacters[index].data.uuid !== reversedInitialCharacters[index]?.data.uuid) {
-      break;
-    }
+//   for (let index = 0; index < reversedCharacters.length; index++) {
+//     if (reversedCharacters[index].data.uuid !== reversedInitialCharacters[index]?.data.uuid) {
+//       break;
+//     }
 
-    uuidEnd = reversedCharacters[index].data.uuid;
+//     uuidEnd = reversedCharacters[index].data.uuid;
 
-    if (
-      index === reversedCharacters.length - 1 &&
-      reversedCharacters.length >= reversedInitialCharacters.length
-    ) {
-      uuidEnd = afterEndIndex.value ? totalCharacters.value[afterEndIndex.value].data.uuid : null;
-    }
-  }
+//     if (
+//       index === reversedCharacters.length - 1 &&
+//       reversedCharacters.length >= reversedInitialCharacters.length
+//     ) {
+//       uuidEnd = afterEndIndex.value ? totalCharacters.value[afterEndIndex.value].data.uuid : null;
+//     }
+//   }
 
-  return { uuidStart, uuidEnd };
-}
+//   return { uuidStart, uuidEnd };
+// }
 
 function preventUserFromPageLeaving(event: BeforeUnloadEvent): string {
   if (!isValidText.value) {
@@ -402,6 +365,8 @@ function preventUserFromRouteLeaving(): boolean {
   if (!answer) {
     return false;
   }
+
+  return true;
 }
 
 watch(
@@ -412,26 +377,32 @@ watch(
     // TODO: This needs refactoring. Centralize fetches, split fetch/initialize logic
     await fetchAndInitializeText(textUuid.value);
 
+    const text: TextAccessObject = await api.getTextAccessObject(textUuid.value);
+
     if (!isValidText.value) {
       isLoading.value = false;
       return;
     }
 
-    await fetchAndInitializeCharacters(text.value.data.uuid);
+    // await fetchAndInitializeCharacters(text.value.data.uuid);
 
-    if (charactersFetchError.value) {
-      isLoading.value = false;
-      return;
-    }
+    // if (charactersFetchError.value) {
+    //   isLoading.value = false;
+    //   return;
+    // }
 
-    await fetchAndInitializeAnnotations(text.value.data.uuid);
+    const fetchedAnnotations: AnnotationData[] = await api.getAnnotations('text', textUuid.value);
 
-    if (annotationFetchError.value) {
-      isLoading.value = false;
-      return;
-    }
+    // if (annotationFetchError.value) {
+    //   isLoading.value = false;
+    //   return;
+    // }
 
-    initializeEditor();
+    const standoffObject = { text: text.text.data.text, annotations: fetchedAnnotations };
+
+    initializeTiptap(standoffObject);
+
+    console.log('anno count: ', fetchedAnnotations.length);
 
     isLoading.value = false;
   },
@@ -486,7 +457,88 @@ watch(
     >
       <EditorHeader ref="labelInputRef" />
       <EditorAnnotationButtonPane />
-      <EditorText ref="editorRef" :async-operation-running="asyncOperationRunning" />
+      <div class="button-group text-center">
+        <button
+          @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
+          :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
+        >
+          H1
+        </button>
+        <button
+          @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
+          :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
+        >
+          H2
+        </button>
+        <button
+          @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
+          :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
+        >
+          H3
+        </button>
+        <button
+          @click="tiptap?.chain().focus().setParagraph().run()"
+          :class="{ 'is-active': tiptap?.isActive('paragraph') }"
+        >
+          Paragraph
+        </button>
+        <button
+          @click="tiptap?.chain().focus().toggleBold().run()"
+          :class="{ 'is-active': tiptap?.isActive('bold') }"
+        >
+          Bold
+        </button>
+        <button
+          @click="tiptap?.chain().focus().setTextAlign('left').run()"
+          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
+        >
+          <-- Global left
+        </button>
+        <button
+          @click="tiptap?.chain().focus().setTextAlign('right').run()"
+          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
+        >
+          Global right --\>
+        </button>
+        <button
+          @click="tiptap?.chain().focus().setTextAlign('center').run()"
+          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
+        >
+          Global center
+        </button>
+        <button
+          @click="tiptap?.chain().focus().increaseLineHeight().run()"
+          :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
+        >
+          lineheight UP
+        </button>
+        <button
+          @click="tiptap?.chain().focus().decreaseLineHeight().run()"
+          :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
+        >
+          lineheight DOWN
+        </button>
+
+        <button
+          @click="
+            tiptap
+              ?.chain()
+              .focus()
+              .setZeroPointAnnotation({
+                type: 'deleted',
+                subType: '',
+                isZeroPoint: true,
+                uuid: '123',
+              })
+              .run()
+          "
+          :class="{ 'is-active': tiptap?.isActive('zeroPointAnnotation') }"
+        >
+          Zero point test
+        </button>
+      </div>
+      <editor-content id="editor" :editor="tiptap" spellcheck="false" />
+
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
     <EditorResizer

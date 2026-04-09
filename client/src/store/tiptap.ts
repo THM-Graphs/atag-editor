@@ -13,8 +13,10 @@ const tiptap = shallowRef<Editor | null>(null);
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
 
-function initializeTiptap(): void {
-  const converter: StandoffConverter = new StandoffConverter(standoffJson as ApiJson);
+function initializeTiptap(standoffObject?: { text: string; annotations: AnnotationData[] }): void {
+  const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
+
+  const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
   const { tipTapJson, annotations, structuralAnnotations } = converter.getData();
 
   const annos = createAnnotationObjects(annotations);
@@ -28,6 +30,27 @@ function initializeTiptap(): void {
     extensions: [...getConfiguredExtensions()],
     autofocus: 'end',
   });
+}
+
+function createExtendedStandoffObject(standoffObject: {
+  text: string;
+  annotations: AnnotationData[];
+}): { text: string; annotations: AnnotationData[] } {
+  const extended = cloneDeep(standoffObject);
+  extended.annotations.push({
+    additionalTexts: [],
+    properties: {
+      text: standoffJson.text,
+      startIndex: 0,
+      uuid: 'abc123',
+      subType: '',
+      endIndex: standoffJson.text.length - 1,
+      type: 'p',
+    },
+    entities: [],
+  });
+
+  return extended;
 }
 
 function createAnnotationObjects(
