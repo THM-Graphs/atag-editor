@@ -7,7 +7,7 @@ import {
   onBeforeRouteLeave,
 } from 'vue-router';
 import { EditorContent } from '@tiptap/vue-3';
-import { useEventListener, useTitle } from '@vueuse/core';
+import { useEventListener, useTitle, useDebounceFn } from '@vueuse/core';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
@@ -36,7 +36,11 @@ interface SidebarConfig {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid = computed<string>(() => route.params.uuid as string);
 
-const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
+const { tiptap, initializeTiptap, destroyTiptap, annotations, onViewportChange } = useTiptapStore();
+
+const handleScroll = useDebounceFn(onViewportChange, 100);
+
+useEventListener(window, 'scroll', handleScroll, { capture: true, passive: true });
 
 onUnmounted(() => destroyTiptap());
 

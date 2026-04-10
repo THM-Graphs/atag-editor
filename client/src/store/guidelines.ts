@@ -12,6 +12,7 @@ import { Bold } from '@tiptap/extension-bold';
 import { TextAlign } from './TextAlign';
 import { LineHeight } from './LineHeight';
 import { AnnotationMark } from '../services/annotationMark';
+import { AnnotationDecorations } from '../services/annotationDecorations';
 import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 
 declare module '@tiptap/core' {
@@ -383,6 +384,7 @@ export function useGuidelinesStore() {
       Heading,
       Bold,
       AnnotationMark,
+      AnnotationDecorations,
       // UniqueID.configure({
       //   types: 'all',
       //   attributeName: 'anno-uuid',

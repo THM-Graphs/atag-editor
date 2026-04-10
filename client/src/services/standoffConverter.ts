@@ -148,7 +148,13 @@ export default class StandoffConverter {
       .filter(a => a.properties.type === 'p')
       .map(a => ({
         type: 'paragraph',
-        content: this.runs,
+        content: [
+          {
+            type: 'text',
+            text: this.standoffJson.text,
+            marks: [],
+          },
+        ],
       }));
 
     baseTree.content = tree;

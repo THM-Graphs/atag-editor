@@ -1,14 +1,23 @@
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import { Annotation, AnnotationData, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import { useGuidelinesStore } from '../store/guidelines';
+import { useFilterStore } from '../store/filter';
 import { cloneDeep } from '../utils/helper/helper';
+import {
+  initializeAnnotationDecorations,
+  syncAnnotationPositions,
+  updateAnnotationFilter,
+  updateAnnotationViewport,
+} from '../services/annotationDecorations';
 
 const { getConfiguredExtensions } = useGuidelinesStore();
+const { selectedOptions } = useFilterStore();
 
 const tiptap = shallowRef<Editor | null>(null);
+let stopFilterWatch: (() => void) | null = null;
 
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
@@ -17,18 +26,47 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
 
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
-  const { tipTapJson, annotations, structuralAnnotations } = converter.getData();
+  const {
+    tipTapJson,
+    annotations: annotationDtos,
+    structuralAnnotations: structuralAnnotationDtos,
+  } = converter.getData();
 
-  const annos = createAnnotationObjects(annotations);
-  const structuralAnnos = createAnnotationObjects(structuralAnnotations);
-
-  setAnnotations({ annotations: annos, structuralAnnotations: structuralAnnos });
+  setAnnotations({
+    annotations: createAnnotationObjects(annotationDtos),
+    structuralAnnotations: createAnnotationObjects(structuralAnnotationDtos),
+  });
 
   tiptap.value = new Editor({
-    // TODO: Content comes dynamically
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'end',
+  });
+
+  initializeAnnotationDecorations(tiptap.value, annotationDtos, selectedOptions.value);
+
+  stopFilterWatch?.();
+  stopFilterWatch = watch(selectedOptions, types => {
+    console.log('filter hit');
+    if (tiptap.value) updateAnnotationFilter(tiptap.value, types);
+  });
+}
+
+function syncAnnotationsForSave(): void {
+  if (!tiptap.value || !annotations.value) return;
+
+  const annotationDataMap = new Map<string, AnnotationData>(
+    [...annotations.value.entries()].map(([uuid, anno]) => [uuid, anno.data]),
+  );
+
+  syncAnnotationPositions(tiptap.value.state, annotationDataMap);
+
+  annotationDataMap.forEach((data, uuid) => {
+    const anno = annotations.value!.get(uuid);
+    if (anno) {
+      anno.data.properties.startIndex = data.properties.startIndex;
+      anno.data.properties.endIndex = data.properties.endIndex;
+    }
   });
 }
 
@@ -76,6 +114,8 @@ function createAnnotationObjects(
 }
 
 function destroyTiptap(): void {
+  stopFilterWatch?.();
+  stopFilterWatch = null;
   tiptap.value?.destroy();
   tiptap.value = null;
 }
@@ -87,6 +127,10 @@ function setAnnotations(data: {
   structuralAnnotations.value = data.structuralAnnotations;
   annotations.value = data.annotations;
 }
+function onViewportChange(): void {
+  if (tiptap.value) updateAnnotationViewport(tiptap.value);
+}
+
 export function useTiptapStore() {
   return {
     annotations,
@@ -94,6 +138,7 @@ export function useTiptapStore() {
     tiptap,
     destroyTiptap,
     initializeTiptap,
+    onViewportChange,
     setAnnotations,
   };
 }
