@@ -11,6 +11,7 @@
   "dependencies": {
     "@primevue/themes": "^4.0.0-rc.2",
     "@tiptap/extension-bold": "^3.21.0",
+    "@tiptap/extension-hard-break": "^3.22.3",
     "@tiptap/extension-link": "^3.22.0",
     "@tiptap/extension-list": "^3.22.3",
     "@tiptap/extension-table": "^3.22.3",

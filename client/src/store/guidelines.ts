@@ -9,6 +9,7 @@ import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
 import { ListKit } from '@tiptap/extension-list';
 import UniqueID from '@tiptap/extension-unique-id';
+import HardBreak from '@tiptap/extension-hard-break';
 import { TableKit } from '@tiptap/extension-table';
 import { UndoRedo } from '@tiptap/extensions';
 import { Gapcursor } from '@tiptap/extensions';
