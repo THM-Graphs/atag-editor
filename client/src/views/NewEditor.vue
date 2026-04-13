@@ -489,36 +489,19 @@ watch(
           Bold
         </button>
         <button
-          @click="tiptap?.chain().focus().setTextAlign('left').run()"
-          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
+          @click="
+            tiptap?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          "
         >
-          <-- Global left
-        </button>
-        <button
-          @click="tiptap?.chain().focus().setTextAlign('right').run()"
-          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
-        >
-          Global right --\>
-        </button>
-        <button
-          @click="tiptap?.chain().focus().setTextAlign('center').run()"
-          :class="{ 'is-active': tiptap?.isActive('textAlign') }"
-        >
-          Global center
-        </button>
-        <button
-          @click="tiptap?.chain().focus().increaseLineHeight().run()"
-          :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
-        >
-          lineheight UP
-        </button>
-        <button
-          @click="tiptap?.chain().focus().decreaseLineHeight().run()"
-          :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
-        >
-          lineheight DOWN
+          Insert table
         </button>
 
+        <button
+          @click="tiptap?.chain().focus().toggleBulletList().run()"
+          :class="{ 'is-active': tiptap?.isActive('bulletList') }"
+        >
+          Toggle bullet list
+        </button>
         <button
           @click="
             tiptap
@@ -538,7 +521,6 @@ watch(
         </button>
       </div>
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
-
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
     <EditorResizer
@@ -559,4 +541,85 @@ watch(
   </div>
 </template>
 
-<style scoped></style>
+<style>
+:root {
+  --gray-1: rgba(61, 37, 20, 0.05);
+  --gray-2: rgba(61, 37, 20, 0.08);
+  --gray-3: rgba(61, 37, 20, 0.12);
+  --gray-4: rgba(53, 38, 28, 0.3);
+  --gray-5: rgba(28, 25, 23, 0.6);
+  --purple: #6a00f5;
+}
+/* Table-specific styling */
+table {
+  border-collapse: collapse;
+  margin: 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+
+  td,
+  th {
+    border: 1px solid var(--gray-3);
+    box-sizing: border-box;
+    min-width: 1em;
+    padding: 6px 8px;
+    position: relative;
+    vertical-align: top;
+
+    > * {
+      margin-bottom: 0;
+    }
+  }
+
+  th {
+    background-color: var(--gray-1);
+    font-weight: bold;
+    text-align: left;
+  }
+
+  .selectedCell:after {
+    background: var(--gray-2);
+    content: '';
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+  }
+
+  .column-resize-handle {
+    background-color: var(--purple);
+    bottom: -2px;
+    pointer-events: none;
+    position: absolute;
+    right: -2px;
+    top: 0;
+    width: 4px;
+  }
+}
+
+.tableWrapper {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+&.resize-cursor {
+  cursor: ew-resize;
+  cursor: col-resize;
+}
+
+/* List styles */
+ul,
+ol {
+  padding: 0 1rem;
+  margin: 1.25rem 1rem 1.25rem 0.4rem;
+
+  li p {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+}
+</style>
