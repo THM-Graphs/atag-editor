@@ -2,26 +2,6 @@ import { computed, readonly, ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
-import { Extension } from '@tiptap/vue-3';
-import Heading from '@tiptap/extension-heading';
-import Document from '@tiptap/extension-document';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
-import { ListKit } from '@tiptap/extension-list';
-import UniqueID from '@tiptap/extension-unique-id';
-import HardBreak from '@tiptap/extension-hard-break';
-import { TableKit } from '@tiptap/extension-table';
-import { UndoRedo } from '@tiptap/extensions';
-import { Gapcursor } from '@tiptap/extensions';
-import { AnnotationMark } from '../services/annotationMark';
-import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
-declare module '@tiptap/core' {
-  interface Commands<ReturnType> {
-    customHeading: {
-      toggleCustomHeading: () => ReturnType;
-    };
-  }
-}
 
 const guidelines = ref<IGuidelines>();
 const isFetching = ref<boolean>(false);
@@ -306,28 +286,6 @@ export function useGuidelinesStore() {
     );
   }
 
-  function getConfiguredExtensions(): Extension[] {
-    return [
-      Document,
-      Paragraph,
-      Text,
-      Heading,
-      TableKit.configure({
-        table: { resizable: true },
-      }),
-      ListKit,
-      Gapcursor,
-      UndoRedo,
-      AnnotationMark,
-      ZeroPointAnnotation,
-      // UniqueID.configure({
-      //   types: 'all',
-      //   attributeName: 'anno-uuid',
-      //   generateID: () => crypto.randomUUID(),
-      // }),
-    ];
-  }
-
   return {
     availableCollectionLabels,
     error: readonly(error),
@@ -347,7 +305,6 @@ export function useGuidelinesStore() {
     getCollectionAnnotationFields,
     getCollectionAnnotationConfig,
     getCollectionConfigFields,
-    getConfiguredExtensions,
     initializeGuidelines,
   };
 }

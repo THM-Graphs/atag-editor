@@ -2,12 +2,13 @@
 import { EditorContent } from '@tiptap/vue-3';
 import { onMounted, onUnmounted } from 'vue';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
+import EditorToC from '../components/EditorToC.vue';
 import { Annotation } from '../models/types';
 import EditorAnnotationFormNew from '../components/EditorAnnotationFormNew.vue';
 import Button from 'primevue/button';
 import { useTiptapStore } from '../store/tiptap';
 
-const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
+const { tiptap, initializeTiptap, destroyTiptap, annotations, items } = useTiptapStore();
 
 onMounted(() => initializeTiptap());
 onUnmounted(() => destroyTiptap());
@@ -121,11 +122,7 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
     </div>
     <EditorAnnotationButtonPaneNew />
     <div class="flex">
-      <div class="table-of-contents">
-        <template v-if="tiptap">
-          <ToC :editor="tiptap" :items="items" />
-        </template>
-      </div>
+      <EditorToC />
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
       <div>
         <h3>Annotations ({{ annotations?.size }})</h3>

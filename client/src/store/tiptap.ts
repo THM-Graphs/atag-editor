@@ -1,17 +1,63 @@
 import { ref, shallowRef } from 'vue';
 import { Annotation, AnnotationData, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
+import Heading from '@tiptap/extension-heading';
+import Document from '@tiptap/extension-document';
+import Paragraph from '@tiptap/extension-paragraph';
+import Text from '@tiptap/extension-text';
+import { ListKit } from '@tiptap/extension-list';
+import UniqueID from '@tiptap/extension-unique-id';
+import HardBreak from '@tiptap/extension-hard-break';
+import { TableKit } from '@tiptap/extension-table';
+import { UndoRedo } from '@tiptap/extensions';
+import { Gapcursor } from '@tiptap/extensions';
+import {
+  getHierarchicalIndexes,
+  TableOfContentData,
+  TableOfContents,
+} from '@tiptap/extension-table-of-contents';
+import { AnnotationMark } from '../services/annotationMark';
+import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
-import { useGuidelinesStore } from '../store/guidelines';
 import { cloneDeep } from '../utils/helper/helper';
-
-const { getConfiguredExtensions } = useGuidelinesStore();
 
 const tiptap = shallowRef<Editor | null>(null);
 
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
+const toCItems = ref<TableOfContentData>([]);
+
+function getConfiguredExtensions(): any[] {
+  return [
+    Document,
+    Paragraph,
+    Text,
+    Heading,
+    TableKit.configure({
+      table: { resizable: true },
+    }),
+    TableOfContents.configure({
+      anchorTypes: ['heading', 'paragraph'],
+
+      getIndex: getHierarchicalIndexes,
+      onUpdate: content => {
+        console.log(content);
+        toCItems.value = content;
+      },
+    }),
+    ListKit,
+    Gapcursor,
+    UndoRedo,
+    AnnotationMark,
+    ZeroPointAnnotation,
+    // UniqueID.configure({
+    //   types: 'all',
+    //   attributeName: 'node-uuid',
+    //   generateID: () => crypto.randomUUID(),
+    // }),
+  ];
+}
 
 function initializeTiptap(standoffObject?: { text: string; annotations: AnnotationData[] }): void {
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
@@ -90,6 +136,7 @@ function setAnnotations(data: {
 export function useTiptapStore() {
   return {
     annotations,
+    toCItems,
     structuralAnnotations,
     tiptap,
     destroyTiptap,

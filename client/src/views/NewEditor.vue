@@ -550,6 +550,11 @@ watch(
   --gray-5: rgba(28, 25, 23, 0.6);
   --purple: #6a00f5;
 }
+
+#editor {
+  overflow-y: scroll;
+}
+
 /* Table-specific styling */
 table {
   border-collapse: collapse;
