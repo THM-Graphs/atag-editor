@@ -1,11 +1,16 @@
 import { AnnotationData, ApiJson, TiptapMark, TiptapNode, TiptapJson } from '../models/types';
 
+type TreeNode = {
+  content: string;
+  children: TreeNode[];
+};
+
 export default class StandoffConverter {
   private annotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
   private structuralAnnotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
   private standoffJson: ApiJson;
   private indexMap: Map<number, Set<string>> = new Map<number, Set<string>>();
-  private runs: TiptapNode[] = [];
+  // private runs: TiptapNode[] = [];
   private tiptapJson: TiptapJson | null = null;
   // TODO: This should come from guidelines, config etc.
   private structuralAnnotationTypes: Set<string> = new Set([
@@ -62,12 +67,19 @@ export default class StandoffConverter {
     this.indexMap = map;
   }
 
-  private createRuns(): void {
+  private createRunsForBlock(startIndex: number, endIndex: number): TiptapNode[] {
     const runs: TiptapNode[] = [];
 
+    let isFirstRun: boolean = true;
     let currentRun: TiptapNode | null = null;
 
-    for (let i = 0; i < this.indexMap.size; i++) {
+    currentRun = {
+      type: 'text',
+      text: '',
+      marks: [],
+    };
+
+    for (let i = startIndex; i <= endIndex; i++) {
       const textAtIndex: string = this.standoffJson.text[i];
       const uuidsAtIndex: Set<string> = this.indexMap.get(i) ?? new Set<string>();
       const annosAtIndex: TiptapMark[] = [...uuidsAtIndex].map(uuid => {
@@ -86,41 +98,44 @@ export default class StandoffConverter {
         return markData;
       });
 
-      if (i === 0) {
-        currentRun = {
-          type: 'text',
-          text: textAtIndex,
-          marks: annosAtIndex,
-        };
-      } else {
-        const previousUuids = this.indexMap.get(i - 1) ?? new Set<string>();
+      const previousUuids = this.indexMap.get(i - 1) ?? new Set<string>();
 
-        // If sets are same, push text to it and jump to next loop
+      if (isFirstRun) {
+        currentRun.text += textAtIndex;
+        currentRun.marks = annosAtIndex;
+
+        isFirstRun = false;
+      } else {
+        // If sets are same, just push text to it and jump to next loop
         if (
           previousUuids.difference(uuidsAtIndex).size === 0 &&
-          uuidsAtIndex.difference(previousUuids).size === 0
+          uuidsAtIndex.difference(previousUuids).size === 0 &&
+          !isFirstRun
         ) {
           currentRun!.text += textAtIndex;
 
-          if (i === this.indexMap.size - 1) {
-            runs.push(currentRun as TiptapNode);
-          }
+          // if (i === endIndex - 1) {
+          //   runs.push(currentRun as TiptapNode);
+          // }
 
           continue;
+        } else {
+          // If sets are different, push current run to array and open up new run
+          runs.push(currentRun as TiptapNode);
+
+          currentRun = {
+            type: 'text',
+            text: textAtIndex,
+            marks: annosAtIndex,
+          };
         }
-
-        // Else, push run to array and open up new run
-        runs.push(currentRun as TiptapNode);
-
-        currentRun = {
-          type: 'text',
-          text: textAtIndex,
-          marks: annosAtIndex,
-        };
       }
     }
 
-    this.runs = runs;
+    // Close and push run after the last loops has run
+    runs.push(currentRun as TiptapNode);
+
+    return runs;
   }
 
   private createAnnotationUuidMaps(): void {
@@ -133,7 +148,96 @@ export default class StandoffConverter {
     });
   }
 
+  private getChildren(startIndex: number, endIndex: number): AnnotationData[] {
+    const annotationsBetween: AnnotationData[] = this.standoffJson.annotations.filter(a => {
+      a.properties.startIndex >= startIndex && a.properties.endIndex <= endIndex;
+    });
+
+    return annotationsBetween;
+  }
+
+  private getOrderedChildren(
+    startIndex: number,
+    endIndex: number,
+    annotations: AnnotationData[],
+  ): AnnotationData[] {
+    // const childrenAnnotations: AnnotationData[] = this.getChildren(startIndex, endIndex);
+    const orderedList: AnnotationData[] = [];
+
+    const first = annotations.find(a => a.properties.startIndex === startIndex);
+
+    if (!first) {
+      return orderedList;
+    }
+
+    orderedList.push(first);
+
+    let currentEndIndex: number = first.properties.endIndex;
+
+    // Loop until end is reached
+    while (currentEndIndex <= endIndex) {
+      const anno = annotations.find(a => a.properties.startIndex === currentEndIndex + 1);
+
+      if (!anno) {
+        break;
+      }
+
+      // Push to list
+      orderedList.push(anno);
+
+      // Set new boundary
+      currentEndIndex = anno.properties.endIndex;
+    }
+
+    return orderedList;
+  }
+
+  private walkTree(
+    startIndex: number,
+    endIndex: number,
+    annotations: AnnotationData[],
+    parentUuid?: string,
+  ): TreeNode {
+    const content: string = this.standoffJson.text.slice(startIndex, endIndex + 1);
+
+    // Get direct children within this range, excluding the parent itself
+    let children: AnnotationData[] = this.getOrderedChildren(
+      startIndex,
+      endIndex,
+      annotations,
+    ).filter(a => (parentUuid ? a.properties.uuid !== parentUuid : true));
+
+    return {
+      content,
+      children: children.map(ch => {
+        // Get annotations nested inside this child's range
+        const nestedAnnotations = annotations.filter(
+          a =>
+            a.properties.uuid !== ch.properties.uuid &&
+            a.properties.startIndex >= ch.properties.startIndex &&
+            a.properties.endIndex <= ch.properties.endIndex,
+        );
+
+        return this.walkTree(
+          ch.properties.startIndex,
+          ch.properties.endIndex,
+          nestedAnnotations, // ✅ scoped to this child's range
+          ch.properties.uuid, // ✅ exclude the child itself in next level
+        );
+      }),
+    };
+  }
+
   public convertStandoffToTipTap(): void {
+    const textLength = this.standoffJson.text.length;
+    const annotations = this.standoffJson.annotations.filter(a => a.properties.type === 'p');
+
+    const nodeTree: TreeNode = this.walkTree(0, textLength - 1, annotations);
+
+    console.log(nodeTree);
+
+    // console.log(nodeTree);
+
     let baseTree: TiptapJson = {
       type: 'doc',
       content: [],
@@ -142,14 +246,18 @@ export default class StandoffConverter {
     this.createAnnotationUuidMaps();
     this.createIndexMap();
 
-    this.createRuns();
+    // this.createRunsForBlock();
 
     const tree: TiptapJson[] = this.standoffJson.annotations
       .filter(a => a.properties.type === 'p')
-      .map(a => ({
-        type: 'paragraph',
-        content: this.runs,
-      }));
+      .map(a => {
+        const text = a.properties.text;
+        const runs = this.createRunsForBlock(a.properties.startIndex, a.properties.endIndex);
+        return {
+          type: 'paragraph',
+          content: runs,
+        };
+      });
 
     baseTree.content = tree;
 
