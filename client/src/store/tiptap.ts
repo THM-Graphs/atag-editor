@@ -74,7 +74,7 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     // TODO: Content comes dynamically
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
-    autofocus: 'end',
+    autofocus: 'start',
   });
 }
 
