@@ -1,4 +1,4 @@
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey, Transaction } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/core';
 import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
@@ -16,8 +16,14 @@ type TransactionMetaType =
   | undefined;
 
 type InitMeta = {
-  type: TransactionMetaType;
+  type: 'initialize';
   annotations: Map<string, AnnotationData>;
+  selectedTypes: string[];
+};
+
+type FilterUpdateMeta = {
+  type: 'filterUpdated';
+  selectedTypes: string[];
 };
 
 type AnnotationDecorationState = {
@@ -52,6 +58,7 @@ function createWidgetDecoration(from: number, to: number, annotation: Annotation
   // TODO: Make this also dynamic
   elm.className = 'indicator';
   elm.textContent = '❣';
+  elm.dataset.uuid = annotation.properties.uuid;
 
   // TODO: Is this needed or handled by tiptap?
   elm.style.userSelect = 'false';
@@ -60,6 +67,8 @@ function createWidgetDecoration(from: number, to: number, annotation: Annotation
     side: -1,
     key: `widget-${annotation.properties.uuid}`,
     // ignoreSelection: true,
+    _type: annotation.properties.type,
+    _uuid: annotation.properties.uuid,
   });
 }
 
@@ -69,9 +78,10 @@ function createInlineDecoration(from: number, to: number, annotation: Annotation
     to,
     {
       nodeName: 'span',
-      class: '' + annotation.properties.type,
+      class: [annotation.properties.type, annotation.properties.subType].filter(Boolean).join(' '),
+      'data-uuid': annotation.properties.uuid,
     },
-    { inclusiveEnd: true },
+    { inclusiveEnd: true, _type: annotation.properties.type, _uuid: annotation.properties.uuid },
   );
 }
 
@@ -94,6 +104,24 @@ function createInitialDecorations(annotations: Map<string, AnnotationData>): Dec
   return decos;
 }
 
+function createFilteredDecorations(
+  decorationSet: DecorationSet,
+  filterOptions: {
+    selectedTypes: string[];
+  },
+  tr: Transaction,
+): DecorationSet {
+  const { doc } = tr;
+  const { selectedTypes } = filterOptions;
+
+  // TODO: Implement filter
+  const filteredDecorations: Decoration[] = decorationSet
+    .find(0, Number.MAX_SAFE_INTEGER)
+    .filter(decoration => selectedTypes.includes(decoration.spec._type));
+
+  return DecorationSet.create(doc, filteredDecorations);
+}
+
 export const AnnotationDecoration = Extension.create({
   name: 'annotationDecoration',
 
@@ -109,16 +137,33 @@ export const AnnotationDecoration = Extension.create({
             };
           },
           apply(tr, value): AnnotationDecorationState {
-            const meta: InitMeta | undefined = tr.getMeta('type');
+            const doc: Node = tr.doc;
+            const meta: InitMeta | FilterUpdateMeta | undefined = tr.getMeta('type');
 
             // On initialization, all decorations need to be created at first
             if (meta?.type === 'initialize') {
-              const doc: Node = tr.doc;
-
               const decos: Decoration[] = createInitialDecorations(meta.annotations);
 
               const newAll: DecorationSet = DecorationSet.create(doc, decos);
-              const newFiltered: DecorationSet = newAll;
+              const newFiltered: DecorationSet = createFilteredDecorations(
+                newAll,
+                { selectedTypes: meta.selectedTypes },
+                tr,
+              );
+
+              return {
+                all: newAll,
+                filtered: newFiltered,
+              };
+            } else if (meta?.type === 'filterUpdated') {
+              const newAll: DecorationSet = value.all.map(tr.mapping, tr.doc);
+
+              // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
+              const newFiltered: DecorationSet = createFilteredDecorations(
+                newAll,
+                { selectedTypes: meta.selectedTypes },
+                tr,
+              );
 
               return {
                 all: newAll,
@@ -126,12 +171,12 @@ export const AnnotationDecoration = Extension.create({
               };
             }
 
-            // Remap ALL doc positions if just the document has changed and no custom transaction was dispatched
+            // If just content changed:
+            // Remap ALL doc positions since no custom transaction was dispatched
             const newAll: DecorationSet = value.all.map(tr.mapping, tr.doc);
-
-            // TODO: Apply filter functions
-            // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
-            const newFiltered: DecorationSet = newAll;
+            const newFiltered: DecorationSet = tr.docChanged
+              ? value.filtered.map(tr.mapping, tr.doc)
+              : value.filtered;
 
             return {
               all: newAll,

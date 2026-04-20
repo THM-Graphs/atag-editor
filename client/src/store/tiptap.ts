@@ -1,4 +1,4 @@
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import { Annotation, AnnotationData, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
@@ -23,6 +23,9 @@ import { standoffJson } from '../services/standoffJson';
 import { cloneDeep } from '../utils/helper/helper';
 import { AnnotationDecoration } from '../services/annotationDecoration';
 import { Transaction } from '@tiptap/pm/state';
+import { useFilterStore } from './filter';
+
+const { selectedOptions } = useFilterStore();
 
 const tiptap = shallowRef<Editor | null>(null);
 
@@ -154,6 +157,12 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
 
   setAnnotations({ annotations: annos, structuralAnnotations: structuralAnnos });
 
+  type InitMeta = {
+    type: 'initialize';
+    annotations: Map<string, AnnotationData>;
+    selectedTypes: string[];
+  };
+
   tiptap.value = new Editor({
     // TODO: Content comes dynamically
     content: tipTapJson,
@@ -162,15 +171,40 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     onCreate: ({ editor }) => {
       const tr: Transaction = editor.state.tr;
 
-      tr.setMeta('type', {
+      const meta: InitMeta = {
         type: 'initialize',
         annotations: annotations,
-      });
+        selectedTypes: selectedOptions.value,
+      };
+
+      tr.setMeta('type', meta);
 
       editor.view.dispatch(tr);
     },
   });
 }
+
+type FilterUpdateMeta = {
+  type: 'filterUpdated';
+  selectedTypes: string[];
+};
+
+watch(selectedOptions, newVal => {
+  if (!tiptap.value) {
+    return;
+  }
+
+  const tr: Transaction = tiptap.value.state.tr;
+
+  const meta: FilterUpdateMeta = {
+    type: 'filterUpdated',
+    selectedTypes: newVal,
+  };
+
+  tr.setMeta('type', meta);
+
+  tiptap.value?.view.dispatch(tr);
+});
 
 function createExtendedStandoffObject(standoffObject: {
   text: string;
