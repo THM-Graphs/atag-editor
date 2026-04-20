@@ -21,12 +21,95 @@ import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import { cloneDeep } from '../utils/helper/helper';
+import { AnnotationDecoration } from '../services/annotationDecoration';
 
 const tiptap = shallowRef<Editor | null>(null);
 
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
 const toCItems = ref<TableOfContentData>([]);
+
+const testAnnotations = [
+  {
+    additionalTexts: [],
+    properties: {
+      text: 'niederländische Provinz L',
+      startIndex: 226,
+      uuid: 'df8d7103-74ff-4ffa-b4fb-36693484790f',
+      endIndex: 250,
+      type: 'concept',
+    },
+    entities: [],
+  },
+  {
+    additionalTexts: [],
+    properties: {
+      text: 'Ehemann',
+      startIndex: 2657,
+      uuid: '4ca5076c-6b0c-4ebe-b8e4-3a747d71199f',
+      endIndex: 2663,
+      type: 'concept',
+    },
+    entities: [
+      {
+        nodeLabels: ['Concept'],
+        data: {
+          label: 'Ehemann',
+          uuid: '0172917b-202e-4571-a38e-5d1d34a7cf95',
+        },
+      },
+    ],
+  },
+  {
+    additionalTexts: [],
+    properties: {
+      text: 'Arlon',
+      startIndex: 2632,
+      uuid: '8cbbe9d1-b115-406f-96d1-74441d553388',
+      endIndex: 2636,
+      type: 'place',
+    },
+    entities: [
+      {
+        nodeLabels: ['Place'],
+        data: {
+          label: 'Arlon',
+          uuid: '6540de0f-3931-4fde-852c-d0eb620c314d',
+        },
+      },
+    ],
+  },
+  {
+    additionalTexts: [],
+    properties: {
+      text: 'Provinz Limburg',
+      startIndex: 242,
+      uuid: '9197a8d1-c6d1-4747-b800-b7f8df761687',
+      endIndex: 256,
+      type: 'place',
+    },
+    entities: [
+      {
+        nodeLabels: ['Place'],
+        data: {
+          label: 'Limburg',
+          uuid: 'a8b55639-6195-45b0-a04c-f00f61c27592',
+        },
+      },
+    ],
+  },
+  {
+    additionalTexts: [],
+    properties: {
+      text: ' Limburg war ein historisches Territorium im Heiligen Römischen Reich, dessen Kerngebiet',
+      startIndex: 13,
+      uuid: '5cca91e2-f05b-43e3-bff0-556567829295',
+      endIndex: 100,
+      type: 'commentary',
+    },
+    entities: [],
+  },
+];
 
 function getConfiguredExtensions(): any[] {
   return [
@@ -42,7 +125,6 @@ function getConfiguredExtensions(): any[] {
 
       getIndex: getHierarchicalIndexes,
       onUpdate: content => {
-        console.log(content);
         toCItems.value = content;
       },
     }),
@@ -51,6 +133,9 @@ function getConfiguredExtensions(): any[] {
     UndoRedo,
     AnnotationMark,
     ZeroPointAnnotation,
+    AnnotationDecoration.configure({
+      initialAnnotations: testAnnotations,
+    }),
     // UniqueID.configure({
     //   types: 'all',
     //   attributeName: 'node-uuid',

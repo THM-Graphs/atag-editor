@@ -135,6 +135,14 @@ export default class StandoffConverter {
     // Close and push run after the last loops has run
     runs.push(currentRun as TiptapNode);
 
+    return [
+      {
+        type: 'text',
+        text: this.standoffJson.text.slice(startIndex, endIndex + 1),
+        marks: [],
+      },
+    ];
+
     return runs;
   }
 
