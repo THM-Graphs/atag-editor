@@ -242,7 +242,7 @@ export default class StandoffConverter {
 
     const nodeTree: TreeNode = this.walkTree(0, textLength - 1, annotations);
 
-    console.log(nodeTree);
+    // console.log(nodeTree);
 
     // console.log(nodeTree);
 

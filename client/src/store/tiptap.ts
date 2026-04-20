@@ -22,6 +22,7 @@ import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import { cloneDeep } from '../utils/helper/helper';
 import { AnnotationDecoration } from '../services/annotationDecoration';
+import { Transaction } from '@tiptap/pm/state';
 
 const tiptap = shallowRef<Editor | null>(null);
 
@@ -133,9 +134,7 @@ function getConfiguredExtensions(): any[] {
     UndoRedo,
     AnnotationMark,
     ZeroPointAnnotation,
-    AnnotationDecoration.configure({
-      initialAnnotations: testAnnotations,
-    }),
+    AnnotationDecoration,
     // UniqueID.configure({
     //   types: 'all',
     //   attributeName: 'node-uuid',
@@ -160,6 +159,16 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
+    onCreate: ({ editor }) => {
+      const tr: Transaction = editor.state.tr;
+
+      tr.setMeta('type', {
+        type: 'initialize',
+        annotations: annotations,
+      });
+
+      editor.view.dispatch(tr);
+    },
   });
 }
 

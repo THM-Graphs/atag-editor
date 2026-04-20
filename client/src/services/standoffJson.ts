@@ -59,6 +59,17 @@ export const standoffJson = {
     {
       additionalTexts: [],
       properties: {
+        text: 'd ',
+        startIndex: 112,
+        uuid: 'xf8de103-74ff-wffa-b4fb-36693484790f',
+        endIndex: 113,
+        type: 'deleted',
+      },
+      entities: [],
+    },
+    {
+      additionalTexts: [],
+      properties: {
         text: 'niederländische Provinz L',
         startIndex: 226,
         uuid: 'df8d7103-74ff-4ffa-b4fb-36693484790f',
