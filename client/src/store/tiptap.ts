@@ -214,11 +214,11 @@ function createExtendedStandoffObject(standoffObject: {
   extended.annotations.push({
     additionalTexts: [],
     properties: {
-      text: standoffJson.text,
+      text: standoffObject.text,
       startIndex: 0,
       uuid: 'abc123',
       subType: '',
-      endIndex: standoffJson.text.length - 1,
+      endIndex: standoffObject.text.length - 1,
       type: 'p',
     },
     entities: [],

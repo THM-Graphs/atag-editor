@@ -31,9 +31,31 @@ type AnnotationDecorationState = {
   filtered: DecorationSet;
 };
 
-// TODO: Implement
-function indexToEditorPos(index: number): number {
-  return index;
+function indexToPosition(doc: Node, index: number): number {
+  let remaining: number = index;
+  let pos: number = 0;
+
+  doc.descendants((node: Node, nodePos: number) => {
+    // Position already found, do not further descend into the node subtree
+    if (remaining < 0) {
+      return false;
+    }
+
+    if (node.isText) {
+      // Count characters in text node. If annotation index is inside it, return its position. Else,
+      // subtract the number of characters in the text node from the remaining index.
+      if (remaining <= node.text!.length) {
+        pos = nodePos + remaining;
+        remaining = -1;
+
+        return false;
+      }
+
+      remaining -= node.text!.length;
+    }
+  });
+
+  return pos;
 }
 
 function isZeroPoint(annotation: AnnotationData): boolean {
@@ -85,14 +107,19 @@ function createInlineDecoration(from: number, to: number, annotation: Annotation
   );
 }
 
-function createInitialDecorations(annotations: Map<string, AnnotationData>): Decoration[] {
+function createInitialDecorations(
+  doc: Node,
+  annotations: Map<string, AnnotationData>,
+): Decoration[] {
   const decos: Decoration[] = [];
 
-  for (const annotation of annotations.values()) {
+  for (const annotation of [...annotations.values()].toSorted(
+    (a, b) => a.properties.startIndex - b.properties.startIndex,
+  )) {
     const { startIndex, endIndex } = annotation.properties;
 
-    const start: number = indexToEditorPos(startIndex);
-    const end: number = indexToEditorPos(endIndex);
+    const start: number = indexToPosition(doc, startIndex);
+    const end: number = indexToPosition(doc, endIndex + 1);
 
     if (isZeroPoint(annotation)) {
       decos.push(createWidgetDecoration(start, end, annotation));
@@ -136,13 +163,14 @@ export const AnnotationDecoration = Extension.create({
               filtered: DecorationSet.empty,
             };
           },
-          apply(tr, value): AnnotationDecorationState {
+
+          apply(tr, value, _, newState): AnnotationDecorationState {
             const doc: Node = tr.doc;
             const meta: InitMeta | FilterUpdateMeta | undefined = tr.getMeta('type');
 
             // On initialization, all decorations need to be created at first
             if (meta?.type === 'initialize') {
-              const decos: Decoration[] = createInitialDecorations(meta.annotations);
+              const decos: Decoration[] = createInitialDecorations(newState.doc, meta.annotations);
 
               const newAll: DecorationSet = DecorationSet.create(doc, decos);
               const newFiltered: DecorationSet = createFilteredDecorations(
