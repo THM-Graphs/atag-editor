@@ -7,6 +7,18 @@ import { AnnotationData, AnnotationType } from '../models/types';
 
 const { getAnnotationConfig } = useGuidelinesStore();
 
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    annotationDecoration: {
+      initializeDecorations: (
+        annotations: Map<string, AnnotationData>,
+        selectedTypes: string[],
+      ) => ReturnType;
+      applyFilterUpdates: (selectedTypes: string[]) => ReturnType;
+    };
+  }
+}
+
 type TransactionMetaType =
   | 'annotationAdded'
   | 'annotationDeleted'
@@ -151,6 +163,43 @@ function createFilteredDecorations(
 
 export const AnnotationDecoration = Extension.create({
   name: 'annotationDecoration',
+
+  addCommands() {
+    return {
+      initializeDecorations:
+        (annotations: Map<string, AnnotationData>, selectedTypes: string[]) =>
+        ({ tr, dispatch }) => {
+          const meta: InitMeta = {
+            type: 'initialize',
+            annotations: annotations,
+            selectedTypes,
+          };
+
+          tr.setMeta(this.options.name, meta);
+
+          dispatch?.(tr);
+
+          return true;
+        },
+
+      applyFilterUpdates:
+        (selectedTypes: string[]) =>
+        ({ tr, dispatch }) => {
+          console.log(dispatch);
+
+          const meta: FilterUpdateMeta = {
+            type: 'filterUpdated',
+            selectedTypes,
+          };
+
+          tr.setMeta(this.options.name, meta);
+
+          dispatch?.(tr);
+
+          return true;
+        },
+    };
+  },
 
   addProseMirrorPlugins() {
     return [
