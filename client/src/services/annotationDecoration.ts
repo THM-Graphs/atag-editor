@@ -73,7 +73,7 @@ function isZeroPoint(annotation: AnnotationData): boolean {
   return config.isZeroPoint ? true : false;
 }
 
-function createWidgetDecoration(from: number, to: number, annotation: AnnotationData): Decoration {
+function createWidgetDecoration(after: number, annotation: AnnotationData): Decoration {
   // Widget decoration for the comment indicator
   const elm: HTMLSpanElement = document.createElement('span');
 
@@ -85,7 +85,7 @@ function createWidgetDecoration(from: number, to: number, annotation: Annotation
   // TODO: Is this needed or handled by tiptap?
   elm.style.userSelect = 'false';
 
-  return Decoration.widget(from, elm, {
+  return Decoration.widget(after, elm, {
     side: -1,
     key: `widget-${annotation.properties.uuid}`,
     // ignoreSelection: true,
@@ -122,7 +122,7 @@ function createInitialDecorations(
     const end: number = indexToPosition(doc, endIndex + 1);
 
     if (isZeroPoint(annotation)) {
-      decos.push(createWidgetDecoration(start, end, annotation));
+      decos.push(createWidgetDecoration(start + 1, annotation));
     } else {
       decos.push(createInlineDecoration(start, end, annotation));
     }
