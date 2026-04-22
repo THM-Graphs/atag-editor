@@ -175,7 +175,7 @@ export const AnnotationDecoration = Extension.create({
             selectedTypes,
           };
 
-          tr.setMeta(this.options.name, meta);
+          tr.setMeta(this.name, meta);
 
           dispatch?.(tr);
 
@@ -192,7 +192,7 @@ export const AnnotationDecoration = Extension.create({
             selectedTypes,
           };
 
-          tr.setMeta(this.options.name, meta);
+          tr.setMeta(this.name, meta);
 
           dispatch?.(tr);
 
@@ -215,7 +215,8 @@ export const AnnotationDecoration = Extension.create({
 
           apply(tr, value, _, newState): AnnotationDecorationState {
             const doc: Node = tr.doc;
-            const meta: InitMeta | FilterUpdateMeta | undefined = tr.getMeta('type');
+            const meta: InitMeta | FilterUpdateMeta | undefined =
+              tr.getMeta('annotationDecoration');
 
             // On initialization, all decorations need to be created at first
             if (meta?.type === 'initialize') {
