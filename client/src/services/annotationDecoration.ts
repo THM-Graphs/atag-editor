@@ -14,6 +14,7 @@ export const ANNOTATION_DECORATION_KEY = new PluginKey<AnnotationDecorationState
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     annotationDecoration: {
+      addAnnotationDecoration: (annotation: AnnotationData, from: number, to: number) => ReturnType;
       initializeDecorations: (
         annotations: Map<string, AnnotationData>,
         selectedTypes: string[],
@@ -34,7 +35,14 @@ type AnnotationDecorationState = {
   selectedTypes: string[];
 };
 
-type TransactionMeta = InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
+type TransactionMeta = AddMeta | InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
+
+type AddMeta = {
+  type: 'addAnnotationDecoration';
+  annotation: AnnotationData;
+  from: number;
+  to: number;
+};
 
 type InitMeta = {
   type: 'initialize';
@@ -180,6 +188,22 @@ export const AnnotationDecoration = Extension.create({
 
   addCommands() {
     return {
+      addAnnotationDecoration:
+        (annotation: AnnotationData, from: number, to: number) =>
+        ({ tr, dispatch }) => {
+          const meta: AddMeta = {
+            type: 'addAnnotationDecoration',
+            annotation,
+            from,
+            to,
+          };
+
+          tr.setMeta(ANNOTATION_DECORATION_KEY, meta);
+
+          dispatch?.(tr);
+
+          return true;
+        },
       initializeDecorations:
         (
           annotations: Map<string, AnnotationData>,
@@ -202,7 +226,6 @@ export const AnnotationDecoration = Extension.create({
 
           return true;
         },
-
       applyFilterUpdates:
         (selectedTypes: string[]) =>
         ({ tr, dispatch }) => {
@@ -319,6 +342,26 @@ export const AnnotationDecoration = Extension.create({
                 ...oldDecorations,
                 visibleFrom: meta.visibleFrom,
                 visibleTo: meta.visibleTo,
+                all: newAll,
+                filtered: newFiltered,
+              };
+            } else if (meta?.type === 'addAnnotationDecoration') {
+              // TOD: Add this to history...
+              const annoDeco = createInlineDecoration(meta.from, meta.to, meta.annotation);
+
+              const newAll: DecorationSet = oldDecorations.all
+                .add(doc, [annoDeco])
+                .map(tr.mapping, tr.doc);
+
+              // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
+              const newFiltered: DecorationSet = createFilteredDecorations(
+                newAll,
+                { ...oldDecorations },
+                tr,
+              );
+
+              return {
+                ...oldDecorations,
                 all: newAll,
                 filtered: newFiltered,
               };

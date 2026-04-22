@@ -12,6 +12,8 @@ import { useAppStore } from '../store/app';
 import { useDialog } from 'primevue';
 import AnnotationCreateModal from './AnnotationCreateModal.vue';
 import { useTiptapStore } from '../store/tiptap';
+import { useValidateTextSelection } from '../composables/useValidateTextSelection';
+const { isValid: isSelectionValid } = useValidateTextSelection();
 
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
   useGuidelinesStore();
@@ -45,8 +47,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
     const config: AnnotationType = getAnnotationConfig(data.type);
 
     isAnnotationTypeEnabled(data.type);
-    // TODO: Don't forget this
-    // isSelectionValid(config);
+    isSelectionValid(tiptap.value?.state.selection, config);
 
     const selectedCharacters: Character[] = getCharactersInSelection();
     const newAnnotationTemplate: Annotation = createAnnotation({ ...data });
@@ -119,25 +120,14 @@ function handleClick(data: { type: string; subType?: string | number }) {
  * @returns {void} This function does not return any value.
  */
 function addAnnotationToStore(params: { annotation: Annotation; characters: Character[] }): void {
-  const { uuid, type, subType } = params.annotation.data.properties;
+  const annotationData: AnnotationData = params.annotation.data;
+  const { from, to } = tiptap.value!.state.selection;
 
-  tiptap.value
-    ?.chain()
-    .setAnnotation({
-      uuid,
-      type,
-      subType,
-      // TODO: Fix this
-      isZeroPoint: false,
-    })
-    .run();
-
+  // Add to store
   annotations.value?.set(params.annotation.data.properties.uuid, params.annotation);
 
-  // execCommand('createAnnotation', {
-  //   annotation: params.annotation,
-  //   characters: params.characters,
-  // });
+  // Add editor decoration
+  tiptap.value?.commands.addAnnotationDecoration(annotationData, from, to);
 }
 </script>
 

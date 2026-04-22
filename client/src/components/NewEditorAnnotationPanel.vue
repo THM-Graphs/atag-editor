@@ -11,6 +11,7 @@ import { DecorationSet } from '@tiptap/pm/view';
 const { tiptap, selection, annotations: allAnnotations } = useTiptapStore();
 const { selectedOptions } = useFilterStore();
 
+// TODO: A max number of annotations should be shown to keep UI from freezing
 const annotationsInSelection = computed<Annotation[]>(() => {
   if (!tiptap.value || !selection.value) {
     return [];
