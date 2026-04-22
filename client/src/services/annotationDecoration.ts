@@ -13,23 +13,30 @@ declare module '@tiptap/core' {
       initializeDecorations: (
         annotations: Map<string, AnnotationData>,
         selectedTypes: string[],
+        visibleFrom: number,
+        visibleTo: number,
       ) => ReturnType;
       applyFilterUpdates: (selectedTypes: string[]) => ReturnType;
+      applyViewportUpdates: (docRange: { from: number; to: number }) => ReturnType;
     };
   }
 }
 
-type TransactionMetaType =
-  | 'annotationAdded'
-  | 'annotationDeleted'
-  | 'docChanged'
-  | 'filterUpdated'
-  | 'initialize'
-  | undefined;
+type AnnotationDecorationState = {
+  all: DecorationSet;
+  filtered: DecorationSet;
+  visibleFrom: number;
+  visibleTo: number;
+  selectedTypes: string[];
+};
+
+type TransactionMeta = InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
 
 type InitMeta = {
   type: 'initialize';
   annotations: Map<string, AnnotationData>;
+  visibleFrom: number;
+  visibleTo: number;
   selectedTypes: string[];
 };
 
@@ -38,9 +45,10 @@ type FilterUpdateMeta = {
   selectedTypes: string[];
 };
 
-type AnnotationDecorationState = {
-  all: DecorationSet;
-  filtered: DecorationSet;
+type ViewportMeta = {
+  type: 'viewportChanged';
+  visibleFrom: number;
+  visibleTo: number;
 };
 
 function indexToPosition(doc: Node, index: number): number {
@@ -145,18 +153,20 @@ function createInitialDecorations(
 
 function createFilteredDecorations(
   decorationSet: DecorationSet,
-  filterOptions: {
+  filters: {
     selectedTypes: string[];
+    visibleFrom: number;
+    visibleTo: number;
   },
   tr: Transaction,
 ): DecorationSet {
   const { doc } = tr;
-  const { selectedTypes } = filterOptions;
+  const { selectedTypes, visibleFrom, visibleTo } = filters;
 
-  // TODO: Implement filter
-  const filteredDecorations: Decoration[] = decorationSet
-    .find(0, Number.MAX_SAFE_INTEGER)
-    .filter(decoration => selectedTypes.includes(decoration.spec._type));
+  // TODO: The spec should be typed, very annoying
+  const filteredDecorations: Decoration[] = decorationSet.find(visibleFrom, visibleTo, spec =>
+    selectedTypes.includes(spec._type),
+  );
 
   return DecorationSet.create(doc, filteredDecorations);
 }
@@ -167,12 +177,19 @@ export const AnnotationDecoration = Extension.create({
   addCommands() {
     return {
       initializeDecorations:
-        (annotations: Map<string, AnnotationData>, selectedTypes: string[]) =>
+        (
+          annotations: Map<string, AnnotationData>,
+          selectedTypes: string[],
+          visibleFrom: number,
+          visibleTo: number,
+        ) =>
         ({ tr, dispatch }) => {
           const meta: InitMeta = {
             type: 'initialize',
             annotations: annotations,
             selectedTypes,
+            visibleFrom,
+            visibleTo,
           };
 
           tr.setMeta(this.name, meta);
@@ -185,11 +202,27 @@ export const AnnotationDecoration = Extension.create({
       applyFilterUpdates:
         (selectedTypes: string[]) =>
         ({ tr, dispatch }) => {
-          console.log(dispatch);
-
           const meta: FilterUpdateMeta = {
             type: 'filterUpdated',
             selectedTypes,
+          };
+
+          tr.setMeta(this.name, meta);
+
+          dispatch?.(tr);
+
+          return true;
+        },
+
+      applyViewportUpdates:
+        (docRange: { from: number; to: number }) =>
+        ({ tr, dispatch }) => {
+          const { from, to } = docRange;
+
+          const meta: ViewportMeta = {
+            type: 'viewportChanged',
+            visibleFrom: from,
+            visibleTo: to,
           };
 
           tr.setMeta(this.name, meta);
@@ -207,43 +240,81 @@ export const AnnotationDecoration = Extension.create({
         key: new PluginKey(this.name),
         state: {
           init(): AnnotationDecorationState {
+            // Return empty state object at plugin initialization. Initial data are inserted with a custom 'initialization'
+            // transaction. The reason for this is that during setup phase there are multiple transactions running
+            // in the editor which might override the initial state.
             return {
               all: DecorationSet.empty,
               filtered: DecorationSet.empty,
+              selectedTypes: [],
+              visibleFrom: 0,
+              visibleTo: 0,
             };
           },
 
-          apply(tr, value, _, newState): AnnotationDecorationState {
+          apply(tr, oldDecorations): AnnotationDecorationState {
             const doc: Node = tr.doc;
-            const meta: InitMeta | FilterUpdateMeta | undefined =
-              tr.getMeta('annotationDecoration');
+            const meta: TransactionMeta = tr.getMeta('annotationDecoration');
 
             // On initialization, all decorations need to be created at first
             if (meta?.type === 'initialize') {
-              const decos: Decoration[] = createInitialDecorations(newState.doc, meta.annotations);
+              const decos: Decoration[] = createInitialDecorations(doc, meta.annotations);
 
               const newAll: DecorationSet = DecorationSet.create(doc, decos);
               const newFiltered: DecorationSet = createFilteredDecorations(
                 newAll,
-                { selectedTypes: meta.selectedTypes },
+                {
+                  selectedTypes: meta.selectedTypes,
+                  visibleFrom: meta.visibleFrom,
+                  visibleTo: meta.visibleTo,
+                },
                 tr,
               );
 
               return {
                 all: newAll,
                 filtered: newFiltered,
+                selectedTypes: meta.selectedTypes,
+                visibleFrom: meta.visibleFrom,
+                visibleTo: meta.visibleTo,
               };
             } else if (meta?.type === 'filterUpdated') {
-              const newAll: DecorationSet = value.all.map(tr.mapping, tr.doc);
+              const newAll: DecorationSet = oldDecorations.all.map(tr.mapping, tr.doc);
 
               // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
               const newFiltered: DecorationSet = createFilteredDecorations(
                 newAll,
-                { selectedTypes: meta.selectedTypes },
+                {
+                  ...oldDecorations,
+                  selectedTypes: meta.selectedTypes,
+                },
                 tr,
               );
 
               return {
+                ...oldDecorations,
+                selectedTypes: meta.selectedTypes,
+                all: newAll,
+                filtered: newFiltered,
+              };
+            } else if (meta?.type === 'viewportChanged') {
+              const newAll: DecorationSet = oldDecorations.all.map(tr.mapping, tr.doc);
+
+              // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
+              const newFiltered: DecorationSet = createFilteredDecorations(
+                newAll,
+                {
+                  selectedTypes: oldDecorations.selectedTypes,
+                  visibleFrom: meta.visibleFrom,
+                  visibleTo: meta.visibleTo,
+                },
+                tr,
+              );
+
+              return {
+                ...oldDecorations,
+                visibleFrom: meta.visibleFrom,
+                visibleTo: meta.visibleTo,
                 all: newAll,
                 filtered: newFiltered,
               };
@@ -251,12 +322,13 @@ export const AnnotationDecoration = Extension.create({
 
             // If just content changed:
             // Remap ALL doc positions since no custom transaction was dispatched
-            const newAll: DecorationSet = value.all.map(tr.mapping, tr.doc);
+            const newAll: DecorationSet = oldDecorations.all.map(tr.mapping, tr.doc);
             const newFiltered: DecorationSet = tr.docChanged
-              ? value.filtered.map(tr.mapping, tr.doc)
-              : value.filtered;
+              ? oldDecorations.filtered.map(tr.mapping, tr.doc)
+              : oldDecorations.filtered;
 
             return {
+              ...oldDecorations,
               all: newAll,
               filtered: newFiltered,
             };

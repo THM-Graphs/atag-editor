@@ -23,6 +23,8 @@ import { standoffJson } from '../services/standoffJson';
 import { cloneDeep } from '../utils/helper/helper';
 import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
+import { EditorView } from '@tiptap/pm/view';
+import { useEventListener } from '@vueuse/core';
 
 const { selectedOptions } = useFilterStore();
 
@@ -63,6 +65,34 @@ function getConfiguredExtensions(): any[] {
   ];
 }
 
+function getVisibleDocRange(editorView: EditorView): { from: number; to: number } {
+  // TODO: Add viewport buffer so that annotation directly above/below are included...
+  const rect: DOMRect | undefined = editorView.dom.parentElement!.getBoundingClientRect();
+
+  const { top: parentTopOffset, left: parentLeftOffset, height } = rect;
+
+  const startPos = editorView.posAtCoords({
+    left: parentLeftOffset + 1,
+    top: parentTopOffset,
+  });
+  const endPos = editorView.posAtCoords({
+    left: parentLeftOffset + 1,
+    top: parentTopOffset + height,
+  });
+
+  // Catch edge cases
+  const from: number = startPos?.pos ?? 0;
+  const to: number = endPos?.pos ?? editorView.state.doc.content.size;
+
+  return { from, to };
+}
+
+function handleScroll() {
+  const { from, to } = getVisibleDocRange(tiptap.value!.view);
+
+  tiptap.value?.commands.applyViewportUpdates({ from, to });
+}
+
 function initializeTiptap(standoffObject?: { text: string; annotations: AnnotationData[] }): void {
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
 
@@ -80,7 +110,14 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
     onCreate: ({ editor }) => {
-      editor.commands.initializeDecorations(annotations, selectedOptions.value);
+      const { from, to } = getVisibleDocRange(tiptap.value!.view);
+
+      editor.commands.initializeDecorations(annotations, selectedOptions.value, from, to);
+
+      const scrollContainer: HTMLElement | null = editor.view.dom.parentElement;
+
+      // TODO: Should this maybe moved directly to the plugin?
+      useEventListener(scrollContainer, 'scroll', handleScroll);
     },
   });
 }
