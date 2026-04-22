@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch } from 'vue';
+import { readonly, ref, shallowRef, watch } from 'vue';
 import { Annotation, AnnotationData, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
@@ -25,6 +25,7 @@ import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
 import { EditorView } from '@tiptap/pm/view';
 import { useEventListener } from '@vueuse/core';
+import { Selection } from '@tiptap/pm/state';
 
 const { selectedOptions } = useFilterStore();
 
@@ -33,6 +34,12 @@ const tiptap = shallowRef<Editor | null>(null);
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
 const toCItems = ref<TableOfContentData>([]);
+
+const selection = ref<Selection | null>(null);
+
+function setSelectionInStore(newSelection: Selection | null): void {
+  selection.value = newSelection;
+}
 
 function getConfiguredExtensions(): any[] {
   return [
@@ -109,6 +116,9 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
+    onSelectionUpdate: ({ editor }) => {
+      setSelectionInStore(editor.view.state.selection);
+    },
     onCreate: ({ editor }) => {
       const { from, to } = getVisibleDocRange(tiptap.value!.view);
 
@@ -191,6 +201,7 @@ export function useTiptapStore() {
   return {
     annotations,
     toCItems,
+    selection: readonly(selection),
     structuralAnnotations,
     tiptap,
     destroyTiptap,

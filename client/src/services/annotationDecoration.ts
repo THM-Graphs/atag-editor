@@ -7,6 +7,10 @@ import { AnnotationData, AnnotationType } from '../models/types';
 
 const { getAnnotationConfig } = useGuidelinesStore();
 
+export const ANNOTATION_DECORATION_KEY = new PluginKey<AnnotationDecorationState>(
+  'annotationDecoration',
+);
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     annotationDecoration: {
@@ -192,7 +196,7 @@ export const AnnotationDecoration = Extension.create({
             visibleTo,
           };
 
-          tr.setMeta(this.name, meta);
+          tr.setMeta(ANNOTATION_DECORATION_KEY, meta);
 
           dispatch?.(tr);
 
@@ -207,7 +211,7 @@ export const AnnotationDecoration = Extension.create({
             selectedTypes,
           };
 
-          tr.setMeta(this.name, meta);
+          tr.setMeta(ANNOTATION_DECORATION_KEY, meta);
 
           dispatch?.(tr);
 
@@ -225,7 +229,7 @@ export const AnnotationDecoration = Extension.create({
             visibleTo: to,
           };
 
-          tr.setMeta(this.name, meta);
+          tr.setMeta(ANNOTATION_DECORATION_KEY, meta);
 
           dispatch?.(tr);
 
@@ -237,7 +241,7 @@ export const AnnotationDecoration = Extension.create({
   addProseMirrorPlugins() {
     return [
       new Plugin({
-        key: new PluginKey(this.name),
+        key: ANNOTATION_DECORATION_KEY,
         state: {
           init(): AnnotationDecorationState {
             // Return empty state object at plugin initialization. Initial data are inserted with a custom 'initialization'
@@ -254,7 +258,7 @@ export const AnnotationDecoration = Extension.create({
 
           apply(tr, oldDecorations): AnnotationDecorationState {
             const doc: Node = tr.doc;
-            const meta: TransactionMeta = tr.getMeta('annotationDecoration');
+            const meta: TransactionMeta = tr.getMeta(ANNOTATION_DECORATION_KEY);
 
             // On initialization, all decorations need to be created at first
             if (meta?.type === 'initialize') {

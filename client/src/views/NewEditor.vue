@@ -9,7 +9,7 @@ import {
 import { EditorContent } from '@tiptap/vue-3';
 import { useEventListener, useTitle } from '@vueuse/core';
 import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
-import EditorAnnotationPanel from '../components/EditorAnnotationPanel.vue';
+import NewEditorAnnotationPanel from '../components/NewEditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
 import EditorActionButtonsPane from '../components/EditorActionButtonsPane.vue';
@@ -536,7 +536,7 @@ watch(
       :width="sidebars['right'].width"
     >
       <EditorFilter />
-      <EditorAnnotationPanel />
+      <NewEditorAnnotationPanel />
     </EditorSidebar>
   </div>
 </template>
