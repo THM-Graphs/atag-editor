@@ -16,7 +16,6 @@ import {
   TableOfContentData,
   TableOfContents,
 } from '@tiptap/extension-table-of-contents';
-import { AnnotationMark } from '../services/annotationMark';
 import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
@@ -61,7 +60,6 @@ function getConfiguredExtensions(): any[] {
     ListKit,
     Gapcursor,
     UndoRedo,
-    AnnotationMark,
     ZeroPointAnnotation,
     AnnotationDecoration,
     // UniqueID.configure({
