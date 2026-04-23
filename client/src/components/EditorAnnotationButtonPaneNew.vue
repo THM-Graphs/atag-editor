@@ -13,6 +13,7 @@ import { useDialog } from 'primevue';
 import AnnotationCreateModal from './AnnotationCreateModal.vue';
 import { useTiptapStore } from '../store/tiptap';
 import { useValidateTextSelection } from '../composables/useValidateTextSelection';
+import { Selection } from '@tiptap/pm/state';
 const { isValid: isSelectionValid } = useValidateTextSelection();
 
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
@@ -43,6 +44,12 @@ function isAnnotationTypeEnabled(type: string): boolean {
 }
 
 function handleClick(data: { type: string; subType?: string | number }) {
+  const selection: Selection | undefined = tiptap.value?.state.selection;
+
+  if (!selection) {
+    return;
+  }
+
   try {
     const config: AnnotationType = getAnnotationConfig(data.type);
 
@@ -108,6 +115,12 @@ function handleClick(data: { type: string; subType?: string | number }) {
     } else {
       console.error('Unexpected error:', error);
     }
+  } finally {
+    tiptap.value
+      ?.chain()
+      .focus()
+      .setTextSelection(selection.to ?? 0)
+      .run();
   }
 }
 
