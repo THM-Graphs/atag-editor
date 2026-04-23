@@ -4,6 +4,8 @@ import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { useGuidelinesStore } from '../store/guidelines';
 import { AnnotationData, AnnotationType } from '../models/types';
+import { AddAnnotationStep } from './addAnnotationStep';
+import { RemoveAnnotationStep } from './removeAnnotationStep';
 
 const { getAnnotationConfig } = useGuidelinesStore();
 
@@ -15,6 +17,7 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     annotationDecoration: {
       addAnnotationDecoration: (annotation: AnnotationData, from: number, to: number) => ReturnType;
+      removeAnnotationDecoration: (annotation: AnnotationData) => ReturnType;
       initializeDecorations: (
         annotations: Map<string, AnnotationData>,
         selectedTypes: string[],
@@ -35,14 +38,7 @@ type AnnotationDecorationState = {
   selectedTypes: string[];
 };
 
-type TransactionMeta = AddMeta | InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
-
-type AddMeta = {
-  type: 'addAnnotationDecoration';
-  annotation: AnnotationData;
-  from: number;
-  to: number;
-};
+type TransactionMeta = InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
 
 type InitMeta = {
   type: 'initialize';
@@ -191,19 +187,45 @@ export const AnnotationDecoration = Extension.create({
       addAnnotationDecoration:
         (annotation: AnnotationData, from: number, to: number) =>
         ({ tr, dispatch }) => {
-          const meta: AddMeta = {
-            type: 'addAnnotationDecoration',
-            annotation,
-            from,
-            to,
-          };
-
-          tr.setMeta(ANNOTATION_DECORATION_KEY, meta);
+          // Add placeholder step that signals plugin what to execute
+          tr.step(new AddAnnotationStep(annotation, from, to));
 
           dispatch?.(tr);
 
           return true;
         },
+
+      removeAnnotationDecoration:
+        (annotation: AnnotationData) =>
+        ({ tr, dispatch, state }) => {
+          const pluginState: AnnotationDecorationState | undefined =
+            ANNOTATION_DECORATION_KEY.getState(state);
+
+          if (!pluginState) {
+            return false;
+          }
+
+          // Annotation must be found to be included in the step, since undo and redo need to know
+          // what annotation object to (re)create
+          const decos: Decoration[] = pluginState.all.find(
+            undefined,
+            undefined,
+            spec => spec._uuid === annotation.properties.uuid,
+          );
+
+          if (!decos.length) {
+            return false;
+          }
+
+          const deco: Decoration = decos[0];
+
+          tr.step(new RemoveAnnotationStep(annotation, deco.from, deco.to));
+
+          dispatch?.(tr);
+
+          return true;
+        },
+
       initializeDecorations:
         (
           annotations: Map<string, AnnotationData>,
@@ -345,39 +367,73 @@ export const AnnotationDecoration = Extension.create({
                 all: newAll,
                 filtered: newFiltered,
               };
-            } else if (meta?.type === 'addAnnotationDecoration') {
-              // TOD: Add this to history...
-              const annoDeco = createInlineDecoration(meta.from, meta.to, meta.annotation);
-
-              const newAll: DecorationSet = oldDecorations.all
-                .add(doc, [annoDeco])
-                .map(tr.mapping, tr.doc);
-
-              // Set of to-be-rendered decorations (viewport, annotation type filter etc.)
-              const newFiltered: DecorationSet = createFilteredDecorations(
-                newAll,
-                { ...oldDecorations },
-                tr,
-              );
-
-              return {
-                ...oldDecorations,
-                all: newAll,
-                filtered: newFiltered,
-              };
             }
 
-            // If just content changed:
-            // Remap ALL doc positions since no custom transaction was dispatched
-            const newAll: DecorationSet = oldDecorations.all.map(tr.mapping, tr.doc);
-            const newFiltered: DecorationSet = tr.docChanged
-              ? oldDecorations.filtered.map(tr.mapping, tr.doc)
-              : oldDecorations.filtered;
+            // Handle AddAnnotationStep / RemoveAnnotationStep (and their undo/redo inverses).
+            // Because these are actual Steps, the history plugin records and inverts them
+            // automatically — no special undo handling needed here.
+            let newAll: DecorationSet = oldDecorations.all;
+            let decorationsChanged: boolean = false;
+
+            // Loop over transaction steps to discover if any of them are AddAnnotationStep/RemoveAnnotationStep.
+            // This would mean the last transaction should add/remove a decoration
+            for (const step of tr.steps) {
+              if (step instanceof AddAnnotationStep) {
+                const { from, to, annotation } = step;
+
+                const newDeco: Decoration = isZeroPoint(annotation)
+                  ? createWidgetDecoration(from + 1, annotation)
+                  : createInlineDecoration(from, to, annotation);
+
+                newAll = newAll.add(doc, [newDeco]);
+                decorationsChanged = true;
+              } else if (step instanceof RemoveAnnotationStep) {
+                const { annotation } = step;
+
+                const toRemove: Decoration[] = newAll.find(
+                  undefined,
+                  undefined,
+                  spec => spec._uuid === annotation.properties.uuid,
+                );
+                newAll = newAll.remove(toRemove);
+                decorationsChanged = true;
+              }
+            }
+
+            // Remap all positions for any document changes (typing, deletions, etc.)
+            newAll = newAll.map(tr.mapping, doc);
+
+            // Remap stored viewport bounds so the filter window stays accurate after
+            // insertions/deletions that shift document positions.
+            const newVisibleFrom: number = tr.docChanged
+              ? tr.mapping.map(oldDecorations.visibleFrom)
+              : oldDecorations.visibleFrom;
+            const newVisibleTo: number = tr.docChanged
+              ? tr.mapping.map(oldDecorations.visibleTo)
+              : oldDecorations.visibleTo;
+
+            let newFiltered: DecorationSet = oldDecorations.filtered;
+
+            if (decorationsChanged || tr.docChanged) {
+              /* 
+              TODO: Recreation of the "filtered" set might be an overkill, but it works currently. Before, the "filtered" set did not change since
+              the drawn HTML would not change completely. However, when a lot of text is removed an new text comes into
+              the viewport, it does not have decorations yet - they are only added when a viewportChanged transaction
+              was dispatched during scroll. Keep in mind
+              */
+              newFiltered = createFilteredDecorations(
+                newAll,
+                { ...oldDecorations, visibleFrom: newVisibleFrom, visibleTo: newVisibleTo },
+                tr,
+              );
+            }
 
             return {
               ...oldDecorations,
               all: newAll,
               filtered: newFiltered,
+              visibleFrom: newVisibleFrom,
+              visibleTo: newVisibleTo,
             };
           },
         },

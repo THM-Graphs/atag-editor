@@ -46,7 +46,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
     const config: AnnotationType = getAnnotationConfig(data.type);
 
     isAnnotationTypeEnabled(data.type);
-    isSelectionValid(config);
+    isSelectionValid(undefined, config);
 
     const selectedCharacters: Character[] = getCharactersInSelection();
     const newAnnotationTemplate: Annotation = createAnnotation({

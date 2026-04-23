@@ -8,7 +8,6 @@ import {
 } from 'vue-router';
 import { EditorContent } from '@tiptap/vue-3';
 import { useEventListener, useTitle } from '@vueuse/core';
-import EditorAnnotationButtonPane from '../components/EditorAnnotationButtonPane.vue';
 import NewEditorAnnotationPanel from '../components/NewEditorAnnotationPanel.vue';
 import EditorSidebar from '../components/EditorSidebar.vue';
 import EditorHeader from '../components/EditorHeader.vue';
@@ -27,6 +26,7 @@ import { useTextStore } from '../store/text';
 import { useAppStore } from '../store/app';
 import PageOverlay from '../components/PageOverlay.vue';
 import { useTiptapStore } from '../store/tiptap';
+import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -456,7 +456,7 @@ watch(
       :style="{ width: mainWidth + 'px' }"
     >
       <EditorHeader ref="labelInputRef" />
-      <EditorAnnotationButtonPane />
+      <EditorAnnotationButtonPaneNew />
       <div class="button-group text-center">
         <button
           @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
