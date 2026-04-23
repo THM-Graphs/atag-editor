@@ -14,6 +14,7 @@ import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextS
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import FormPropertiesSection from './FormPropertiesSection.vue';
 import TruncatedBadge from './TruncatedBadge.vue';
+import { useTiptapStore } from '../store/tiptap';
 
 const props = defineProps<{
   annotation: Annotation;
@@ -23,7 +24,8 @@ const { annotation } = props;
 
 const confirm = useConfirm();
 
-const { isRedrawMode, redrawMode, execCommand, toggleRedrawMode } = useEditorStore();
+const { tiptap, annotations } = useTiptapStore();
+const { isRedrawMode, redrawMode } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
 const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
@@ -47,27 +49,44 @@ const redrawButtonTitle = computed<string>(() =>
 );
 
 function handleDeleteAnnotation(event: MouseEvent): void {
-  // if (annotation.isTruncated) {
-  //   return;
-  // }
-  // confirm.require({
-  //   target: event.currentTarget as HTMLButtonElement,
-  //   message: 'Do you want to delete this annotation?',
-  //   icon: 'pi pi-exclamation-triangle',
-  //   rejectProps: {
-  //     label: 'Cancel',
-  //     severity: 'secondary',
-  //     outlined: true,
-  //     title: 'Cancel',
-  //   },
-  //   acceptProps: {
-  //     label: 'Delete',
-  //     severity: 'danger',
-  //     title: 'Delete annotation',
-  //   },
-  //   accept: () => {execCommand('deleteAnnotation', { annotation })},
-  //   reject: () => {},
-  // });
+  // TODO: Remove this, nothing is truncated anymore
+  if (annotation.isTruncated) {
+    return;
+  }
+
+  confirm.require({
+    target: event.currentTarget as HTMLButtonElement,
+    message: 'Do you want to delete this annotation?',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+      title: 'Cancel',
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+      title: 'Delete annotation',
+    },
+    accept: () => {
+      // TODO: Might be changed when the "status" behaviour is changed.
+      const annoEntry: Annotation | undefined = annotations.value?.get(
+        annotation.data.properties.uuid,
+      );
+
+      if (!annoEntry) {
+        return;
+      }
+
+      // Set annotation deleted
+      annoEntry.status = 'deleted';
+
+      // Remove decoration
+      tiptap.value?.commands.removeAnnotationDecoration(annotation.data);
+    },
+    reject: () => {},
+  });
 }
 
 function handleRedraw(): void {
