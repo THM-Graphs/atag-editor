@@ -59,6 +59,11 @@ type ViewportMeta = {
   visibleTo: number;
 };
 
+type AnnotationDecorationSpec = {
+  _type: string;
+  _uuid: string;
+};
+
 function indexToPosition(doc: Node, index: number): number {
   let remaining: number = index;
   let pos: number = 0;
@@ -129,7 +134,7 @@ function createInlineDecoration(from: number, to: number, annotation: Annotation
     {
       nodeName: 'span',
       class: [annotation.properties.type, annotation.properties.subType].filter(Boolean).join(' '),
-      'data-uuid': annotation.properties.uuid,
+      'data-anno-uuid': annotation.properties.uuid,
     },
     { inclusiveEnd: true, _type: annotation.properties.type, _uuid: annotation.properties.uuid },
   );
@@ -171,9 +176,10 @@ function createFilteredDecorations(
   const { doc } = tr;
   const { selectedTypes, visibleFrom, visibleTo } = filters;
 
-  // TODO: The spec should be typed, very annoying
-  const filteredDecorations: Decoration[] = decorationSet.find(visibleFrom, visibleTo, spec =>
-    selectedTypes.includes(spec._type),
+  const filteredDecorations: Decoration[] = decorationSet.find(
+    visibleFrom,
+    visibleTo,
+    (spec: AnnotationDecorationSpec) => selectedTypes.includes(spec._type),
   );
 
   return DecorationSet.create(doc, filteredDecorations);
@@ -210,7 +216,7 @@ export const AnnotationDecoration = Extension.create({
           const decos: Decoration[] = pluginState.all.find(
             undefined,
             undefined,
-            spec => spec._uuid === annotation.properties.uuid,
+            (spec: AnnotationDecorationSpec) => spec._uuid === annotation.properties.uuid,
           );
 
           if (!decos.length) {
