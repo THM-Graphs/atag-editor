@@ -63,11 +63,11 @@ function getConfiguredExtensions(): any[] {
     UndoRedo,
     ZeroPointAnnotation,
     AnnotationDecoration,
-    // UniqueID.configure({
-    //   types: 'all',
-    //   attributeName: 'node-uuid',
-    //   generateID: () => crypto.randomUUID(),
-    // }),
+    UniqueID.configure({
+      types: 'all',
+      attributeName: 'uuid',
+      generateID: () => crypto.randomUUID(),
+    }),
   ];
 }
 

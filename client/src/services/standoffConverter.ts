@@ -264,6 +264,9 @@ export default class StandoffConverter {
         return {
           type: 'paragraph',
           content: runs,
+          attrs: {
+            uuid: a.properties.uuid,
+          },
         };
       });
 
