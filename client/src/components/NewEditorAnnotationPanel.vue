@@ -8,16 +8,16 @@ import { useTiptapStore } from '../store/tiptap';
 import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
 import { DecorationSet } from '@tiptap/pm/view';
 
-const { tiptap, selection, annotations: allAnnotations } = useTiptapStore();
+const { tiptap, annotations: allAnnotations } = useTiptapStore();
 const { selectedOptions } = useFilterStore();
 
 // TODO: A max number of annotations should be shown to keep UI from freezing
 const annotationsInSelection = computed<Annotation[]>(() => {
-  if (!tiptap.value || !selection.value) {
+  if (!tiptap.value || !tiptap.value.state.selection) {
     return [];
   }
 
-  const { from, to } = selection.value;
+  const { from, to } = tiptap.value.state.selection;
 
   const decorations: DecorationSet =
     ANNOTATION_DECORATION_KEY.getState(tiptap.value.view.state)?.all ?? DecorationSet.empty;

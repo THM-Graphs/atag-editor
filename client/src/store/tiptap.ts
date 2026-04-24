@@ -1,4 +1,4 @@
-import { readonly, ref, shallowRef, watch } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import { Annotation, AnnotationData, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
@@ -19,12 +19,15 @@ import {
 import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
-import { cloneDeep } from '../utils/helper/helper';
+import {
+  cloneDeep,
+  createAnnotationObjects,
+  createExtendedStandoffObject,
+  getVisibleDocRange,
+} from '../utils/helper/helper';
 import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
-import { EditorView } from '@tiptap/pm/view';
 import { useEventListener } from '@vueuse/core';
-import { Selection } from '@tiptap/pm/state';
 
 const { selectedOptions } = useFilterStore();
 
@@ -32,13 +35,11 @@ const tiptap = shallowRef<Editor | null>(null);
 
 const structuralAnnotations = ref<Map<string, Annotation>>();
 const annotations = ref<Map<string, Annotation>>();
+
+const initialStructuralAnnotations = ref<Map<string, Annotation>>();
+const initialAnnotations = ref<Map<string, Annotation>>();
+
 const toCItems = ref<TableOfContentData>([]);
-
-const selection = ref<Selection | null>(null);
-
-function setSelectionInStore(newSelection: Selection | null): void {
-  selection.value = newSelection;
-}
 
 function getConfiguredExtensions(): any[] {
   return [
@@ -70,28 +71,6 @@ function getConfiguredExtensions(): any[] {
   ];
 }
 
-function getVisibleDocRange(editorView: EditorView): { from: number; to: number } {
-  // TODO: Add viewport buffer so that annotation directly above/below are included...
-  const rect: DOMRect | undefined = editorView.dom.parentElement!.getBoundingClientRect();
-
-  const { top: parentTopOffset, left: parentLeftOffset, height } = rect;
-
-  const startPos = editorView.posAtCoords({
-    left: parentLeftOffset + 1,
-    top: parentTopOffset,
-  });
-  const endPos = editorView.posAtCoords({
-    left: parentLeftOffset + 1,
-    top: parentTopOffset + height,
-  });
-
-  // Catch edge cases
-  const from: number = startPos?.pos ?? 0;
-  const to: number = endPos?.pos ?? editorView.state.doc.content.size;
-
-  return { from, to };
-}
-
 function handleScroll() {
   const { from, to } = getVisibleDocRange(tiptap.value!.view);
 
@@ -114,9 +93,6 @@ function initializeTiptap(standoffObject?: { text: string; annotations: Annotati
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
-    onSelectionUpdate: ({ editor }) => {
-      setSelectionInStore(editor.view.state.selection);
-    },
     onCreate: ({ editor }) => {
       const { from, to } = getVisibleDocRange(tiptap.value!.view);
 
@@ -140,49 +116,6 @@ watch(selectedOptions, newVal => {
   tiptap.value.commands.applyFilterUpdates(newVal);
 });
 
-function createExtendedStandoffObject(standoffObject: {
-  text: string;
-  annotations: AnnotationData[];
-}): { text: string; annotations: AnnotationData[] } {
-  const extended = cloneDeep(standoffObject);
-  extended.annotations.push({
-    additionalTexts: [],
-    properties: {
-      text: standoffObject.text,
-      startIndex: 0,
-      uuid: 'abc123',
-      subType: '',
-      endIndex: standoffObject.text.length - 1,
-      type: 'p',
-    },
-    entities: [],
-  });
-
-  return extended;
-}
-
-function createAnnotationObjects(
-  annotationDtos: Map<string, AnnotationData>,
-): Map<string, Annotation> {
-  const map = new Map<string, Annotation>();
-
-  annotationDtos.forEach((data: AnnotationData, key: string) => {
-    // isTruncated is set to false at first since truncation happens in separate method
-    map.set(key, {
-      characterUuids: [],
-      data: cloneDeep(data),
-      endUuid: '',
-      initialData: cloneDeep(data),
-      isTruncated: false,
-      startUuid: '',
-      // TODO: Allow setting status dynamically (on import, everything is "created")
-      status: 'existing',
-    });
-  });
-
-  return map;
-}
-
 function destroyTiptap(): void {
   tiptap.value?.destroy();
   tiptap.value = null;
@@ -194,12 +127,14 @@ function setAnnotations(data: {
 }): void {
   structuralAnnotations.value = data.structuralAnnotations;
   annotations.value = data.annotations;
+
+  initialAnnotations.value = cloneDeep(data.annotations);
+  initialStructuralAnnotations.value = cloneDeep(data.structuralAnnotations);
 }
 export function useTiptapStore() {
   return {
     annotations,
     toCItems,
-    selection: readonly(selection),
     structuralAnnotations,
     tiptap,
     destroyTiptap,

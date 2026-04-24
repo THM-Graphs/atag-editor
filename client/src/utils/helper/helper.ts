@@ -1,6 +1,7 @@
 import { Ref } from 'vue';
 import {
   Annotation,
+  AnnotationData,
   Character,
   CollectionAccessObject,
   PropertyConfigDataType,
@@ -9,6 +10,7 @@ import {
   Text,
 } from '../../models/types';
 import ICollection from '../../models/ICollection';
+import { EditorView } from '@tiptap/pm/view';
 
 /**
  * Converts the given characters and annotations into a single StandoffJson object.
@@ -124,6 +126,49 @@ export function createNewTextObject(): Text {
       text: '',
     },
   };
+}
+
+export function createExtendedStandoffObject(standoffObject: {
+  text: string;
+  annotations: AnnotationData[];
+}): { text: string; annotations: AnnotationData[] } {
+  const extended = cloneDeep(standoffObject);
+  extended.annotations.push({
+    additionalTexts: [],
+    properties: {
+      text: standoffObject.text,
+      startIndex: 0,
+      uuid: 'abc123',
+      subType: '',
+      endIndex: standoffObject.text.length - 1,
+      type: 'p',
+    },
+    entities: [],
+  });
+
+  return extended;
+}
+
+export function createAnnotationObjects(
+  annotationDtos: Map<string, AnnotationData>,
+): Map<string, Annotation> {
+  const map = new Map<string, Annotation>();
+
+  annotationDtos.forEach((data: AnnotationData, key: string) => {
+    // isTruncated is set to false at first since truncation happens in separate method
+    map.set(key, {
+      characterUuids: [],
+      data: cloneDeep(data),
+      endUuid: '',
+      initialData: cloneDeep(data),
+      isTruncated: false,
+      startUuid: '',
+      // TODO: Allow setting status dynamically (on import, everything is "created")
+      status: 'existing',
+    });
+  });
+
+  return map;
 }
 
 /**
@@ -269,6 +314,39 @@ export function getSpansToAnnotate(): HTMLSpanElement[] {
   }
 
   return spans;
+}
+
+/**
+ * Returns the ProseMirror document positions that correspond to the top and bottom edges
+ * of the editor's scroll container (i.e. the currently visible range of the document).
+ *
+ * Falls back to `0` for `from` and `doc.content.size` for `to` when `posAtCoords` returns
+ * `null` — which happens when the editor content does not yet fill the container or the
+ * coordinates land outside the rendered document.
+ *
+ * @param {EditorView} editorView - The ProseMirror EditorView instance.
+ * @returns {{ from: number; to: number }} The start and end document positions of the visible range.
+ */
+export function getVisibleDocRange(editorView: EditorView): { from: number; to: number } {
+  // TODO: Add viewport buffer so that annotation directly above/below are included...
+  const rect: DOMRect | undefined = editorView.dom.parentElement!.getBoundingClientRect();
+
+  const { top: parentTopOffset, left: parentLeftOffset, height } = rect;
+
+  const startPos = editorView.posAtCoords({
+    left: parentLeftOffset + 1,
+    top: parentTopOffset,
+  });
+  const endPos = editorView.posAtCoords({
+    left: parentLeftOffset + 1,
+    top: parentTopOffset + height,
+  });
+
+  // Catch edge cases
+  const from: number = startPos?.pos ?? 0;
+  const to: number = endPos?.pos ?? editorView.state.doc.content.size;
+
+  return { from, to };
 }
 
 /**
