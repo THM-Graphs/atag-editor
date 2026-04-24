@@ -19,7 +19,7 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
-import { AnnotationData, TextAccessObject } from '../models/types';
+import { AnnotationData, IndexMap, TextAccessObject } from '../models/types';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -27,6 +27,9 @@ import { useAppStore } from '../store/app';
 import PageOverlay from '../components/PageOverlay.vue';
 import { useTiptapStore } from '../store/tiptap';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
+import { buildDecorationIndexMap, buildStructureIndexMap } from '../utils/helper/indexHelper';
+import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
+import { Decoration } from '@tiptap/pm/view';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -122,6 +125,18 @@ const editorRef = ref<HTMLDivElement>(null);
 
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
+  if (!tiptap.value) {
+    return;
+  }
+
+  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
+    tiptap.value.state,
+  )!.all.find();
+  const doc = tiptap.value.state.doc;
+
+  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
+  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
+
   // if (!hasUnsavedChanges()) {
   //   console.log('no changes made, no request needed');
   //   return;

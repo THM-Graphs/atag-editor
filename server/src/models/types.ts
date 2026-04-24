@@ -16,7 +16,7 @@ export type Annotation = {
   initialData: AnnotationData;
   isTruncated: boolean;
   startUuid: string;
-  status: 'existing' | 'created' | 'deleted';
+  status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
 export interface AnnotationData {

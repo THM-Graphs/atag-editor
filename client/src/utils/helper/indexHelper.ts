@@ -1,16 +1,78 @@
 import { Node } from '@tiptap/pm/model';
+import { Decoration } from '@tiptap/pm/view';
+import { IndexMap } from '../../models/types';
 
-export function buildIndexMap(doc: Node): Map<string, { startIndex: number; endIndex: number }> {
-  const map = new Map<string, { startIndex: number; endIndex: number }>();
-  let charIndex = 0;
+function traverseNode(node: Node, charIndex: number, map: IndexMap): number {
+  if (node.isText) {
+    return charIndex + node.text!.length;
+  }
 
-  doc.descendants((node: Node) => {
+  const startIndex: number = charIndex;
+  let current: number = charIndex;
+
+  node.forEach(child => {
+    current = traverseNode(child, current, map);
+  });
+
+  if (node.attrs.uuid) {
+    map.set(node.attrs.uuid, { startIndex, endIndex: current });
+  }
+
+  return current;
+}
+
+export function buildStructureIndexMap(doc: Node): IndexMap {
+  const map: IndexMap = new Map();
+
+  traverseNode(doc, 0, map);
+
+  console.log(map);
+
+  return map;
+}
+
+export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): IndexMap {
+  const sorted: number[] = [...new Set(decorations.flatMap(d => [d.from, d.to]))].sort(
+    (a, b) => a - b,
+  );
+  const positionMap = new Map<number, number>();
+
+  let charIndex: number = 0;
+  let i: number = 0;
+
+  doc.descendants((node: Node, nodePos: number) => {
+    if (i >= sorted.length) return false;
+
     if (node.isText) {
-      map.set(node.attrs.uuid, { startIndex: charIndex, endIndex: charIndex + node.text!.length });
+      const nodeEnd: number = nodePos + node.text!.length;
+
+      while (i < sorted.length && sorted[i] < nodePos) {
+        positionMap.set(sorted[i++], charIndex);
+      }
+
+      while (i < sorted.length && sorted[i] <= nodeEnd) {
+        const pos: number = sorted[i++];
+        positionMap.set(pos, charIndex + (pos - nodePos));
+      }
 
       charIndex += node.text!.length;
     }
   });
+
+  while (i < sorted.length) {
+    positionMap.set(sorted[i++], charIndex);
+  }
+
+  const map = new Map<string, { startIndex: number; endIndex: number }>();
+
+  for (const deco of decorations) {
+    map.set(deco.spec._uuid, {
+      startIndex: positionMap.get(deco.from)!,
+      endIndex: positionMap.get(deco.to)!,
+    });
+  }
+
+  console.log(map);
 
   return map;
 }

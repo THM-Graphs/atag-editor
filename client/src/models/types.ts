@@ -16,7 +16,7 @@ export type Annotation = {
   initialData: AnnotationData;
   isTruncated: boolean;
   startUuid: string;
-  status: 'existing' | 'created' | 'deleted';
+  status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
 export interface AnnotationData {
@@ -175,6 +175,8 @@ export type HistoryRecord = {
     characters: Character[];
   };
 };
+
+export type IndexMap = Map<string, { startIndex: number; endIndex: number }>;
 
 export type CollectionStatusObject = {
   data: Collection;
