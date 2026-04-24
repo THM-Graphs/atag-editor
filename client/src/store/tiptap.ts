@@ -79,12 +79,11 @@ function handleScroll() {
 
 function initializeTiptap(standoffObject?: { text: string; annotations: AnnotationData[] }): void {
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
-
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
   const { tipTapJson, annotations, structuralAnnotations } = converter.getData();
 
-  const annos = createAnnotationObjects(annotations);
-  const structuralAnnos = createAnnotationObjects(structuralAnnotations);
+  const annos: Map<string, Annotation> = createAnnotationObjects(annotations);
+  const structuralAnnos: Map<string, Annotation> = createAnnotationObjects(structuralAnnotations);
 
   setAnnotations({ annotations: annos, structuralAnnotations: structuralAnnos });
 
