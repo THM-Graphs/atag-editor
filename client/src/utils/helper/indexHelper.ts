@@ -32,12 +32,16 @@ export function buildStructureIndexMap(doc: Node): IndexMap {
 }
 
 export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): IndexMap {
+  // All availabe decoration positions that need remapping
   const sortedPositions: number[] = [...new Set(decorations.flatMap(d => [d.from, d.to]))].sort(
     (a, b) => a - b,
   );
   const positionMap = new Map<number, number>();
 
+  // The index of the character in the plain text (counts only char positions, not doc positions)
   let charIndex: number = 0;
+
+  // Loop index for sortedPositions array
   let i: number = 0;
 
   doc.descendants((node: Node, nodePos: number) => {
@@ -48,22 +52,17 @@ export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): I
     if (node.isText) {
       const nodeEnd: number = nodePos + node.text!.length;
 
-      while (i < sortedPositions.length && sortedPositions[i] < nodePos) {
-        positionMap.set(sortedPositions[i++], charIndex);
-      }
-
+      // For each doc position inside the current text node, the same mapping can be applied
       while (i < sortedPositions.length && sortedPositions[i] <= nodeEnd) {
-        const pos: number = sortedPositions[i++];
-        positionMap.set(pos, charIndex + (pos - nodePos));
+        const curr: number = sortedPositions[i];
+        i++;
+
+        positionMap.set(curr, charIndex + (curr - nodePos));
       }
 
       charIndex += node.text!.length;
     }
   });
-
-  while (i < sortedPositions.length) {
-    positionMap.set(sortedPositions[i++], charIndex);
-  }
 
   const map = new Map<string, { startIndex: number; endIndex: number }>();
 
@@ -104,31 +103,4 @@ export function indexToPosition(doc: Node, index: number): number {
   });
 
   return pos;
-}
-
-export function positionToIndex(doc: Node, pos: number): number {
-  let index: number = 0;
-  let found: boolean = false;
-
-  doc.descendants((node: Node, nodePos: number) => {
-    // Index already found, do not further descend into the node subtree
-    if (found) {
-      return false;
-    }
-
-    if (node.isText) {
-      // Count characters in text node. If the given position is inside it, return its position.
-      const nodeEnd: number = nodePos + node.text!.length;
-
-      if (pos >= nodePos && pos <= nodeEnd) {
-        index += pos - nodePos;
-        found = true;
-        return false;
-      }
-
-      index += node.text!.length;
-    }
-  });
-
-  return index;
 }
