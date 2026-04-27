@@ -41,7 +41,8 @@ interface SidebarConfig {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid = computed<string>(() => route.params.uuid as string);
 
-const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
+const { tiptap, initializeTiptap, destroyTiptap, annotations, structuralAnnotations } =
+  useTiptapStore();
 
 onUnmounted(() => destroyTiptap());
 
@@ -125,34 +126,15 @@ const metadataRef = ref(null);
 const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
-// TODO: Annotations structure has changed, overhaul all methods inside
-async function handleSaveChanges(): Promise<void> {
-  if (!tiptap.value) {
-    return;
-  }
-
-  // if (!hasUnsavedChanges()) {
-  //   console.log('no changes made, no request needed');
-  //   return;
-  // }
-
-  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
-    tiptap.value.state,
-  )!.all.find();
-  const doc: Node = tiptap.value.state.doc;
-  const plainText: string = tiptap.value.getText({ blockSeparator: '' });
-
-  // console.time('indexing...');
-
-  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
-  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
-  // console.timeEnd('indexing...');
-  // console.time('transfer to annos');
-
+function findAffectedAnnotations(
+  indexMap: IndexMap,
+  plainText: string,
+  store: Map<string, Annotation>,
+): Annotation[] {
   const affectedAnnos: Annotation[] = [];
 
-  decorationIndexMap.forEach((value, key) => {
-    const annoEntry = annotations.value?.get(key);
+  indexMap.forEach((value, key) => {
+    const annoEntry = store.get(key);
 
     // Should not happen actually
     if (!annoEntry) {
@@ -193,6 +175,44 @@ async function handleSaveChanges(): Promise<void> {
   });
 
   console.log(affectedAnnos);
+
+  return affectedAnnos;
+}
+
+// TODO: Annotations structure has changed, overhaul all methods inside
+async function handleSaveChanges(): Promise<void> {
+  if (!tiptap.value) {
+    return;
+  }
+
+  // if (!hasUnsavedChanges()) {
+  //   console.log('no changes made, no request needed');
+  //   return;
+  // }
+
+  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
+    tiptap.value.state,
+  )!.all.find();
+  const doc: Node = tiptap.value.state.doc;
+  const plainText: string = tiptap.value.getText({ blockSeparator: '' });
+
+  // console.time('indexing...');
+
+  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
+  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
+  // console.timeEnd('indexing...');
+  // console.time('transfer to annos');
+
+  const affectedStructuraAnnotations = findAffectedAnnotations(
+    structureIndexMap,
+    plainText,
+    structuralAnnotations.value as Map<string, Annotation>,
+  );
+  const affectedInlineAnnotations = findAffectedAnnotations(
+    decorationIndexMap,
+    plainText,
+    annotations.value as Map<string, Annotation>,
+  );
 
   // console.timeEnd('transfer to annos');
 
