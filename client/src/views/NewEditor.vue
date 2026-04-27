@@ -19,7 +19,7 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
-import { AnnotationData, IndexMap, TextAccessObject } from '../models/types';
+import { Annotation, AnnotationData, IndexMap, TextAccessObject } from '../models/types';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -30,6 +30,8 @@ import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonP
 import { buildDecorationIndexMap, buildStructureIndexMap } from '../utils/helper/indexHelper';
 import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
 import { Decoration } from '@tiptap/pm/view';
+import { Node } from '@tiptap/pm/model';
+import { cloneDeep } from '../utils/helper/helper';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -129,18 +131,73 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
-  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
-    tiptap.value.state,
-  )!.all.find();
-  const doc = tiptap.value.state.doc;
-
-  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
-  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
-
   // if (!hasUnsavedChanges()) {
   //   console.log('no changes made, no request needed');
   //   return;
   // }
+
+  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
+    tiptap.value.state,
+  )!.all.find();
+  const doc: Node = tiptap.value.state.doc;
+  const plainText: string = tiptap.value.getText({ blockSeparator: '' });
+
+  console.log(plainText.length);
+
+  // console.time('indexing...');
+
+  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
+  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
+  // console.timeEnd('indexing...');
+  // console.time('transfer to annos');
+
+  const affectedAnnos: Annotation[] = [];
+
+  decorationIndexMap.forEach((value, key) => {
+    const annoEntry = annotations.value?.get(key);
+
+    // Should not happen actually
+    if (!annoEntry) {
+      console.error(`The annotation with uuid ${key} could not be found`);
+      return;
+    }
+
+    const hasNewStart: boolean = annoEntry.data.properties.startIndex !== value.startIndex;
+    const hasNewEnd: boolean = annoEntry.data.properties.endIndex !== value.endIndex;
+    const isChangedOrCreatedOrDeleted: boolean = ['created', 'deleted', 'edited'].includes(
+      annoEntry.status,
+    );
+
+    if (hasNewStart || hasNewEnd || isChangedOrCreatedOrDeleted) {
+      // Needs to be cloned object to keep editor data clean. Otherwise, a failed operation would make problems
+      // ("status" field is updated, doc history not clean etc.)
+      const cloned: Annotation = cloneDeep(annoEntry);
+
+      // Apply indices to cloned object
+      if (hasNewStart) {
+        cloned.data.properties.startIndex = value.startIndex;
+      }
+
+      if (hasNewEnd) {
+        cloned.data.properties.endIndex = value.endIndex;
+      }
+
+      // Get slice of plain text
+      cloned.data.properties.text = plainText.slice(value.startIndex, value.endIndex + 1);
+
+      // Update status explicitly for changed indices. Otherwised changed/added/deleted annotations keep their status
+      if (hasNewStart || hasNewEnd) {
+        cloned.status = 'edited';
+      }
+
+      affectedAnnos.push(cloned);
+    }
+  });
+
+  console.log(affectedAnnos);
+
+  // console.timeEnd('transfer to annos');
+
   // asyncOperationRunning.value = true;
   // try {
   //   // TODO: Text needs to be saved to when labels are changed
@@ -416,8 +473,6 @@ watch(
     const standoffObject = { text: text.text.data.text, annotations: fetchedAnnotations };
 
     initializeTiptap(standoffObject);
-
-    console.log('anno count: ', fetchedAnnotations.length);
 
     isLoading.value = false;
   },

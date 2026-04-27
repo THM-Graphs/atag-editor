@@ -6,8 +6,6 @@ import { computed } from 'vue';
 
 const route = useRoute();
 
-console.log(route);
-
 const newRoute = computed(() => {
   if (route.path.includes('/texts/')) {
     return '/editor/' + route.params.uuid;
