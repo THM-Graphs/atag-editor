@@ -15,7 +15,7 @@ function traverseNode(node: Node, charIndex: number, map: IndexMap): number {
   });
 
   if (node.attrs.uuid) {
-    map.set(node.attrs.uuid, { startIndex, endIndex: current });
+    map.set(node.attrs.uuid, { startIndex, endIndex: current - 1 });
   }
 
   return current;
@@ -32,7 +32,7 @@ export function buildStructureIndexMap(doc: Node): IndexMap {
 }
 
 export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): IndexMap {
-  const sorted: number[] = [...new Set(decorations.flatMap(d => [d.from, d.to]))].sort(
+  const sortedPositions: number[] = [...new Set(decorations.flatMap(d => [d.from, d.to]))].sort(
     (a, b) => a - b,
   );
   const positionMap = new Map<number, number>();
@@ -41,17 +41,19 @@ export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): I
   let i: number = 0;
 
   doc.descendants((node: Node, nodePos: number) => {
-    if (i >= sorted.length) return false;
+    if (i >= sortedPositions.length) {
+      return false;
+    }
 
     if (node.isText) {
       const nodeEnd: number = nodePos + node.text!.length;
 
-      while (i < sorted.length && sorted[i] < nodePos) {
-        positionMap.set(sorted[i++], charIndex);
+      while (i < sortedPositions.length && sortedPositions[i] < nodePos) {
+        positionMap.set(sortedPositions[i++], charIndex);
       }
 
-      while (i < sorted.length && sorted[i] <= nodeEnd) {
-        const pos: number = sorted[i++];
+      while (i < sortedPositions.length && sortedPositions[i] <= nodeEnd) {
+        const pos: number = sortedPositions[i++];
         positionMap.set(pos, charIndex + (pos - nodePos));
       }
 
@@ -59,8 +61,8 @@ export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): I
     }
   });
 
-  while (i < sorted.length) {
-    positionMap.set(sorted[i++], charIndex);
+  while (i < sortedPositions.length) {
+    positionMap.set(sortedPositions[i++], charIndex);
   }
 
   const map = new Map<string, { startIndex: number; endIndex: number }>();
@@ -68,7 +70,7 @@ export function buildDecorationIndexMap(doc: Node, decorations: Decoration[]): I
   for (const deco of decorations) {
     map.set(deco.spec._uuid, {
       startIndex: positionMap.get(deco.from)!,
-      endIndex: positionMap.get(deco.to)!,
+      endIndex: positionMap.get(deco.to)! - 1,
     });
   }
 

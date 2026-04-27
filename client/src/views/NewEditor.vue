@@ -142,8 +142,6 @@ async function handleSaveChanges(): Promise<void> {
   const doc: Node = tiptap.value.state.doc;
   const plainText: string = tiptap.value.getText({ blockSeparator: '' });
 
-  console.log(plainText.length);
-
   // console.time('indexing...');
 
   const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
@@ -173,12 +171,12 @@ async function handleSaveChanges(): Promise<void> {
       // ("status" field is updated, doc history not clean etc.)
       const cloned: Annotation = cloneDeep(annoEntry);
 
-      // Apply indices to cloned object
-      if (hasNewStart) {
+      // Apply indices to cloned object (for existing or new annotations)
+      if (hasNewStart || annoEntry.status === 'created') {
         cloned.data.properties.startIndex = value.startIndex;
       }
 
-      if (hasNewEnd) {
+      if (hasNewEnd || annoEntry.status === 'created') {
         cloned.data.properties.endIndex = value.endIndex;
       }
 
