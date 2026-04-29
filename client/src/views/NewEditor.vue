@@ -179,16 +179,52 @@ function findAffectedAnnotations(
   return affectedAnnos;
 }
 
+function getEmtpyNodes(): Node[] {
+  const nodesWithoutText: Node[] = [];
+
+  tiptap.value!.state.doc.descendants((node: Node) => {
+    if (node.isText) {
+      if (!node.text || node.text === '') {
+        nodesWithoutText.push(node);
+      }
+    } else {
+      if (node.childCount === 0) {
+        nodesWithoutText.push(node);
+      }
+    }
+  });
+
+  return nodesWithoutText;
+}
+
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
   if (!tiptap.value) {
     return;
   }
 
+  console.log(tiptap.value.state.doc);
+
+  tiptap.value!.state.doc.descendants((node: Node) => {
+    if (!node.isText) {
+      console.log(node.type.name, node.attrs);
+    }
+  });
+
   // if (!hasUnsavedChanges()) {
   //   console.log('no changes made, no request needed');
   //   return;
   // }
+
+  const nodesWithoutChildrenOrText = getEmtpyNodes();
+
+  if (nodesWithoutChildrenOrText.length > 0) {
+    console.warn('Some nodes have no text: ', nodesWithoutChildrenOrText);
+
+    return;
+  }
+
+  return;
 
   const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
     tiptap.value.state,
@@ -547,19 +583,25 @@ watch(
       <EditorAnnotationButtonPaneNew />
       <div class="button-group text-center">
         <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
+          @click="
+            tiptap?.chain().focus().toggleHeading({ level: 1, annotationType: 'knecht' }).run()
+          "
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
         >
           H1
         </button>
         <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
+          @click="
+            tiptap?.chain().focus().toggleHeading({ level: 2, annotationType: 'knecht' }).run()
+          "
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
         >
           H2
         </button>
         <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
+          @click="
+            tiptap?.chain().focus().toggleHeading({ level: 3, annotationType: 'knecht' }).run()
+          "
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
         >
           H3
@@ -576,13 +618,7 @@ watch(
         >
           Bold
         </button>
-        <button
-          @click="
-            tiptap?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-          "
-        >
-          Insert table
-        </button>
+        <button @click="tiptap?.chain().focus().insertTable().run()">⋮⋮⋮ Table</button>
 
         <button
           @click="tiptap?.chain().focus().toggleBulletList().run()"
@@ -596,10 +632,9 @@ watch(
               ?.chain()
               .focus()
               .setZeroPointAnnotation({
-                type: 'deleted',
-                subType: '',
-                isZeroPoint: true,
-                uuid: '123',
+                additionalTexts: [],
+                properties: { type: 'deleted', subType: '', isZeroPoint: true, uuid: '123' },
+                entities: [],
               })
               .run()
           "

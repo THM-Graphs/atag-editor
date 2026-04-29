@@ -1,4 +1,12 @@
-import { AnnotationData, ApiJson, TiptapMark, TiptapNode, TiptapJson } from '../models/types';
+import {
+  AnnotationData,
+  ApiJson,
+  TiptapMark,
+  TiptapNode,
+  TiptapJson,
+  AnnotationType,
+} from '../models/types';
+import { useGuidelinesStore } from '../store/guidelines';
 
 type TreeNode = {
   content: string;
@@ -12,19 +20,17 @@ export default class StandoffConverter {
   private indexMap: Map<number, Set<string>> = new Map<number, Set<string>>();
   // private runs: TiptapNode[] = [];
   private tiptapJson: TiptapJson | null = null;
-  // TODO: This should come from guidelines, config etc.
-  private structuralAnnotationTypes: Set<string> = new Set([
-    'p',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'h6',
-  ]);
+  private structuralAnnotationConfigs: AnnotationType[] = [];
+  private structuralAnnotationTypes: Set<string> = new Set<string>();
 
   constructor(newStandoffJson: ApiJson) {
+    const { structuralAnnotationConfigs } = useGuidelinesStore();
+
     this.standoffJson = newStandoffJson;
+    this.structuralAnnotationConfigs = structuralAnnotationConfigs;
+    this.structuralAnnotationTypes = new Set<string>(
+      this.structuralAnnotationConfigs.map(c => c.type),
+    );
 
     this.convertStandoffToTipTap();
   }
@@ -238,7 +244,9 @@ export default class StandoffConverter {
 
   public convertStandoffToTipTap(): void {
     const textLength = this.standoffJson.text.length;
-    const annotations = this.standoffJson.annotations.filter(a => a.properties.type === 'p');
+    const annotations = this.standoffJson.annotations.filter(
+      a => a.properties.type === 'paragraph',
+    );
 
     const nodeTree: TreeNode = this.walkTree(0, textLength - 1, annotations);
 
@@ -257,15 +265,15 @@ export default class StandoffConverter {
     // this.createRunsForBlock();
 
     const tree: TiptapJson[] = this.standoffJson.annotations
-      .filter(a => a.properties.type === 'p')
+      .filter(a => a.properties.type === 'paragraph')
       .map(a => {
-        const text = a.properties.text;
         const runs = this.createRunsForBlock(a.properties.startIndex, a.properties.endIndex);
         return {
           type: 'paragraph',
           content: runs,
           attrs: {
             uuid: a.properties.uuid,
+            annotationType: a.properties.type,
           },
         };
       });

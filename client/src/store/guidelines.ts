@@ -3,6 +3,7 @@ import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
 import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
 
+const { initializeFilter } = useFilterStore();
 const guidelines = ref<IGuidelines>();
 const isFetching = ref<boolean>(false);
 const error = ref<any>(null);
@@ -11,7 +12,90 @@ const isInitialized = computed<boolean>(() => guidelines.value && !isFetching.va
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 const availableCollectionLabels = ref<string[]>([]);
 const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
-const { initializeFilter } = useFilterStore();
+
+const structuralAnnotationConfigs: AnnotationType[] = [
+  {
+    type: 'paragraph',
+    properties: [
+      {
+        name: 'type',
+        type: 'string',
+        required: true,
+        editable: true,
+        visible: true,
+      },
+    ],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'heading',
+    properties: [
+      {
+        name: 'level',
+        type: 'number',
+        minimum: 1,
+        maximum: 6,
+        required: true,
+        editable: true,
+        visible: true,
+      },
+    ],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'table',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'tableCell',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'tableRow',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'tableHeader',
+    properties: [
+      {
+        name: 'rowspan',
+        type: 'number',
+        required: true,
+        editable: true,
+        visible: true,
+      },
+      {
+        name: 'colspan',
+        type: 'number',
+        required: true,
+        editable: true,
+        visible: true,
+      },
+    ],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+];
 
 /**
  * Store for making the edition guidelines available to all components. When the component is mounted,
@@ -294,6 +378,7 @@ export function useGuidelinesStore() {
     guidelines,
     isFetching: readonly(isFetching),
     isInitialized: readonly(isInitialized),
+    structuralAnnotationConfigs,
     annotationHasConstraints,
     getAllCollectionConfigFields,
     getAnnotationConfig,

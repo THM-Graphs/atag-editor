@@ -133,6 +133,11 @@ export function createExtendedStandoffObject(standoffObject: {
   annotations: AnnotationData[];
 }): { text: string; annotations: AnnotationData[] } {
   const extended = cloneDeep(standoffObject);
+
+  if (extended.annotations.find(a => a.properties.type === 'paragraph')) {
+    return extended;
+  }
+
   extended.annotations.push({
     additionalTexts: [],
     properties: {
@@ -141,7 +146,7 @@ export function createExtendedStandoffObject(standoffObject: {
       uuid: 'abc123',
       subType: '',
       endIndex: standoffObject.text.length - 1,
-      type: 'p',
+      type: 'paragraph',
     },
     entities: [],
   });

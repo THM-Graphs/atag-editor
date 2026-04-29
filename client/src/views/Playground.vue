@@ -66,40 +66,10 @@ function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'
         Paragraph
       </button>
       <button
-        @click="tiptap?.chain().focus().toggleBold().run()"
-        :class="{ 'is-active': tiptap?.isActive('bold') }"
+        @click="tiptap?.chain().focus().insertTable().run()"
+        :class="{ 'is-active': tiptap?.isActive('table') }"
       >
-        Bold
-      </button>
-      <button
-        @click="tiptap?.chain().focus().setTextAlign('left').run()"
-        :class="{ 'is-active': tiptap?.isActive('textAlign') }"
-      >
-        <-- Global left
-      </button>
-      <button
-        @click="tiptap?.chain().focus().setTextAlign('right').run()"
-        :class="{ 'is-active': tiptap?.isActive('textAlign') }"
-      >
-        Global right --\>
-      </button>
-      <button
-        @click="tiptap?.chain().focus().setTextAlign('center').run()"
-        :class="{ 'is-active': tiptap?.isActive('textAlign') }"
-      >
-        Global center
-      </button>
-      <button
-        @click="tiptap?.chain().focus().increaseLineHeight().run()"
-        :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
-      >
-        lineheight UP
-      </button>
-      <button
-        @click="tiptap?.chain().focus().decreaseLineHeight().run()"
-        :class="{ 'is-active': tiptap?.isActive('lineHeight') }"
-      >
-        lineheight DOWN
+        ⋮⋮⋮ Table
       </button>
 
       <button

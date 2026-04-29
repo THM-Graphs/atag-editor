@@ -28,6 +28,7 @@ import {
 import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
 import { useEventListener } from '@vueuse/core';
+import { AnnotationAttributes } from '../services/AnnotationAttributes';
 
 const { selectedOptions } = useFilterStore();
 
@@ -51,8 +52,7 @@ function getConfiguredExtensions(): any[] {
       table: { resizable: true },
     }),
     TableOfContents.configure({
-      anchorTypes: ['heading', 'paragraph'],
-
+      anchorTypes: ['heading', 'paragraph', 'table', 'tableRow', 'tableHeader', 'tableCell'],
       getIndex: getHierarchicalIndexes,
       onUpdate: content => {
         toCItems.value = content;
@@ -60,6 +60,7 @@ function getConfiguredExtensions(): any[] {
     }),
     ListKit,
     Gapcursor,
+    HardBreak,
     UndoRedo,
     ZeroPointAnnotation,
     AnnotationDecoration,
@@ -68,6 +69,7 @@ function getConfiguredExtensions(): any[] {
       attributeName: 'uuid',
       generateID: () => crypto.randomUUID(),
     }),
+    AnnotationAttributes,
   ];
 }
 
