@@ -13,6 +13,8 @@ type TreeNode = {
   children: TreeNode[];
 };
 
+const { structuralAnnotationConfigs, getStructuralAnnotationConfig } = useGuidelinesStore();
+
 export default class StandoffConverter {
   private annotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
   private structuralAnnotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
@@ -24,8 +26,6 @@ export default class StandoffConverter {
   private structuralAnnotationTypes: Set<string> = new Set<string>();
 
   constructor(newStandoffJson: ApiJson) {
-    const { structuralAnnotationConfigs } = useGuidelinesStore();
-
     this.standoffJson = newStandoffJson;
     this.structuralAnnotationConfigs = structuralAnnotationConfigs;
     this.structuralAnnotationTypes = new Set<string>(
@@ -268,12 +268,22 @@ export default class StandoffConverter {
       .filter(a => a.properties.type === 'paragraph')
       .map(a => {
         const runs = this.createRunsForBlock(a.properties.startIndex, a.properties.endIndex);
+
+        let nodeAttrs: Record<string, any> = {};
+        const config: AnnotationType | undefined = getStructuralAnnotationConfig(a.properties.type);
+
+        if (config) {
+          config.properties?.forEach(field => {
+            nodeAttrs[field.name] = a.properties[field.name];
+          });
+        }
+
         return {
           type: 'paragraph',
           content: runs,
           attrs: {
             uuid: a.properties.uuid,
-            annotationType: a.properties.type,
+            ...nodeAttrs,
           },
         };
       });

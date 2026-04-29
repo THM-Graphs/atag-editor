@@ -24,6 +24,13 @@ const structuralAnnotationConfigs: AnnotationType[] = [
         editable: true,
         visible: true,
       },
+      {
+        name: 'wtfBro',
+        type: 'string',
+        required: true,
+        editable: true,
+        visible: true,
+      },
     ],
     shortcut: [],
     text: '',
@@ -150,6 +157,10 @@ export function useGuidelinesStore() {
    */
   function getAnnotationConfig(type: string): AnnotationType {
     return guidelines.value.annotations.types.find(t => t.type === type);
+  }
+
+  function getStructuralAnnotationConfig(type: string): AnnotationType | undefined {
+    return structuralAnnotationConfigs.find(t => t.type === type);
   }
 
   /**
@@ -390,6 +401,7 @@ export function useGuidelinesStore() {
     getCollectionAnnotationFields,
     getCollectionAnnotationConfig,
     getCollectionConfigFields,
+    getStructuralAnnotationConfig,
     initializeGuidelines,
   };
 }
