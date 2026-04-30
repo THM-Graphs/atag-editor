@@ -135,9 +135,11 @@ function setAnnotations(data: {
 export function useTiptapStore() {
   return {
     annotations,
-    toCItems,
+    initialAnnotations,
+    initialStructuralAnnotations,
     structuralAnnotations,
     tiptap,
+    toCItems,
     destroyTiptap,
     initializeTiptap,
     setAnnotations,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComputedRef, computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, computed, onUnmounted, ref, watch } from 'vue';
 import {
   RouteLocationNormalizedLoaded,
   useRoute,
@@ -19,7 +19,13 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
-import { Annotation, AnnotationData, IndexMap, TextAccessObject } from '../models/types';
+import {
+  Annotation,
+  AnnotationData,
+  IndexMap,
+  PropertyConfig,
+  TextAccessObject,
+} from '../models/types';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -27,11 +33,11 @@ import { useAppStore } from '../store/app';
 import PageOverlay from '../components/PageOverlay.vue';
 import { useTiptapStore } from '../store/tiptap';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
-import { buildDecorationIndexMap, buildStructureIndexMap } from '../utils/helper/indexHelper';
-import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
-import { Decoration } from '@tiptap/pm/view';
 import { Node } from '@tiptap/pm/model';
 import { cloneDeep } from '../utils/helper/helper';
+import { useCreateIndexMaps } from '../composables/useCreateIndexMaps';
+import { useGuidelinesStore } from '../store/guidelines';
+import IAnnotation from '../models/IAnnotation';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -41,8 +47,16 @@ interface SidebarConfig {
 const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid = computed<string>(() => route.params.uuid as string);
 
-const { tiptap, initializeTiptap, destroyTiptap, annotations, structuralAnnotations } =
-  useTiptapStore();
+const {
+  tiptap,
+  initializeTiptap,
+  destroyTiptap,
+  annotations,
+  initialStructuralAnnotations,
+  initialAnnotations,
+} = useTiptapStore();
+
+const { getStructuralAnnotationConfig } = useGuidelinesStore();
 
 onUnmounted(() => destroyTiptap());
 
@@ -126,57 +140,22 @@ const metadataRef = ref(null);
 const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
-function findAffectedAnnotations(
-  indexMap: IndexMap,
-  plainText: string,
-  store: Map<string, Annotation>,
-): Annotation[] {
-  const affectedAnnos: Annotation[] = [];
+function isBlock(node: Node): boolean {
+  if (node.type.isBlock || node.type.name === 'hardBreak') {
+    return true;
+  }
 
-  indexMap.forEach((value, key) => {
-    const annoEntry = store.get(key);
+  return false;
+}
 
-    // Should not happen actually
-    if (!annoEntry) {
-      console.error(`The annotation with uuid ${key} could not be found`);
-      return;
-    }
+function logMap(heading: string, map: IndexMap) {
+  console.log(`%c${heading}`, 'font-weight: bold; font-size: 18px;');
+  const plainText: string = tiptap.value!.state.doc.textContent;
 
-    const hasNewStart: boolean = annoEntry.data.properties.startIndex !== value.startIndex;
-    const hasNewEnd: boolean = annoEntry.data.properties.endIndex !== value.endIndex;
-    const isChangedOrCreatedOrDeleted: boolean = ['created', 'deleted', 'edited'].includes(
-      annoEntry.status,
-    );
-
-    if (hasNewStart || hasNewEnd || isChangedOrCreatedOrDeleted) {
-      // Needs to be cloned object to keep editor data clean. Otherwise, a failed operation would make problems
-      // ("status" field is updated, doc history not clean etc.)
-      const cloned: Annotation = cloneDeep(annoEntry);
-
-      // Apply indices to cloned object (for existing or new annotations)
-      if (hasNewStart || annoEntry.status === 'created') {
-        cloned.data.properties.startIndex = value.startIndex;
-      }
-
-      if (hasNewEnd || annoEntry.status === 'created') {
-        cloned.data.properties.endIndex = value.endIndex;
-      }
-
-      // Get slice of plain text
-      cloned.data.properties.text = plainText.slice(value.startIndex, value.endIndex + 1);
-
-      // Update status explicitly for changed indices. Otherwised changed/added/deleted annotations keep their status
-      if (hasNewStart || hasNewEnd) {
-        cloned.status = 'edited';
-      }
-
-      affectedAnnos.push(cloned);
-    }
+  [...map.values()].forEach(indexSet => {
+    const slice = plainText.slice(indexSet.startIndex, indexSet.endIndex + 1);
+    console.log(indexSet.startIndex, indexSet.endIndex, slice);
   });
-
-  console.log(affectedAnnos);
-
-  return affectedAnnos;
 }
 
 function getEmtpyNodes(): Node[] {
@@ -197,6 +176,168 @@ function getEmtpyNodes(): Node[] {
   return nodesWithoutText;
 }
 
+function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotation[] {
+  const affectedAnnos: Annotation[] = [];
+
+  // Loop through annotations currently in the editor
+  indexMap.forEach((value, uuid) => {
+    const currentEntry: Annotation | undefined = annotations.value?.get(uuid);
+    const initialEntry: Annotation | undefined = initialAnnotations.value?.get(uuid);
+
+    // Should not happen actually
+    if (!currentEntry) {
+      console.error(`The annotation with uuid ${uuid} could not be found`);
+      return;
+    }
+
+    const { startIndex, endIndex } = value;
+    const textSlice: string = plainText.slice(startIndex, endIndex + 1);
+
+    const hasNewStart: boolean =
+      !initialEntry || initialEntry.data.properties.startIndex !== startIndex;
+    const hasNewEnd: boolean = !initialEntry || initialEntry.data.properties.endIndex !== endIndex;
+    const hasChangedText: boolean =
+      !initialEntry || initialEntry.data.properties.text !== textSlice;
+    const isEditedOrDeleted: boolean = ['created', 'deleted', 'edited'].includes(
+      currentEntry.status,
+    );
+
+    if (hasNewStart || hasNewEnd || hasChangedText || isEditedOrDeleted) {
+      // Needs to be cloned object to keep editor data clean. Otherwise, a failed operation would make problems
+      // ("status" field is updated, doc history not clean etc.)
+      const cloned: Annotation = cloneDeep(currentEntry);
+
+      // Apply indices to cloned object (for existing or new annotations)
+      if (hasNewStart || currentEntry.status === 'created') {
+        cloned.data.properties.startIndex = value.startIndex;
+      }
+
+      if (hasNewEnd || currentEntry.status === 'created') {
+        cloned.data.properties.endIndex = value.endIndex;
+      }
+
+      // Get slice of plain text
+      cloned.data.properties.text = textSlice;
+
+      // Update status explicitly for changed indices. Otherwised changed/added/deleted annotations keep their status
+      if (hasNewStart || hasNewEnd) {
+        cloned.status = 'edited';
+      }
+
+      affectedAnnos.push(cloned);
+    }
+  });
+
+  return affectedAnnos;
+}
+
+function getConfiguredNodeAttrs(node: Node, type: string) {
+  // retrieve configured attributes from node (e.g. not "data-toc-id" or anything editor related)
+  const fields: PropertyConfig[] = getStructuralAnnotationConfig(type)?.properties ?? [];
+
+  const filteredAttrs: Record<string, any> = {};
+
+  fields.forEach((field: PropertyConfig) => {
+    if (field.name in node.attrs) {
+      filteredAttrs[field.name] = node.attrs[field.name];
+    }
+  });
+
+  return filteredAttrs;
+}
+
+function findChangedStructureElements(indexMap: IndexMap, plainText: string): Annotation[] {
+  const affectedElements: Annotation[] = [];
+
+  const nodes = new Map<string, Node>();
+
+  tiptap.value?.state.doc.descendants(node => {
+    if (isBlock(node)) {
+      nodes.set(node.attrs.uuid, node);
+    }
+  });
+
+  // Loop through nodes currently in the editor
+  indexMap.forEach((value, uuid) => {
+    const node: Node | undefined = nodes.get(uuid);
+    const initialEntry: Annotation | undefined = initialStructuralAnnotations.value?.get(uuid);
+
+    // Should not happen actually
+    if (!node) {
+      console.error(`The annotation with uuid ${uuid} could not be found`);
+      return;
+    }
+
+    const { startIndex, endIndex } = value;
+    const textSlice: string = plainText.slice(startIndex, endIndex + 1);
+
+    const isNew: boolean = !initialEntry;
+
+    // Create annotation object (needed)
+    const annotation: Annotation = {
+      characterUuids: [],
+      startUuid: '',
+      endUuid: '',
+      initialData: {} as AnnotationData,
+      status: isNew ? 'created' : 'edited',
+      isTruncated: false,
+      data: {
+        additionalTexts: [],
+        properties: {
+          ...getConfiguredNodeAttrs(node, node.type.name),
+          startIndex,
+          endIndex,
+          text: textSlice,
+        } as IAnnotation,
+        entities: [],
+      },
+    };
+
+    affectedElements.push(annotation);
+  });
+
+  // Get elements which are deleted in editor
+  const uuidsInEditor = new Set<string>([...indexMap.keys()]);
+  const initialUuids = new Set<string>([...(initialStructuralAnnotations.value?.keys() ?? [])]);
+  const deletedUuids = initialUuids.difference(uuidsInEditor);
+
+  deletedUuids.forEach(uuid => {
+    const annoEntry: Annotation = initialAnnotations.value?.get(uuid)!;
+
+    const cloned: Annotation = { ...cloneDeep(annoEntry), status: 'deleted' };
+
+    affectedElements.push(cloned);
+  });
+
+  return affectedElements;
+}
+
+function getAffectedAnnotations(): Annotation[] {
+  const plainText: string = tiptap.value!.state.doc.textContent;
+
+  const { decorationIndexMap, structureBlockIndexMap, zeroPointIndexMap, hardBreakIndexMap } =
+    useCreateIndexMaps().buildIndexMaps();
+
+  // logMap('structureBlockIndexMap', structureBlockIndexMap as IndexMap);
+  // logMap('hardBreakIndexMap', hardBreakIndexMap as IndexMap);
+  // logMap('zeroPointIndexMap', zeroPointIndexMap as IndexMap);
+  // logMap('decorationIndexMap', decorationIndexMap as IndexMap);
+
+  // Zero point and range annotation are stored in the same store and can therefore share the same index map
+  const changedAnnotations = findChangedAnnotations(
+    new Map([...decorationIndexMap, ...zeroPointIndexMap]) as IndexMap,
+    plainText,
+  );
+
+  // hardBreaks and blocks are stored in the same store and can therefore share the same index map
+  const affectedStructureBlocks = findChangedStructureElements(
+    new Map([...structureBlockIndexMap, ...hardBreakIndexMap]) as IndexMap,
+    plainText,
+  );
+
+  return [...affectedStructureBlocks, ...changedAnnotations];
+}
+
 // TODO: Annotations structure has changed, overhaul all methods inside
 async function handleSaveChanges(): Promise<void> {
   if (!tiptap.value) {
@@ -204,51 +345,30 @@ async function handleSaveChanges(): Promise<void> {
   }
 
   console.log(tiptap.value.state.doc);
+  // return;
 
-  tiptap.value!.state.doc.descendants((node: Node) => {
-    if (!node.isText) {
-      console.log(node.type.name, node.attrs);
-    }
-  });
+  // tiptap.value!.state.doc.descendants((node: Node) => {
+  //   if (!node.isText) {
+  //     console.log(node.type.name, node.attrs);
+  //   }
+  // });
 
   // if (!hasUnsavedChanges()) {
   //   console.log('no changes made, no request needed');
   //   return;
   // }
 
-  const nodesWithoutChildrenOrText = getEmtpyNodes();
+  // const nodesWithoutChildrenOrText = getEmtpyNodes();
 
-  if (nodesWithoutChildrenOrText.length > 0) {
-    console.warn('Some nodes have no text: ', nodesWithoutChildrenOrText);
+  // if (nodesWithoutChildrenOrText.length > 0) {
+  //   console.warn('Some nodes have no text: ', nodesWithoutChildrenOrText);
 
-    return;
-  }
+  //   return;
+  // }
 
-  return;
+  // return;
 
-  const decorations: Decoration[] = ANNOTATION_DECORATION_KEY.getState(
-    tiptap.value.state,
-  )!.all.find();
-  const doc: Node = tiptap.value.state.doc;
-  const plainText: string = tiptap.value.getText({ blockSeparator: '' });
-
-  // console.time('indexing...');
-
-  const structureIndexMap: IndexMap = buildStructureIndexMap(doc);
-  const decorationIndexMap: IndexMap = buildDecorationIndexMap(doc, decorations);
-  // console.timeEnd('indexing...');
-  // console.time('transfer to annos');
-
-  const affectedStructuraAnnotations = findAffectedAnnotations(
-    structureIndexMap,
-    plainText,
-    structuralAnnotations.value as Map<string, Annotation>,
-  );
-  const affectedInlineAnnotations = findAffectedAnnotations(
-    decorationIndexMap,
-    plainText,
-    annotations.value as Map<string, Annotation>,
-  );
+  const affectedAnnotations = getAffectedAnnotations();
 
   // console.timeEnd('transfer to annos');
 

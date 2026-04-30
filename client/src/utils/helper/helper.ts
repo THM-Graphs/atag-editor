@@ -143,7 +143,7 @@ export function createExtendedStandoffObject(standoffObject: {
     properties: {
       text: standoffObject.text,
       startIndex: 0,
-      uuid: 'abc123',
+      uuid: 'wrapper-paragraph',
       subType: '',
       endIndex: standoffObject.text.length - 1,
       type: 'paragraph',
