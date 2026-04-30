@@ -19,10 +19,10 @@ const annotationsInSelection = computed<Annotation[]>(() => {
 
   const { from, to } = tiptap.value.state.selection;
 
+  const annosBetweenPositions: Annotation[] = [];
+
   const decorations: DecorationSet =
     ANNOTATION_DECORATION_KEY.getState(tiptap.value.view.state)?.all ?? DecorationSet.empty;
-
-  const annosBetweenPositions: Annotation[] = [];
 
   decorations.find(from, to).forEach(decoration => {
     const uuid: string = decoration.spec._uuid;
@@ -30,6 +30,17 @@ const annotationsInSelection = computed<Annotation[]>(() => {
 
     if (annoEntry) {
       annosBetweenPositions.push(annoEntry);
+    }
+  });
+
+  tiptap.value.state.doc.nodesBetween(from, to, node => {
+    if (node.type.name === 'zeroPointAnnotation') {
+      const uuid: string = node.attrs.uuid;
+      const annoEntry: Annotation | undefined = allAnnotations.value?.get(uuid);
+
+      if (annoEntry) {
+        annosBetweenPositions.push(annoEntry);
+      }
     }
   });
 
@@ -47,8 +58,9 @@ const annotationsInSelection = computed<Annotation[]>(() => {
       <template v-for="annotation in annotationsInSelection" :key="annotation.data.properties.uuid">
         <EditorAnnotationFormNew
           :annotation="annotation"
-          v-if="selectedOptions.includes(annotation.data.properties.type)"
+          v-if="[...selectedOptions].includes(annotation.data.properties.type)"
         />
+        <div v-if="annotation.data.properties.type === 'paragraph'">Paragraph</div>
       </template>
     </div>
   </div>

@@ -62,10 +62,11 @@ export type TiptapMark = {
   attrs: Record<string, any>;
 };
 
-export type AllowedTiptapNodeTypes = 'doc' | 'paragraph' | 'text' | 'hardBreak';
+export type AllowedTiptapNodeTypes = string;
 
 export type TiptapNode = {
   type: AllowedTiptapNodeTypes;
+  attrs?: Record<string, any>;
   content?: TiptapNode[];
   marks?: TiptapMark[];
   text?: string;

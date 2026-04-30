@@ -3,12 +3,12 @@ import { Extension } from '@tiptap/core';
 import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { useGuidelinesStore } from '../store/guidelines';
-import { AnnotationData, AnnotationType } from '../models/types';
+import { AnnotationData } from '../models/types';
 import { AddAnnotationStep } from './addAnnotationStep';
 import { RemoveAnnotationStep } from './removeAnnotationStep';
 import { indexToPosition } from '../utils/helper/indexHelper';
 
-const { getAnnotationConfig } = useGuidelinesStore();
+const { isZeroPoint } = useGuidelinesStore();
 
 export const ANNOTATION_DECORATION_KEY = new PluginKey<AnnotationDecorationState>(
   'annotationDecoration',
@@ -65,43 +65,7 @@ type AnnotationDecorationSpec = {
   _uuid: string;
 };
 
-function isZeroPoint(annotation: AnnotationData): boolean {
-  const config: AnnotationType = getAnnotationConfig(annotation.properties.type);
-
-  if (!config) {
-    console.error(
-      `The configuration of annotation type "${annotation.properties.tpye} could not be found`,
-    );
-
-    return false;
-  }
-
-  // TODO: Should the isZeroPoint property of the annotation also (or instead) be included?
-  return config.isZeroPoint ? true : false;
-}
-
-function createWidgetDecoration(after: number, annotation: AnnotationData): Decoration {
-  // Widget decoration for the comment indicator
-  const elm: HTMLSpanElement = document.createElement('span');
-
-  // TODO: Make this also dynamic
-  elm.className = 'indicator';
-  elm.textContent = '❣';
-  elm.dataset.uuid = annotation.properties.uuid;
-
-  // TODO: Is this needed or handled by tiptap?
-  elm.style.userSelect = 'false';
-
-  return Decoration.widget(after, elm, {
-    side: -1,
-    key: `widget-${annotation.properties.uuid}`,
-    // ignoreSelection: true,
-    _type: annotation.properties.type,
-    _uuid: annotation.properties.uuid,
-  });
-}
-
-function createInlineDecoration(from: number, to: number, annotation: AnnotationData): Decoration {
+function createDecoration(from: number, to: number, annotation: AnnotationData): Decoration {
   return Decoration.inline(
     from,
     to,
@@ -128,11 +92,7 @@ function createInitialDecorations(
     const start: number = indexToPosition(doc, startIndex);
     const end: number = indexToPosition(doc, endIndex + 1);
 
-    if (isZeroPoint(annotation)) {
-      decos.push(createWidgetDecoration(start + 1, annotation));
-    } else {
-      decos.push(createInlineDecoration(start, end, annotation));
-    }
+    decos.push(createDecoration(start, end, annotation));
   }
 
   return decos;
@@ -214,9 +174,14 @@ export const AnnotationDecoration = Extension.create({
           visibleTo: number,
         ) =>
         ({ tr, dispatch }) => {
+          // TODO: Or should this be filtered outside the plugin?
+          const filtered = new Map<string, AnnotationData>(
+            [...annotations].filter(([_, annotation]) => !isZeroPoint(annotation)),
+          );
+
           const meta: InitMeta = {
             type: 'initialize',
-            annotations: annotations,
+            annotations: filtered,
             selectedTypes,
             visibleFrom,
             visibleTo,
@@ -361,9 +326,7 @@ export const AnnotationDecoration = Extension.create({
               if (step instanceof AddAnnotationStep) {
                 const { from, to, annotation } = step;
 
-                const newDeco: Decoration = isZeroPoint(annotation)
-                  ? createWidgetDecoration(from + 1, annotation)
-                  : createInlineDecoration(from, to, annotation);
+                const newDeco: Decoration = createDecoration(from, to, annotation);
 
                 newAll = newAll.add(doc, [newDeco]);
                 decorationsChanged = true;

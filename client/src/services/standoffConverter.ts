@@ -1,37 +1,18 @@
-import {
-  AnnotationData,
-  ApiJson,
-  TiptapMark,
-  TiptapNode,
-  TiptapJson,
-  AnnotationType,
-} from '../models/types';
+import { AnnotationData, ApiJson, TiptapNode, TiptapJson } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
-type TreeNode = {
-  content: string;
-  children: TreeNode[];
-};
-
-const { structuralAnnotationConfigs, getStructuralAnnotationConfig } = useGuidelinesStore();
+const { structuralAnnotationConfigs, isZeroPoint } = useGuidelinesStore();
 
 export default class StandoffConverter {
-  private annotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
-  private structuralAnnotations: Map<string, AnnotationData> = new Map<string, AnnotationData>();
+  private annotations: Map<string, AnnotationData> = new Map();
+  private structuralAnnotations: Map<string, AnnotationData> = new Map();
   private standoffJson: ApiJson;
-  private indexMap: Map<number, Set<string>> = new Map<number, Set<string>>();
-  // private runs: TiptapNode[] = [];
   private tiptapJson: TiptapJson | null = null;
-  private structuralAnnotationConfigs: AnnotationType[] = [];
-  private structuralAnnotationTypes: Set<string> = new Set<string>();
+  private structuralAnnotationTypes: Set<string>;
 
   constructor(newStandoffJson: ApiJson) {
     this.standoffJson = newStandoffJson;
-    this.structuralAnnotationConfigs = structuralAnnotationConfigs;
-    this.structuralAnnotationTypes = new Set<string>(
-      this.structuralAnnotationConfigs.map(c => c.type),
-    );
-
+    this.structuralAnnotationTypes = new Set(structuralAnnotationConfigs.map(c => c.type));
     this.convertStandoffToTipTap();
   }
 
@@ -47,253 +28,144 @@ export default class StandoffConverter {
     };
   }
 
-  private createIndexMap(): void {
-    const map: Map<number, Set<string>> = new Map();
-
-    for (let i = 0; i < this.standoffJson.text.length; i++) {
-      map.set(i, new Set<string>());
-    }
-
-    this.annotations.values().forEach(annotation => {
-      const { startIndex, endIndex, uuid, type } = annotation.properties;
-
-      // The index map is only for non-structural annotations,
-      // as structural annotations will be represented as nodes in the tree, not marks on text
-      if (this.structuralAnnotationTypes.has(type)) {
-        return;
-      }
-
-      for (let i = startIndex; i <= endIndex; i++) {
-        const existingUuids: Set<string> | undefined = map.get(i);
-
-        existingUuids?.add(uuid);
-      }
-    });
-
-    this.indexMap = map;
-  }
-
-  private createRunsForBlock(startIndex: number, endIndex: number): TiptapNode[] {
-    const runs: TiptapNode[] = [];
-
-    let isFirstRun: boolean = true;
-    let currentRun: TiptapNode | null = null;
-
-    currentRun = {
-      type: 'text',
-      text: '',
-      marks: [],
-    };
-
-    for (let i = startIndex; i <= endIndex; i++) {
-      const textAtIndex: string = this.standoffJson.text[i];
-      const uuidsAtIndex: Set<string> = this.indexMap.get(i) ?? new Set<string>();
-      const annosAtIndex: TiptapMark[] = [...uuidsAtIndex].map(uuid => {
-        const annotation = this.annotations.get(uuid);
-
-        const markData: TiptapMark = {
-          type: 'annotation',
-          attrs: {
-            uuid: annotation?.properties.uuid,
-            type: annotation?.properties.type,
-            subType: annotation?.properties.subType ?? '',
-            isZeroPoint: false,
-          },
-        };
-
-        return markData;
-      });
-
-      const previousUuids = this.indexMap.get(i - 1) ?? new Set<string>();
-
-      if (isFirstRun) {
-        currentRun.text += textAtIndex;
-        currentRun.marks = annosAtIndex;
-
-        isFirstRun = false;
-      } else {
-        // If sets are same, just push text to it and jump to next loop
-        if (
-          previousUuids.difference(uuidsAtIndex).size === 0 &&
-          uuidsAtIndex.difference(previousUuids).size === 0 &&
-          !isFirstRun
-        ) {
-          currentRun!.text += textAtIndex;
-
-          // if (i === endIndex - 1) {
-          //   runs.push(currentRun as TiptapNode);
-          // }
-
-          continue;
-        } else {
-          // If sets are different, push current run to array and open up new run
-          runs.push(currentRun as TiptapNode);
-
-          currentRun = {
-            type: 'text',
-            text: textAtIndex,
-            marks: annosAtIndex,
-          };
-        }
-      }
-    }
-
-    // Close and push run after the last loops has run
-    runs.push(currentRun as TiptapNode);
-
-    return [
-      {
-        type: 'text',
-        text: this.standoffJson.text.slice(startIndex, endIndex + 1),
-        marks: [],
-      },
-    ];
-
-    return runs;
-  }
-
   private createAnnotationUuidMaps(): void {
-    this.standoffJson.annotations.forEach(a => {
+    for (const a of this.standoffJson.annotations) {
       if (this.structuralAnnotationTypes.has(a.properties.type)) {
-        this.structuralAnnotations.set(a.properties.uuid, a as AnnotationData);
+        this.structuralAnnotations.set(a.properties.uuid, a);
       } else {
-        this.annotations.set(a.properties.uuid, a as AnnotationData);
+        this.annotations.set(a.properties.uuid, a);
       }
-    });
+    }
   }
 
-  private getChildren(startIndex: number, endIndex: number): AnnotationData[] {
-    const annotationsBetween: AnnotationData[] = this.standoffJson.annotations.filter(a => {
-      a.properties.startIndex >= startIndex && a.properties.endIndex <= endIndex;
-    });
-
-    return annotationsBetween;
-  }
-
-  private getOrderedChildren(
-    startIndex: number,
-    endIndex: number,
-    annotations: AnnotationData[],
+  // Returns the immediate structural children of `annotation` within `allStructural`.
+  // Hard breaks are excluded — they are inline nodes handled in createLeafContent.
+  private findDirectChildren(
+    annotation: AnnotationData,
+    allStructural: AnnotationData[],
   ): AnnotationData[] {
-    // const childrenAnnotations: AnnotationData[] = this.getChildren(startIndex, endIndex);
-    const orderedList: AnnotationData[] = [];
+    const { uuid, startIndex, endIndex } = annotation.properties;
 
-    const first = annotations.find(a => a.properties.startIndex === startIndex);
+    const contained = allStructural.filter(
+      a =>
+        a.properties.uuid !== uuid &&
+        a.properties.type !== 'hardBreak' &&
+        a.properties.startIndex >= startIndex &&
+        a.properties.endIndex <= endIndex,
+    );
 
-    if (!first) {
-      return orderedList;
-    }
-
-    orderedList.push(first);
-
-    let currentEndIndex: number = first.properties.endIndex;
-
-    // Loop until end is reached
-    while (currentEndIndex <= endIndex) {
-      const anno = annotations.find(a => a.properties.startIndex === currentEndIndex + 1);
-
-      if (!anno) {
-        break;
-      }
-
-      // Push to list
-      orderedList.push(anno);
-
-      // Set new boundary
-      currentEndIndex = anno.properties.endIndex;
-    }
-
-    return orderedList;
+    return contained
+      .filter(
+        child =>
+          !contained.some(
+            b =>
+              b.properties.uuid !== child.properties.uuid &&
+              b.properties.startIndex <= child.properties.startIndex &&
+              b.properties.endIndex >= child.properties.endIndex,
+          ),
+      )
+      .sort((a, b) => a.properties.startIndex - b.properties.startIndex);
   }
 
-  private walkTree(
-    startIndex: number,
-    endIndex: number,
-    annotations: AnnotationData[],
-    parentUuid?: string,
-  ): TreeNode {
-    const content: string = this.standoffJson.text.slice(startIndex, endIndex + 1);
+  private createTextNode(startIndex: number, endIndex: number): TiptapNode[] {
+    const text = this.standoffJson.text.slice(startIndex, endIndex + 1);
+    return text ? [{ type: 'text', text }] : [];
+  }
 
-    // Get direct children within this range, excluding the parent itself
-    let children: AnnotationData[] = this.getOrderedChildren(
-      startIndex,
-      endIndex,
-      annotations,
-    ).filter(a => (parentUuid ? a.properties.uuid !== parentUuid : true));
+  // Builds the inline content of a leaf structural node, interleaving text with
+  // zero-point atom nodes and hard breaks, all sorted by position.
+  private createLeafContent(startIndex: number, endIndex: number): TiptapNode[] {
+    type InlineEntry = { pos: number; node: TiptapNode };
+
+    const inRange = (a: AnnotationData) =>
+      a.properties.startIndex >= startIndex && a.properties.startIndex <= endIndex;
+
+    const zeroPointEntries: InlineEntry[] = [...this.annotations.values()]
+      .filter(a => isZeroPoint(a) && inRange(a))
+      .map(a => ({
+        pos: a.properties.startIndex,
+        node: {
+          type: 'zeroPointAnnotation',
+          attrs: { uuid: a.properties.uuid, annotationData: a },
+        },
+      }));
+
+    const hardBreakEntries: InlineEntry[] = [...this.structuralAnnotations.values()]
+      .filter(a => a.properties.type === 'hardBreak' && inRange(a))
+      .map(a => ({
+        pos: a.properties.startIndex,
+        node: { type: 'hardBreak', attrs: { uuid: a.properties.uuid } },
+      }));
+
+    const inlineNodes = [...zeroPointEntries, ...hardBreakEntries].sort((a, b) => a.pos - b.pos);
+
+    if (inlineNodes.length === 0) {
+      return this.createTextNode(startIndex, endIndex);
+    }
+
+    const nodes: TiptapNode[] = [];
+    let cursor = startIndex;
+
+    for (const { pos, node } of inlineNodes) {
+      // Text up to and including the character at pos (inline node sits after this character)
+      if (cursor <= pos) {
+        nodes.push(...this.createTextNode(cursor, pos));
+      }
+      nodes.push(node);
+      cursor = pos + 1;
+    }
+
+    if (cursor <= endIndex) {
+      nodes.push(...this.createTextNode(cursor, endIndex));
+    }
+
+    return nodes;
+  }
+
+  private buildStructuralNode(
+    annotation: AnnotationData,
+    allStructural: AnnotationData[],
+  ): TiptapNode {
+    const directChildren = this.findDirectChildren(annotation, allStructural);
+    const { startIndex, endIndex } = annotation.properties;
+
+    const content: TiptapNode[] =
+      directChildren.length === 0
+        ? this.createLeafContent(startIndex, endIndex)
+        : directChildren.map(child => this.buildStructuralNode(child, allStructural));
 
     return {
+      type: annotation.properties.type,
+      // Spread all annotation properties so the save path can reconstruct them from node.attrs
+      attrs: {
+        ...annotation.properties,
+        annotationType: annotation.properties.type,
+      },
       content,
-      children: children.map(ch => {
-        // Get annotations nested inside this child's range
-        const nestedAnnotations = annotations.filter(
-          a =>
-            a.properties.uuid !== ch.properties.uuid &&
-            a.properties.startIndex >= ch.properties.startIndex &&
-            a.properties.endIndex <= ch.properties.endIndex,
-        );
-
-        return this.walkTree(
-          ch.properties.startIndex,
-          ch.properties.endIndex,
-          nestedAnnotations, // ✅ scoped to this child's range
-          ch.properties.uuid, // ✅ exclude the child itself in next level
-        );
-      }),
     };
   }
 
   public convertStandoffToTipTap(): void {
-    const textLength = this.standoffJson.text.length;
-    const annotations = this.standoffJson.annotations.filter(
-      a => a.properties.type === 'paragraph',
-    );
-
-    const nodeTree: TreeNode = this.walkTree(0, textLength - 1, annotations);
-
-    // console.log(nodeTree);
-
-    // console.log(nodeTree);
-
-    let baseTree: TiptapJson = {
-      type: 'doc',
-      content: [],
-    };
-
     this.createAnnotationUuidMaps();
-    this.createIndexMap();
 
-    // this.createRunsForBlock();
+    const allStructural: AnnotationData[] = [...this.structuralAnnotations.values()];
 
-    const tree: TiptapJson[] = this.standoffJson.annotations
-      .filter(a => a.properties.type === 'paragraph')
-      .map(a => {
-        const runs = this.createRunsForBlock(a.properties.startIndex, a.properties.endIndex);
+    // Root annotations: not contained by any other structural annotation
+    const roots: AnnotationData[] = allStructural
+      .filter(
+        a =>
+          !allStructural.some(
+            b =>
+              b.properties.uuid !== a.properties.uuid &&
+              b.properties.startIndex <= a.properties.startIndex &&
+              b.properties.endIndex >= a.properties.endIndex,
+          ),
+      )
+      .sort((a, b) => a.properties.startIndex - b.properties.startIndex);
 
-        let nodeAttrs: Record<string, any> = {};
-        const config: AnnotationType | undefined = getStructuralAnnotationConfig(a.properties.type);
-
-        if (config) {
-          config.properties?.forEach(field => {
-            nodeAttrs[field.name] = a.properties[field.name];
-          });
-        }
-
-        return {
-          type: 'paragraph',
-          content: runs,
-          attrs: {
-            uuid: a.properties.uuid,
-            ...nodeAttrs,
-          },
-        };
-      });
-
-    baseTree.content = tree;
-
-    // 1. Create doc structure
-    // 2. Create runs from marks
-    // 2.1 Set Map with key = index and value = Set<annotation uuid>
-
-    this.tiptapJson = baseTree;
+    this.tiptapJson = {
+      type: 'doc',
+      content: roots.map(root => this.buildStructuralNode(root, allStructural)),
+    };
   }
 }

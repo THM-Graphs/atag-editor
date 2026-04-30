@@ -1,7 +1,12 @@
 import { computed, readonly, ref } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
-import { AnnotationConfigEntity, AnnotationType, PropertyConfig } from '../models/types';
+import {
+  AnnotationConfigEntity,
+  AnnotationData,
+  AnnotationType,
+  PropertyConfig,
+} from '../models/types';
 
 const { initializeFilter } = useFilterStore();
 const guidelines = ref<IGuidelines>();
@@ -16,22 +21,7 @@ const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 const structuralAnnotationConfigs: AnnotationType[] = [
   {
     type: 'paragraph',
-    properties: [
-      {
-        name: 'type',
-        type: 'string',
-        required: true,
-        editable: true,
-        visible: true,
-      },
-      {
-        name: 'wtfBro',
-        type: 'string',
-        required: true,
-        editable: true,
-        visible: true,
-      },
-    ],
+    properties: [],
     shortcut: [],
     text: '',
     category: 'structure',
@@ -97,6 +87,14 @@ const structuralAnnotationConfigs: AnnotationType[] = [
         visible: true,
       },
     ],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'hardBreak',
+    properties: [],
     shortcut: [],
     text: '',
     category: 'structure',
@@ -368,6 +366,28 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Returns whether an annotation is a zero-point annotation, based on its type
+   * config or its own `isZeroPoint` property.
+   *
+   * @param annotation - The annotation to check.
+   * @returns `true` if the annotation is a zero-point annotation, `false` otherwise.
+   */
+  function isZeroPoint(annotation: AnnotationData): boolean {
+    const config: AnnotationType = getAnnotationConfig(annotation.properties.type);
+
+    if (!config) {
+      console.error(
+        `The configuration of annotation type "${annotation.properties.tpye} could not be found`,
+      );
+
+      return false;
+    }
+
+    // TODO: Should the isZeroPoint property of the annotation also (or instead) be included?
+    return config.isZeroPoint || annotation.properties.isZeroPoint === true;
+  }
+
+  /**
    * Sorts each group of annotation types alphabetically by their type within their respective category.
    *
    * @return {Record<string, AnnotationType[]>} An object where the keys are the categories and the values are arrays of sorted annotation types.
@@ -403,5 +423,6 @@ export function useGuidelinesStore() {
     getCollectionConfigFields,
     getStructuralAnnotationConfig,
     initializeGuidelines,
+    isZeroPoint,
   };
 }
