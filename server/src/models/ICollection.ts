@@ -1,8 +1,6 @@
-export default interface ICollection {
-  [keyof: string]: any;
+import { BaseNodeData } from './types.js';
+
+export type ICollection = BaseNodeData & {
+  [keyof: string]: unknown;
   label: string;
-  receivedBy: string;
-  sentBy: string;
-  status: string;
-  uuid: string;
-}
+};

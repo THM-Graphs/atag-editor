@@ -1,6 +1,5 @@
-export default interface IEntity {
+import { BaseNodeData } from './types.js';
+
+export type IEntity = BaseNodeData & {
   label: string;
-  subType: string;
-  type: string;
-  uuid: string;
-}
+};

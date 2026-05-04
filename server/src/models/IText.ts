@@ -1,4 +1,5 @@
-export default interface IText {
+import { BaseNodeData } from './types.js';
+
+export type IText = BaseNodeData & {
   text: string;
-  uuid: string;
-}
+};

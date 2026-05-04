@@ -1,9 +1,10 @@
-export default interface IAnnotation {
-  [keyof: string]: any;
+import { BaseNodeData } from './types.js';
+
+export type IAnnotation = BaseNodeData & {
+  [keyof: string]: unknown;
   endIndex: number;
   startIndex: number;
-  subType: string | number;
+  subType?: string | number;
   text: string;
   type: string;
-  uuid: string;
-}
+};
