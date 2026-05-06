@@ -1,5 +1,5 @@
 import { ref, shallowRef, watch } from 'vue';
-import { Annotation, NodeDto, ApiJson } from '../models/types';
+import { NodeDto, ApiJson, Annotation } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
 import Document from '@tiptap/extension-document';
@@ -21,7 +21,6 @@ import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import {
   cloneDeep,
-  createAnnotationObjects,
   createExtendedStandoffObject,
   getVisibleDocRange,
 } from '../utils/helper/helper';
@@ -84,10 +83,7 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
   const { tipTapJson, annotations, structuralAnnotations } = converter.getData();
 
-  const annos: Map<string, Annotation> = createAnnotationObjects(annotations);
-  const structuralAnnos: Map<string, Annotation> = createAnnotationObjects(structuralAnnotations);
-
-  setAnnotations({ annotations: annos, structuralAnnotations: structuralAnnos });
+  setAnnotations({ annotations, structuralAnnotations });
 
   tiptap.value = new Editor({
     // TODO: Content comes dynamically

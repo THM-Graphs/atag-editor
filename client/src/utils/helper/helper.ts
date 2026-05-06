@@ -1,7 +1,6 @@
 import { Ref } from 'vue';
 import {
-  Annotation,
-  AnnotationData,
+  AnnotationOld,
   NodeDto,
   Character,
   CollectionAccessObject,
@@ -9,6 +8,10 @@ import {
   StandoffAnnotation,
   StandoffJson,
   TextNode,
+  NodeStatusObject,
+  AnnotationNode,
+  EntityNode,
+  CollectionNode,
 } from '../../models/types';
 import { ICollection } from '../../models/ICollection';
 import { EditorView } from '@tiptap/pm/view';
@@ -22,7 +25,7 @@ import { EditorView } from '@tiptap/pm/view';
  */
 export function buildStandoffJson(
   characters: Character[],
-  annotations: Annotation[],
+  annotations: AnnotationOld[],
 ): StandoffJson {
   const text: string = characters.map(c => c.data.text).join('');
   const standoffAnnotations: StandoffAnnotation[] = annotations.map(a => a.data.properties);
@@ -157,28 +160,6 @@ export function createExtendedStandoffObject(standoffObject: {
   return extended;
 }
 
-export function createAnnotationObjects(
-  annotationDtos: Map<string, AnnotationData>,
-): Map<string, Annotation> {
-  const map = new Map<string, Annotation>();
-
-  annotationDtos.forEach((data: AnnotationData, key: string) => {
-    // isTruncated is set to false at first since truncation happens in separate method
-    map.set(key, {
-      characterUuids: [],
-      data: cloneDeep(data),
-      endUuid: '',
-      initialData: cloneDeep(data),
-      isTruncated: false,
-      startUuid: '',
-      // TODO: Allow setting status dynamically (on import, everything is "created")
-      status: 'existing',
-    });
-  });
-
-  return map;
-}
-
 /**
  * A function that compares two objects to check if they are equal. Works only for non-nested objects
  * where values are strings or numbers.
@@ -225,6 +206,25 @@ export function areSetsEqual(setA: Set<string>, setB: Set<string>): boolean {
   }
 
   return true;
+}
+
+/**
+ * Filters out the RAMEN base node labels (`"Annotation"`, `"Collection"`, `"Content"`, `"Entity"`, `"Text"`)
+ * from the given array, returning only the domain-specific labels.
+ *
+ * This function is mostly used for displaying labels in node previews (e.g. in annotation forms,
+ * collection column entries etc.).
+ *
+ * // TODO: Don't forget to remove the "Text" label.
+ *
+ * @param {string[]} nodeLabels - The full list of node labels to filter.
+ * @returns {string[]} The labels with all base node labels removed.
+ */
+export function filterDefaultLabels(nodeLabels: string[]): string[] {
+  // TODO: Remove "Text" check ("Content") is enough. Only kept for legacy reasons :)
+  const baseNodeLabels: string[] = ['Annotation', 'Collection', 'Content', 'Entity', 'Text'];
+
+  return nodeLabels.filter(l => !baseNodeLabels.includes(l));
 }
 
 /**
@@ -411,6 +411,27 @@ export function getRangeBoundaries(range: Range): {
   return { startSpan: startReferenceSpanElement, endSpan: endReferenceSpanElement };
 }
 
+// TODO: These functions should actually check the node, not the status object...refactor later
+export function isEntityNode(node: NodeStatusObject): node is NodeStatusObject<EntityNode> {
+  return node.node.nodeLabels.includes('Entity');
+}
+
+export function isAnnotationNode(node: NodeStatusObject): node is NodeStatusObject<AnnotationNode> {
+  return node.node.nodeLabels.includes('Annotation');
+}
+
+export function isCollectionNode(node: NodeStatusObject): node is NodeStatusObject<CollectionNode> {
+  return node.node.nodeLabels.includes('Collection');
+}
+
+export function isTextNode(node: NodeStatusObject): node is NodeStatusObject<TextNode> {
+  return node.node.nodeLabels.includes('Text');
+}
+
+export function isContentNode(node: NodeStatusObject): node is NodeStatusObject<TextNode> {
+  return node.node.nodeLabels.includes('Content');
+}
+
 /**
  * Checks if the given node is the text container element with id "text".
  *
@@ -509,11 +530,11 @@ export function isCaretAtEnd(
 /**
  * Toggles the text highlighting for the given annotation by adding CSS classes to annotated span elements.
  *
- * @param {Annotation} annotation - The annotation for which to toggle highlighting.
+ * @param {AnnotationOld} annotation - The annotation for which to toggle highlighting.
  * @param {'on' | 'off'} direction - The direction of the toggle operation.
  * @return {void}
  */
-export function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'): void {
+export function toggleTextHightlighting(annotation: AnnotationOld, direction: 'on' | 'off'): void {
   const annotatedSpans: NodeListOf<HTMLSpanElement> = document.querySelectorAll(
     `#text > span:has(span[data-anno-uuid="${annotation.data.properties.uuid}"])`,
   );

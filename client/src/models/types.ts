@@ -21,7 +21,7 @@ export type NodeStatusObject<
   };
 };
 
-export type Annotation = {
+export type AnnotationOld = {
   characterUuids: string[];
   data: AnnotationData;
   endUuid: string;
@@ -31,11 +31,15 @@ export type Annotation = {
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
+export type Annotation = NodeStatusObject<AnnotationNode>;
+
 export type AnnotationNode = Node<IAnnotation>;
 
 /** A node object for retrieving data */
-export type NodeDto = {
-  node: AnnotationNode | CollectionNode | EntityNode | TextNode;
+export type NodeDto<
+  T extends Node<BaseNodeData> = AnnotationNode | EntityNode | CollectionNode | TextNode,
+> = {
+  node: T;
   connectedNodes: NodeDto[];
 };
 
@@ -161,7 +165,7 @@ export type Command = {
 };
 
 export type CommandData = {
-  annotation?: Annotation;
+  annotation?: AnnotationOld;
   characters?: Character[];
   leftUuid?: string | null;
   rightUuid?: string | null;
@@ -191,7 +195,7 @@ export type HistoryRecord = {
   timestamp: Date;
   data: {
     afterEndCharacter: Character | null;
-    annotations: Annotation[];
+    annotations: AnnotationOld[];
     beforeStartCharacter: Character | null;
     characters: Character[];
   };

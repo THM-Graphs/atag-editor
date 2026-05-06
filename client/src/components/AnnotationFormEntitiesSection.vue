@@ -7,7 +7,7 @@ import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
 import { AnnotationConfigEntity, AnnotationType, EntityNode } from '../models/types';
 import { useAppStore } from '../store/app';
-import EntityItem from './EntityItem.vue';
+import EntityItem from './EntityCard.vue';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
@@ -250,7 +250,7 @@ async function searchEntitiesOptions(searchString: string, category: string): Pr
       <EntityItem
         v-for="entry in categorizedEntities[category]"
         :key="entry.data.uuid"
-        :entity="entry"
+        :node="entry"
         :status="
           props.initialEntities.map(e => e.data.uuid).includes(entry.data.uuid)
             ? 'existing'

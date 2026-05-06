@@ -29,7 +29,16 @@ const config = {
 </script>
 
 <template>
-  <Tag :value="props.content" :severity="config[props.type].severity" :title="props.title" />
+  <Tag
+    :value="props.content"
+    :severity="config[props.type].severity"
+    :title="props.title"
+    :style="{
+      fontSize: '0.7rem',
+      padding: '2px 4px',
+      lineHeight: '100%',
+    }"
+  />
 </template>
 
 <style scoped></style>

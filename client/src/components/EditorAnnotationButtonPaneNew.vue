@@ -2,7 +2,7 @@
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
-import { Annotation, AnnotationData, AnnotationType, Character } from '../models/types';
+import { AnnotationOld, AnnotationData, AnnotationType, Character } from '../models/types';
 import { useCharactersStore } from '../store/characters';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 import { useFilterStore } from '../store/filter';
@@ -57,7 +57,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
     isSelectionValid(tiptap.value?.state.selection, config);
 
     const selectedCharacters: Character[] = getCharactersInSelection();
-    const newAnnotationTemplate: Annotation = createAnnotation({ ...data });
+    const newAnnotationTemplate: AnnotationOld = createAnnotation({ ...data });
 
     if (annotationHasConstraints(config)) {
       createModalInstance(
@@ -128,11 +128,14 @@ function handleClick(data: { type: string; subType?: string | number }) {
  * Adds a new annotation to the store by executing the `createAnnotation` command.
  *
  * @param {Object} params - Object with two properties: `annotation` and `characters`.
- * @param {Annotation} params.annotation - The annotation to add to the store.
+ * @param {AnnotationOld} params.annotation - The annotation to add to the store.
  * @param {Character[]} params.characters - The characters associated with the annotation.
  * @returns {void} This function does not return any value.
  */
-function addAnnotationToStore(params: { annotation: Annotation; characters: Character[] }): void {
+function addAnnotationToStore(params: {
+  annotation: AnnotationOld;
+  characters: Character[];
+}): void {
   const annotationData: AnnotationData = params.annotation.data;
   const { from, to } = tiptap.value!.state.selection;
 

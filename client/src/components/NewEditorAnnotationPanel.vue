@@ -55,12 +55,12 @@ const annotationsInSelection = computed<Annotation[]>(() => {
       <Badge :value="annotationsInSelection.length" severity="contrast" />
     </div>
     <div class="annotation-list flex-grow-1 overflow-y-auto p-1">
-      <template v-for="annotation in annotationsInSelection" :key="annotation.data.properties.uuid">
+      <template v-for="annotation in annotationsInSelection" :key="annotation.node.data.uuid">
         <EditorAnnotationFormNew
           :annotation="annotation"
-          v-if="[...selectedOptions].includes(annotation.data.properties.type)"
+          v-if="[...selectedOptions].includes(annotation.node.data.type)"
         />
-        <div v-if="annotation.data.properties.type === 'paragraph'">Paragraph</div>
+        <div v-if="annotation.node.data.type === 'paragraph'">Paragraph</div>
       </template>
     </div>
   </div>

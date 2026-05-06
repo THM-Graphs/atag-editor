@@ -19,14 +19,7 @@ import EditorResizer from '../components/EditorResizer.vue';
 import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
-import {
-  Annotation,
-  AnnotationData,
-  NodeDto,
-  IndexMap,
-  PropertyConfig,
-  TextAccessObject,
-} from '../models/types';
+import { NodeDto, IndexMap, PropertyConfig, TextAccessObject, Annotation } from '../models/types';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -38,7 +31,7 @@ import { Node } from '@tiptap/pm/model';
 import { cloneDeep } from '../utils/helper/helper';
 import { useCreateIndexMaps } from '../composables/useCreateIndexMaps';
 import { useGuidelinesStore } from '../store/guidelines';
-import IAnnotation from '../models/IAnnotation';
+import { IAnnotation } from '../models/IAnnotation';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -194,13 +187,11 @@ function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotati
     const { startIndex, endIndex } = value;
     const textSlice: string = plainText.slice(startIndex, endIndex + 1);
 
-    const hasNewStart: boolean =
-      !initialEntry || initialEntry.data.properties.startIndex !== startIndex;
-    const hasNewEnd: boolean = !initialEntry || initialEntry.data.properties.endIndex !== endIndex;
-    const hasChangedText: boolean =
-      !initialEntry || initialEntry.data.properties.text !== textSlice;
+    const hasNewStart: boolean = !initialEntry || initialEntry.node.data.startIndex !== startIndex;
+    const hasNewEnd: boolean = !initialEntry || initialEntry.node.data.endIndex !== endIndex;
+    const hasChangedText: boolean = !initialEntry || initialEntry.node.data.text !== textSlice;
     const isEditedOrDeleted: boolean = ['created', 'deleted', 'edited'].includes(
-      currentEntry.status,
+      currentEntry.meta.status,
     );
 
     if (hasNewStart || hasNewEnd || hasChangedText || isEditedOrDeleted) {
@@ -209,20 +200,20 @@ function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotati
       const cloned: Annotation = cloneDeep(currentEntry);
 
       // Apply indices to cloned object (for existing or new annotations)
-      if (hasNewStart || currentEntry.status === 'created') {
-        cloned.data.properties.startIndex = value.startIndex;
+      if (hasNewStart || currentEntry.meta.status === 'created') {
+        cloned.node.data.startIndex = value.startIndex;
       }
 
-      if (hasNewEnd || currentEntry.status === 'created') {
-        cloned.data.properties.endIndex = value.endIndex;
+      if (hasNewEnd || currentEntry.meta.status === 'created') {
+        cloned.node.data.endIndex = value.endIndex;
       }
 
       // Get slice of plain text
-      cloned.data.properties.text = textSlice;
+      cloned.node.data.text = textSlice;
 
       // Update status explicitly for changed indices. Otherwised changed/added/deleted annotations keep their status
       if (hasNewStart || hasNewEnd) {
-        cloned.status = 'edited';
+        cloned.meta.status = 'updated';
       }
 
       affectedAnnos.push(cloned);
@@ -260,11 +251,11 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
 
   // Loop through nodes currently in the editor
   indexMap.forEach((value, uuid) => {
-    const node: Node | undefined = nodes.get(uuid);
+    const docNode: Node | undefined = nodes.get(uuid);
     const initialEntry: Annotation | undefined = initialStructuralAnnotations.value?.get(uuid);
 
     // Should not happen actually
-    if (!node) {
+    if (!docNode) {
       console.error(`The annotation with uuid ${uuid} could not be found`);
       return;
     }
@@ -276,21 +267,18 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
 
     // Create annotation object (needed)
     const annotation: Annotation = {
-      characterUuids: [],
-      startUuid: '',
-      endUuid: '',
-      initialData: {} as AnnotationData,
-      status: isNew ? 'created' : 'edited',
-      isTruncated: false,
-      data: {
-        additionalTexts: [],
-        properties: {
-          ...getConfiguredNodeAttrs(node, node.type.name),
+      node: {
+        data: {
+          ...getConfiguredNodeAttrs(docNode, docNode.type.name),
           startIndex,
           endIndex,
           text: textSlice,
         } as IAnnotation,
-        entities: [],
+        nodeLabels: ['Annotation'],
+      },
+      connectedNodes: [],
+      meta: {
+        status: isNew ? 'created' : 'updated',
       },
     };
 
@@ -305,7 +293,7 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
   deletedUuids.forEach(uuid => {
     const annoEntry: Annotation = initialAnnotations.value?.get(uuid)!;
 
-    const cloned: Annotation = { ...cloneDeep(annoEntry), status: 'deleted' };
+    const cloned: Annotation = { ...cloneDeep(annoEntry), meta: { status: 'deleted' } };
 
     affectedElements.push(cloned);
   });
@@ -753,9 +741,16 @@ watch(
               ?.chain()
               .focus()
               .setZeroPointAnnotation({
-                additionalTexts: [],
-                properties: { type: 'deleted', subType: '', isZeroPoint: true, uuid: '123' },
-                entities: [],
+                nodeLabels: [],
+                data: {
+                  type: 'deleted',
+                  subType: '',
+                  isZeroPoint: true,
+                  uuid: '123',
+                  startIndex: 0,
+                  endIndex: 0,
+                  text: '',
+                },
               })
               .run()
           "

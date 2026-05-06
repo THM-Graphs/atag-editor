@@ -46,7 +46,6 @@ export default class StandoffConverter {
   }
 
   private createAnnotationUuidMaps(): void {
-    console.log(this);
     const annotationStatusObjects: NodeStatusObject<AnnotationNode>[] =
       this.standoffJson.annotations.map(a => this.createNodeStatusObjectFromRawData(a));
 

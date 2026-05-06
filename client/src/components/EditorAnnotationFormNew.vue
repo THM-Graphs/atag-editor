@@ -2,22 +2,25 @@
 import { computed, ref } from 'vue';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
-import { toggleTextHightlighting } from '../utils/helper/helper';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
 import { useConfirm } from 'primevue/useconfirm';
-import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
-import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
-import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
+import {
+  Annotation,
+  AnnotationNode,
+  AnnotationType,
+  NodeStatusObject,
+  PropertyConfig,
+} from '../models/types';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import FormPropertiesSection from './FormPropertiesSection.vue';
-import TruncatedBadge from './TruncatedBadge.vue';
 import { useTiptapStore } from '../store/tiptap';
+import AnnotationFormAdditionalNodesSection from './AnnotationFormAdditionalNodesSection.vue';
 
 const props = defineProps<{
-  annotation: Annotation;
+  annotation: NodeStatusObject<AnnotationNode>;
 }>();
 
 const { annotation } = props;
@@ -28,18 +31,16 @@ const { tiptap, annotations } = useTiptapStore();
 const { isRedrawMode, redrawMode } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
-const config: AnnotationType = getAnnotationConfig(annotation.data.properties.type);
+const config: AnnotationType = getAnnotationConfig(annotation.node.data.type);
 // TODO: Maybe give whole config instead of only fields...?
-const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.data.properties.type);
+const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.node.data.type);
 
 const panelIsCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
 const previewText = computed<string>(() => {
-  const sliced: string = annotation.data.properties.text?.slice(0, 10);
+  const sliced: string = annotation.node.data.text?.slice(0, 10);
 
-  return annotation.data.properties.text?.length >= 10
-    ? sliced + '...'
-    : annotation.data.properties.text;
+  return annotation.node.data.text?.length >= 10 ? sliced + '...' : annotation.node.data.text;
 });
 const redrawButtonicon = computed<string>(() =>
   redrawMode.value?.direction === 'on' ? 'pi pi-times' : 'pi pi-pencil',
@@ -49,11 +50,6 @@ const redrawButtonTitle = computed<string>(() =>
 );
 
 function handleDeleteAnnotation(event: MouseEvent): void {
-  // TODO: Remove this, nothing is truncated anymore
-  if (annotation.isTruncated) {
-    return;
-  }
-
   confirm.require({
     target: event.currentTarget as HTMLButtonElement,
     message: 'Do you want to delete this annotation?',
@@ -71,19 +67,17 @@ function handleDeleteAnnotation(event: MouseEvent): void {
     },
     accept: () => {
       // TODO: Might be changed when the "status" behaviour is changed.
-      const annoEntry: Annotation | undefined = annotations.value?.get(
-        annotation.data.properties.uuid,
-      );
+      const annoEntry: Annotation | undefined = annotations.value?.get(annotation.node.data.uuid);
 
       if (!annoEntry) {
         return;
       }
 
       // Set annotation deleted
-      annoEntry.status = 'deleted';
+      annoEntry.meta.status = 'deleted';
 
       // Remove decoration
-      tiptap.value?.commands.removeAnnotationDecoration(annotation.data);
+      tiptap.value?.commands.removeAnnotationDecoration(annotation.node);
     },
     reject: () => {},
   });
@@ -93,7 +87,7 @@ function handleRedraw(): void {
   // if (isRedrawMode.value) {
   //   toggleRedrawMode({ direction: 'off', cause: 'cancel' });
   // } else {
-  //   toggleRedrawMode({ direction: 'on', annotationUuid: annotation.data.properties.uuid });
+  //   toggleRedrawMode({ direction: 'on', annotationUuid: annotation.node.data.uuid });
   // }
 }
 
@@ -117,7 +111,7 @@ function handleShrink(): void {
 <template>
   <Panel
     class="annotation-form mb-3"
-    :data-annotation-uuid="annotation.data.properties.uuid"
+    :data-annotation-uuid="annotation.node.data.uuid"
     toggleable
     @update:collapsed="panelIsCollapsed = !panelIsCollapsed"
     :collapsed="panelIsCollapsed"
@@ -132,25 +126,19 @@ function handleShrink(): void {
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
           <AnnotationTypeIcon
-            :annotationType="annotation.data.properties.subType ?? annotation.data.properties.type"
+            :annotationType="annotation.node.data.subType ?? annotation.node.data.type"
           />
         </div>
         <div class="annotation-type-container">
           <span class="font-bold">{{
-            annotation.data.properties.subType ?? annotation.data.properties.type
+            annotation.node.data.subType ?? annotation.node.data.type
           }}</span>
         </div>
-        <div class="preview font-italic text-xs" :title="annotation.data.properties.text">
+        <div class="preview font-italic text-xs" :title="annotation.node.data.text">
           {{ previewText }}
         </div>
-        <div
-          class="spy pi pi-eye cursor-pointer"
-          title="Show annotated text"
-          @mouseover="toggleTextHightlighting(annotation, 'on')"
-          @mouseleave="toggleTextHightlighting(annotation, 'off')"
-        ></div>
+        <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div>
       </div>
-      <TruncatedBadge v-if="annotation.isTruncated" :icon="false" :text="true" />
     </template>
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
@@ -167,27 +155,14 @@ function handleShrink(): void {
       <template #toggleicon>
         <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
       </template>
-      <FormPropertiesSection
-        v-model="annotation.data.properties"
-        :fields="propertyFields"
-        mode="edit"
-      />
+      <FormPropertiesSection v-model="annotation.node.data" :fields="propertyFields" mode="edit" />
     </Fieldset>
-    <AnnotationFormAdditionalTextSection
-      v-if="config.hasAdditionalTexts === true && !panelIsCollapsed"
-      v-model="annotation.data.additionalTexts"
-      :initial-additional-texts="annotation.initialData.additionalTexts"
-      mode="edit"
-    />
-    <AnnotationFormEntitiesSection
+    <AnnotationFormAdditionalNodesSection
       v-if="config.hasEntities === true && !panelIsCollapsed"
-      v-model="annotation.data.entities"
+      v-model="annotation.connectedNodes"
       mode="edit"
       :annotation-config="config"
-      :default-search-value="annotation.data.properties.text"
-      :initialEntities="annotation.initialData.entities"
     />
-
     <div v-if="!panelIsCollapsed" class="edit-buttons flex justify-content-center">
       <Button
         icon="pi pi-angle-left"
@@ -195,7 +170,7 @@ function handleShrink(): void {
         severity="secondary"
         rounded
         title="Move annotation left by one character"
-        :disabled="annotation.isTruncated"
+        :disabled="true"
         @click="handleShiftLeft"
       />
       <Button
@@ -204,7 +179,7 @@ function handleShrink(): void {
         severity="secondary"
         rounded
         title="Move annotation right by one character"
-        :disabled="annotation.isTruncated"
+        :disabled="true"
         @click="handleShiftRight"
       />
       <Button
@@ -213,7 +188,7 @@ function handleShrink(): void {
         severity="secondary"
         rounded
         title="Expand annotation right by one character"
-        :disabled="annotation.isTruncated || config.isZeroPoint"
+        :disabled="true || config.isZeroPoint"
         @click="handleExpand"
       />
       <Button
@@ -222,7 +197,7 @@ function handleShrink(): void {
         severity="secondary"
         rounded
         title="Shrink annotation from the right by one character"
-        :disabled="annotation.isTruncated || config.isZeroPoint"
+        :disabled="true || config.isZeroPoint"
         @click="handleShrink"
       />
       <Button
@@ -232,7 +207,7 @@ function handleShrink(): void {
         severity="secondary"
         rounded
         :title="redrawButtonTitle"
-        :disabled="annotation.isTruncated"
+        :disabled="true"
         @click="handleRedraw"
       />
     </div>
@@ -243,7 +218,7 @@ function handleShrink(): void {
         severity="danger"
         icon="pi pi-trash"
         size="small"
-        :disabled="annotation.isTruncated"
+        :disabled="false"
         @click="handleDeleteAnnotation"
       />
     </div>
