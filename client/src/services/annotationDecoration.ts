@@ -3,8 +3,8 @@ import { Extension } from '@tiptap/core';
 import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { useGuidelinesStore } from '../store/guidelines';
-import { AnnotationData } from '../models/types';
 import { AddAnnotationStep } from './addAnnotationStep';
+import { AnnotationNode, NodeStatusObject } from '../models/types';
 import { RemoveAnnotationStep } from './removeAnnotationStep';
 import { indexToPosition } from '../utils/helper/indexHelper';
 
@@ -17,10 +17,10 @@ export const ANNOTATION_DECORATION_KEY = new PluginKey<AnnotationDecorationState
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     annotationDecoration: {
-      addAnnotationDecoration: (annotation: AnnotationData, from: number, to: number) => ReturnType;
-      removeAnnotationDecoration: (annotation: AnnotationData) => ReturnType;
+      addAnnotationDecoration: (annotation: AnnotationNode, from: number, to: number) => ReturnType;
+      removeAnnotationDecoration: (annotation: AnnotationNode) => ReturnType;
       initializeDecorations: (
-        annotations: Map<string, AnnotationData>,
+        annotations: Map<string, NodeStatusObject<AnnotationNode>>,
         selectedTypes: string[],
         visibleFrom: number,
         visibleTo: number,
@@ -43,7 +43,7 @@ type TransactionMeta = InitMeta | FilterUpdateMeta | ViewportMeta | undefined;
 
 type InitMeta = {
   type: 'initialize';
-  annotations: Map<string, AnnotationData>;
+  annotations: Map<string, AnnotationNode>;
   visibleFrom: number;
   visibleTo: number;
   selectedTypes: string[];
@@ -65,29 +65,29 @@ type AnnotationDecorationSpec = {
   _uuid: string;
 };
 
-function createDecoration(from: number, to: number, annotation: AnnotationData): Decoration {
+function createDecoration(from: number, to: number, annotation: AnnotationNode): Decoration {
   return Decoration.inline(
     from,
     to,
     {
       nodeName: 'span',
-      class: [annotation.properties.type, annotation.properties.subType].filter(Boolean).join(' '),
-      'data-anno-uuid': annotation.properties.uuid,
+      class: [annotation.data.type, annotation.data.subType].filter(Boolean).join(' '),
+      'data-anno-uuid': annotation.data.uuid,
     },
-    { inclusiveEnd: true, _type: annotation.properties.type, _uuid: annotation.properties.uuid },
+    { inclusiveEnd: true, _type: annotation.data.type, _uuid: annotation.data.uuid },
   );
 }
 
 function createInitialDecorations(
   doc: Node,
-  annotations: Map<string, AnnotationData>,
+  annotations: Map<string, AnnotationNode>,
 ): Decoration[] {
   const decos: Decoration[] = [];
 
   for (const annotation of [...annotations.values()].toSorted(
-    (a, b) => a.properties.startIndex - b.properties.startIndex,
+    (a, b) => a.data.startIndex - b.data.startIndex,
   )) {
-    const { startIndex, endIndex } = annotation.properties;
+    const { startIndex, endIndex } = annotation.data;
 
     const start: number = indexToPosition(doc, startIndex);
     const end: number = indexToPosition(doc, endIndex + 1);
@@ -125,7 +125,7 @@ export const AnnotationDecoration = Extension.create({
   addCommands() {
     return {
       addAnnotationDecoration:
-        (annotation: AnnotationData, from: number, to: number) =>
+        (annotation: AnnotationNode, from: number, to: number) =>
         ({ tr, dispatch }) => {
           // Add placeholder step that signals plugin what to execute
           tr.step(new AddAnnotationStep(annotation, from, to));
@@ -136,7 +136,7 @@ export const AnnotationDecoration = Extension.create({
         },
 
       removeAnnotationDecoration:
-        (annotation: AnnotationData) =>
+        (annotation: AnnotationNode) =>
         ({ tr, dispatch, state }) => {
           const pluginState: AnnotationDecorationState | undefined =
             ANNOTATION_DECORATION_KEY.getState(state);
@@ -150,7 +150,7 @@ export const AnnotationDecoration = Extension.create({
           const decos: Decoration[] = pluginState.all.find(
             undefined,
             undefined,
-            (spec: AnnotationDecorationSpec) => spec._uuid === annotation.properties.uuid,
+            (spec: AnnotationDecorationSpec) => spec._uuid === annotation.data.uuid,
           );
 
           if (!decos.length) {
@@ -168,16 +168,20 @@ export const AnnotationDecoration = Extension.create({
 
       initializeDecorations:
         (
-          annotations: Map<string, AnnotationData>,
+          annotations: Map<string, NodeStatusObject<AnnotationNode>>,
           selectedTypes: string[],
           visibleFrom: number,
           visibleTo: number,
         ) =>
         ({ tr, dispatch }) => {
           // TODO: Or should this be filtered outside the plugin?
-          const filtered = new Map<string, AnnotationData>(
-            [...annotations].filter(([_, annotation]) => !isZeroPoint(annotation)),
-          );
+          const filtered = new Map<string, AnnotationNode>();
+
+          for (const [uuid, { node }] of annotations) {
+            if (!isZeroPoint(node)) {
+              filtered.set(uuid, node);
+            }
+          }
 
           const meta: InitMeta = {
             type: 'initialize',
@@ -336,7 +340,7 @@ export const AnnotationDecoration = Extension.create({
                 const toRemove: Decoration[] = newAll.find(
                   undefined,
                   undefined,
-                  spec => spec._uuid === annotation.properties.uuid,
+                  spec => spec._uuid === annotation.data.uuid,
                 );
                 newAll = newAll.remove(toRemove);
                 decorationsChanged = true;

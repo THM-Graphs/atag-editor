@@ -3,9 +3,9 @@ import { IGuidelines } from '../models/IGuidelines';
 import { useFilterStore } from './filter';
 import {
   AnnotationConfigEntity,
-  AnnotationData,
   AnnotationType,
   PropertyConfig,
+  AnnotationNode,
 } from '../models/types';
 
 const { initializeFilter } = useFilterStore();
@@ -372,19 +372,19 @@ export function useGuidelinesStore() {
    * @param annotation - The annotation to check.
    * @returns `true` if the annotation is a zero-point annotation, `false` otherwise.
    */
-  function isZeroPoint(annotation: AnnotationData): boolean {
-    const config: AnnotationType = getAnnotationConfig(annotation.properties.type);
+  function isZeroPoint(annotation: AnnotationNode): boolean {
+    const config: AnnotationType = getAnnotationConfig(annotation.data.type);
 
     if (!config) {
       console.error(
-        `The configuration of annotation type "${annotation.properties.tpye} could not be found`,
+        `The configuration of annotation type "${annotation.data.type} could not be found`,
       );
 
       return false;
     }
 
     // TODO: Should the isZeroPoint property of the annotation also (or instead) be included?
-    return config.isZeroPoint || annotation.properties.isZeroPoint === true;
+    return config.isZeroPoint || annotation.data.isZeroPoint === true;
   }
 
   /**

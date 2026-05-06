@@ -1,12 +1,24 @@
-import IAnnotation from './IAnnotation';
+import { IAnnotation } from './IAnnotation';
 import ICharacter from './ICharacter';
-import ICollection from './ICollection';
-import IEntity from './IEntity';
-import IText from './IText';
+import { ICollection } from './ICollection';
+import { IEntity } from './IEntity';
+import { IText } from './IText';
 
 export type AdditionalText = {
   annotation: IAnnotation;
-  text: Text;
+  text: TextNode;
+};
+
+/** A status object for nodes in the frontend and for API requests */
+export type NodeStatusObject<
+  T extends Node<BaseNodeData> = AnnotationNode | EntityNode | CollectionNode | TextNode,
+> = {
+  node: T;
+  connectedNodes: NodeStatusObject<T>[];
+  meta: {
+    status: 'added' | 'removed' | 'created' | 'deleted' | 'updated' | 'unchanged';
+    [key: string]: unknown;
+  };
 };
 
 export type Annotation = {
@@ -19,9 +31,17 @@ export type Annotation = {
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
+export type AnnotationNode = Node<IAnnotation>;
+
+/** A node object for retrieving data */
+export type NodeDto = {
+  node: AnnotationNode | CollectionNode | EntityNode | TextNode;
+  connectedNodes: NodeDto[];
+};
+
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
-  entities: Entity[];
+  entities: EntityNode[];
   properties: IAnnotation;
 }
 
@@ -54,7 +74,7 @@ export type AnnotationConfigEntity = {
 
 export type ApiJson = {
   text: string;
-  annotations: AnnotationData[];
+  annotations: NodeDto[];
 };
 
 export type TiptapMark = {
@@ -81,7 +101,7 @@ export type BaseNodeData = {
 export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
 
 export type Bookmark = {
-  data: Collection | Text;
+  data: CollectionNode | TextNode;
   type: 'collection' | 'text';
   createdAt: string; // ISO 8601 string
   updatedAt: string; // ISO 8601 string
@@ -100,16 +120,16 @@ export type CharacterPostData = {
   uuidStart: string;
 };
 
-export type Collection = Node<ICollection>;
+export type CollectionNode = Node<ICollection>;
 
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
-  collection: Collection;
-  texts: Text[];
+  collection: CollectionNode;
+  texts: TextNode[];
 };
 
 export type CollectionCreationData = CollectionAccessObject & {
-  parentCollection: Collection | null;
+  parentCollection: CollectionNode | null;
 };
 
 export type CollectionNetworkActionType = 'move' | 'reference' | 'dereference' | 'delete';
@@ -120,7 +140,7 @@ export type CollectionPostData = {
 };
 
 export type CollectionPreview = {
-  collection: Collection;
+  collection: CollectionNode;
   nodeCounts: {
     annotations: number;
     texts: number;
@@ -162,7 +182,7 @@ export type CommandType =
   | 'shiftAnnotationRight'
   | 'shrinkAnnotation';
 
-export type Entity = Node<IEntity>;
+export type EntityNode = Node<IEntity>;
 
 export type HistoryStack = HistoryRecord[];
 
@@ -180,13 +200,13 @@ export type HistoryRecord = {
 export type IndexMap = Map<string, { startIndex: number; endIndex: number }>;
 
 export type CollectionStatusObject = {
-  data: Collection;
+  data: CollectionNode;
   status: 'existing' | 'temporary';
 };
 
 export type Level = {
   collections: CollectionStatusObject[];
-  activeCollection: Collection | null;
+  activeCollection: CollectionNode | null;
   parentUuid: string | null;
 };
 
@@ -197,17 +217,17 @@ export type MalformedAnnotation = {
 
 export type NetworkPostData = {
   type: CollectionNetworkActionType;
-  nodes: (Collection | Text)[];
-  origin: Collection | null;
-  target: Collection | null;
+  nodes: (CollectionNode | TextNode)[];
+  origin: CollectionNode | null;
+  target: CollectionNode | null;
 };
 
-export type Node<T extends BaseNodeData> = {
+export type Node<T = AnnotationNode | CollectionNode | EntityNode | TextNode> = {
   data: T;
   nodeLabels: string[];
 };
 
-export type NodeAncestry = (Text | Collection | IAnnotation)[];
+export type NodeAncestry = (TextNode | CollectionNode | IAnnotation)[];
 
 export type PaginationData = {
   limit: number;
@@ -281,12 +301,12 @@ export type StandoffJson = {
   text: string;
 };
 
-export type Text = Node<IText>;
+export type TextNode = Node<IText>;
 
 export type TextAccessObject = {
-  collection: Collection | null;
+  collection: CollectionNode | null;
   paths: NodeAncestry[];
-  text: Text;
+  text: TextNode;
 };
 
 export type TextOperationResult = {

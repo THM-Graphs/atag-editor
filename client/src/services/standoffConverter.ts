@@ -1,11 +1,18 @@
-import { AnnotationData, ApiJson, TiptapNode, TiptapJson } from '../models/types';
+import {
+  ApiJson,
+  TiptapNode,
+  TiptapJson,
+  NodeDto,
+  NodeStatusObject,
+  AnnotationNode,
+} from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 
 const { structuralAnnotationConfigs, isZeroPoint } = useGuidelinesStore();
 
 export default class StandoffConverter {
-  private annotations: Map<string, AnnotationData> = new Map();
-  private structuralAnnotations: Map<string, AnnotationData> = new Map();
+  private annotations: Map<string, NodeStatusObject<AnnotationNode>> = new Map();
+  private structuralAnnotations: Map<string, NodeStatusObject<AnnotationNode>> = new Map();
   private standoffJson: ApiJson;
   private tiptapJson: TiptapJson | null = null;
   private structuralAnnotationTypes: Set<string>;
@@ -17,8 +24,8 @@ export default class StandoffConverter {
   }
 
   public getData(): {
-    annotations: Map<string, AnnotationData>;
-    structuralAnnotations: Map<string, AnnotationData>;
+    annotations: Map<string, NodeStatusObject<AnnotationNode>>;
+    structuralAnnotations: Map<string, NodeStatusObject<AnnotationNode>>;
     tipTapJson: TiptapJson;
   } {
     return {
@@ -28,12 +35,26 @@ export default class StandoffConverter {
     };
   }
 
+  private createNodeStatusObjectFromRawData(rawNode: NodeDto): NodeStatusObject<AnnotationNode> {
+    return {
+      node: rawNode.node as AnnotationNode,
+      connectedNodes: rawNode.connectedNodes.map(n => this.createNodeStatusObjectFromRawData(n)),
+      meta: {
+        status: 'unchanged',
+      },
+    };
+  }
+
   private createAnnotationUuidMaps(): void {
-    for (const a of this.standoffJson.annotations) {
-      if (this.structuralAnnotationTypes.has(a.properties.type)) {
-        this.structuralAnnotations.set(a.properties.uuid, a);
+    console.log(this);
+    const annotationStatusObjects: NodeStatusObject<AnnotationNode>[] =
+      this.standoffJson.annotations.map(a => this.createNodeStatusObjectFromRawData(a));
+
+    for (const a of annotationStatusObjects) {
+      if (this.structuralAnnotationTypes.has(a.node.data.type)) {
+        this.structuralAnnotations.set(a.node.data.uuid, a);
       } else {
-        this.annotations.set(a.properties.uuid, a);
+        this.annotations.set(a.node.data.uuid, a);
       }
     }
   }
@@ -41,17 +62,17 @@ export default class StandoffConverter {
   // Returns the immediate structural children of `annotation` within `allStructural`.
   // Hard breaks are excluded — they are inline nodes handled in createLeafContent.
   private findDirectChildren(
-    annotation: AnnotationData,
-    allStructural: AnnotationData[],
-  ): AnnotationData[] {
-    const { uuid, startIndex, endIndex } = annotation.properties;
+    annotation: NodeStatusObject<AnnotationNode>,
+    allStructural: NodeStatusObject<AnnotationNode>[],
+  ): NodeStatusObject<AnnotationNode>[] {
+    const { uuid, startIndex, endIndex } = annotation.node.data;
 
     const contained = allStructural.filter(
       a =>
-        a.properties.uuid !== uuid &&
-        a.properties.type !== 'hardBreak' &&
-        a.properties.startIndex >= startIndex &&
-        a.properties.endIndex <= endIndex,
+        a.node.data.uuid !== uuid &&
+        a.node.data.type !== 'hardBreak' &&
+        a.node.data.startIndex >= startIndex &&
+        a.node.data.endIndex <= endIndex,
     );
 
     return contained
@@ -59,12 +80,12 @@ export default class StandoffConverter {
         child =>
           !contained.some(
             b =>
-              b.properties.uuid !== child.properties.uuid &&
-              b.properties.startIndex <= child.properties.startIndex &&
-              b.properties.endIndex >= child.properties.endIndex,
+              b.node.data.uuid !== child.node.data.uuid &&
+              b.node.data.startIndex <= child.node.data.startIndex &&
+              b.node.data.endIndex >= child.node.data.endIndex,
           ),
       )
-      .sort((a, b) => a.properties.startIndex - b.properties.startIndex);
+      .sort((a, b) => a.node.data.startIndex - b.node.data.startIndex);
   }
 
   private createTextNode(startIndex: number, endIndex: number): TiptapNode[] {
@@ -77,24 +98,24 @@ export default class StandoffConverter {
   private createLeafContent(startIndex: number, endIndex: number): TiptapNode[] {
     type InlineEntry = { pos: number; node: TiptapNode };
 
-    const inRange = (a: AnnotationData) =>
-      a.properties.startIndex >= startIndex && a.properties.startIndex <= endIndex;
+    const inRange = (a: NodeStatusObject<AnnotationNode>) =>
+      a.node.data.startIndex >= startIndex && a.node.data.startIndex <= endIndex;
 
     const zeroPointEntries: InlineEntry[] = [...this.annotations.values()]
-      .filter(a => isZeroPoint(a) && inRange(a))
+      .filter(a => isZeroPoint(a.node) && inRange(a))
       .map(a => ({
-        pos: a.properties.startIndex,
+        pos: a.node.data.startIndex,
         node: {
           type: 'zeroPointAnnotation',
-          attrs: { uuid: a.properties.uuid, annotationData: a },
+          attrs: { uuid: a.node.data.uuid, annotationData: a.node },
         },
       }));
 
     const hardBreakEntries: InlineEntry[] = [...this.structuralAnnotations.values()]
-      .filter(a => a.properties.type === 'hardBreak' && inRange(a))
+      .filter(a => a.node.data.type === 'hardBreak' && inRange(a))
       .map(a => ({
-        pos: a.properties.startIndex,
-        node: { type: 'hardBreak', attrs: { uuid: a.properties.uuid } },
+        pos: a.node.data.startIndex,
+        node: { type: 'hardBreak', attrs: { uuid: a.node.data.uuid } },
       }));
 
     const inlineNodes = [...zeroPointEntries, ...hardBreakEntries].sort((a, b) => a.pos - b.pos);
@@ -123,11 +144,11 @@ export default class StandoffConverter {
   }
 
   private buildStructuralNode(
-    annotation: AnnotationData,
-    allStructural: AnnotationData[],
+    annotation: NodeStatusObject<AnnotationNode>,
+    allStructural: NodeStatusObject<AnnotationNode>[],
   ): TiptapNode {
     const directChildren = this.findDirectChildren(annotation, allStructural);
-    const { startIndex, endIndex } = annotation.properties;
+    const { startIndex, endIndex } = annotation.node.data;
 
     const content: TiptapNode[] =
       directChildren.length === 0
@@ -135,11 +156,11 @@ export default class StandoffConverter {
         : directChildren.map(child => this.buildStructuralNode(child, allStructural));
 
     return {
-      type: annotation.properties.type,
+      type: annotation.node.data.type,
       // Spread all annotation properties so the save path can reconstruct them from node.attrs
       attrs: {
-        ...annotation.properties,
-        annotationType: annotation.properties.type,
+        ...annotation.node.data,
+        annotationType: annotation.node.data.type,
       },
       content,
     };
@@ -148,20 +169,22 @@ export default class StandoffConverter {
   public convertStandoffToTipTap(): void {
     this.createAnnotationUuidMaps();
 
-    const allStructural: AnnotationData[] = [...this.structuralAnnotations.values()];
+    const allStructural: NodeStatusObject<AnnotationNode>[] = [
+      ...this.structuralAnnotations.values(),
+    ];
 
     // Root annotations: not contained by any other structural annotation
-    const roots: AnnotationData[] = allStructural
+    const roots: NodeStatusObject<AnnotationNode>[] = allStructural
       .filter(
         a =>
           !allStructural.some(
             b =>
-              b.properties.uuid !== a.properties.uuid &&
-              b.properties.startIndex <= a.properties.startIndex &&
-              b.properties.endIndex >= a.properties.endIndex,
+              b.node.data.uuid !== a.node.data.uuid &&
+              b.node.data.startIndex <= a.node.data.startIndex &&
+              b.node.data.endIndex >= a.node.data.endIndex,
           ),
       )
-      .sort((a, b) => a.properties.startIndex - b.properties.startIndex);
+      .sort((a, b) => a.node.data.startIndex - b.node.data.startIndex);
 
     this.tiptapJson = {
       type: 'doc',

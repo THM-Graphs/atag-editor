@@ -1,17 +1,17 @@
 import { Node, NodeViewRendererProps } from '@tiptap/core';
-import { AnnotationData } from '../models/types';
+import { AnnotationNode } from '../models/types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     zeroPointAnnotation: {
-      setZeroPointAnnotation: (annotation: AnnotationData) => ReturnType;
+      setZeroPointAnnotation: (annotation: AnnotationNode) => ReturnType;
     };
   }
 }
 
 type ZeroPointAttributes = {
   uuid: string;
-  annotationData: AnnotationData;
+  annotationData: AnnotationNode;
 };
 
 export const ZeroPointAnnotation = Node.create({
@@ -33,7 +33,7 @@ export const ZeroPointAnnotation = Node.create({
         parseHTML: (element: HTMLElement) => element.getAttribute('data-anno-uuid'),
         renderHTML: (attributes: ZeroPointAttributes) => {
           return {
-            'data-anno-type': attributes.annotationData.properties.type,
+            'data-anno-type': attributes.annotationData.data.type,
           };
         },
       },
@@ -44,7 +44,7 @@ export const ZeroPointAnnotation = Node.create({
         parseHTML: (element: HTMLElement) => element.getAttribute('data-anno-uuid'),
         renderHTML: (attributes: ZeroPointAttributes) => {
           return {
-            'data-uuid': attributes.annotationData.properties.uuid,
+            'data-uuid': attributes.annotationData.data.uuid,
           };
         },
       },
@@ -62,7 +62,7 @@ export const ZeroPointAnnotation = Node.create({
   addNodeView() {
     return (nodeProps: NodeViewRendererProps) => {
       const elm: HTMLElement = document.createElement('span');
-      const annotationType = nodeProps.node.attrs.annotationData.properties.type;
+      const annotationType = nodeProps.node.attrs.annotationData.data.type;
 
       elm.setAttribute('data-anno-type', annotationType);
 
@@ -79,13 +79,12 @@ export const ZeroPointAnnotation = Node.create({
   addCommands() {
     return {
       setZeroPointAnnotation:
-        (annotation: AnnotationData) =>
+        (annotation: AnnotationNode) =>
         ({ commands }) => {
           return commands.insertContent({
             type: this.name,
-            attrs: { annotationData: annotation, uuid: annotation.properties.uuid },
+            attrs: { annotationData: annotation, uuid: annotation.data.uuid },
           });
-          // return commands.insertContent({ type: this.name, attrs: attributes });
         },
     };
   },

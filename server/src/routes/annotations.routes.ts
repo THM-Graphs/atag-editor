@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import AnnotationService from '../services/annotation.service.js';
-import IAnnotation from '../models/IAnnotation.js';
-import { Annotation, AnnotationData } from '../models/types.js';
+import { IAnnotation } from '../models/IAnnotation.js';
+import { Annotation, NodeDto } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -19,7 +19,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const parentUuid: string = getParentUuid(req);
 
   try {
-    const annotations: AnnotationData[] = await annotationService.getAnnotations(parentUuid);
+    const annotations: NodeDto[] = await annotationService.getAnnotations(parentUuid);
 
     res.status(200).json(annotations);
   } catch (error: unknown) {

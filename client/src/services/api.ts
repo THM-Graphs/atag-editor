@@ -2,19 +2,19 @@ import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
   Annotation,
-  AnnotationData,
+  NodeDto,
   Character,
   CharacterPostData,
-  Collection,
+  CollectionNode,
   CollectionCreationData,
   CollectionPostData,
   CollectionSearchParams,
   CursorData,
-  Entity,
+  EntityNode,
   NetworkPostData,
   NodeAncestry,
   PaginationResult,
-  Text,
+  TextNode,
   TextAccessObject,
 } from '../models/types';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
@@ -91,7 +91,7 @@ export default class ApiService {
     }
   }
 
-  public async createCollection(data: CollectionCreationData): Promise<Collection> {
+  public async createCollection(data: CollectionCreationData): Promise<CollectionNode> {
     try {
       const url: string = `${this.baseUrl}/collections`;
 
@@ -114,7 +114,7 @@ export default class ApiService {
     }
   }
 
-  public async deleteCollection(uuid: string): Promise<Collection> {
+  public async deleteCollection(uuid: string): Promise<CollectionNode> {
     try {
       const url: string = `${this.baseUrl}/collections/${uuid}`;
 
@@ -139,7 +139,7 @@ export default class ApiService {
   public async getAnnotations(
     nodeType: 'collection' | 'text',
     nodeUuid: string,
-  ): Promise<AnnotationData[]> {
+  ): Promise<NodeDto[]> {
     try {
       const url: string = `${this.baseUrl}/${nodeType}s/${nodeUuid}/annotations`;
 
@@ -167,7 +167,7 @@ export default class ApiService {
     }
   }
 
-  public async getCollection(collectionUuid: string): Promise<Collection> {
+  public async getCollection(collectionUuid: string): Promise<CollectionNode> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}`;
 
@@ -201,7 +201,7 @@ export default class ApiService {
       filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
       cursor: CursorData | null;
     },
-  ): Promise<PaginationResult<Collection[]>> {
+  ): Promise<PaginationResult<CollectionNode[]>> {
     const DEFAULT_ROW_COUNT: number | null = 10;
 
     const path: string = parentUuid
@@ -235,7 +235,7 @@ export default class ApiService {
     }
   }
 
-  public async getEntities(nodeLabel: string, searchString: string): Promise<Entity[]> {
+  public async getEntities(nodeLabel: string, searchString: string): Promise<EntityNode[]> {
     try {
       const url: string = `${this.baseUrl}/entities?node=${nodeLabel}&searchStr=${searchString}`;
 
@@ -290,7 +290,7 @@ export default class ApiService {
     }
   }
 
-  public async getTexts(collectionUuid: string): Promise<Text[]> {
+  public async getTexts(collectionUuid: string): Promise<TextNode[]> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}/texts`;
 
@@ -366,7 +366,7 @@ export default class ApiService {
     }
   }
 
-  public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<CollectionNode> {
     const url: string = `${this.baseUrl}/collections/${uuid}`;
 
     try {
@@ -389,7 +389,7 @@ export default class ApiService {
     }
   }
 
-  public async updateNetwork(data: NetworkPostData): Promise<(Collection | Text)[]> {
+  public async updateNetwork(data: NetworkPostData): Promise<(CollectionNode | TextNode)[]> {
     const url: string = `${this.baseUrl}/network`;
 
     try {
@@ -412,7 +412,7 @@ export default class ApiService {
     }
   }
 
-  public async validateCollectionPath(uuidString: string): Promise<Collection[]> {
+  public async validateCollectionPath(uuidString: string): Promise<CollectionNode[]> {
     try {
       const url: string = `${this.baseUrl}/network?path=${uuidString}`;
 

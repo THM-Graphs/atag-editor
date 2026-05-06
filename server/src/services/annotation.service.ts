@@ -2,18 +2,19 @@ import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import GuidelinesService from './guidelines.service.js';
 import { createCharactersFromText, toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
-import IAnnotation from '../models/IAnnotation.js';
+import { NodeDto } from '../models/types.js';
 import {
   AdditionalText,
   Annotation,
   AnnotationData,
   CollectionPostData,
-  Entity,
+  EntityNode,
   PropertyConfig,
-  Text,
+  TextNode,
 } from '../models/types.js';
 import { IGuidelines } from '../models/IGuidelines.js';
 import ICharacter from '../models/ICharacter.js';
+import { IAnnotation } from '../models/IAnnotation.js';
 
 /**
  * Data type for annotation data before saving them in the database. Contains only the
@@ -26,14 +27,14 @@ type ProcessedAnnotation = Omit<Annotation, 'data'> & {
       created: CreatedAdditionalText[];
     };
     entities: {
-      deleted: Entity[];
-      created: Entity[];
+      deleted: EntityNode[];
+      created: EntityNode[];
     };
   };
 };
 
 type CreatedAdditionalText = Omit<AdditionalText, 'text'> & {
-  text: Text & {
+  text: TextNode & {
     characters: ICharacter[];
   };
 };
@@ -101,61 +102,57 @@ export default class AnnotationService {
     return annotationObjects;
   }
 
-  public async getAnnotations(nodeUuid: string): Promise<AnnotationData[]> {
+  /**
+   * Recursively convert the given annotation dtos to JS types. This is needed to convert the connected nodes of annotations,
+   * which can have an arbitrary depth.
+   *
+   * @param rawAnnotations annotation dtos which should recursively be converted to JS types
+   * @returns The given annotation dtos with all nodes converted to JS types.
+   */
+  public toNativeTypesRecursively(rawAnnotations: NodeDto[]): NodeDto[] {
+    return rawAnnotations.map(annotation => ({
+      node: toNativeTypes(annotation.node),
+      connectedNodes: this.toNativeTypesRecursively(annotation.connectedNodes),
+    })) as NodeDto[];
+  }
+
+  public async getAnnotations(nodeUuid: string): Promise<NodeDto[]> {
     const query: string = `
     // Match all annotations for given selection
     MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
-    // Fetch additional nodes by label defined in the guidelines
+    // Fetch nodes connected to the annotation node
     WITH a
 
-    // Fetch entities
     CALL {
         WITH a
 
-        MATCH (a)-[r:REFERS_TO]->(e:Entity)
+        MATCH (a)-[r:REFERS_TO]->(x:Entity|Collection|Text)
         
         RETURN collect({
-            nodeLabels: [l IN labels(e) WHERE l <> "Entity" | l],
-            data: e {.*}
-        }) AS entities
+            node: {
+                nodeLabels: labels(x),
+                data: x {.*}
+            },
+            connectedNodes: []
+        }) AS connectedNodes
     }
 
-    WITH a, entities AS entities
-
-    // Fetch additional texts
-    CALL {
-        WITH a
-
-        MATCH (a)-[r:HAS_ANNOTATION]->(aComment:Annotation)-[:REFERS_TO]->(t2:Text)
-
-        RETURN collect({
-            annotation: aComment {.*}, 
-            text: {
-                nodeLabels: [l IN labels(t2) WHERE l <> 'Text' | l],
-                data: t2 {.*}
-            }
-        }) as additionalTexts
-
-    }
-
-    WITH a, entities, additionalTexts
+    WITH a, connectedNodes
 
     RETURN collect({
-        properties: a {.*},
-        entities: entities,
-        additionalTexts: additionalTexts
+        node: {
+            nodeLabels: labels(a),
+            data: a {.*}
+        },
+        connectedNodes: connectedNodes
     }) AS annotations
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { nodeUuid });
-    const rawAnnotations: AnnotationData[] = result.records[0]?.get('annotations');
+    const rawAnnotations: NodeDto[] = result.records[0]?.get('annotations');
 
-    const annotations: AnnotationData[] = rawAnnotations.map(annotation =>
-      toNativeTypes(annotation),
-    ) as AnnotationData[];
-
-    return annotations;
+    return this.toNativeTypesRecursively(rawAnnotations);
   }
 
   /**
@@ -179,13 +176,13 @@ export default class AnnotationService {
           annotation.data!.properties.type,
         );
 
-      const initialEntities: Entity[] = annotation.initialData!.entities;
-      const newEntities: Entity[] = annotation.data!.entities;
+      const initialEntities: EntityNode[] = annotation.initialData!.entities;
+      const newEntities: EntityNode[] = annotation.data!.entities;
 
       const initialEntityUuids: string[] = initialEntities.map(item => item.data.uuid);
       const newEntityUuids: string[] = newEntities.map(item => item.data.uuid);
 
-      const createdEntities: Entity[] = newEntities.filter(
+      const createdEntities: EntityNode[] = newEntities.filter(
         entity => !initialEntityUuids.includes(entity.data.uuid),
       );
 
@@ -193,7 +190,7 @@ export default class AnnotationService {
       // TODO: When entities can contain more than just label, use the toNeo4jTypes function?
       createdEntities.forEach(e => (e.data.label = e.data.label.trim()));
 
-      const deletedEntities: Entity[] = initialEntities.filter(
+      const deletedEntities: EntityNode[] = initialEntities.filter(
         entity => !newEntityUuids.includes(entity.data.uuid),
       );
 

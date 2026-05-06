@@ -1,5 +1,5 @@
 import { ref, shallowRef, watch } from 'vue';
-import { Annotation, AnnotationData, ApiJson } from '../models/types';
+import { Annotation, NodeDto, ApiJson } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
 import Document from '@tiptap/extension-document';
@@ -79,7 +79,7 @@ function handleScroll() {
   tiptap.value?.commands.applyViewportUpdates({ from, to });
 }
 
-function initializeTiptap(standoffObject?: { text: string; annotations: AnnotationData[] }): void {
+function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[] }): void {
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
   const { tipTapJson, annotations, structuralAnnotations } = converter.getData();

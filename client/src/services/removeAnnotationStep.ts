@@ -1,6 +1,6 @@
 import { Node, Schema } from '@tiptap/pm/model';
 import { Step, StepResult, Mapping } from '@tiptap/pm/transform';
-import { AnnotationData } from '../models/types';
+import { AnnotationNode } from '../models/types';
 import { AddAnnotationStep } from './addAnnotationStep';
 
 /**
@@ -13,7 +13,7 @@ import { AddAnnotationStep } from './addAnnotationStep';
  */
 export class RemoveAnnotationStep extends Step {
   constructor(
-    readonly annotation: AnnotationData,
+    readonly annotation: AnnotationNode,
     readonly from: number,
     readonly to: number,
   ) {

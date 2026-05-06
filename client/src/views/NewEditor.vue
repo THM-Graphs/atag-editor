@@ -22,6 +22,7 @@ import Message from 'primevue/message';
 import {
   Annotation,
   AnnotationData,
+  NodeDto,
   IndexMap,
   PropertyConfig,
   TextAccessObject,
@@ -637,7 +638,7 @@ watch(
     //   return;
     // }
 
-    const fetchedAnnotations: AnnotationData[] = await api.getAnnotations('text', textUuid.value);
+    const fetchedAnnotations: NodeDto[] = await api.getAnnotations('text', textUuid.value);
 
     // if (annotationFetchError.value) {
     //   isLoading.value = false;

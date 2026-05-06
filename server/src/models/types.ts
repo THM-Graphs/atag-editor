@@ -1,12 +1,12 @@
-import IAnnotation from './IAnnotation.js';
+import { IAnnotation } from './IAnnotation.js';
 import ICharacter from './ICharacter.js';
-import ICollection from './ICollection.js';
-import IEntity from './IEntity.js';
-import IText from './IText.js';
+import { ICollection } from './ICollection.js';
+import { IEntity } from './IEntity.js';
+import { IText } from './IText.js';
 
 export type AdditionalText = {
   annotation: IAnnotation;
-  text: Text;
+  text: TextNode;
 };
 
 export type Annotation = {
@@ -19,11 +19,19 @@ export type Annotation = {
   status: 'existing' | 'created' | 'deleted' | 'edited';
 };
 
+export type AnnotationNode = Node<IAnnotation>;
+
 export interface AnnotationData {
   additionalTexts: AdditionalText[];
-  entities: Entity[];
+  entities: EntityNode[];
   properties: IAnnotation;
 }
+
+/** A node object for retrieving data */
+export type NodeDto = {
+  node: AnnotationNode | CollectionNode | EntityNode | TextNode;
+  connectedNodes: NodeDto[];
+};
 
 export type AnnotationType = {
   category: string;
@@ -71,18 +79,18 @@ export type CharacterPostData = {
   uuidStart: string;
 };
 
-export type Collection = Node<ICollection>;
+export type CollectionNode = Node<ICollection>;
 
 export type CollectionAccessObject = {
   annotations: AnnotationData[];
-  collection: Collection;
-  texts: Text[];
+  collection: CollectionNode;
+  texts: TextNode[];
 };
 
 export type CollectionNetworkActionType = 'move' | 'reference' | 'dereference' | 'delete';
 
 export type CollectionCreationData = CollectionAccessObject & {
-  parentCollection: Collection | null;
+  parentCollection: CollectionNode | null;
 };
 
 export type CollectionPostData = {
@@ -91,7 +99,7 @@ export type CollectionPostData = {
 };
 
 export type CollectionPreview = {
-  collection: Collection;
+  collection: CollectionNode;
   nodeCounts: {
     annotations: number;
     texts: number;
@@ -99,7 +107,7 @@ export type CollectionPreview = {
   };
 };
 
-export type Entity = Node<IEntity>;
+export type EntityNode = Node<IEntity>;
 
 export type FaviconResponse = {
   contentType: string;
@@ -111,19 +119,19 @@ export type MalformedAnnotation = {
   data: StandoffAnnotation;
 };
 
-export type Node<T extends BaseNodeData> = {
+export type Node<T = AnnotationNode | CollectionNode | EntityNode | TextNode> = {
   data: T;
   nodeLabels: string[];
 };
 
 export type NetworkPostData = {
   type: CollectionNetworkActionType;
-  nodes: (Collection | Text)[];
-  origin: Collection | null;
-  target: Collection | null;
+  nodes: (CollectionNode | TextNode)[];
+  origin: CollectionNode | null;
+  target: CollectionNode | null;
 };
 
-export type NodeAncestry = (Text | Collection | IAnnotation)[];
+export type NodeAncestry = (TextNode | CollectionNode | IAnnotation)[];
 
 export type PaginationData = {
   limit: number;
@@ -190,10 +198,10 @@ export type StandoffJson = {
   text: string;
 };
 
-export type Text = Node<IText>;
+export type TextNode = Node<IText>;
 
 export type TextAccessObject = {
-  collection: Collection | null;
+  collection: CollectionNode | null;
   paths: NodeAncestry[];
-  text: Text;
+  text: TextNode;
 };

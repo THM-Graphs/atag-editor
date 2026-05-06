@@ -2,14 +2,15 @@ import { Ref } from 'vue';
 import {
   Annotation,
   AnnotationData,
+  NodeDto,
   Character,
   CollectionAccessObject,
   PropertyConfigDataType,
   StandoffAnnotation,
   StandoffJson,
-  Text,
+  TextNode,
 } from '../../models/types';
-import ICollection from '../../models/ICollection';
+import { ICollection } from '../../models/ICollection';
 import { EditorView } from '@tiptap/pm/view';
 
 /**
@@ -116,9 +117,9 @@ export function createNewCollectionAccessObject(
  *
  * This function is used to generate a new Text object with default values for the node labels and data properties.
  *
- * @return {Text} A new Text object with default values.
+ * @return {TextNode} A new Text object with default values.
  */
-export function createNewTextObject(): Text {
+export function createNewTextObject(): TextNode {
   return {
     nodeLabels: [],
     data: {
@@ -130,25 +131,27 @@ export function createNewTextObject(): Text {
 
 export function createExtendedStandoffObject(standoffObject: {
   text: string;
-  annotations: AnnotationData[];
-}): { text: string; annotations: AnnotationData[] } {
+  annotations: NodeDto[];
+}): { text: string; annotations: NodeDto[] } {
   const extended = cloneDeep(standoffObject);
 
-  if (extended.annotations.find(a => a.properties.type === 'paragraph')) {
+  if (extended.annotations.find(a => a.node.data.type === 'paragraph')) {
     return extended;
   }
 
   extended.annotations.push({
-    additionalTexts: [],
-    properties: {
-      text: standoffObject.text,
-      startIndex: 0,
-      uuid: 'wrapper-paragraph',
-      subType: '',
-      endIndex: standoffObject.text.length - 1,
-      type: 'paragraph',
+    node: {
+      nodeLabels: ['Annotation'],
+      data: {
+        text: standoffObject.text,
+        startIndex: 0,
+        uuid: 'wrapper-paragraph',
+        subType: '',
+        endIndex: standoffObject.text.length - 1,
+        type: 'paragraph',
+      },
     },
-    entities: [],
+    connectedNodes: [],
   });
 
   return extended;
