@@ -1,12 +1,12 @@
 import { ref } from 'vue';
 import ICollection from '../models/ICollection';
-import { Collection } from '../models/types';
+import { CollectionNode } from '../models/types';
 
 const collection = ref<ICollection>();
 const initialCollection = ref<ICollection>();
 const collectionNodeLabels = ref<string[]>([]);
 
-function initializeCollection(newCollection: Collection): void {
+function initializeCollection(newCollection: CollectionNode): void {
   collection.value = newCollection.data;
   collectionNodeLabels.value = newCollection.nodeLabels;
   initialCollection.value = { ...newCollection.data };

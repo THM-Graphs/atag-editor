@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Entity } from '../models/types';
+import { EntityNode } from '../models/types';
 import Button from 'primevue/button';
 import { Popover } from 'primevue';
 import Tag from 'primevue/tag';
@@ -9,11 +9,11 @@ import { capitalize, useTemplateRef } from 'vue';
 
 const props = defineProps<{
   status: 'existing' | 'temporary';
-  entity: Entity;
+  entity: EntityNode;
 }>();
 
 const emit = defineEmits<{
-  (e: 'removeEntity', entity: Entity): void;
+  (e: 'removeEntity', entity: EntityNode): void;
 }>();
 
 const infoIcon = useTemplateRef('info-icon');

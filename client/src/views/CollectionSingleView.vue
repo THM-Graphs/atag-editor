@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouteLocationNormalized, useRoute } from 'vue-router';
-import { Collection, NodeAncestry } from '../models/types';
+import { CollectionNode, NodeAncestry } from '../models/types';
 import CollectionBreadcrumbs from '../components/CollectionBreadcrumbs.vue';
 import Card from 'primevue/card';
 
@@ -9,7 +9,7 @@ const route: RouteLocationNormalized = useRoute();
 const uuid: string = route.params.uuid as string;
 
 // These two are added to the route in the beforeEnter navigation guard
-const collection: Collection = route.meta.collection as Collection;
+const collection: CollectionNode = route.meta.collection as CollectionNode;
 const ancestryPaths: NodeAncestry[] = route.meta.ancestryPaths as NodeAncestry[];
 </script>
 <template>

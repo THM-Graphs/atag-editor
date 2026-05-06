@@ -1,12 +1,12 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/notFound.error.js';
-import { Text, TextAccessObject } from '../models/types.js';
+import { TextNode, TextAccessObject } from '../models/types.js';
 import { ancestryPaths } from '../utils/cypher.js';
 import { toNativeTypes } from '../utils/helper.js';
 
 export default class TextService {
-  public async getTexts(collectionUuid: string): Promise<Text[]> {
+  public async getTexts(collectionUuid: string): Promise<TextNode[]> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 

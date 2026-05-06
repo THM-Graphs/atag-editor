@@ -2,7 +2,7 @@ import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
 import TextService from '../services/text.service.js';
-import { Text, TextAccessObject } from '../models/types.js';
+import { TextNode, TextAccessObject } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -13,7 +13,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const collectionUuid: string = req.params.collectionUuid; // This is the collection UUID
 
   try {
-    const texts: Text[] = await textService.getTexts(collectionUuid);
+    const texts: TextNode[] = await textService.getTexts(collectionUuid);
 
     res.status(200).json(texts);
   } catch (error: unknown) {

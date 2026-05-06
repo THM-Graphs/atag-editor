@@ -9,13 +9,13 @@ import { useGuidelinesStore } from '../store/guidelines';
 import {
   AnnotationData,
   AnnotationType,
-  Collection,
+  CollectionNode,
   CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
   CollectionStatusObject,
   PropertyConfig,
-  Text,
+  TextNode,
 } from '../models/types';
 import Tag from 'primevue/tag';
 import {
@@ -86,7 +86,7 @@ const confirm = useConfirm();
 const temporaryWorkData = ref<CollectionAccessObject | null>(null);
 const initialTemporaryWorkData = ref<CollectionAccessObject | null>(null);
 
-const temporaryTexts = ref<Text[]>([]);
+const temporaryTexts = ref<TextNode[]>([]);
 
 // Responsible for setting inputs (non-)editable. The global mode
 // determines the state of the page.
@@ -217,7 +217,7 @@ function handleAnnotationButtonClick(data: { type: string; subType?: string | nu
   temporaryWorkData.value.annotations.push(newAnnotation);
 }
 
-function handleAddText(newText: Text) {
+function handleAddText(newText: TextNode) {
   newText.data.text = newText.data.text.replace(/(\r\n|\n|\r)/g, ' ');
 
   temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== newText.data.uuid);
@@ -226,7 +226,7 @@ function handleAddText(newText: Text) {
 }
 
 async function handleAddTextClick(): Promise<void> {
-  const newText: Text = createNewTextObject();
+  const newText: TextNode = createNewTextObject();
 
   temporaryTexts.value.push(newText);
 }
@@ -271,7 +271,7 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
-function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
+function handleRemoveText(text: TextNode, status: 'existing' | 'temporary'): void {
   if (status === 'existing') {
     temporaryWorkData.value.texts = temporaryWorkData.value.texts.filter(
       t => t.data.uuid !== text.data.uuid,
@@ -281,8 +281,8 @@ function handleRemoveText(text: Text, status: 'existing' | 'temporary'): void {
   }
 }
 
-async function createCollection(): Promise<Collection> {
-  const parentCollection: Collection | null =
+async function createCollection(): Promise<CollectionNode> {
+  const parentCollection: CollectionNode | null =
     pathToActiveCollection.value[pathToActiveCollection.value.length - 2] ?? null;
 
   const creationData: CollectionCreationData = {
@@ -297,7 +297,7 @@ async function createCollection(): Promise<Collection> {
     initialData: initialTemporaryWorkData.value,
   };
 
-  const updated: Collection = await api.updateCollection(
+  const updated: CollectionNode = await api.updateCollection(
     temporaryWorkData.value.collection.data.uuid,
     updateData,
   );
@@ -305,7 +305,7 @@ async function createCollection(): Promise<Collection> {
   return updated;
 }
 
-function transferDataToListItem(uuid: string, index: number, data: Collection): void {
+function transferDataToListItem(uuid: string, index: number, data: CollectionNode): void {
   // TODO: Make this more elegant
   const collectionObject: CollectionStatusObject | null = findCollectionInHierarchy(uuid, index);
 
@@ -339,7 +339,7 @@ async function handleApplyChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
-    const result: Collection =
+    const result: CollectionNode =
       globalMode.value === 'create' ? await createCollection() : await updateCollection();
 
     // Set returned collection data to column list item
@@ -438,7 +438,7 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-async function updateCollection(): Promise<Collection> {
+async function updateCollection(): Promise<CollectionNode> {
   removeUnnecessaryDataBeforeSave();
 
   const collectionPostData: CollectionPostData = {

@@ -1,5 +1,5 @@
 import { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
-import { Collection, NodeAncestry } from '../models/types';
+import { CollectionNode, NodeAncestry } from '../models/types';
 import { useAppStore } from '../store/app';
 
 export function useNavigationGuard() {
@@ -42,7 +42,7 @@ export function useNavigationGuard() {
     const ancestryPaths: NodeAncestry[] = await api.getCollectionAncestry(uuid);
 
     if (ancestryPaths.length > 1) {
-      const collection: Collection = await api.getCollection(uuid);
+      const collection: CollectionNode = await api.getCollection(uuid);
 
       route.meta.collection = collection;
       route.meta.ancestryPaths = ancestryPaths;

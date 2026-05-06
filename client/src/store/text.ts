@@ -1,14 +1,14 @@
 import { readonly, ref } from 'vue';
 import { useAppStore } from './app';
-import { Collection, NodeAncestry, Text, TextAccessObject } from '../models/types';
+import { CollectionNode, NodeAncestry, TextNode, TextAccessObject } from '../models/types';
 import { cloneDeep } from '../utils/helper/helper';
 
 const { api } = useAppStore();
 
 // Data
-const text = ref<Text>(null);
-const initialText = ref<Text>(null);
-const correspondingCollection = ref<Collection>(null);
+const text = ref<TextNode>(null);
+const initialText = ref<TextNode>(null);
+const correspondingCollection = ref<CollectionNode>(null);
 const paths = ref<NodeAncestry[]>([]);
 
 // Fetch status

@@ -5,14 +5,14 @@ import { camelCaseToTitleCase } from '../utils/helper/helper';
 import AutoComplete from 'primevue/autocomplete';
 import Button from 'primevue/button';
 import Fieldset from 'primevue/fieldset';
-import { AnnotationConfigEntity, AnnotationType, Entity } from '../models/types';
+import { AnnotationConfigEntity, AnnotationType, EntityNode } from '../models/types';
 import { useAppStore } from '../store/app';
 import EntityItem from './EntityItem.vue';
 
 /**
  *  Enriches entities item with an html key that contains the highlighted parts of the node label
  * */
-type EntityEntry = Entity & { html: string };
+type EntityEntry = EntityNode & { html: string };
 
 /**
  * Interface for relevant state information about each entities category
@@ -27,12 +27,12 @@ interface EntitiesSearchObject {
   };
 }
 
-const entities = defineModel<Entity[]>();
+const entities = defineModel<EntityNode[]>();
 
 const props = defineProps<{
   mode?: 'edit' | 'view';
   defaultSearchValue?: string;
-  initialEntities: Entity[];
+  initialEntities: EntityNode[];
   annotationConfig: AnnotationType;
 }>();
 
@@ -57,8 +57,8 @@ const visibleEntityCategories = computed<string[]>(() => {
 });
 
 // This is the computed function for the data
-const categorizedEntities = computed<Record<string, Entity[]>>(() => {
-  const obj: Record<string, Entity[]> = {};
+const categorizedEntities = computed<Record<string, EntityNode[]>>(() => {
+  const obj: Record<string, EntityNode[]> = {};
 
   entityConfigs.forEach((config: AnnotationConfigEntity) => {
     obj[config.category] = entities.value.filter(e => e.nodeLabels.includes(config.nodeLabel));
@@ -178,9 +178,9 @@ function handleEntityItemSelect(item: EntityEntry, category: string): void {
 /**
  * Removes a entity item from the annotation's data.
  *
- * @param {Entity} entity - The entity item to be removed.
+ * @param {EntityNode} entity - The entity item to be removed.
  */
-function handleRemoveEntity(entity: Entity): void {
+function handleRemoveEntity(entity: EntityNode): void {
   entities.value = entities.value.filter(entry => entry.data.uuid !== entity.data.uuid);
 }
 
@@ -213,17 +213,17 @@ function renderHTML(text: string, searchStr: string): string {
 async function searchEntitiesOptions(searchString: string, category: string): Promise<void> {
   const nodeLabel: string = entitiesSearchObject.value[category].nodeLabel;
 
-  const fetchedEntities: Entity[] = await api.getEntities(nodeLabel, searchString);
+  const fetchedEntities: EntityNode[] = await api.getEntities(nodeLabel, searchString);
 
   // Show only entries that are not already part of the annotation
   const existingUuids: string[] = entities.value.map((entry: EntityEntry) => entry.data.uuid);
 
-  const withoutDuplicates: Entity[] = fetchedEntities.filter(
-    (entry: Entity) => !existingUuids.includes(entry.data.uuid),
+  const withoutDuplicates: EntityNode[] = fetchedEntities.filter(
+    (entry: EntityNode) => !existingUuids.includes(entry.data.uuid),
   );
 
   // Store HTML directly in prop to prevent unnecessary, primevue-enforced re-renders during hover
-  const withHtml: EntityEntry[] = withoutDuplicates.map((entry: Entity) => ({
+  const withHtml: EntityEntry[] = withoutDuplicates.map((entry: EntityNode) => ({
     ...entry,
     html: renderHTML(entry.data.label, searchString),
   }));

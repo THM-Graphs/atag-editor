@@ -1,7 +1,7 @@
 import { DeepReadonly, readonly, ref } from 'vue';
 import { useAppStore } from '../store/app';
 import {
-  Collection,
+  CollectionNode,
   CollectionSearchParams,
   CursorData,
   PaginationData,
@@ -12,8 +12,8 @@ const { api } = useAppStore();
 
 export function useCollections() {
   // Data
-  const collection = ref<Collection>(null);
-  const collections = ref<Collection[]>([]);
+  const collection = ref<CollectionNode>(null);
+  const collections = ref<CollectionNode[]>([]);
   const pagination = ref<PaginationData>(null);
 
   // Fetch status
@@ -30,7 +30,10 @@ export function useCollections() {
     isFetching.value = true;
 
     try {
-      const result: PaginationResult<Collection[]> = await api.getCollections(parentUuid, params);
+      const result: PaginationResult<CollectionNode[]> = await api.getCollections(
+        parentUuid,
+        params,
+      );
 
       collections.value = result.data;
       pagination.value = result.pagination;

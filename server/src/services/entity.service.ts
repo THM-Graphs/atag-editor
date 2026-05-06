@@ -1,6 +1,6 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
-import { Entity } from '../models/types.js';
+import { EntityNode } from '../models/types.js';
 
 export default class EntityService {
   /**
@@ -9,9 +9,9 @@ export default class EntityService {
    *
    * @param {string} nodeLabel - The node label to search, e.g. "ActorRole" or "Entity"
    * @param {string} searchStr - The search string to search for.
-   * @return {Promise<Entity[]>} A promise that resolves to an array of entities with the given label.
+   * @return {Promise<EntityNode[]>} A promise that resolves to an array of entities with the given label.
    */
-  async searchByLabel(nodeLabel: string, searchStr: string): Promise<Entity[]> {
+  async searchByLabel(nodeLabel: string, searchStr: string): Promise<EntityNode[]> {
     const query: string = `
 		MATCH (n:${nodeLabel})
     WHERE toLower(n.label) CONTAINS toLower($searchStr)

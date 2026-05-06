@@ -12,8 +12,8 @@ import {
   PaginationResult,
   CollectionPostData,
   PropertyConfig,
-  Text,
-  Collection,
+  TextNode,
+  CollectionNode,
   NodeAncestry,
   CollectionCreationData,
   CursorData,
@@ -22,12 +22,12 @@ import ICharacter from '../models/ICharacter.js';
 import ValidationError from '../errors/validation.error.js';
 
 type CollectionTextObject = {
-  all: Text[];
+  all: TextNode[];
   created: CreatedText[];
-  deleted: Text[];
+  deleted: TextNode[];
 };
 
-type CreatedText = Text & {
+type CreatedText = TextNode & {
   characters: ICharacter[];
 };
 
@@ -60,7 +60,7 @@ export default class CollectionService {
    * @param {string | null} parentUuid - The UUID of the parent collection to restrict the scope to Sub-Collections, or null to fetch all.
    * @param {CursorData | null} cursor - The cursor for pagination, or null for the first page.
    *
-   * @return {Promise<PaginationResult<Collection[]>>} A promise that resolves to a paginated result of Collections.
+   * @return {Promise<PaginationResult<CollectionNode[]>>} A promise that resolves to a paginated result of Collections.
    */
   public async getCollections(
     additionalLabels: string[],
@@ -69,7 +69,7 @@ export default class CollectionService {
     search: string,
     parentUuid: string | null,
     cursor: CursorData | null = null,
-  ): Promise<PaginationResult<Collection[]>> {
+  ): Promise<PaginationResult<CollectionNode[]>> {
     // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch collections
     // that don't have a parent (top level collections)
     const baseCollectionSnippet = parentUuid
@@ -129,19 +129,19 @@ export default class CollectionService {
     ]);
 
     const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
-    const rawData: Collection[] = dataResult.records[0]?.get('collections') || [];
+    const rawData: CollectionNode[] = dataResult.records[0]?.get('collections') || [];
 
     // Check if there are more records
     const hasMore: boolean = rawData.length > limit;
-    const collections: Collection[] = hasMore ? rawData.slice(0, limit) : rawData;
+    const collections: CollectionNode[] = hasMore ? rawData.slice(0, limit) : rawData;
 
-    const data: Collection[] = collections.map(c => toNativeTypes(c)) as Collection[];
+    const data: CollectionNode[] = collections.map(c => toNativeTypes(c)) as CollectionNode[];
 
     // Generate next cursor from the last item
     let nextCursor: CursorData | null = null;
 
     if (hasMore && data.length > 0) {
-      const lastItem: Collection = data[data.length - 1];
+      const lastItem: CollectionNode = data[data.length - 1];
 
       nextCursor = {
         label: lastItem.data.label,
@@ -166,9 +166,9 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the retrieved collection.
+   * @return {Promise<CollectionNode>} A promise that resolves to the retrieved collection.
    */
-  public async getCollection(uuid: string): Promise<Collection> {
+  public async getCollection(uuid: string): Promise<CollectionNode> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
@@ -179,13 +179,13 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const rawCollection: Collection = result.records[0]?.get('collection');
+    const rawCollection: CollectionNode = result.records[0]?.get('collection');
 
     if (!rawCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    const collection: Collection = toNativeTypes(rawCollection) as Collection;
+    const collection: CollectionNode = toNativeTypes(rawCollection) as CollectionNode;
 
     return collection;
   }
@@ -323,9 +323,9 @@ export default class CollectionService {
    *
    * @param {CollectionCreationData} data - The data to set for the collection node.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the created collection node.
+   * @return {Promise<CollectionNode>} A promise that resolves to the created collection node.
    */
-  public async createNewCollection(data: CollectionCreationData): Promise<Collection> {
+  public async createNewCollection(data: CollectionCreationData): Promise<CollectionNode> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
@@ -336,10 +336,10 @@ export default class CollectionService {
       data.collection.nodeLabels,
     );
 
-    const collection: Collection = {
+    const collection: CollectionNode = {
       nodeLabels: [...data.collection.nodeLabels, 'Collection'],
       data: toNeo4jTypes(data.collection.data, fields),
-    } as Collection;
+    } as CollectionNode;
 
     const parentUuid: string | null = data.parentCollection?.data.uuid ?? null;
 
@@ -375,13 +375,13 @@ export default class CollectionService {
     const newTextUUids: string[] = newData.texts.map(t => t.data.uuid);
 
     const createdTexts: CreatedText[] = newData.texts
-      .filter((text: Text) => !initialTextUuids.includes(text.data.uuid))
-      .map((t: Text) => ({
+      .filter((text: TextNode) => !initialTextUuids.includes(text.data.uuid))
+      .map((t: TextNode) => ({
         ...t,
         characters: createCharactersFromText(t.data.text),
       }));
 
-    const deletedTexts: Text[] = initialData.texts.filter(
+    const deletedTexts: TextNode[] = initialData.texts.filter(
       text => !newTextUUids.includes(text.data.uuid),
     );
 
@@ -401,9 +401,9 @@ export default class CollectionService {
    * @param {string} uuid - The UUID of the collection node to update.
    * @param {CollectionPostData} data - The data containing updates for the collection.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the updated collection node.
+   * @return {Promise<CollectionNode>} A promise that resolves to the updated collection node.
    */
-  public async updateCollection(uuid: string, data: CollectionPostData): Promise<Collection> {
+  public async updateCollection(uuid: string, data: CollectionPostData): Promise<CollectionNode> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines = await guidelineService.getGuidelines();
 
@@ -415,7 +415,7 @@ export default class CollectionService {
     );
 
     const texts: CollectionTextObject = this.processCollectionTextsBeforeSaving(data);
-    const collection: Collection = {
+    const collection: CollectionNode = {
       nodeLabels: data.data.collection.nodeLabels,
       data: toNeo4jTypes(data.data.collection.data, fields) as ICollection,
     };
@@ -504,7 +504,7 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid, collection, texts });
-    const updatedCollection: Collection = result.records[0]?.get('collection');
+    const updatedCollection: CollectionNode = result.records[0]?.get('collection');
 
     if (!updatedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
@@ -518,9 +518,9 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the Collection node to delete.
    * @throws {NotFoundError} If the Collection with the specified UUID is not found.
-   * @return {Promise<Collection>} A promise that resolves to the deleted Collection node.
+   * @return {Promise<CollectionNode>} A promise that resolves to the deleted Collection node.
    */
-  public async deleteCollection(uuid: string): Promise<Collection> {
+  public async deleteCollection(uuid: string): Promise<CollectionNode> {
     const query: string = `
 
     MATCH (c:Collection {uuid: $uuid})
@@ -553,7 +553,7 @@ export default class CollectionService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid });
-    const deletedCollection: Collection = result.records[0]?.get('collection');
+    const deletedCollection: CollectionNode = result.records[0]?.get('collection');
 
     if (!deletedCollection) {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);

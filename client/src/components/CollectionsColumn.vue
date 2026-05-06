@@ -4,7 +4,7 @@ import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
 import {
-  Collection,
+  CollectionNode,
   CollectionAccessObject,
   CollectionSearchParams,
   CollectionStatusObject,
@@ -95,9 +95,9 @@ onMounted(() => {
   scrollToColumn();
 });
 
-function addData(data: Collection[]) {
+function addData(data: CollectionNode[]) {
   levels.value[props.index].collections.push(
-    ...data.map((c: Collection) => {
+    ...data.map((c: CollectionNode) => {
       return {
         data: c,
         status: 'existing',
@@ -110,7 +110,7 @@ function endResize() {
   window.removeEventListener('mousemove', handleResize);
 }
 
-async function fetchData(): Promise<PaginationResult<Collection[]>> {
+async function fetchData(): Promise<PaginationResult<CollectionNode[]>> {
   const { data, pagination } = await api.getCollections(props.parentUuid, {
     filters: searchParams.value,
     cursor: columnPagination.value?.nextCursor,
@@ -136,7 +136,7 @@ async function fetchMoreData(): Promise<void> {
 
   const { data, pagination } = await fetchData();
 
-  const filteredData: Collection[] = removeDuplicatesAfterFetching(data);
+  const filteredData: CollectionNode[] = removeDuplicatesAfterFetching(data);
 
   addData(filteredData);
   setPagination(pagination);
@@ -254,22 +254,22 @@ async function handleSearchParamsChange() {
  * A duplicate is the case when the user created a new collection which gets added on top of the list for UX reasons.
  * When data are fetched alphabetically, it might be loaded again.
  *
- * @param {Collection[]} data - The collection data to filter.
- * @returns {Collection[]} The filtered data.
+ * @param {CollectionNode[]} data - The collection data to filter.
+ * @returns {CollectionNode[]} The filtered data.
  */
-function removeDuplicatesAfterFetching(data: Collection[]): Collection[] {
+function removeDuplicatesAfterFetching(data: CollectionNode[]): CollectionNode[] {
   const existingUuids: Set<string> = new Set(
     levels.value[props.index].collections.map((c: CollectionStatusObject) => c.data.data.uuid),
   );
 
-  const filteredData: Collection[] = data.filter(
-    (c: Collection) => !existingUuids.has(c.data.uuid),
+  const filteredData: CollectionNode[] = data.filter(
+    (c: CollectionNode) => !existingUuids.has(c.data.uuid),
   );
 
   return filteredData;
 }
 
-function replaceData(data: Collection[]) {
+function replaceData(data: CollectionNode[]) {
   levels.value[props.index].collections = data.map(c => {
     return {
       data: c,

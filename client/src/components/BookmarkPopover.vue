@@ -5,7 +5,7 @@ import ButtonGroup from 'primevue/buttongroup';
 import ToggleButton from 'primevue/togglebutton';
 import { useBookmarks } from '../composables/useBookmarks';
 import BookmarkItem from './BookmarkItem.vue';
-import { Bookmark, Collection, Text } from '../models/types';
+import { Bookmark, CollectionNode, TextNode } from '../models/types';
 import { capitalize } from '../utils/helper/helper';
 import { RouteLocationNormalized, useRoute } from 'vue-router';
 import { InputText } from 'primevue';
@@ -33,8 +33,8 @@ const displayedItems = computed<DeepReadonly<Bookmark[]>>(() =>
   bookmarks.value.filter(bookmark => {
     const stringToCheck: string =
       selectedBookmarkType.value === 'collection'
-        ? (bookmark.data as Collection).data.label
-        : (bookmark.data as Text).data.text;
+        ? (bookmark.data as CollectionNode).data.label
+        : (bookmark.data as TextNode).data.text;
 
     if (
       bookmark.type === selectedBookmarkType.value &&

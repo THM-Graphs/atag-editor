@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useBookmarks } from '../composables/useBookmarks';
-import { Bookmark, Collection } from '../models/types';
+import { Bookmark, CollectionNode } from '../models/types';
 import router from '../router';
 import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
@@ -22,7 +22,7 @@ function handleItemClick(): void {
 
 const htmlTitle = computed<string>(
   () =>
-    `Go go ${props.bookmarkData.type} ${isCollection ? (props.bookmarkData.data as Collection).data.label : 'with UUID ' + props.bookmarkData.data.data.uuid}`,
+    `Go go ${props.bookmarkData.type} ${isCollection ? (props.bookmarkData.data as CollectionNode).data.label : 'with UUID ' + props.bookmarkData.data.data.uuid}`,
 );
 
 // TODO: This should be in a helper function
@@ -59,7 +59,7 @@ const displayedText = computed<string>(
           </div>
           <template v-if="isCollection">
             <div class="label font-bold">
-              {{ (props.bookmarkData.data as Collection).data.label }}
+              {{ (props.bookmarkData.data as CollectionNode).data.label }}
             </div>
           </template>
           <template v-else>

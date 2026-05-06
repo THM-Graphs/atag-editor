@@ -1,7 +1,7 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/notFound.error.js';
-import { Text, Collection, NetworkPostData } from '../models/types.js';
+import { TextNode, CollectionNode, NetworkPostData } from '../models/types.js';
 
 /**
  * Service class for managing network operations on Collections and Text nodes.
@@ -13,9 +13,9 @@ export default class NetworkService {
    * to their current parent collection(s).
    *
    * @param {NetworkPostData} data - The data containing the nodes to copy and the target collection.
-   * @return {Promise<(Collection | Text)[]>} A promise that resolves to an array of the copied nodes.
+   * @return {Promise<(CollectionNode | TextNode)[]>} A promise that resolves to an array of the copied nodes.
    */
-  async referenceNodes(data: NetworkPostData): Promise<(Collection | Text)[]> {
+  async referenceNodes(data: NetworkPostData): Promise<(CollectionNode | TextNode)[]> {
     const { nodes, target } = data;
 
     if (!target) {
@@ -35,7 +35,7 @@ export default class NetworkService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { targetUuid, nodes });
-    const updatedNodes: (Collection | Text)[] = result.records[0]?.get('updatedNodes');
+    const updatedNodes: (CollectionNode | TextNode)[] = result.records[0]?.get('updatedNodes');
 
     if (!updatedNodes) {
       throw new NotFoundError(`Collection with UUID ${targetUuid} not found`);
@@ -60,7 +60,7 @@ export default class NetworkService {
    * Disconnects the given nodes from the given origin collection (= removes the `PART_OF` relationships).
    *
    * @param {NetworkPostData} data - The data containing the nodes to dereference and the origin collection.
-   * @return {Promise<(Collection | Text)[]>} A promise that resolves to an array of the dereferenced nodes.
+   * @return {Promise<(CollectionNode | TextNode)[]>} A promise that resolves to an array of the dereferenced nodes.
    */
   async dereferenceNodes(data: NetworkPostData): Promise<any> {
     const { nodes, origin } = data;
@@ -85,7 +85,7 @@ export default class NetworkService {
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { originUuid, nodes });
 
-    const updatedNodes: (Collection | Text)[] = result.records[0]?.get('updatedNodes');
+    const updatedNodes: (CollectionNode | TextNode)[] = result.records[0]?.get('updatedNodes');
 
     if (!updatedNodes) {
       throw new NotFoundError(`Collection with UUID ${originUuid} not found`);
@@ -99,7 +99,7 @@ export default class NetworkService {
    * collection and creates ``PART_OF` relationships to the new parent collection).
    *
    * @param {NetworkPostData} data - The data containing the nodes to move and the origin and target collections.
-   * @return {Promise<(Collection | Text)[]>} A promise that resolves to an array of the moved nodes.
+   * @return {Promise<(CollectionNode | TextNode)[]>} A promise that resolves to an array of the moved nodes.
    */
   async moveNodes(data: NetworkPostData): Promise<any> {
     const { nodes, origin, target } = data;
@@ -131,7 +131,7 @@ export default class NetworkService {
       nodes,
     });
 
-    const updatedNodes: (Collection | Text)[] = result.records[0]?.get('updatedNodes');
+    const updatedNodes: (CollectionNode | TextNode)[] = result.records[0]?.get('updatedNodes');
 
     if (!updatedNodes) {
       throw new NotFoundError(`Collection with UUID ${targetUuid} not found`);
@@ -140,7 +140,7 @@ export default class NetworkService {
     return updatedNodes;
   }
 
-  async validatePath(uuids: string[]): Promise<Collection[]> {
+  async validatePath(uuids: string[]): Promise<CollectionNode[]> {
     if (!uuids || uuids.length === 0) {
       return [];
     }
@@ -172,7 +172,7 @@ export default class NetworkService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuids });
-    const path: Collection[] = result.records[0]?.get('path');
+    const path: CollectionNode[] = result.records[0]?.get('path');
 
     if (!path) {
       throw new NotFoundError(`The requested path [${uuids}] does not exist`);

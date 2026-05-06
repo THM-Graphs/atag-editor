@@ -1,5 +1,10 @@
 import { computed, readonly, ref } from 'vue';
-import { Collection, CollectionAccessObject, CollectionStatusObject, Level } from '../models/types';
+import {
+  CollectionNode,
+  CollectionAccessObject,
+  CollectionStatusObject,
+  Level,
+} from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
 
@@ -8,7 +13,7 @@ const { api } = useAppStore();
 const levels = ref<Level[]>([]);
 
 const activeCollection = ref<CollectionAccessObject | null>(null);
-const pathToActiveCollection = ref<Collection[]>([]);
+const pathToActiveCollection = ref<CollectionNode[]>([]);
 
 const previousPaths = useRefHistory(pathToActiveCollection, {
   capacity: 5,
@@ -162,10 +167,10 @@ export function useCollectionManagerStore() {
    * Called when the user navigates through the hierarchy by clicking on a collection item in the columns
    * or when the URL changes.
    *
-   * @param {Collection[]} path The active path selection.
+   * @param {CollectionNode[]} path The active path selection.
    * @returns {void} This function does not return a value.
    */
-  function setPathToActiveCollection(path: Collection[]): void {
+  function setPathToActiveCollection(path: CollectionNode[]): void {
     pathToActiveCollection.value = path;
   }
 
@@ -186,10 +191,10 @@ export function useCollectionManagerStore() {
    *
    * Called on URL path change (by watcher) or when a creation process of a new collection is canceled.
    *
-   * @param {Collection[]} newPath The new path selection.
+   * @param {CollectionNode[]} newPath The new path selection.
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
-  async function updateLevelsAndFetchData(newPath: Collection[]): Promise<void> {
+  async function updateLevelsAndFetchData(newPath: CollectionNode[]): Promise<void> {
     setPathToActiveCollection(newPath);
     updateLevels();
 
@@ -268,9 +273,9 @@ export function useCollectionManagerStore() {
    * Validates a collection path given by a comma-separated string of UUIDs.
    *
    * @param {string} uuidString - The comma-separated string of UUIDs to validate.
-   * @returns {Promise<Collection[]>} - A promise that resolves with the validated collection path.
+   * @returns {Promise<CollectionNode[]>} - A promise that resolves with the validated collection path.
    */
-  async function validatePath(uuidString: string): Promise<Collection[]> {
+  async function validatePath(uuidString: string): Promise<CollectionNode[]> {
     return await api.validateCollectionPath(uuidString);
   }
 

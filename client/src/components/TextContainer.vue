@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Text } from '../models/types';
+import { TextNode } from '../models/types';
 import Card from 'primevue/card';
 import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
@@ -11,13 +11,13 @@ import { useBookmarks } from '../composables/useBookmarks';
 
 const props = defineProps<{
   status: 'existing' | 'temporary';
-  text: Text;
+  text: TextNode;
   mode: 'view' | 'edit';
 }>();
 
 const emit = defineEmits<{
-  (e: 'textAdded', text: Text): void;
-  (e: 'textRemoved', text: Text): void;
+  (e: 'textAdded', text: TextNode): void;
+  (e: 'textRemoved', text: TextNode): void;
 }>();
 
 const { getAvailableTextLabels } = useGuidelinesStore();
