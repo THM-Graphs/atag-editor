@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { useAppStore } from './app';
 import { useCharactersStore } from './characters';
 import {
-  Annotation,
+  AnnotationOld,
   AnnotationData,
   AnnotationReference,
   Character,
@@ -16,10 +16,10 @@ const { snippetCharacters, totalCharacters, getAfterEndCharacter, getBeforeStart
   useCharactersStore();
 
 // Data
-const totalAnnotations = ref<Annotation[]>([]);
-const initialTotalAnnotations = ref<Annotation[]>([]);
-const snippetAnnotations = ref<Annotation[]>([]);
-const initialSnippetAnnotations = ref<Annotation[]>([]);
+const totalAnnotations = ref<AnnotationOld[]>([]);
+const initialTotalAnnotations = ref<AnnotationOld[]>([]);
+const snippetAnnotations = ref<AnnotationOld[]>([]);
+const initialSnippetAnnotations = ref<AnnotationOld[]>([]);
 
 // Fetch status
 const isFetching = ref<boolean>(false);
@@ -48,7 +48,7 @@ export function useAnnotationStore() {
     // Map for checking which annotation has which characters. Structure: { "annotationUuid": <"charUuid1", "charUuid2", ...> }
     const characterAnnotationMap = createCharacterAnnotationMap(totalCharacters.value);
 
-    const annotationObjects: Annotation[] = annotationData.map(
+    const annotationObjects: AnnotationOld[] = annotationData.map(
       (annotationDataObject: AnnotationData) => {
         const uuid: string = annotationDataObject.properties.uuid;
 
@@ -108,7 +108,7 @@ export function useAnnotationStore() {
     });
   }
 
-  function addAnnotation(annotation: Annotation): Annotation {
+  function addAnnotation(annotation: AnnotationOld): AnnotationOld {
     snippetAnnotations.value.push(annotation);
 
     return annotation;
@@ -140,14 +140,14 @@ export function useAnnotationStore() {
   }
 
   function deleteAnnotation(uuid: string): void {
-    const annotation: Annotation = snippetAnnotations.value.find(
+    const annotation: AnnotationOld = snippetAnnotations.value.find(
       a => a.data.properties.uuid === uuid,
     );
 
     annotation.status = 'deleted';
   }
 
-  function expandAnnotation(annotation: Annotation): TextOperationResult {
+  function expandAnnotation(annotation: AnnotationOld): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -202,10 +202,10 @@ export function useAnnotationStore() {
    * Retrieves information about the characters that are annotated with the specified annotation.
    * The information includes the first and last character, as well as their respective indexes.
    *
-   * @param {Annotation} annotation - The annotation for which to retrieve information.
+   * @param {AnnotationOld} annotation - The annotation for which to retrieve information.
    * @return {{firstCharacter: Character, lastCharacter: Character, firstIndex: number, lastIndex: number}} - The information about the annotated characters.
    */
-  function getAnnotationInfo(annotation: Annotation): {
+  function getAnnotationInfo(annotation: AnnotationOld): {
     firstCharacter: Character;
     lastCharacter: Character;
     firstIndex: number;
@@ -229,9 +229,9 @@ export function useAnnotationStore() {
    * Retrieves the annotations that need to be saved to the database. This includes annotations connected to
    * at least one character in the snippet (or a boundary character) as well as annotations marked as deleted.
    *
-   * @returns {Annotation[]} An array of annotations to be saved.
+   * @returns {AnnotationOld[]} An array of annotations to be saved.
    */
-  function getAnnotationsToSave(): Annotation[] {
+  function getAnnotationsToSave(): AnnotationOld[] {
     let charUuids: Set<string> = new Set();
 
     snippetCharacters.value.forEach(c => {
@@ -243,9 +243,9 @@ export function useAnnotationStore() {
     getBeforeStartCharacter()?.annotations.forEach(a => charUuids.add(a.uuid));
     getAfterEndCharacter()?.annotations.forEach(a => charUuids.add(a.uuid));
 
-    const affectedAnnotations: Annotation[] = [];
+    const affectedAnnotations: AnnotationOld[] = [];
 
-    totalAnnotations.value.forEach((annotation: Annotation) => {
+    totalAnnotations.value.forEach((annotation: AnnotationOld) => {
       if (charUuids.has(annotation.data.properties.uuid) || annotation.status === 'deleted') {
         affectedAnnotations.push(annotation);
       }
@@ -267,8 +267,8 @@ export function useAnnotationStore() {
     );
 
     // These are the annotations which will NOT be replaced by the snippet annotations
-    const annotationsOutsideOfSnippet: Annotation[] = totalAnnotations.value.filter(
-      (annotation: Annotation) => !snippetUuids.has(annotation.data.properties.uuid),
+    const annotationsOutsideOfSnippet: AnnotationOld[] = totalAnnotations.value.filter(
+      (annotation: AnnotationOld) => !snippetUuids.has(annotation.data.properties.uuid),
     );
 
     // Combine annotations
@@ -287,7 +287,7 @@ export function useAnnotationStore() {
     initialTotalAnnotations.value = [];
   }
 
-  function shiftAnnotationLeft(annotation: Annotation): TextOperationResult {
+  function shiftAnnotationLeft(annotation: AnnotationOld): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -324,7 +324,7 @@ export function useAnnotationStore() {
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shiftAnnotationRight(annotation: Annotation): TextOperationResult {
+  function shiftAnnotationRight(annotation: AnnotationOld): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -361,7 +361,7 @@ export function useAnnotationStore() {
     return { changeSet: [getAnnotationInfo(annotation).lastCharacter] };
   }
 
-  function shrinkAnnotation(annotation: Annotation): TextOperationResult {
+  function shrinkAnnotation(annotation: AnnotationOld): TextOperationResult {
     if (annotation.isTruncated) {
       return;
     }
@@ -419,7 +419,7 @@ export function useAnnotationStore() {
       });
     });
 
-    totalAnnotations.value.forEach((a: Annotation) => {
+    totalAnnotations.value.forEach((a: AnnotationOld) => {
       if (a.status === 'deleted') {
         return;
       }
@@ -446,10 +446,10 @@ export function useAnnotationStore() {
    */
   function updateAnnotationStatuses(): void {
     totalAnnotations.value = totalAnnotations.value.filter(
-      (a: Annotation) => a.status !== 'deleted',
+      (a: AnnotationOld) => a.status !== 'deleted',
     );
 
-    totalAnnotations.value.forEach((a: Annotation) => {
+    totalAnnotations.value.forEach((a: AnnotationOld) => {
       a.status = 'existing';
       a.initialData = cloneDeep(a.data);
     });
@@ -478,7 +478,7 @@ export function useAnnotationStore() {
       getAfterEndCharacter()?.annotations.map(a => a.uuid) ?? [],
     );
 
-    snippetAnnotations.value.forEach((annotation: Annotation) => {
+    snippetAnnotations.value.forEach((annotation: AnnotationOld) => {
       const uuid: string = annotation.data.properties.uuid;
 
       const isLeftTruncated: boolean =

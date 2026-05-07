@@ -5,7 +5,7 @@ import EditorAnnotationForm from './EditorAnnotationForm.vue';
 import { useAnnotationStore } from '../store/annotations';
 import { useFilterStore } from '../store/filter';
 import { areObjectsEqual, getParentCharacterSpan, isEditorElement } from '../utils/helper/helper';
-import { Annotation } from '../models/types';
+import { AnnotationOld } from '../models/types';
 import Badge from 'primevue/badge';
 import { useEditorStore } from '../store/editor';
 
@@ -18,7 +18,7 @@ interface SelectionObject {
 }
 
 // Last annotations in selection. Is used when new selection is not valid (e.g. outside of text)
-const cachedAnnotationsInSelection = ref<Annotation[]>([]);
+const cachedAnnotationsInSelection = ref<AnnotationOld[]>([]);
 
 // Snapshot of last valid selection. Used to prevent multiple computings and rerenders
 // (see `selectionHasChanged()` documentation)
@@ -29,12 +29,12 @@ const { ranges, selection } = useTextSelection();
 const { snippetAnnotations } = useAnnotationStore();
 const { selectedOptions } = useFilterStore();
 
-const displayedAnnotations: ComputedRef<Annotation[]> = computed(() =>
+const displayedAnnotations: ComputedRef<AnnotationOld[]> = computed(() =>
   snippetAnnotations.value.filter(a => a.status !== 'deleted'),
 );
 
 // TODO: Fix bug, on cancel the counter still shows cached number
-const annotationsInSelection: ComputedRef<Annotation[]> = computed(() => {
+const annotationsInSelection: ComputedRef<AnnotationOld[]> = computed(() => {
   if (isRedrawMode.value) {
     return cachedAnnotationsInSelection.value;
   }

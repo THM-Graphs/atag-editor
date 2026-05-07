@@ -5,7 +5,7 @@ import { useCharactersStore } from '../store/characters';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
-import { Annotation, AnnotationType, Character } from '../models/types';
+import { AnnotationOld, AnnotationType, Character } from '../models/types';
 import Button from 'primevue/button';
 import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
@@ -17,7 +17,7 @@ import TruncatedBadge from './TruncatedBadge.vue';
 export interface TreeNode {
   annotationCount?: number;
   children?: TreeNode[];
-  data?: Annotation;
+  data?: AnnotationOld;
   key: string;
   label: string;
   type: 'category' | 'type' | 'annotation';
@@ -28,7 +28,7 @@ const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStor
 const { snippetAnnotations, totalAnnotations } = useAnnotationStore();
 const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
 
-const displayedAnnotations = ref<Annotation[]>([]);
+const displayedAnnotations = ref<AnnotationOld[]>([]);
 
 const selectedView = ref<'current' | 'all'>('current');
 const isCurrentSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'current');
@@ -41,15 +41,15 @@ watch(
   () => {
     if (selectedView.value === 'current') {
       displayedAnnotations.value = snippetAnnotations.value.filter(
-        (a: Annotation) => a.status !== 'deleted',
+        (a: AnnotationOld) => a.status !== 'deleted',
       );
     } else {
       // Combine snippetAnnotations and totalAnnotations without overriding
-      const combined: Map<string, Annotation> = new Map(
+      const combined: Map<string, AnnotationOld> = new Map(
         snippetAnnotations.value.map(a => [a.data.properties.uuid, a]),
       );
 
-      totalAnnotations.value.forEach((annotation: Annotation) => {
+      totalAnnotations.value.forEach((annotation: AnnotationOld) => {
         const uuid: string = annotation.data.properties.uuid;
 
         if (!combined.has(uuid)) {
@@ -84,11 +84,11 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           children: [],
         };
 
-        const annos: Annotation[] = displayedAnnotations.value.filter(
+        const annos: AnnotationOld[] = displayedAnnotations.value.filter(
           a => a.data.properties.type === annoType.type,
         );
 
-        annos.forEach((anno: Annotation, k: number) => {
+        annos.forEach((anno: AnnotationOld, k: number) => {
           const newAnnotation: TreeNode = {
             key: i.toString() + '-' + j.toString() + '-' + k.toString(),
             label: anno.data.properties.text,

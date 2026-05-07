@@ -8,7 +8,7 @@ import ImportError from '../utils/errors/import.error';
 import MalformedAnnotationsError from '../utils/errors/malformedAnnotations.error';
 import IAnnotation from '../models/IAnnotation';
 import {
-  Annotation,
+  AnnotationOld,
   AnnotationData,
   AnnotationType,
   Character,
@@ -26,8 +26,8 @@ interface DataDump {
     afterEndIndex: number;
   };
   annotations: {
-    initialAnnotations: Annotation[];
-    annotations: Annotation[];
+    initialAnnotations: AnnotationOld[];
+    annotations: AnnotationOld[];
   };
 }
 

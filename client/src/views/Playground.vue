@@ -3,7 +3,7 @@ import { EditorContent } from '@tiptap/vue-3';
 import { onMounted, onUnmounted } from 'vue';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
 import EditorToC from '../components/EditorToC.vue';
-import { Annotation } from '../models/types';
+import { AnnotationOld } from '../models/types';
 import EditorAnnotationFormNew from '../components/EditorAnnotationFormNew.vue';
 import Button from 'primevue/button';
 import { useTiptapStore } from '../store/tiptap';
@@ -19,7 +19,7 @@ function handleClick() {
   });
 }
 
-function toggleTextHightlighting(annotation: Annotation, direction: 'on' | 'off'): void {
+function toggleTextHightlighting(annotation: AnnotationOld, direction: 'on' | 'off'): void {
   const annotatedSpans: NodeListOf<HTMLSpanElement> = document.querySelectorAll(
     `#editor span[data-anno-uuid="${annotation.data.properties.uuid}"]`,
   );

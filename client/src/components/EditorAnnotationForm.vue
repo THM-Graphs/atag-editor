@@ -8,7 +8,7 @@ import ConfirmPopup from 'primevue/confirmpopup';
 import Fieldset from 'primevue/fieldset';
 import Panel from 'primevue/panel';
 import { useConfirm } from 'primevue/useconfirm';
-import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
+import { AnnotationOld, AnnotationType, PropertyConfig } from '../models/types';
 import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
@@ -16,7 +16,7 @@ import FormPropertiesSection from './FormPropertiesSection.vue';
 import TruncatedBadge from './TruncatedBadge.vue';
 
 const props = defineProps<{
-  annotation: Annotation;
+  annotation: AnnotationOld;
 }>();
 
 const { annotation } = props;

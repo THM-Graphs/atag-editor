@@ -2,7 +2,12 @@ import { ref } from 'vue';
 import { PAGINATION_SIZE } from '../config/constants';
 import { useGuidelinesStore } from './guidelines';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Annotation, AnnotationReference, Character, TextOperationResult } from '../models/types';
+import {
+  AnnotationOld,
+  AnnotationReference,
+  Character,
+  TextOperationResult,
+} from '../models/types';
 import { cloneDeep, getSpansToAnnotate, isWordBoundary } from '../utils/helper/helper';
 import { useAppStore } from './app';
 
@@ -917,12 +922,12 @@ export function useCharactersStore() {
    * Annotates each character in the given array with the provided annotation data.
    *
    * @param {Character[]} characters - The array of characters to be annotated.
-   * @param {Annotation} annotation - The annotation data to be applied to each character.
+   * @param {AnnotationOld} annotation - The annotation data to be applied to each character.
    * @return {void} No return value.
    */
   function annotateCharacters(
     characters: Character[],
-    annotation: Annotation,
+    annotation: AnnotationOld,
   ): TextOperationResult {
     characters.forEach((c: Character, index: number, arr: Character[]) =>
       c.annotations.push({

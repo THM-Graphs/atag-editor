@@ -1,5 +1,5 @@
 import { useGuidelinesStore } from '../store/guidelines';
-import { Annotation, AnnotationData, Character, PropertyConfig } from '../models/types';
+import { AnnotationOld, AnnotationData, Character, PropertyConfig } from '../models/types';
 import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
 import IAnnotation from '../models/IAnnotation';
 
@@ -8,7 +8,7 @@ import IAnnotation from '../models/IAnnotation';
  * Used for adding text annotation-specific data during the creation process.
  */
 type TextAnnotationMetadata = Pick<
-  Annotation,
+  AnnotationOld,
   'characterUuids' | 'isTruncated' | 'startUuid' | 'endUuid' | 'status'
 >;
 
@@ -26,11 +26,11 @@ type UseCreateAnnotationReturnType = {
     characters: Character[];
     subType?: string | number;
     type: string;
-  }) => Annotation;
+  }) => AnnotationOld;
   createNewEditorTextAnnotation: (params: {
     subType?: string | number;
     type: string;
-  }) => Annotation;
+  }) => AnnotationOld;
 };
 
 /**
@@ -182,13 +182,13 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
    * Creates a text annotation with the given type and subtype.
    *
    * @param {Object} params - The parameters object. Currently consists only of the type, subtype (optional) and characters to be annotated.
-   * @returns {Annotation} - The created text annotation object.
+   * @returns {AnnotationOld} - The created text annotation object.
    */
   function createTextAnnotation(params: {
     type: string;
     subType?: string | number;
     characters: Character[];
-  }): Annotation {
+  }): AnnotationOld {
     const { type, characters } = params;
 
     const fields: PropertyConfig[] = getAnnotationFields(type);
@@ -213,7 +213,7 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   function createNewEditorTextAnnotation(params: {
     type: string;
     subType?: string | number;
-  }): Annotation {
+  }): AnnotationOld {
     const { type } = params;
 
     const fields: PropertyConfig[] = getAnnotationFields(type);

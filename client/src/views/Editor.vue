@@ -22,7 +22,7 @@ import EditorMetadata from '../components/EditorMetadata.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import Message from 'primevue/message';
 import { cloneDeep } from '../utils/helper/helper';
-import { Annotation, Character, CharacterPostData } from '../models/types';
+import { AnnotationOld, Character, CharacterPostData } from '../models/types';
 import { useAnnotationStore } from '../store/annotations';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
@@ -233,7 +233,7 @@ async function saveAnnotations(): Promise<void> {
   updateAnnotationsBeforeSave();
 
   // Reduce amount of data that need to sent to the backend
-  const annotationsToSave: Annotation[] = getAnnotationsToSave();
+  const annotationsToSave: AnnotationOld[] = getAnnotationsToSave();
 
   await api.updateAnnotations(textUuid.value, annotationsToSave);
 }

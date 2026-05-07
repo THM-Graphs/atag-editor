@@ -1,7 +1,7 @@
 import { DeepReadonly } from 'vue';
 import { IGuidelines } from '../models/IGuidelines';
 import {
-  Annotation,
+  AnnotationOld,
   NodeDto,
   Character,
   CharacterPostData,
@@ -321,7 +321,10 @@ export default class ApiService {
     throw error;
   }
 
-  public async updateAnnotations(textUuid: string, annotationsToSave: Annotation[]): Promise<void> {
+  public async updateAnnotations(
+    textUuid: string,
+    annotationsToSave: AnnotationOld[],
+  ): Promise<void> {
     try {
       const url: string = `${this.baseUrl}/texts/${textUuid}/annotations`;
 
