@@ -627,7 +627,12 @@ watch(
     // }
 
     const fetchedAnnotations: NodeDto[] = await api.getAnnotations('text', textUuid.value);
-
+    console.log(
+      'fetched annos with annos: ',
+      fetchedAnnotations.filter(a =>
+        a.connectedNodes.some(n => n.node.nodeLabels.includes('Annotation')),
+      ),
+    );
     // if (annotationFetchError.value) {
     //   isLoading.value = false;
     //   return;

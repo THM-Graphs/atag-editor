@@ -16,6 +16,17 @@ import { IGuidelines } from '../models/IGuidelines.js';
 import ICharacter from '../models/ICharacter.js';
 import { IAnnotation } from '../models/IAnnotation.js';
 
+type FlatAnnotationTree = {
+  rootUuid: string;
+  annotationNodes: AnnotationNodeRecord[];
+  edges: AnnotationRecordEdge[];
+};
+type AnnotationNodeRecord = NodeDto;
+type AnnotationRecordEdge = {
+  startUuid: string;
+  endUuid: string;
+};
+
 /**
  * Data type for annotation data before saving them in the database. Contains only the
  * uuids of the nodes to be (dis-)connected with the annotation node instead of the complete node data.
@@ -103,56 +114,104 @@ export default class AnnotationService {
   }
 
   /**
-   * Recursively convert the given annotation dtos to JS types. This is needed to convert the connected nodes of annotations,
-   * which can have an arbitrary depth.
+   * Converts a flat annotation tree structure (as returned by the database) into a nested {@link NodeDto} tree.
    *
-   * @param rawAnnotations annotation dtos which should recursively be converted to JS types
-   * @returns The given annotation dtos with all nodes converted to JS types.
+   * Each record contains all annotation nodes for one top-level annotation, the `HAS_ANNOTATION` edges between
+   * them, and the `REFERS_TO` nodes already attached to each annotation. The method reconstructs the nesting
+   * by building an adjacency map from the edges and recursing from the root UUID downward.
+   *
+   * The method is used to generate a nested annotation structure that can be easily consumed by the frontend.
+   *
+   * @param flatTrees - Flat annotation trees, one per top-level annotation.
+   * @returns A nested {@link NodeDto} array representing the full annotation tree.
    */
-  public toNativeTypesRecursively(rawAnnotations: NodeDto[]): NodeDto[] {
-    return rawAnnotations.map(annotation => ({
-      node: toNativeTypes(annotation.node),
-      connectedNodes: this.toNativeTypesRecursively(annotation.connectedNodes),
-    })) as NodeDto[];
+  private buildAnnotationNodeTree(flatTrees: FlatAnnotationTree[]): NodeDto[] {
+    return flatTrees.map(tree => {
+      const { rootUuid, annotationNodes, edges } = tree;
+
+      const nodeMap = new Map<string, NodeDto>(annotationNodes.map(n => [n.node.data.uuid, n]));
+      const adjacency = new Map<string, string[]>();
+
+      edges.forEach((edge: AnnotationRecordEdge) => {
+        const children = adjacency.get(edge.startUuid) ?? [];
+        children.push(edge.endUuid);
+        adjacency.set(edge.startUuid, children);
+      });
+
+      const buildNestedDto = (uuid: string): NodeDto => {
+        const root: NodeDto = nodeMap.get(uuid)!;
+
+        // Current root node
+        const nodeData = {
+          nodeLabels: root.node.nodeLabels,
+          data: toNativeTypes(root.node.data),
+        } as NodeDto['node'];
+
+        // Create node data for children and traverse further into their children using the adjacency list
+        const children = [
+          ...root.connectedNodes.map((child: NodeDto) => ({
+            node: toNativeTypes(child.node) as NodeDto['node'],
+            connectedNodes: [],
+          })),
+          ...(adjacency.get(uuid) ?? []).map(n => buildNestedDto(n)),
+        ];
+
+        return {
+          node: nodeData,
+          connectedNodes: children,
+        };
+      };
+
+      return buildNestedDto(rootUuid);
+    });
   }
 
   public async getAnnotations(nodeUuid: string): Promise<NodeDto[]> {
     const query: string = `
-    // Match all annotations for given selection
     MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
-    // Fetch nodes connected to the annotation node
-    WITH a
+    // Traverse the HAS_ANNOTATION tree if it exists (it has an unknown depth)
+    CALL apoc.path.subgraphAll(a, {
+        relationshipFilter: 'HAS_ANNOTATION>',
+        nodeFilter: 'Annotation',
+        maxLevel: -1
+    }) YIELD nodes, relationships
 
-    CALL {
-        WITH a
+    // Store relationships for later
+    WITH 
+        a,
+        nodes,
+        [rel IN relationships | {
+            startUuid: startNode(rel).uuid, 
+            endUuid: endNode(rel).uuid 
+        }] AS edges
 
-        MATCH (a)-[r:REFERS_TO]->(x:Entity|Collection|Text)
-        
-        RETURN collect({
-            node: {
-                nodeLabels: labels(x),
-                data: x {.*}
-            },
+    // For each annotation node, get the directly via REFERS_TO connected nodes (Entity, Collection or Text)
+    UNWIND nodes AS annotationNode
+    OPTIONAL MATCH (annotationNode)-[:REFERS_TO]->(leaf:Entity|Collection|Text)
+
+    WITH a, edges, annotationNode, collect(leaf) AS leaves
+
+    WITH a, edges, collect({
+        node: {nodeLabels: labels(annotationNode), data: annotationNode {.*}},
+        connectedNodes: [l IN leaves | {
+            node: { nodeLabels: labels(l), data: l {.*} },
             connectedNodes: []
-        }) AS connectedNodes
-    }
+        }]
+    }) AS annotationNodes
 
-    WITH a, connectedNodes
-
+    // Add flattened tree structure to result
     RETURN collect({
-        node: {
-            nodeLabels: labels(a),
-            data: a {.*}
-        },
-        connectedNodes: connectedNodes
-    }) AS annotations
+        rootUuid: a.uuid,
+        annotationNodes: annotationNodes,
+        edges: edges
+    }) as annotations
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { nodeUuid });
-    const rawAnnotations: NodeDto[] = result.records[0]?.get('annotations');
+    const annotations: FlatAnnotationTree[] = result.records[0].get('annotations');
 
-    return this.toNativeTypesRecursively(rawAnnotations);
+    return this.buildAnnotationNodeTree(annotations);
   }
 
   /**

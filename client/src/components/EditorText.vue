@@ -17,7 +17,7 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import { useEditorStore } from '../store/editor';
 import { useFilterStore } from '../store/filter';
 import TextOperationError from '../utils/errors/textOperation.error';
-import { Annotation, AnnotationType, Character } from '../models/types';
+import { AnnotationOld, AnnotationType, Character } from '../models/types';
 import { useEventListener } from '@vueuse/core';
 import { useAppStore } from '../store/app';
 import { useAnnotationStore } from '../store/annotations';
@@ -553,7 +553,7 @@ function handleMouseUp(): void {
   }
 
   try {
-    const annotation: Annotation = snippetAnnotations.value.find(
+    const annotation: AnnotationOld = snippetAnnotations.value.find(
       anno => anno.data.properties.uuid === redrawMode.value.annotationUuid,
     );
 

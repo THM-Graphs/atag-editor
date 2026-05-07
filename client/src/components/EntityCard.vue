@@ -8,22 +8,21 @@ import NodeTag from './NodeTag.vue';
 import { capitalize, useTemplateRef } from 'vue';
 import { filterDefaultLabels } from '../utils/helper/helper';
 
-const props = defineProps<{
-  node: NodeStatusObject<EntityNode>;
-}>();
+const node = defineModel<NodeStatusObject<EntityNode>>();
 
 const infoIcon = useTemplateRef('info-icon');
 
-const filteredLabels: string[] = filterDefaultLabels(props.node.node.nodeLabels);
+const filteredLabels: string[] = filterDefaultLabels(node.value!.node.nodeLabels);
 
-function handleRemoveNode() {
-  throw new Error('Removing node (not yet implemented)');
+function handleRemoveNode(): void {
+  node.value!.meta.status = 'removed';
 }
+
 function togglePopover(event: MouseEvent): void {
   infoIcon.value?.toggle(event);
 }
 
-const tableData = Object.entries(props.node.node.data).map(([property, value]) => {
+const tableData = Object.entries(node.value!.node.data).map(([property, value]) => {
   return { property, value };
 });
 </script>
@@ -34,6 +33,8 @@ const tableData = Object.entries(props.node.node.data).map(([property, value]) =
       <div class="node-labels-pane flex">
         <NodeTag class="test mr-1" v-for="label in filteredLabels" :content="label" type="Entity" />
       </div>
+      <small class="status">{{ node!.meta.status }}</small>
+
       <Button
         icon="pi pi-times"
         size="small"
@@ -43,7 +44,7 @@ const tableData = Object.entries(props.node.node.data).map(([property, value]) =
       ></Button>
     </div>
     <span>
-      {{ props.node.node.data.label }}
+      {{ node!.node.data.label }}
     </span>
     <Button
       icon="pi pi-info-circle"

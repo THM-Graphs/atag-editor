@@ -12,7 +12,13 @@ import {
   NodeStatusObject,
   TextNode,
 } from '../models/types';
-import { isCollectionNode, isEntityNode, isTextNode } from '../utils/helper/helper';
+import {
+  isAnnotationNode,
+  isCollectionNode,
+  isEntityNode,
+  isTextNode,
+} from '../utils/helper/helper';
+import AnnotationCard from './AnnotationCard.vue';
 
 const nodes = defineModel<NodeStatusObject[]>();
 
@@ -22,15 +28,6 @@ const props = defineProps<{
 }>();
 
 const sectionIsCollapsed = ref<boolean>(false);
-
-/**
- * Removes an additional node from the annotation's data.
- *
- * @param {NodeStatusObject} node - The node to be removed.
- */
-function handleRemoveNode(node: NodeStatusObject): void {
-  nodes.value = nodes.value.filter(node => node.node.data.uuid !== node.node.data.uuid);
-}
 </script>
 
 <template>
@@ -46,18 +43,27 @@ function handleRemoveNode(node: NodeStatusObject): void {
       <span :class="`pi pi-chevron-${sectionIsCollapsed ? 'down' : 'up'}`"></span>
     </template>
 
-    <template v-for="node in nodes" :key="node.node.data.uuid">
-      <EntityCard v-if="isEntityNode(node)" :node="node" @remove-node="handleRemoveNode(node)" />
+    <template v-for="(node, index) in nodes" :key="node.node.data.uuid">
+      <EntityCard
+        v-if="isEntityNode(node)"
+        v-model="nodes![index] as NodeStatusObject<EntityNode>"
+      />
       <TextCard
         v-else-if="isTextNode(node) || isTextNode(node)"
-        :node="node"
-        @remove-node="handleRemoveNode(node)"
+        v-model="nodes![index] as NodeStatusObject<TextNode>"
       />
       <CollectionCard
         v-else-if="isCollectionNode(node)"
-        :node="node"
-        @remove-node="handleRemoveNode(node)"
+        v-model="nodes![index] as NodeStatusObject<CollectionNode>"
       />
+      <AnnotationCard
+        v-else-if="isAnnotationNode(node)"
+        v-model="nodes![index] as NodeStatusObject<AnnotationNode>"
+      />
+
+      <div v-else>
+        <p>Unsupported node type: {{ node.node.nodeLabels }}</p>
+      </div>
     </template>
   </Fieldset>
 </template>
