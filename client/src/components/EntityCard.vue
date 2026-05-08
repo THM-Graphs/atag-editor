@@ -4,15 +4,12 @@ import Button from 'primevue/button';
 import { Popover } from 'primevue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import NodeTag from './NodeTag.vue';
+import NodeCardHeader from './NodeCardHeader.vue';
 import { capitalize, useTemplateRef } from 'vue';
-import { filterDefaultLabels } from '../utils/helper/helper';
 
 const node = defineModel<NodeStatusObject<EntityNode>>();
 
 const infoIcon = useTemplateRef('info-icon');
-
-const filteredLabels: string[] = filterDefaultLabels(node.value!.node.nodeLabels);
 
 function handleRemoveNode(): void {
   setNodeStatus('removed');
@@ -33,20 +30,7 @@ const tableData = Object.entries(node.value!.node.data).map(([property, value]) 
 
 <template>
   <div class="node-card-container">
-    <div class="button-pane flex justify-content-between">
-      <div class="node-labels-pane flex">
-        <NodeTag class="test mr-1" v-for="label in filteredLabels" :content="label" type="Entity" />
-      </div>
-      <small class="status">{{ node!.meta.status }}</small>
-
-      <Button
-        icon="pi pi-times"
-        size="small"
-        severity="danger"
-        title="Remove entity"
-        @click="handleRemoveNode"
-      ></Button>
-    </div>
+    <NodeCardHeader :node="node!" @remove="handleRemoveNode" />
     <span>
       {{ node!.node.data.label }}
     </span>

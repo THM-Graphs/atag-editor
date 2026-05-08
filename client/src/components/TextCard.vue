@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { TextNode, NodeStatusObject, NodeStatus } from '../models/types';
-import Button from 'primevue/button';
-import NodeTag from './NodeTag.vue';
 import { computed } from 'vue';
-import { filterDefaultLabels } from '../utils/helper/helper';
+import NodeCardHeader from './NodeCardHeader.vue';
+import { TextNode, NodeStatusObject, NodeStatus } from '../models/types';
 
 const node = defineModel<NodeStatusObject<TextNode>>();
 
-const filteredLabels: string[] = filterDefaultLabels(node.value!.node.nodeLabels);
 const PREVIEW_LENGTH: number = 100;
 
 const displayedText = computed<string>(
@@ -42,19 +39,8 @@ function setNodeStatus(status: NodeStatus): void {
 
 <template>
   <div class="node-card-container" @click="handleClickContainer" title="Open text in Editor">
-    <div class="button-pane flex justify-content-between">
-      <div class="node-labels-pane flex">
-        <NodeTag class="mr-1" v-for="label in filteredLabels" :content="label" type="Text" />
-      </div>
-      <small class="status">{{ node!.meta.status }}</small>
-      <Button
-        icon="pi pi-times"
-        size="small"
-        severity="danger"
-        title="Remove text"
-        @click="handleRemoveNode"
-      ></Button>
-    </div>
+    <NodeCardHeader :node="node!" @remove="handleRemoveNode" />
+
     <div class="text-xs">
       {{ displayedText }}
     </div>
