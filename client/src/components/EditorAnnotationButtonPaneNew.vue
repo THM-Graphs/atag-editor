@@ -2,8 +2,7 @@
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
-import { AnnotationOld, AnnotationData, AnnotationType, Character } from '../models/types';
-import { useCharactersStore } from '../store/characters';
+import { AnnotationType, NodeStatusObject, AnnotationNode, Annotation } from '../models/types';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
 import { useFilterStore } from '../store/filter';
 import ShortcutError from '../utils/errors/shortcut.error';
@@ -19,9 +18,8 @@ const { isValid: isSelectionValid } = useValidateTextSelection();
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
   useGuidelinesStore();
 const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
-const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
-const { createNewEditorTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
+const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 
 const { tiptap, annotations } = useTiptapStore();
 
@@ -54,10 +52,15 @@ function handleClick(data: { type: string; subType?: string | number }) {
     const config: AnnotationType = getAnnotationConfig(data.type);
 
     isAnnotationTypeEnabled(data.type);
-    isSelectionValid(tiptap.value?.state.selection, config);
+    isSelectionValid(selection, config);
 
-    const selectedCharacters: Character[] = getCharactersInSelection();
-    const newAnnotationTemplate: AnnotationOld = createAnnotation({ ...data });
+    const textInSelection: string =
+      tiptap.value?.state.doc.textBetween(selection.from, selection.to) ?? '';
+
+    const newAnnotationTemplate: NodeStatusObject<AnnotationNode> = createAnnotation({
+      ...data,
+      selectedText: textInSelection,
+    });
 
     if (annotationHasConstraints(config)) {
       createModalInstance(
@@ -77,17 +80,11 @@ function handleClick(data: { type: string; subType?: string | number }) {
             },
           },
           data: {
-            annotation: newAnnotationTemplate.data,
+            annotation: newAnnotationTemplate,
           },
           emits: {
-            onSubmit: (editedAnnotationData: AnnotationData) => {
-              addAnnotationToStore({
-                annotation: {
-                  ...newAnnotationTemplate,
-                  data: editedAnnotationData,
-                },
-                characters: selectedCharacters,
-              });
+            onSubmit: (editedAnnotationData: Annotation) => {
+              addAnnotationToStore(editedAnnotationData);
               destroyModalInstance();
             },
           },
@@ -95,7 +92,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
         }),
       );
     } else {
-      addAnnotationToStore({ annotation: newAnnotationTemplate, characters: selectedCharacters });
+      addAnnotationToStore(newAnnotationTemplate);
     }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
@@ -128,22 +125,17 @@ function handleClick(data: { type: string; subType?: string | number }) {
  * Adds a new annotation to the store by executing the `createAnnotation` command.
  *
  * @param {Object} params - Object with two properties: `annotation` and `characters`.
- * @param {AnnotationOld} params.annotation - The annotation to add to the store.
- * @param {Character[]} params.characters - The characters associated with the annotation.
+ * @param {Annotation} annotation - The annotation to add to the store.
  * @returns {void} This function does not return any value.
  */
-function addAnnotationToStore(params: {
-  annotation: AnnotationOld;
-  characters: Character[];
-}): void {
-  const annotationData: AnnotationData = params.annotation.data;
+function addAnnotationToStore(annotation: Annotation): void {
   const { from, to } = tiptap.value!.state.selection;
 
   // Add to store
-  annotations.value?.set(params.annotation.data.properties.uuid, params.annotation);
+  annotations.value?.set(annotation.node.data.uuid, annotation);
 
   // Add editor decoration
-  tiptap.value?.commands.addAnnotationDecoration(annotationData, from, to);
+  tiptap.value?.commands.addAnnotationDecoration(annotation.node, from, to);
 }
 </script>
 

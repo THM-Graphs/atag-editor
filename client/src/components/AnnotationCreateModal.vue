@@ -4,24 +4,23 @@ import Button from 'primevue/button';
 import { useRoute } from 'vue-router';
 import Fieldset from 'primevue/fieldset';
 import FormPropertiesSection from './FormPropertiesSection.vue';
-import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
-import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
-import { AnnotationData, AnnotationType, PropertyConfig } from '../models/types';
+import { Annotation, AnnotationType, PropertyConfig } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
+import AnnotationFormAdditionalNodesSection from './AnnotationFormAdditionalNodesSection.vue';
 
 const route = useRoute();
 const dialogRef: any = inject('dialogRef');
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'submit', annotation: AnnotationData): void;
+  (e: 'submit', annotation: Annotation): void;
 }>();
 
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
-const annotationTemplate: AnnotationData = dialogRef.value.data.annotation;
-const config: AnnotationType = getAnnotationConfig(annotationTemplate.properties.type);
-const propertyFields: PropertyConfig[] = getAnnotationFields(annotationTemplate.properties.type);
+const annotationTemplate: Annotation = dialogRef.value.data.annotation;
+const config: AnnotationType = getAnnotationConfig(annotationTemplate.node.data.type);
+const propertyFields: PropertyConfig[] = getAnnotationFields(annotationTemplate.node.data.type);
 
 const asyncOperationRunning = ref<boolean>(false);
 const propertiesAreCollapsed = ref<boolean>(false);
@@ -38,13 +37,13 @@ function checkAnnotationValidity() {
       return true;
     }
 
-    const value = annotationTemplate.properties[field.name];
+    const value = annotationTemplate.node.data[field.name];
 
     if (value === null || value === undefined) {
       return false;
     }
 
-    if (field.type === 'string' && value.trim().length === 0) {
+    if (field.type === 'string' && (value as string).trim().length === 0) {
       return false;
     }
 
@@ -70,7 +69,7 @@ function handleSubmitClick(): void {
 <template>
   <div class="container flex flex-column">
     <h2 class="w-full m-0 text-center">
-      Add new <span class="font-italic">{{ annotationTemplate.properties.type }}</span> Annotation
+      Add new <span class="font-italic">{{ annotationTemplate.node.data.type }}</span> Annotation
     </h2>
 
     <div class="content mb-2" v-if="annotationTemplate">
@@ -86,24 +85,15 @@ function handleSubmitClick(): void {
           <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
         </template>
         <FormPropertiesSection
-          v-model="annotationTemplate.properties"
+          v-model="annotationTemplate.node.data"
           :fields="propertyFields"
           mode="edit"
         />
       </Fieldset>
-      <AnnotationFormAdditionalTextSection
-        v-if="config.hasAdditionalTexts === true"
-        v-model="annotationTemplate.additionalTexts"
-        :initial-additional-texts="[]"
-        mode="edit"
-      />
-      <AnnotationFormEntitiesSection
-        v-if="config.hasEntities === true"
-        v-model="annotationTemplate.entities"
-        mode="edit"
+      <AnnotationFormAdditionalNodesSection
+        :mode="'edit'"
         :annotation-config="config"
-        :default-search-value="annotationTemplate.properties.text"
-        :initialEntities="[]"
+        v-model="annotationTemplate.connectedNodes"
       />
     </div>
 

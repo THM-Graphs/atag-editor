@@ -1,16 +1,7 @@
 import { useGuidelinesStore } from '../store/guidelines';
-import { AnnotationOld, AnnotationData, Character, PropertyConfig } from '../models/types';
-import { cloneDeep, getDefaultValueForProperty } from '../utils/helper/helper';
-import IAnnotation from '../models/IAnnotation';
-
-/**
- * Metadata fields specific to text annotations.
- * Used for adding text annotation-specific data during the creation process.
- */
-type TextAnnotationMetadata = Pick<
-  AnnotationOld,
-  'characterUuids' | 'isTruncated' | 'startUuid' | 'endUuid' | 'status'
->;
+import { Annotation, AnnotationNode, PropertyConfig } from '../models/types';
+import { getDefaultValueForProperty } from '../utils/helper/helper';
+import { IAnnotation } from '../models/IAnnotation';
 
 /**
  * Return type for the `useCreateAnnotation` hook.
@@ -21,16 +12,12 @@ type UseCreateAnnotationReturnType = {
     nodeLabels: string[];
     subType?: string | number;
     type: string;
-  }) => AnnotationData;
+  }) => Annotation;
   createTextAnnotation: (params: {
-    characters: Character[];
+    selectedText: string;
     subType?: string | number;
     type: string;
-  }) => AnnotationOld;
-  createNewEditorTextAnnotation: (params: {
-    subType?: string | number;
-    type: string;
-  }) => AnnotationOld;
+  }) => Annotation;
 };
 
 /**
@@ -53,19 +40,25 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
    * `entities` (empty array) and `additionalTexts` (empty array). Entites and additionalTexts are added to keep the structure consistent.
    *
    * @param {Object} params - The parameters object. Contains the fields, subType (optional) and type of the annotation.
-   * @returns {AnnotationData} An object containing the properties, entities and additional texts of the annotation.
+   * @returns {Annotation} An object containing the properties, entities and additional texts of the annotation.
    */
   function createAnnotationObject(params: {
     fields: PropertyConfig[];
     subType?: string | number;
     type: string;
-  }): AnnotationData {
+  }): Annotation {
     const nodeData: IAnnotation = createNodeData({ ...params });
+    const node: AnnotationNode = {
+      data: nodeData,
+      nodeLabels: ['Annotation'],
+    };
 
-    const newAnnotation: AnnotationData = {
-      properties: cloneDeep(nodeData),
-      entities: [],
-      additionalTexts: [],
+    const newAnnotation: Annotation = {
+      node,
+      connectedNodes: [],
+      meta: {
+        status: 'created',
+      },
     };
 
     return newAnnotation;
@@ -86,7 +79,7 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
     type: string;
   }): IAnnotation {
     const { type, subType, fields } = params;
-    const subTypeField: PropertyConfig = fields.find(field => field.name === 'subType');
+    const subTypeField: PropertyConfig | undefined = fields.find(field => field.name === 'subType');
 
     const baseNodeData: IAnnotation = {} as IAnnotation;
 
@@ -103,7 +96,7 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
     // (= the user clicked the button directly instead of selecting an entry from the dropdown),
     // set the first option as default value
     if (subTypeField) {
-      baseNodeData.subType = subType ?? subTypeField.options[0];
+      baseNodeData.subType = subType ?? (subTypeField.options || [])[0];
     }
 
     return baseNodeData;
@@ -114,18 +107,18 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
    * The subType is optional and will default to the first option if not provided.
    *
    * @param {Object} params - The parameters object. Contains the type, subType (optional) and node labels of the collection.
-   * @returns {AnnotationData} An object containing the properties, entities and additional texts of the annotation.
+   * @returns {Annotation} An object containing the properties, entities and additional texts of the annotation.
    */
   function createCollectionAnnotation(params: {
     type: string;
     subType?: string | number;
     nodeLabels: string[];
-  }): AnnotationData {
+  }): Annotation {
     const { type, nodeLabels } = params;
 
     const fields: PropertyConfig[] = getCollectionAnnotationFields(nodeLabels, type);
 
-    const annotationObject: AnnotationData = createAnnotationObject({ ...params, fields });
+    const annotationObject: Annotation = createAnnotationObject({ ...params, fields });
 
     return annotationObject;
   }
@@ -159,26 +152,6 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   }
 
   /**
-   * Creates a TextAnnotationMetadata object from a list of characters.
-   *
-   * @param {Object} params - The parameters object. Currently consists only of the characters to be annotated.
-   * @returns {TextAnnotationMetadata} - An object containing the text-specific metadata for the annotation.
-   */
-  function createSpecificTextAnnotationMetadata(params: {
-    characters: Character[];
-  }): TextAnnotationMetadata {
-    const { characters } = params;
-
-    return {
-      characterUuids: characters.map((char: Character) => char.data.uuid),
-      isTruncated: false,
-      startUuid: characters[0].data.uuid,
-      endUuid: characters[characters.length - 1].data.uuid,
-      status: 'created',
-    };
-  }
-
-  /**
    * Creates a text annotation with the given type and subtype.
    *
    * @param {Object} params - The parameters object. Currently consists only of the type, subtype (optional) and characters to be annotated.
@@ -187,62 +160,22 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   function createTextAnnotation(params: {
     type: string;
     subType?: string | number;
-    characters: Character[];
-  }): AnnotationOld {
-    const { type, characters } = params;
+    selectedText: string;
+  }): Annotation {
+    const { type, selectedText } = params;
 
     const fields: PropertyConfig[] = getAnnotationFields(type);
 
-    const annotationObject: AnnotationData = createAnnotationObject({ ...params, fields });
+    const annotation: Annotation = createAnnotationObject({ ...params, fields });
 
-    // TODO: Initial text property computed from characters. Refactor later.
-    // This initial setting is not important since it will be recomputed in backend during save operation,
-    // but useful for autocomplete for entity search.
-    annotationObject.properties.text = characters.map((char: Character) => char.data.text).join('');
+    // Initial text property from text selection.
+    annotation.node.data.text = selectedText;
 
-    // TODO: Special metadata for text annotations. Refactor later
-    const metadata: TextAnnotationMetadata = createSpecificTextAnnotationMetadata({ characters });
-
-    return {
-      data: cloneDeep(annotationObject),
-      initialData: cloneDeep(annotationObject),
-      ...metadata,
-    };
-  }
-
-  function createNewEditorTextAnnotation(params: {
-    type: string;
-    subType?: string | number;
-  }): AnnotationOld {
-    const { type } = params;
-
-    const fields: PropertyConfig[] = getAnnotationFields(type);
-
-    const annotationObject: AnnotationData = createAnnotationObject({ ...params, fields });
-
-    // TODO: This will not be used
-    const metadata: TextAnnotationMetadata = createSpecificTextAnnotationMetadata({
-      characters: [
-        {
-          data: {
-            uuid: '123',
-            text: ' ',
-          },
-          annotations: [],
-        },
-      ],
-    });
-
-    return {
-      data: cloneDeep(annotationObject),
-      initialData: cloneDeep(annotationObject),
-      ...metadata,
-    };
+    return annotation;
   }
 
   return {
     createCollectionAnnotation,
     createTextAnnotation,
-    createNewEditorTextAnnotation,
   };
 }
