@@ -54,6 +54,9 @@ function handleClick(data: { type: string; subType?: string | number }) {
     isAnnotationTypeEnabled(data.type);
     isSelectionValid(selection, config);
 
+    // Needs to be captured since modal opening collapses editor selection
+    const capturedSelection = { from: selection.from, to: selection.to };
+
     const textInSelection: string =
       tiptap.value?.state.doc.textBetween(selection.from, selection.to) ?? '';
 
@@ -84,7 +87,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
           },
           emits: {
             onSubmit: (editedAnnotationData: Annotation) => {
-              addAnnotationToStore(editedAnnotationData);
+              addAnnotationToStore(editedAnnotationData, capturedSelection);
               destroyModalInstance();
             },
           },
@@ -92,7 +95,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
         }),
       );
     } else {
-      addAnnotationToStore(newAnnotationTemplate);
+      addAnnotationToStore(newAnnotationTemplate, capturedSelection);
     }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
@@ -128,8 +131,11 @@ function handleClick(data: { type: string; subType?: string | number }) {
  * @param {Annotation} annotation - The annotation to add to the store.
  * @returns {void} This function does not return any value.
  */
-function addAnnotationToStore(annotation: Annotation): void {
-  const { from, to } = tiptap.value!.state.selection;
+function addAnnotationToStore(
+  annotation: Annotation,
+  selection: { from: number; to: number },
+): void {
+  const { from, to } = selection;
 
   // Add to store
   annotations.value?.set(annotation.node.data.uuid, annotation);
