@@ -213,7 +213,7 @@ function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotati
 
       // Update status explicitly for changed indices. Otherwised changed/added/deleted annotations keep their status
       if (hasNewStart || hasNewEnd) {
-        cloned.meta.status = 'updated';
+        cloned.meta.status = 'modified';
       }
 
       affectedAnnos.push(cloned);
@@ -278,7 +278,7 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
       },
       connectedNodes: [],
       meta: {
-        status: isNew ? 'created' : 'updated',
+        status: isNew ? 'created' : 'modified',
       },
     };
 

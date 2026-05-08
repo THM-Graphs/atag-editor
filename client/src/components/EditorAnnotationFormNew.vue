@@ -18,6 +18,7 @@ import FormPropertiesSection from './FormPropertiesSection.vue';
 import { useTiptapStore } from '../store/tiptap';
 import AnnotationFormAdditionalNodesSection from './AnnotationFormAdditionalNodesSection.vue';
 import { cloneDeep } from '../utils/helper/helper';
+import NodeStatusBadge from './NodeStatusBadge.vue';
 
 const props = defineProps<{
   annotation: NodeStatusObject<AnnotationNode>;
@@ -150,10 +151,10 @@ function updateData(): void {
   const newData: NodeStatusObject<AnnotationNode> = cloneDeep(workingData.value);
 
   // Set status field depeding on whether the annotation freshly created
-  if (workingData.value.meta.status === 'added') {
+  if (initialData.value.meta.status === 'added') {
     newData.meta.status = 'added';
   } else {
-    newData.meta.status = 'updated';
+    newData.meta.status = 'modified';
   }
 
   const uuid: string = workingData.value.node.data.uuid;
@@ -163,6 +164,8 @@ function updateData(): void {
     return;
   }
 
+  workingData.value = newData;
+  initialData.value = cloneDeep(newData);
   annotations.value?.set(uuid, newData);
 }
 </script>
@@ -188,6 +191,7 @@ function updateData(): void {
         </span>
         <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div>
       </div>
+      <NodeStatusBadge :status="workingData.meta.status" />
       <Button
         :icon="`pi pi-chevron-${isCollapsed ? 'down' : 'up'}`"
         severity="secondary"
