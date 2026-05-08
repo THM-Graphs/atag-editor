@@ -739,7 +739,7 @@ watch(
             tiptap
               ?.chain()
               .focus()
-              .setZeroPointAnnotation({
+              .addZeroPointAnnotation({
                 nodeLabels: [],
                 data: {
                   type: 'deleted',

@@ -15,7 +15,7 @@ import { useValidateTextSelection } from '../composables/useValidateTextSelectio
 import { Selection } from '@tiptap/pm/state';
 const { isValid: isSelectionValid } = useValidateTextSelection();
 
-const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig } =
+const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, isZeroPoint } =
   useGuidelinesStore();
 const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { selectedOptions } = useFilterStore();
@@ -87,7 +87,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
           },
           emits: {
             onSubmit: (editedAnnotationData: Annotation) => {
-              addAnnotationToStore(editedAnnotationData, capturedSelection);
+              addAnnotation(editedAnnotationData, capturedSelection);
               destroyModalInstance();
             },
           },
@@ -95,7 +95,7 @@ function handleClick(data: { type: string; subType?: string | number }) {
         }),
       );
     } else {
-      addAnnotationToStore(newAnnotationTemplate, capturedSelection);
+      addAnnotation(newAnnotationTemplate, capturedSelection);
     }
   } catch (error: unknown) {
     if (error instanceof AnnotationRangeError) {
@@ -127,21 +127,23 @@ function handleClick(data: { type: string; subType?: string | number }) {
 /**
  * Adds a new annotation to the store by executing the `createAnnotation` command.
  *
- * @param {Object} params - Object with two properties: `annotation` and `characters`.
  * @param {Annotation} annotation - The annotation to add to the store.
+ * @param {Object} selection - The selection object with `from` and `to` properties.
  * @returns {void} This function does not return any value.
  */
-function addAnnotationToStore(
-  annotation: Annotation,
-  selection: { from: number; to: number },
-): void {
+function addAnnotation(annotation: Annotation, selection: { from: number; to: number }): void {
   const { from, to } = selection;
+  const isAnnoZeroPoint: boolean = isZeroPoint(annotation.node);
 
+  // Add decoration or inline block, depeding on config
+  if (isAnnoZeroPoint) {
+    // TODO: Cursor is set before the inserted element, not after. Fix later
+    tiptap.value?.commands.addZeroPointAnnotation(annotation.node, from);
+  } else {
+    tiptap.value?.commands.addAnnotationDecoration(annotation.node, from, to);
+  }
   // Add to store
   annotations.value?.set(annotation.node.data.uuid, annotation);
-
-  // Add editor decoration
-  tiptap.value?.commands.addAnnotationDecoration(annotation.node, from, to);
 }
 </script>
 

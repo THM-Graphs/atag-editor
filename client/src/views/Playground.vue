@@ -77,11 +77,17 @@ function toggleTextHightlighting(annotation: AnnotationOld, direction: 'on' | 'o
           tiptap
             ?.chain()
             .focus()
-            .setZeroPointAnnotation({
-              type: 'deleted',
-              subType: '',
-              isZeroPoint: true,
-              uuid: '123',
+            .addZeroPointAnnotation({
+              nodeLabels: [],
+              data: {
+                type: 'deleted',
+                subType: '',
+                isZeroPoint: true,
+                uuid: '123',
+                startIndex: 0,
+                endIndex: 0,
+                text: '',
+              },
             })
             .run()
         "

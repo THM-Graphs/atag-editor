@@ -293,6 +293,10 @@
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
 }
 
+.annotation-type-marker-deleted {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/deletedMarker.svg');
+}
+
 /* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
 
 #text > span:has(span.paragraph.end)::after {
