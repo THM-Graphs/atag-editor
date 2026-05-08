@@ -5,7 +5,6 @@ import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
 import ConfirmPopup from 'primevue/confirmpopup';
 import Fieldset from 'primevue/fieldset';
-import Panel from 'primevue/panel';
 import { useConfirm } from 'primevue/useconfirm';
 import {
   Annotation,
@@ -35,7 +34,7 @@ const config: AnnotationType = getAnnotationConfig(annotation.node.data.type);
 // TODO: Maybe give whole config instead of only fields...?
 const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.node.data.type);
 
-const panelIsCollapsed = ref<boolean>(true);
+const isCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
 const previewText = computed<string>(() => {
   const sliced: string = annotation.node.data.text?.slice(0, 10);
@@ -106,166 +105,164 @@ function handleExpand(): void {
 function handleShrink(): void {
   // execCommand('shrinkAnnotation', { annotation });
 }
+
+function toggleCollapsed(newState?: boolean): void {
+  isCollapsed.value = newState ?? !isCollapsed.value;
+}
 </script>
 
 <template>
-  <Panel
-    class="annotation-form mb-3"
-    :data-annotation-uuid="annotation.node.data.uuid"
-    toggleable
-    @update:collapsed="panelIsCollapsed = !panelIsCollapsed"
-    :collapsed="panelIsCollapsed"
-    :toggle-button-props="{
-      severity: 'secondary',
-      title: 'Toggle full view',
-      rounded: true,
-      text: true,
-    }"
-  >
-    <template #header>
+  <div class="annotation-card mb-3" :data-annotation-uuid="annotation.node.data.uuid">
+    <div class="annotation-card-header">
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
           <AnnotationTypeIcon
             :annotationType="annotation.node.data.subType ?? annotation.node.data.type"
           />
         </div>
-        <div class="annotation-type-container">
-          <span class="font-bold">{{
-            annotation.node.data.subType ?? annotation.node.data.type
-          }}</span>
-        </div>
-        <div class="preview font-italic text-xs" :title="annotation.node.data.text">
+        <span class="font-bold">{{
+          annotation.node.data.subType ?? annotation.node.data.type
+        }}</span>
+        <span class="font-italic text-xs text-color-secondary" :title="annotation.node.data.text">
           {{ previewText }}
-        </div>
+        </span>
         <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div>
       </div>
-    </template>
-    <template #toggleicon="{ collapsed }">
-      <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
-    </template>
-    <Fieldset
-      v-if="!panelIsCollapsed"
-      legend="Properties"
-      :toggle-button-props="{
-        title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
-      }"
-      :toggleable="true"
-      @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
-    >
-      <template #toggleicon>
-        <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
-      </template>
-      <FormPropertiesSection v-model="annotation.node.data" :fields="propertyFields" mode="edit" />
-    </Fieldset>
-    <AnnotationFormAdditionalNodesSection
-      v-if="config.hasEntities === true && !panelIsCollapsed"
-      v-model="annotation.connectedNodes"
-      mode="edit"
-      :annotation-config="config"
-    />
-    <div v-if="!panelIsCollapsed" class="edit-buttons flex justify-content-center">
       <Button
-        icon="pi pi-angle-left"
-        size="small"
+        :icon="`pi pi-chevron-${isCollapsed ? 'down' : 'up'}`"
         severity="secondary"
+        title="Toggle full view"
         rounded
-        title="Move annotation left by one character"
-        :disabled="true"
-        @click="handleShiftLeft"
-      />
-      <Button
-        icon="pi pi-angle-right"
+        text
         size="small"
-        severity="secondary"
-        rounded
-        title="Move annotation right by one character"
-        :disabled="true"
-        @click="handleShiftRight"
-      />
-      <Button
-        icon="pi pi-plus"
-        size="small"
-        severity="secondary"
-        rounded
-        title="Expand annotation right by one character"
-        :disabled="true || config.isZeroPoint"
-        @click="handleExpand"
-      />
-      <Button
-        icon="pi pi-minus"
-        size="small"
-        severity="secondary"
-        rounded
-        title="Shrink annotation from the right by one character"
-        :disabled="true || config.isZeroPoint"
-        @click="handleShrink"
-      />
-      <Button
-        :icon="redrawButtonicon"
-        :style="{ zIndex: 99999 }"
-        size="small"
-        severity="secondary"
-        rounded
-        :title="redrawButtonTitle"
-        :disabled="true"
-        @click="handleRedraw"
+        @click.stop="toggleCollapsed()"
       />
     </div>
-    <div v-if="!panelIsCollapsed" class="action-buttons flex justify-content-center">
-      <Button
-        label="Delete"
-        title="Delete annotation"
-        severity="danger"
-        icon="pi pi-trash"
-        size="small"
-        :disabled="false"
-        @click="handleDeleteAnnotation"
+
+    <div v-show="!isCollapsed" class="annotation-card-body">
+      <Fieldset
+        legend="Properties"
+        :toggle-button-props="{
+          title: `${propertiesAreCollapsed ? 'Expand' : 'Collapse'} properties`,
+        }"
+        :toggleable="true"
+        @toggle="propertiesAreCollapsed = !propertiesAreCollapsed"
+      >
+        <template #toggleicon>
+          <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
+        </template>
+        <FormPropertiesSection
+          v-model="annotation.node.data"
+          :fields="propertyFields"
+          mode="edit"
+        />
+      </Fieldset>
+      <AnnotationFormAdditionalNodesSection
+        v-if="config.hasEntities === true"
+        v-model="annotation.connectedNodes"
+        mode="edit"
+        :annotation-config="config"
       />
     </div>
-    <ConfirmPopup></ConfirmPopup>
-  </Panel>
+
+    <div class="annotation-card-footer">
+      <div class="edit-buttons flex justify-content-center">
+        <Button
+          icon="pi pi-angle-left"
+          size="small"
+          severity="secondary"
+          rounded
+          title="Move annotation left by one character"
+          :disabled="true"
+          @click="handleShiftLeft"
+        />
+        <Button
+          icon="pi pi-angle-right"
+          size="small"
+          severity="secondary"
+          rounded
+          title="Move annotation right by one character"
+          :disabled="true"
+          @click="handleShiftRight"
+        />
+        <Button
+          icon="pi pi-plus"
+          size="small"
+          severity="secondary"
+          rounded
+          title="Expand annotation right by one character"
+          :disabled="true || config.isZeroPoint"
+          @click="handleExpand"
+        />
+        <Button
+          icon="pi pi-minus"
+          size="small"
+          severity="secondary"
+          rounded
+          title="Shrink annotation from the right by one character"
+          :disabled="true || config.isZeroPoint"
+          @click="handleShrink"
+        />
+        <Button
+          :icon="redrawButtonicon"
+          :style="{ zIndex: 99999 }"
+          size="small"
+          severity="secondary"
+          rounded
+          :title="redrawButtonTitle"
+          :disabled="true"
+          @click="handleRedraw"
+        />
+      </div>
+      <div class="action-buttons flex justify-content-center">
+        <Button
+          label="Delete"
+          title="Delete annotation"
+          severity="danger"
+          icon="pi pi-trash"
+          size="small"
+          @click="handleDeleteAnnotation"
+        />
+      </div>
+    </div>
+
+    <ConfirmPopup />
+  </div>
 </template>
 
 <style scoped>
-.annotation-form {
-  outline: 1px solid var(--p-primary-color);
+.annotation-card {
+  border: 1px solid var(--p-primary-color);
+  border-radius: var(--p-border-radius-md, 6px);
+  overflow: hidden;
+  background: var(--p-panel-background);
 }
 
-.edited {
-  background-color: rgb(191, 147, 77);
+.annotation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--p-panel-header-background);
+  user-select: none;
 }
 
-.deleted {
-  background-color: red;
+.annotation-card-body {
+  padding: 0.75rem;
+  background: var(--p-panel-content-background);
 }
 
-.existing {
-  background-color: gray;
-}
-
-.preview.collapsed {
-  --fade-start: 50%;
-  max-height: 4rem;
-  mask-image: linear-gradient(to bottom, white var(--fade-start), transparent);
-  transition: max-height 500ms;
-}
-
-.preview.expanded {
-  max-height: auto;
-  max-height: calc-size(auto);
-}
-
-.created {
-  background-color: lightgreen;
+.annotation-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: var(--p-panel-header-background);
 }
 
 .icon-container {
   width: 20px;
   height: 20px;
-}
-
-.form-label {
-  flex-basis: 10rem;
 }
 
 .highlight {
