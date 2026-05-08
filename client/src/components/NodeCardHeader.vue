@@ -5,6 +5,7 @@ import { filterDefaultLabels } from '../utils/helper/helper';
 import { BaseNodeLabel, NodeStatusObject } from '../models/types';
 
 const props = defineProps<{
+  mode: 'edit' | 'view';
   node: NodeStatusObject;
 }>();
 
@@ -30,6 +31,12 @@ function getBaseNodeLabel(labels: string[]): BaseNodeLabel {
 }
 
 function handleRemoveClick(): void {
+  console.log('clicked..');
+  // Just to be sure
+  if (props.mode === 'view') {
+    return;
+  }
+
   emit('remove');
 }
 </script>
@@ -47,10 +54,12 @@ function handleRemoveClick(): void {
     <small class="status">{{ node!.meta.status }}</small>
 
     <Button
+      :class="props.mode === 'view' ? 'invisible' : ''"
       icon="pi pi-times"
       size="small"
       severity="danger"
       title="Remove node"
+      :disabled="props.mode === 'view'"
       @click="handleRemoveClick"
     ></Button>
   </div>
@@ -68,6 +77,10 @@ function handleRemoveClick(): void {
     width: 1rem;
     height: 1rem;
     padding: 10px;
+
+    &.invisible {
+      visibility: hidden;
+    }
   }
 }
 </style>

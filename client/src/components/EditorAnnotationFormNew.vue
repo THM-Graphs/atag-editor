@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import Button from 'primevue/button';
@@ -17,12 +17,14 @@ import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import FormPropertiesSection from './FormPropertiesSection.vue';
 import { useTiptapStore } from '../store/tiptap';
 import AnnotationFormAdditionalNodesSection from './AnnotationFormAdditionalNodesSection.vue';
+import { cloneDeep } from '../utils/helper/helper';
 
 const props = defineProps<{
   annotation: NodeStatusObject<AnnotationNode>;
 }>();
 
-const { annotation } = props;
+const initialData = toRef<NodeStatusObject<AnnotationNode>>(props.annotation);
+const workingData = ref<NodeStatusObject<AnnotationNode>>(cloneDeep(props.annotation));
 
 const confirm = useConfirm();
 
@@ -30,16 +32,20 @@ const { tiptap, annotations } = useTiptapStore();
 const { isRedrawMode, redrawMode } = useEditorStore();
 const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
 
-const config: AnnotationType = getAnnotationConfig(annotation.node.data.type);
+const config: AnnotationType = getAnnotationConfig(workingData.value.node.data.type);
 // TODO: Maybe give whole config instead of only fields...?
-const propertyFields: PropertyConfig[] = getAnnotationFields(annotation.node.data.type);
+const propertyFields: PropertyConfig[] = getAnnotationFields(workingData.value.node.data.type);
+
+const mode = ref<'view' | 'edit'>('view');
 
 const isCollapsed = ref<boolean>(true);
 const propertiesAreCollapsed = ref<boolean>(false);
 const previewText = computed<string>(() => {
-  const sliced: string = annotation.node.data.text?.slice(0, 10);
+  const sliced: string = workingData.value.node.data.text?.slice(0, 10);
 
-  return annotation.node.data.text?.length >= 10 ? sliced + '...' : annotation.node.data.text;
+  return workingData.value.node.data.text?.length >= 10
+    ? sliced + '...'
+    : workingData.value.node.data.text;
 });
 const redrawButtonicon = computed<string>(() =>
   redrawMode.value?.direction === 'on' ? 'pi pi-times' : 'pi pi-pencil',
@@ -66,27 +72,45 @@ function handleDeleteAnnotation(event: MouseEvent): void {
     },
     accept: () => {
       // TODO: Might be changed when the "status" behaviour is changed.
-      const annoEntry: Annotation | undefined = annotations.value?.get(annotation.node.data.uuid);
+      const annoEntry: Annotation | undefined = annotations.value?.get(
+        workingData.value.node.data.uuid,
+      );
 
       if (!annoEntry) {
         return;
       }
 
-      // Set annotation deleted
-      annoEntry.meta.status = 'deleted';
+      // Do NOT set status to 'deleted' - this is determined during save preprocessing
+      // when checked what annotations are in the document
+      // annoEntry.meta.status = 'deleted';
 
       // Remove decoration
-      tiptap.value?.commands.removeAnnotationDecoration(annotation.node);
+      tiptap.value?.commands.removeAnnotationDecoration(workingData.value.node);
     },
     reject: () => {},
   });
+}
+
+function handleEditAnnotation(): void {
+  toggleCollapsed(false);
+  toggleFormMode('edit');
+}
+
+function handleSaveChanges(): void {
+  updateData();
+  toggleFormMode('view');
+}
+
+function handleCancelChanges(): void {
+  resetData();
+  toggleFormMode('view');
 }
 
 function handleRedraw(): void {
   // if (isRedrawMode.value) {
   //   toggleRedrawMode({ direction: 'off', cause: 'cancel' });
   // } else {
-  //   toggleRedrawMode({ direction: 'on', annotationUuid: annotation.node.data.uuid });
+  //   toggleRedrawMode({ direction: 'on', annotationUuid: workingData.node.data.uuid });
   // }
 }
 
@@ -109,21 +133,57 @@ function handleShrink(): void {
 function toggleCollapsed(newState?: boolean): void {
   isCollapsed.value = newState ?? !isCollapsed.value;
 }
+
+function resetData() {
+  workingData.value = cloneDeep(initialData.value);
+}
+
+function toggleFormMode(newState?: 'view' | 'edit'): void {
+  if (newState) {
+    mode.value = newState;
+  } else {
+    mode.value = newState ?? mode.value === 'view' ? 'edit' : 'view';
+  }
+}
+
+function updateData(): void {
+  const newData: NodeStatusObject<AnnotationNode> = cloneDeep(workingData.value);
+
+  // Set status field depeding on whether the annotation freshly created
+  if (workingData.value.meta.status === 'added') {
+    newData.meta.status = 'added';
+  } else {
+    newData.meta.status = 'updated';
+  }
+
+  const uuid: string = workingData.value.node.data.uuid;
+  const entry: NodeStatusObject<AnnotationNode> | undefined = annotations.value?.get(uuid);
+
+  if (!entry) {
+    return;
+  }
+
+  annotations.value?.set(uuid, newData);
+}
 </script>
 
 <template>
-  <div class="annotation-card mb-3" :data-annotation-uuid="annotation.node.data.uuid">
+  <div
+    class="annotation-card mb-3"
+    :data-annotation-uuid="workingData.node.data.uuid"
+    :data-mode="mode"
+  >
     <div class="annotation-card-header">
       <div class="flex items-center gap-1 align-items-center">
         <div class="icon-container">
           <AnnotationTypeIcon
-            :annotationType="annotation.node.data.subType ?? annotation.node.data.type"
+            :annotationType="workingData.node.data.subType ?? workingData.node.data.type"
           />
         </div>
         <span class="font-bold">{{
-          annotation.node.data.subType ?? annotation.node.data.type
+          workingData.node.data.subType ?? workingData.node.data.type
         }}</span>
-        <span class="font-italic text-xs text-color-secondary" :title="annotation.node.data.text">
+        <span class="font-italic text-xs text-color-secondary" :title="workingData.node.data.text">
           {{ previewText }}
         </span>
         <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div>
@@ -152,21 +212,24 @@ function toggleCollapsed(newState?: boolean): void {
           <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
         </template>
         <FormPropertiesSection
-          v-model="annotation.node.data"
+          v-model="workingData.node.data"
           :fields="propertyFields"
-          mode="edit"
+          :mode="mode"
         />
       </Fieldset>
       <AnnotationFormAdditionalNodesSection
         v-if="config.hasEntities === true"
         v-model="annotation.connectedNodes"
-        mode="edit"
+        :mode="mode"
         :annotation-config="config"
       />
     </div>
 
     <div class="annotation-card-footer">
-      <div class="edit-buttons flex justify-content-center">
+      <div
+        v-if="mode === 'view'"
+        class="edit-buttons flex justify-content-center align-items-center"
+      >
         <Button
           icon="pi pi-angle-left"
           size="small"
@@ -175,6 +238,7 @@ function toggleCollapsed(newState?: boolean): void {
           title="Move annotation left by one character"
           :disabled="true"
           @click="handleShiftLeft"
+          :style="{ width: '20px', height: '20px' }"
         />
         <Button
           icon="pi pi-angle-right"
@@ -184,6 +248,7 @@ function toggleCollapsed(newState?: boolean): void {
           title="Move annotation right by one character"
           :disabled="true"
           @click="handleShiftRight"
+          :style="{ width: '20px', height: '20px' }"
         />
         <Button
           icon="pi pi-plus"
@@ -193,6 +258,7 @@ function toggleCollapsed(newState?: boolean): void {
           title="Expand annotation right by one character"
           :disabled="true || config.isZeroPoint"
           @click="handleExpand"
+          :style="{ width: '20px', height: '20px' }"
         />
         <Button
           icon="pi pi-minus"
@@ -202,26 +268,55 @@ function toggleCollapsed(newState?: boolean): void {
           title="Shrink annotation from the right by one character"
           :disabled="true || config.isZeroPoint"
           @click="handleShrink"
+          :style="{ width: '20px', height: '20px' }"
         />
         <Button
           :icon="redrawButtonicon"
-          :style="{ zIndex: 99999 }"
           size="small"
           severity="secondary"
           rounded
           :title="redrawButtonTitle"
           :disabled="true"
           @click="handleRedraw"
+          :style="{ width: '20px', height: '20px' }"
         />
       </div>
-      <div class="action-buttons flex justify-content-center">
+      <div class="action-buttons flex gap-1 justify-content-center">
         <Button
-          label="Delete"
+          v-if="mode === 'view'"
           title="Delete annotation"
           severity="danger"
           icon="pi pi-trash"
           size="small"
           @click="handleDeleteAnnotation"
+          :style="{ width: '25px', height: '25px' }"
+        />
+        <Button
+          v-if="mode === 'view'"
+          title="Edit annotation"
+          severity="contrast"
+          icon="pi pi-pencil"
+          size="small"
+          @click="handleEditAnnotation"
+          :style="{ width: '25px', height: '25px' }"
+        />
+        <Button
+          v-if="mode === 'edit'"
+          label="Save"
+          title="Save changes"
+          severity="primary"
+          icon="pi pi-check"
+          size="small"
+          @click="handleSaveChanges"
+        />
+        <Button
+          v-if="mode === 'edit'"
+          label="Cancel"
+          title="Cancel changes"
+          severity="secondary"
+          icon="pi pi-times"
+          size="small"
+          @click="handleCancelChanges"
         />
       </div>
     </div>
@@ -254,10 +349,17 @@ function toggleCollapsed(newState?: boolean): void {
 
 .annotation-card-footer {
   display: flex;
-  flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem;
   background: var(--p-panel-header-background);
+}
+
+[data-mode='view'] .annotation-card-footer {
+  justify-content: space-between !important;
+}
+
+[data-mode='edit'] .annotation-card-footer {
+  justify-content: center;
 }
 
 .icon-container {

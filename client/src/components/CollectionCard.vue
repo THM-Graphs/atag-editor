@@ -7,6 +7,10 @@ import Column from 'primevue/column';
 import NodeCardHeader from './NodeCardHeader.vue';
 import { capitalize, useTemplateRef } from 'vue';
 
+const props = defineProps<{
+  mode: 'edit' | 'view';
+}>();
+
 const node = defineModel<NodeStatusObject<CollectionNode>>();
 
 const infoIcon = useTemplateRef('info-icon');
@@ -45,7 +49,7 @@ const tableData = Object.entries(node.value!.node.data).map(([property, value]) 
 
 <template>
   <div class="node-card-container" @click="handleClickContainer" title="Open collection in Editor">
-    <NodeCardHeader :node="node!" @remove="handleRemoveNode" />
+    <NodeCardHeader :node="node!" :mode="props.mode" @remove="handleRemoveNode" />
     <span>
       {{ node!.node.data.label }}
     </span>

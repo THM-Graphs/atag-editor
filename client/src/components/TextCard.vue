@@ -3,6 +3,10 @@ import { computed } from 'vue';
 import NodeCardHeader from './NodeCardHeader.vue';
 import { TextNode, NodeStatusObject, NodeStatus } from '../models/types';
 
+const props = defineProps<{
+  mode: 'edit' | 'view';
+}>();
+
 const node = defineModel<NodeStatusObject<TextNode>>();
 
 const PREVIEW_LENGTH: number = 100;
@@ -39,8 +43,7 @@ function setNodeStatus(status: NodeStatus): void {
 
 <template>
   <div class="node-card-container" @click="handleClickContainer" title="Open text in Editor">
-    <NodeCardHeader :node="node!" @remove="handleRemoveNode" />
-
+    <NodeCardHeader :node="node!" :mode="props.mode" @remove="handleRemoveNode" />
     <div class="text-xs">
       {{ displayedText }}
     </div>

@@ -23,7 +23,7 @@ import AnnotationCard from './AnnotationCard.vue';
 const nodes = defineModel<NodeStatusObject[]>();
 
 const props = defineProps<{
-  mode?: 'edit' | 'view';
+  mode: 'edit' | 'view';
   annotationConfig: AnnotationType;
 }>();
 
@@ -47,18 +47,22 @@ const sectionIsCollapsed = ref<boolean>(false);
       <EntityCard
         v-if="isEntityNode(node)"
         v-model="nodes![index] as NodeStatusObject<EntityNode>"
+        :mode="props.mode"
       />
       <TextCard
         v-else-if="isTextNode(node) || isTextNode(node)"
         v-model="nodes![index] as NodeStatusObject<TextNode>"
+        :mode="props.mode"
       />
       <CollectionCard
         v-else-if="isCollectionNode(node)"
         v-model="nodes![index] as NodeStatusObject<CollectionNode>"
+        :mode="props.mode"
       />
       <AnnotationCard
         v-else-if="isAnnotationNode(node)"
         v-model="nodes![index] as NodeStatusObject<AnnotationNode>"
+        :mode="props.mode"
       />
 
       <div v-else>
