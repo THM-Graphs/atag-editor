@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, useTemplateRef } from 'vue';
 import Fieldset from 'primevue/fieldset';
 import EntityCard from './EntityCard.vue';
 import CollectionCard from './CollectionCard.vue';
@@ -7,6 +7,7 @@ import TextCard from './TextCard.vue';
 import {
   AnnotationNode,
   AnnotationType,
+  BaseNodeLabel,
   CollectionNode,
   EntityNode,
   NodeStatusObject,
@@ -19,6 +20,11 @@ import {
   isTextNode,
 } from '../utils/helper/helper';
 import AnnotationCard from './AnnotationCard.vue';
+import Button from 'primevue/button';
+import Menu from 'primevue/menu';
+import AddNodeModal from './AddNodeModal.vue';
+import { useAppStore } from '../store/app';
+import { useDialog } from 'primevue/usedialog';
 
 const nodes = defineModel<NodeStatusObject[]>();
 
@@ -27,7 +33,66 @@ const props = defineProps<{
   annotationConfig: AnnotationType;
 }>();
 
+const { createModalInstance, destroyModalInstance } = useAppStore();
+const dialog: ReturnType<typeof useDialog> = useDialog();
+
 const sectionIsCollapsed = ref<boolean>(false);
+
+const menu = useTemplateRef('menu');
+
+function startAddingNode(nodeLabel: BaseNodeLabel): void {
+  console.log(`Start adding a new ${nodeLabel} node`);
+
+  createModalInstance(
+    dialog.open(AddNodeModal, {
+      props: {
+        modal: true,
+        closable: false,
+        closeOnEscape: false,
+        style: { width: '25rem' },
+      },
+      data: {
+        baseNodeLabel: nodeLabel,
+      },
+      emits: {
+        onSubmit: (node: NodeStatusObject) => {
+          addNode(node);
+          destroyModalInstance();
+        },
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
+  // Here you would implement the logic to add a new node of the specified type
+}
+
+function addNode(node: NodeStatusObject) {
+  console.log('node added: ', node);
+}
+
+const nodeOptions = ref([
+  {
+    label: 'Possible Nodes',
+    items: [
+      {
+        label: 'Collection',
+        command: () => startAddingNode('Collection'),
+      },
+      {
+        label: 'Entity',
+        command: () => startAddingNode('Entity'),
+      },
+      {
+        label: 'Text',
+        command: () => startAddingNode('Text'),
+      },
+    ],
+  },
+]);
+
+function toggleMenu(event: PointerEvent) {
+  menu.value!.toggle(event);
+}
 </script>
 
 <template>
@@ -69,6 +134,17 @@ const sectionIsCollapsed = ref<boolean>(false);
         <p>Unsupported node type: {{ node.node.nodeLabels }}</p>
       </div>
     </template>
+    <Button
+      type="button"
+      label="Add Node"
+      icon="pi pi-plus"
+      class="w-full"
+      severity="secondary"
+      @click="toggleMenu"
+      aria-haspopup="true"
+      aria-controls="overlay_menu"
+    />
+    <Menu ref="menu" id="overlay_menu" :model="nodeOptions" :popup="true" />
   </Fieldset>
 </template>
 
