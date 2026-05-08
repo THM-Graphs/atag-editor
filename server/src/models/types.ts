@@ -33,6 +33,12 @@ export type NodeDto = {
   connectedNodes: NodeDto[];
 };
 
+/**
+ * A status field for nodes in the frontend and for API requests. Is accessed during editing
+ * (to display the current edit state) and before saving to tell the backend how to process the data.
+ */
+export type NodeStatus = 'added' | 'removed' | 'created' | 'deleted' | 'updated' | 'unchanged';
+
 export type AnnotationType = {
   category: string;
   defaultSelected: boolean;

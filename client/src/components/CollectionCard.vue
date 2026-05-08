@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CollectionNode, NodeStatusObject } from '../models/types';
+import { CollectionNode, NodeStatus, NodeStatusObject } from '../models/types';
 import Button from 'primevue/button';
 import { Popover } from 'primevue';
 import DataTable from 'primevue/datatable';
@@ -14,8 +14,12 @@ const infoIcon = useTemplateRef('info-icon');
 
 const filteredLabels: string[] = filterDefaultLabels(node.value!.node.nodeLabels);
 
-function handleRemoveNode() {
-  node.value!.meta.status = 'removed';
+function handleRemoveNode(): void {
+  setNodeStatus('removed');
+}
+
+function setNodeStatus(status: NodeStatus): void {
+  node.value!.meta.status = status;
 }
 
 /**

@@ -16,10 +16,16 @@ export type NodeStatusObject<
   node: T;
   connectedNodes: NodeStatusObject<T>[];
   meta: {
-    status: 'added' | 'removed' | 'created' | 'deleted' | 'updated' | 'unchanged';
+    status: NodeStatus;
     [key: string]: unknown;
   };
 };
+
+/**
+ * A status field for nodes in the frontend and for API requests. Is accessed during editing
+ * (to display the current edit state) and before saving to tell the backend how to process the data.
+ */
+export type NodeStatus = 'added' | 'removed' | 'created' | 'deleted' | 'updated' | 'unchanged';
 
 export type AnnotationOld = {
   characterUuids: string[];

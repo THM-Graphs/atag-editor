@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TextNode, NodeStatusObject } from '../models/types';
+import { TextNode, NodeStatusObject, NodeStatus } from '../models/types';
 import Button from 'primevue/button';
 import NodeTag from './NodeTag.vue';
 import { computed } from 'vue';
@@ -31,8 +31,12 @@ function handleClickContainer(event: PointerEvent): void {
   window.open(`/texts/${node.value!.node.data.uuid}`, '_blank', 'noopener noreferrer');
 }
 
-function handleRemoveNode() {
-  node.value!.meta.status = 'removed';
+function handleRemoveNode(): void {
+  setNodeStatus('removed');
+}
+
+function setNodeStatus(status: NodeStatus): void {
+  node.value!.meta.status = status;
 }
 </script>
 
