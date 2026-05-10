@@ -30,7 +30,7 @@ export function useCollections() {
     isFetching.value = true;
 
     try {
-      const result: PaginationResult<CollectionNode[]> = await api.getCollections(
+      const result: PaginationResult<CollectionNode[]> = await api.getChildCollections(
         parentUuid,
         params,
       );

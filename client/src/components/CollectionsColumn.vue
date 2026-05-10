@@ -111,7 +111,7 @@ function endResize() {
 }
 
 async function fetchData(): Promise<PaginationResult<CollectionNode[]>> {
-  const { data, pagination } = await api.getCollections(props.parentUuid, {
+  const { data, pagination } = await api.getChildCollections(props.parentUuid, {
     filters: searchParams.value,
     cursor: columnPagination.value?.nextCursor,
   });

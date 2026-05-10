@@ -195,7 +195,7 @@ export default class ApiService {
     }
   }
 
-  public async getCollections(
+  public async getChildCollections(
     parentUuid: string,
     params: {
       filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
@@ -290,7 +290,7 @@ export default class ApiService {
     }
   }
 
-  public async getTexts(collectionUuid: string): Promise<TextNode[]> {
+  public async getChildTexts(collectionUuid: string): Promise<TextNode[]> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}/texts`;
 

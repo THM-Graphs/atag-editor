@@ -108,7 +108,7 @@ export default class CollectionService {
       LIMIT $limit
 
       RETURN collect({
-          nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+          nodeLabels: labels(c),
           data: c {.*}
       }) AS collections
     `;

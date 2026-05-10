@@ -44,7 +44,7 @@ export function useCollectionManagerStore() {
     const [collection, annotations, texts] = await Promise.all([
       api.getCollection(uuid),
       api.getAnnotations('collection', uuid),
-      api.getTexts(uuid),
+      api.getChildTexts(uuid),
     ]);
 
     const cao: CollectionAccessObject = { collection, texts, annotations };

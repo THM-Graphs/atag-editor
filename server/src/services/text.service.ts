@@ -27,7 +27,7 @@ export default class TextService {
 
     RETURN [
             t IN texts | {
-                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                nodeLabels: labels(t),
                 data: t {.*}
             }
     ] AS texts
