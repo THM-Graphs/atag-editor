@@ -17,6 +17,7 @@ import {
   NodeAncestry,
   CollectionCreationData,
   CursorData,
+  NodeSearchParams,
 } from '../models/types.js';
 import ICharacter from '../models/ICharacter.js';
 import ValidationError from '../errors/validation.error.js';
@@ -392,6 +393,70 @@ export default class CollectionService {
     };
 
     return collectionTextObject;
+  }
+
+  public async search(
+    options: Required<NodeSearchParams>,
+  ): Promise<PaginationResult<CollectionNode[]>> {
+    const { nodeLabels, limit, order, offset, search } = options;
+
+    const baseQuery: string = `
+    MATCH (n:Collection)
+    WHERE toLower(n.label) CONTAINS toLower($search)
+    AND (size($nodeLabels) = 0 OR size(apoc.coll.intersection($nodeLabels, labels(n))) > 0)
+
+    WITH n 
+    ORDER BY n.label ASC 
+    `;
+
+    // Count query: Get the total number of records matching the filters
+    const countQuery: string = baseQuery + `RETURN count(n) AS totalRecords`;
+
+    const dataQuery: string =
+      baseQuery +
+      `
+      SKIP $offset
+      LIMIT $limit
+
+      RETURN collect({
+        nodeLabels: labels(n),
+        data: n {.*}
+      }) as collections
+      
+    `;
+
+    const [countResult, dataResult] = await Promise.all([
+      Neo4jDriver.runQuery(countQuery, {
+        order,
+        search,
+        nodeLabels,
+        offset: int(offset),
+        limit: int(limit),
+      }),
+      Neo4jDriver.runQuery(dataQuery, {
+        order,
+        search,
+        nodeLabels,
+        offset: int(offset),
+        limit: int(limit),
+      }),
+    ]);
+
+    const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
+
+    const rawData: CollectionNode[] = dataResult.records[0]?.get('collections') || [];
+    const data: CollectionNode[] = rawData.map(c => toNativeTypes(c)) as CollectionNode[];
+
+    return {
+      data,
+      pagination: {
+        limit,
+        order,
+        search,
+        totalRecords,
+        offset,
+      },
+    };
   }
 
   /**

@@ -78,10 +78,9 @@ function resetPagination(): void {
   setPagination(null);
 }
 
-async function fetchData(): Promise<PaginationResult<CollectionNode[]>> {
-  const { data, pagination } = await api.getChildCollections('', {
+async function fetchData(): Promise<PaginationResult<(CollectionNode | EntityNode | TextNode)[]>> {
+  const { data, pagination } = await api.searchNodes(props.baseNodeLabel, {
     filters: searchParams.value,
-    cursor: resultPagination.value?.nextCursor as CursorData,
   });
 
   return { data, pagination };

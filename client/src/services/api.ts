@@ -8,7 +8,7 @@ import {
   CollectionNode,
   CollectionCreationData,
   CollectionPostData,
-  CollectionSearchParams,
+  NodeSearchParams,
   CursorData,
   EntityNode,
   NetworkPostData,
@@ -16,6 +16,7 @@ import {
   PaginationResult,
   TextNode,
   TextAccessObject,
+  BaseNodeLabel,
 } from '../models/types';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
@@ -195,10 +196,47 @@ export default class ApiService {
     }
   }
 
+  public async searchNodes(
+    baseNodeLabel: BaseNodeLabel,
+    params: {
+      filters: DeepReadonly<NodeSearchParams> | NodeSearchParams;
+    },
+  ): Promise<PaginationResult<(CollectionNode | EntityNode | TextNode)[]>> {
+    const DEFAULT_ROW_COUNT: number | null = 10;
+
+    const path: string = `${this.baseUrl}/search`;
+
+    const { sortDirection, searchInput, nodeLabels, rowCount, offset } = params.filters;
+
+    const urlParams: URLSearchParams = new URLSearchParams();
+
+    urlParams.set('scope', baseNodeLabel);
+    urlParams.set('order', sortDirection);
+    urlParams.set('search', searchInput);
+    urlParams.set('nodeLabels', nodeLabels.join(','));
+    urlParams.set('limit', rowCount?.toString() ?? DEFAULT_ROW_COUNT.toString());
+
+    if (offset) {
+      urlParams.set('offset', offset.toString() ?? '');
+    }
+
+    const fetchUrl: string = `${path}?${urlParams.toString()}`;
+
+    try {
+      const response: Response = await fetch(fetchUrl);
+
+      await this.assertResponseOk(response);
+
+      return await response.json();
+    } catch (error: unknown) {
+      this.handleApiError(error);
+    }
+  }
+
   public async getChildCollections(
     parentUuid: string,
     params: {
-      filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
+      filters: DeepReadonly<NodeSearchParams> | NodeSearchParams;
       cursor: CursorData | null;
     },
   ): Promise<PaginationResult<CollectionNode[]>> {

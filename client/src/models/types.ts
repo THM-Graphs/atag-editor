@@ -161,6 +161,7 @@ export type CollectionPreview = {
 export type NodeSearchParams = {
   searchInput?: string;
   nodeLabels?: string[];
+  offset?: number;
   rowCount?: number;
   sortDirection?: 'asc' | 'desc';
 };
@@ -241,10 +242,11 @@ export type NodeAncestry = (TextNode | CollectionNode | IAnnotation)[];
 
 export type PaginationData = {
   limit: number;
+  offset?: number | null;
   order: string;
   search: string;
   totalRecords: number;
-  nextCursor: CursorData | null;
+  nextCursor?: CursorData | null;
 };
 
 export type CursorData = {

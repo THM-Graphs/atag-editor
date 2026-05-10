@@ -51,11 +51,11 @@ export function createCharactersFromText(text: string): ICharacter[] {
  *   - `sort`: The field to sort by.
  *   - `order`: The direction of the sort (ascending/descending).
  *   - `limit`: The maximum number of results to return.
- *   - `skip`: The number of results to skip.
+ *   - `offset`: The number of results to skip.
  */
 export function getPagination(req: Request): Record<string, any> {
   // TODO: Should this function have more restriction functionalities/error handling
-  let { search, limit, order, cursorUuid, cursorLabel } = req.query;
+  let { search, limit, order, cursorUuid, cursorLabel, offset } = req.query;
 
   // Valid Order directions
   const ORDER_ASC: string = 'ASC';
@@ -64,6 +64,8 @@ export function getPagination(req: Request): Record<string, any> {
   // TODO: This is a temporary solution until a better endless
   // pagination solution in the frontend is implemented
   const MAX_ROW_COUNT: number = 1000;
+  const DEFAULT_OFFSET: number = 0;
+
   const isCursorValid: boolean =
     typeof cursorUuid === 'string' && typeof cursorLabel === 'string' && cursorUuid !== '';
 
@@ -84,6 +86,7 @@ export function getPagination(req: Request): Record<string, any> {
   return {
     cursor,
     limit: parseInt(limit as string) || MAX_ROW_COUNT,
+    offset: parseInt(offset as string) || DEFAULT_OFFSET,
     order,
     search,
   };

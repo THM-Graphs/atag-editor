@@ -7,7 +7,7 @@ import { FETCH_DELAY } from '../config/constants';
 export type UseSearchParamsReturn = {
   searchParams: DeepReadonly<Ref<NodeSearchParams>>;
   resetSearchParams: () => void;
-  updateSearchParams: (params: NodeSearchParams, options: { immediate: boolean }) => void;
+  updateSearchParams: (params: NodeSearchParams, options?: { immediate: boolean }) => void;
 };
 
 /**

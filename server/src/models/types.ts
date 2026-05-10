@@ -139,12 +139,21 @@ export type NetworkPostData = {
 
 export type NodeAncestry = (TextNode | CollectionNode | IAnnotation)[];
 
+export type NodeSearchParams = {
+  nodeLabels?: string[];
+  order?: 'asc' | 'desc';
+  offset?: number;
+  limit?: number;
+  search?: string;
+};
+
 export type PaginationData = {
   limit: number;
+  offset?: number | null;
   order: string;
   search: string;
   totalRecords: number;
-  nextCursor: CursorData | null;
+  nextCursor?: CursorData | null;
 };
 
 export type CursorData = {

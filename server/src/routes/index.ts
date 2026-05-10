@@ -7,6 +7,7 @@ import stylesRoutes from './styles.routes.js';
 import textRoutes from './text.routes.js';
 import networkRoutes from './network.routes.js';
 import healthRoutes from './health.routes.js';
+import searchRoutes from './search.routes.js';
 
 const router: Router = express.Router();
 
@@ -17,6 +18,7 @@ router.use('/entities', entityRoutes);
 router.use('/styles', stylesRoutes);
 router.use('/favicon', faviconRoutes);
 router.use('/texts', textRoutes);
+router.use('/search', searchRoutes);
 router.use('/network', networkRoutes);
 
 export default router;
