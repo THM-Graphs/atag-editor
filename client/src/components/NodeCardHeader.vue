@@ -3,6 +3,7 @@ import Button from 'primevue/button';
 import NodeTag from './NodeTag.vue';
 import { filterDefaultLabels } from '../utils/helper/helper';
 import { BaseNodeLabel, NodeStatusObject } from '../models/types';
+import NodeStatusBadge from './NodeStatusBadge.vue';
 
 const props = defineProps<{
   mode: 'edit' | 'view';
@@ -51,8 +52,7 @@ function handleRemoveClick(): void {
         :type="baseNodeLabel"
       />
     </div>
-    <small class="status">{{ node!.meta.status }}</small>
-
+    <NodeStatusBadge :status="node.meta.status" />
     <Button
       :class="props.mode === 'view' ? 'invisible' : ''"
       icon="pi pi-times"
