@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 import {
   CollectionNode,
   CollectionAccessObject,
-  CollectionSearchParams,
+  NodeSearchParams,
   CollectionStatusObject,
   PaginationData,
   PaginationResult,
@@ -206,7 +206,7 @@ async function handleItemSelected(uuid: string): Promise<void> {
 }
 
 function handleNodeLabelsChange(selectedLabels: string[]) {
-  const data: CollectionSearchParams = {
+  const data: NodeSearchParams = {
     nodeLabels: selectedLabels,
   };
 
@@ -236,7 +236,7 @@ function handleResize(event: MouseEvent) {
 }
 
 function handleSearchInputChange(newInput: string) {
-  const data: CollectionSearchParams = {
+  const data: NodeSearchParams = {
     searchInput: newInput,
   };
 

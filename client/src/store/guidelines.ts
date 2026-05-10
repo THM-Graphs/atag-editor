@@ -6,6 +6,7 @@ import {
   AnnotationType,
   PropertyConfig,
   AnnotationNode,
+  BaseNodeLabel,
 } from '../models/types';
 
 const { initializeFilter } = useFilterStore();
@@ -16,6 +17,8 @@ const isInitialized = computed<boolean>(() => guidelines.value && !isFetching.va
 
 const groupedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 const availableCollectionLabels = ref<string[]>([]);
+const availableEntityLabels = ref<string[]>([]);
+const availableTextLabels = ref<string[]>([]);
 const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 
 const structuralAnnotationConfigs: AnnotationType[] = [
@@ -119,6 +122,8 @@ export function useGuidelinesStore() {
     groupedAnnotationTypes.value = groupAnnotationTypes();
     groupedAndSortedAnnotationTypes.value = sortAnnotationTypesInGroup();
     availableCollectionLabels.value = getAvailableCollectionLabels();
+    availableEntityLabels.value = getAvailableEntityLabels();
+    availableTextLabels.value = getAvailableTextLabels();
 
     initializeFilter(guidelines.value);
   }
@@ -300,12 +305,41 @@ export function useGuidelinesStore() {
   }
 
   /**
+   * Retrieves the available labels that can be assigned to a an Entity node.
+   *
+   * @return {string[]} The available labels.
+   */
+  function getAvailableEntityLabels(): string[] {
+    return guidelines.value?.annotations.entities.map(e => e.nodeLabel) ?? [];
+  }
+
+  /**
    * Retrieves the available labels that can be assigned to a a Text node.
    *
    * @return {string[]} The available labels.
    */
   function getAvailableTextLabels(): string[] {
-    return guidelines.value.texts.additionalLabels;
+    return guidelines.value?.texts.additionalLabels ?? [];
+  }
+
+  /**
+   * Retrieves the available labels that can be assigned to a node with given base type.
+   *
+   * Convenience wrapper for when only the base node label is known.
+   *
+   * @return {string[]} The available labels.
+   */
+  function getAvailableNodeLabels(baseLabel: BaseNodeLabel): string[] {
+    switch (baseLabel) {
+      case 'Collection':
+        return availableCollectionLabels.value;
+      case 'Entity':
+        return availableEntityLabels.value;
+      case 'Text':
+        return availableTextLabels.value;
+      default:
+        return [];
+    }
   }
 
   /**
@@ -403,6 +437,8 @@ export function useGuidelinesStore() {
 
   return {
     availableCollectionLabels,
+    availableEntityLabels,
+    availableTextLabels,
     error: readonly(error),
     groupedAndSortedAnnotationTypes,
     groupedAnnotationTypes,
@@ -417,6 +453,8 @@ export function useGuidelinesStore() {
     getAvailableAnnotationResourceConfigs: getAvailableAnnotationEntityConfigs,
     getAvailableCollectionAnnotationConfigs,
     getAvailableCollectionLabels,
+    getAvailableEntityLabels,
+    getAvailableNodeLabels,
     getAvailableTextLabels,
     getCollectionAnnotationFields,
     getCollectionAnnotationConfig,

@@ -7,7 +7,7 @@ import { useSearchParams } from '../composables/useSearchParams';
 import {
   BaseNodeLabel,
   CollectionNode,
-  CollectionSearchParams,
+  NodeSearchParams,
   CursorData,
   EntityNode,
   PaginationData,
@@ -67,7 +67,7 @@ function handleResultItemSelect(item: CollectionNode | TextNode | EntityNode): v
 }
 
 function handleSearchInputChange(newInput: string) {
-  const data: CollectionSearchParams = {
+  const data: NodeSearchParams = {
     searchInput: newInput,
   };
 
@@ -88,7 +88,7 @@ async function fetchData(): Promise<PaginationResult<CollectionNode[]>> {
 }
 
 function handleNodeLabelsChange(selectedLabels: string[]) {
-  const data: CollectionSearchParams = {
+  const data: NodeSearchParams = {
     nodeLabels: selectedLabels,
   };
 

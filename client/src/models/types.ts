@@ -158,7 +158,7 @@ export type CollectionPreview = {
   };
 };
 
-export type CollectionSearchParams = {
+export type NodeSearchParams = {
   searchInput?: string;
   nodeLabels?: string[];
   rowCount?: number;

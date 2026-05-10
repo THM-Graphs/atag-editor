@@ -2,7 +2,7 @@ import { DeepReadonly, readonly, ref } from 'vue';
 import { useAppStore } from '../store/app';
 import {
   CollectionNode,
-  CollectionSearchParams,
+  NodeSearchParams,
   CursorData,
   PaginationData,
   PaginationResult,
@@ -23,7 +23,7 @@ export function useCollections() {
   async function fetchCollections(
     parentUuid: string | null,
     params: {
-      filters: DeepReadonly<CollectionSearchParams> | CollectionSearchParams;
+      filters: DeepReadonly<NodeSearchParams> | NodeSearchParams;
       cursor: CursorData | null;
     },
   ) {

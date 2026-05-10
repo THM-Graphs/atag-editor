@@ -1,5 +1,5 @@
 import { readonly, ref } from 'vue';
-import { CollectionSearchParams } from '../models/types';
+import { NodeSearchParams } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import { useTimeoutFn } from '@vueuse/core';
 import { FETCH_DELAY } from '../config/constants';
@@ -31,7 +31,7 @@ export function useCollectionSearch(rowCount?: number) {
   // UUID of the parent collection (if there is one)
   const parentUuid = ref<string>('');
 
-  const searchParams = ref<CollectionSearchParams>({
+  const searchParams = ref<NodeSearchParams>({
     searchInput: '',
     nodeLabels: availableCollectionLabels.value,
     rowCount: DEFAULT_ROW_COUNT,
@@ -55,7 +55,7 @@ export function useCollectionSearch(rowCount?: number) {
 
   /** Debounced update of the search parameters */
   const { start: updateDebounced } = useTimeoutFn(
-    (params: CollectionSearchParams) => {
+    (params: NodeSearchParams) => {
       updateParams(params);
     },
     FETCH_DELAY,
@@ -67,12 +67,12 @@ export function useCollectionSearch(rowCount?: number) {
    * If the `immediate` option is set to true (default), the search parameters are updated immediately. If set to false,
    * the update is debounced with the time specified in `FETCH_DELAY` (currently 500ms).
    *
-   * @param {CollectionSearchParams} params - The partial search parameters to update.
+   * @param {NodeSearchParams} params - The partial search parameters to update.
    * @param {{ immediate: boolean }} options - Optional options object.
    * @param {boolean} options.immediate - Whether to update the search parameters immediately or not.
    */
   function updateSearchParams(
-    params: CollectionSearchParams,
+    params: NodeSearchParams,
     options: { immediate: boolean } = { immediate: true },
   ): void {
     const { immediate } = options;
@@ -88,9 +88,9 @@ export function useCollectionSearch(rowCount?: number) {
    * Updates the search parameters with given data. These are partials, so not all parameters will be updated.
    * The search parameters are updated immediately.
    *
-   * @param {CollectionSearchParams} params - The partial search parameters to update.
+   * @param {NodeSearchParams} params - The partial search parameters to update.
    */
-  function updateParams(params: CollectionSearchParams): void {
+  function updateParams(params: NodeSearchParams): void {
     for (const [name, value] of Object.entries(params)) {
       if (value !== undefined && name in searchParams.value) {
         searchParams.value[name] = value;
