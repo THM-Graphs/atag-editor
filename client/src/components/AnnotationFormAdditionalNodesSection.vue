@@ -63,11 +63,12 @@ function startAddingNode(nodeLabel: BaseNodeLabel): void {
       onClose: destroyModalInstance,
     }),
   );
-  // Here you would implement the logic to add a new node of the specified type
 }
 
 function addNode(node: NodeStatusObject) {
-  console.log('node added: ', node);
+  console.log('Node added: ', node);
+
+  nodes.value!.push(node);
 }
 
 const nodeOptions = ref([
@@ -135,6 +136,7 @@ function toggleMenu(event: PointerEvent) {
       </div>
     </template>
     <Button
+      v-if="mode === 'edit'"
       type="button"
       label="Add Node"
       icon="pi pi-plus"

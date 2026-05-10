@@ -1,15 +1,5 @@
 import { ref, readonly, Ref, DeepReadonly } from 'vue';
-import { useGuidelinesStore } from '../store/guidelines';
-import { cloneDeep, createNewCharacter, getDefaultValueForProperty } from '../utils/helper/helper';
-import { IAnnotation } from '../models/IAnnotation';
-import {
-  AnnotationData,
-  AnnotationType,
-  Character,
-  MalformedAnnotation,
-  PropertyConfig,
-  StandoffJson,
-} from '../models/types';
+import { NodeStatusObject } from '../models/types';
 
 type ErrorMessage = {
   severity: string;
@@ -22,10 +12,12 @@ type PipelineStep = null | 'choosing' | 'editing' | 'finishing';
 export type UseAddNodeReturn = {
   currentStep: Readonly<Ref<PipelineStep, PipelineStep>>;
   errorMessages: DeepReadonly<Ref<ErrorMessage[], ErrorMessage[]>>;
+  node: Ref<NodeStatusObject | null>;
   addErrorMessage: (error: DOMException | unknown) => void;
   cancel: () => void;
   finish: () => void;
   init: () => Promise<void>;
+  setNode: (node: NodeStatusObject | null) => void;
   setPipelineStep: (step: PipelineStep) => void;
 };
 
@@ -37,7 +29,7 @@ export type UseAddNodeReturn = {
  * @returns {UseAddNodeReturn} An object containing the necessary state variables and functions to control the pipeline.
  */
 export function useAddNode(): UseAddNodeReturn {
-  const { getAnnotationConfig, getAnnotationFields } = useGuidelinesStore();
+  const node = ref<NodeStatusObject | null>(null);
 
   const currentStep = ref<PipelineStep>('choosing');
   const errorMessages = ref<ErrorMessage[]>([]);
@@ -83,7 +75,12 @@ export function useAddNode(): UseAddNodeReturn {
   }
 
   function resetPipeline(): void {
+    setNode(null);
     setPipelineStep(null);
+  }
+
+  function setNode(newNode: NodeStatusObject | null): void {
+    node.value = newNode;
   }
 
   function setPipelineStep(step: PipelineStep): void {
@@ -93,10 +90,12 @@ export function useAddNode(): UseAddNodeReturn {
   return {
     currentStep: readonly(currentStep),
     errorMessages: readonly(errorMessages),
+    node,
     addErrorMessage,
     cancel,
     finish,
     init,
     setPipelineStep,
+    setNode,
   };
 }
