@@ -1,16 +1,56 @@
 <script setup lang="ts">
 import { EditorContent } from '@tiptap/vue-3';
-import { onMounted, onUnmounted } from 'vue';
+import { h, onMounted, onUnmounted } from 'vue';
 import EditorAnnotationButtonPaneNew from '../components/EditorAnnotationButtonPaneNew.vue';
 import EditorToC from '../components/EditorToC.vue';
-import { AnnotationOld } from '../models/types';
+import { AnnotationOld, NodeStatusObject } from '../models/types';
 import EditorAnnotationFormNew from '../components/EditorAnnotationFormNew.vue';
 import Button from 'primevue/button';
 import { useTiptapStore } from '../store/tiptap';
+import { useDialog } from 'primevue';
+import AddNodeModal from '../components/AddNodeModal.vue';
+import { useAppStore } from '../store/app';
 
-const { tiptap, initializeTiptap, destroyTiptap, annotations, items } = useTiptapStore();
+const { createModalInstance, destroyModalInstance } = useAppStore();
+const { tiptap, initializeTiptap, destroyTiptap, annotations } = useTiptapStore();
 
-onMounted(() => initializeTiptap());
+const dialog: ReturnType<typeof useDialog> = useDialog();
+
+onMounted(() => {
+  // initializeTiptap();
+
+  createModalInstance(
+    dialog.open(AddNodeModal, {
+      props: {
+        modal: true,
+        closable: true,
+        closeOnEscape: false,
+        style: { width: '40rem' },
+        header: `Add a Text node`,
+
+        closeButtonProps: {
+          severity: 'secondary',
+          title: 'Cancel',
+          style: { width: '30px', height: '30px' },
+          rounded: true,
+        },
+        pt: {
+          headerActions: { style: 'margin-left: auto' },
+        },
+      },
+      data: {
+        baseNodeLabel: 'Text',
+      },
+      emits: {
+        onSubmit: (node: NodeStatusObject) => {
+          console.log('Node added: ', node);
+          destroyModalInstance();
+        },
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
+});
 onUnmounted(() => destroyTiptap());
 
 function handleClick() {

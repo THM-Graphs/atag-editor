@@ -47,9 +47,19 @@ function startAddingNode(nodeLabel: BaseNodeLabel): void {
     dialog.open(AddNodeModal, {
       props: {
         modal: true,
-        closable: false,
+        closable: true,
         closeOnEscape: false,
-        style: { width: '25rem' },
+        style: { width: '40rem', height: '30rem' },
+        closeButtonProps: {
+          severity: 'secondary',
+          title: 'Cancel',
+          style: { width: '30px', height: '30px' },
+          rounded: true,
+        },
+        header: `Add a ${nodeLabel} node`,
+        pt: {
+          headerActions: { style: 'margin-left: auto' },
+        },
       },
       data: {
         baseNodeLabel: nodeLabel,

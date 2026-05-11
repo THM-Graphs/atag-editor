@@ -69,9 +69,9 @@ function handleSearchItemSelected(item: CollectionNode | TextNode | EntityNode) 
   setPipelineStep('finishing');
 }
 
-async function handleCancelClick(): Promise<void> {
-  cancelProcess();
-  closeModal();
+function handleGoBack(): void {
+  setNode(null);
+  setPipelineStep('choosing');
 }
 
 function closeModal(): void {
@@ -80,34 +80,40 @@ function closeModal(): void {
 </script>
 
 <template>
-  <h2 class="w-full m-0 text-center">Add {{ baseNodeLabel }} Node</h2>
-  <template v-if="currentStep === 'choosing'">
-    <NodeSearchbar :base-node-label="baseNodeLabel" @item-selected="handleSearchItemSelected" />
-  </template>
-  <template v-if="currentStep === 'editing'">
-    <h2>Edit your data here :)</h2>
-  </template>
-  <template v-if="currentStep === 'finishing'">
-    <CollectionCard
-      v-if="baseNodeLabel === 'Collection'"
-      v-model="nodeToAdd as NodeStatusObject<CollectionNode>"
-      mode="view"
-    />
-    <TextCard
-      v-if="baseNodeLabel === 'Text'"
-      v-model="nodeToAdd as NodeStatusObject<TextNode>"
-      mode="view"
-    />
-    <EntityCard
-      v-if="baseNodeLabel === 'Entity'"
-      v-model="nodeToAdd as NodeStatusObject<EntityNode>"
-      mode="view"
-    />
-    <div class="flex justify-content-center gap-2 mt-4 w-full">
-      <Button label="Add" icon="pi pi-plus" @click="handleFinishClick" />
-      <Button label="Cancel" icon="pi pi-times" severity="secondary" @click="handleCancelClick" />
-    </div>
-  </template>
+  <div class="container">
+    <template v-if="currentStep === 'choosing'">
+      <NodeSearchbar :base-node-label="baseNodeLabel" @item-selected="handleSearchItemSelected" />
+    </template>
+    <template v-if="currentStep === 'editing'">
+      <h2>Edit your data here :)</h2>
+    </template>
+    <template v-if="currentStep === 'finishing'">
+      <CollectionCard
+        v-if="baseNodeLabel === 'Collection'"
+        v-model="nodeToAdd as NodeStatusObject<CollectionNode>"
+        mode="view"
+      />
+      <TextCard
+        v-if="baseNodeLabel === 'Text'"
+        v-model="nodeToAdd as NodeStatusObject<TextNode>"
+        mode="view"
+      />
+      <EntityCard
+        v-if="baseNodeLabel === 'Entity'"
+        v-model="nodeToAdd as NodeStatusObject<EntityNode>"
+        mode="view"
+      />
+      <div class="flex justify-content-center gap-2 mt-4 w-full">
+        <Button label="Add" icon="pi pi-plus" @click="handleFinishClick" />
+        <Button
+          label="Go back"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          @click="handleGoBack"
+        />
+      </div>
+    </template>
+  </div>
 </template>
 
 <style scoped></style>

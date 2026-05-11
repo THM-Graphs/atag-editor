@@ -36,6 +36,9 @@ const emit = defineEmits<{
 const PREVIEW_CHARACTER_SIZE: number = 25;
 
 const isSearchActive = ref<boolean>(false);
+const placeHolder = computed<string>(() => {
+  return `Search ${getNodeLabelPlural(props.baseNodeLabel)}`;
+});
 
 const availableNodeLabels: string[] = toValue(getAvailableNodeLabels(props.baseNodeLabel));
 
@@ -45,6 +48,21 @@ const resultPagination = ref<PaginationData>();
 watch(searchParams, handleSearchParamsChange, {
   deep: true,
 });
+
+function getNodeLabelPlural(nodeLabel: BaseNodeLabel): string {
+  switch (nodeLabel) {
+    case 'Collection':
+      return 'Collections';
+    case 'Text':
+      return 'Texts';
+    case 'Entity':
+      return 'Entities';
+    case 'Annotation':
+      return 'Annotations';
+    default:
+      return 'Nodes';
+  }
+}
 
 function resetSearch(): void {
   resetSearchParams();
@@ -112,7 +130,7 @@ async function handleSearchParamsChange() {
 </script>
 
 <template>
-  <div class="header flex gap-1">
+  <div class="flex gap-1">
     <MultiSelect
       :modelValue="searchParams.nodeLabels"
       :options="availableNodeLabels"
@@ -121,18 +139,19 @@ async function handleSearchParamsChange() {
       :maxSelectedLabels="2"
       :selectedItemsLabel="`${searchParams.nodeLabels?.length ?? 0} labels selected`"
       title="Select node labels to filter"
-      class="flex-shrink-0"
+      class="flex-shrink-0 w-12rem"
       @update:modelValue="handleNodeLabelsChange"
     />
     <AutoComplete
       :class="isSearchActive ? 'active' : 'inactive'"
       :modelValue="searchParams.searchInput"
-      :placeholder="`Search for text`"
+      :placeholder="placeHolder"
       :suggestions="fetchedItems"
-      class="searchbar h-2rem"
+      inputClass="w-full"
+      class="searchbar h-3rem flex-grow-1"
       variant="filled"
       ref="searchbar"
-      title="Enter search term"
+      :title="placeHolder"
       @complete="handleSearchInputChange($event.query)"
       @option-select="handleResultItemSelect($event.value)"
     >
