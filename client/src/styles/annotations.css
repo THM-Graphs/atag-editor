@@ -294,7 +294,7 @@
 }
 
 .annotation-type-marker-deleted {
-  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/deletedMarker.svg');
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/deletedMarker.svg');
 }
 
 /* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */
