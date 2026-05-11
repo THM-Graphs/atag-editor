@@ -106,7 +106,7 @@ export default class StandoffConverter {
         pos: a.node.data.startIndex,
         node: {
           type: 'zeroPointAnnotation',
-          attrs: { uuid: a.node.data.uuid, annotationData: a.node },
+          attrs: { uuid: a.node.data.uuid, annotationData: a.node, type: a.node.data.type },
         },
       }));
 
@@ -114,7 +114,7 @@ export default class StandoffConverter {
       .filter(a => a.node.data.type === 'hardBreak' && inRange(a))
       .map(a => ({
         pos: a.node.data.startIndex,
-        node: { type: 'hardBreak', attrs: { uuid: a.node.data.uuid } },
+        node: { type: 'hardBreak', attrs: { uuid: a.node.data.uuid, type: a.node.data.type } },
       }));
 
     const inlineNodes = [...zeroPointEntries, ...hardBreakEntries].sort((a, b) => a.pos - b.pos);
@@ -159,7 +159,6 @@ export default class StandoffConverter {
       // Spread all annotation properties so the save path can reconstruct them from node.attrs
       attrs: {
         ...annotation.node.data,
-        annotationType: annotation.node.data.type,
       },
       content,
     };

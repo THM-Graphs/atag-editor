@@ -28,6 +28,13 @@ function propertiesToAttributes(config: AnnotationType): Record<string, Attribut
     };
   });
 
+  // TODO: Currently hardcoded, think about better solution...
+  nodeAttrs.type = {
+    isRequired: false,
+    parseHTML: (el: HTMLElement) => el.getAttribute('type'),
+    renderHTML: attrs => ({ type: attrs.type }),
+  };
+
   return nodeAttrs;
 }
 

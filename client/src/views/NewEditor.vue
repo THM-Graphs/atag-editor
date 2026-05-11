@@ -134,7 +134,13 @@ const metadataRef = ref(null);
 const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
-function isBlock(node: Node): boolean {
+/**
+ * Checks if a node is a structure element editor-wise, meaning that it is either a block element that contains text or other block elmements
+ * (div, paragraph) or a `hardBreak`.
+ *
+ * @param {Node} node - Tiptap node to be checked
+ */
+function isStructureElement(node: Node): boolean {
   if (node.type.isBlock || node.type.name === 'hardBreak') {
     return true;
   }
@@ -152,22 +158,21 @@ function logMap(heading: string, map: IndexMap) {
   });
 }
 
-function getEmtpyNodes(): Node[] {
-  const nodesWithoutText: Node[] = [];
+function getEmptyNodes(): Node[] {
+  const emptyNodes: Node[] = [];
 
   tiptap.value!.state.doc.descendants((node: Node) => {
-    if (node.isText) {
-      if (!node.text || node.text === '') {
-        nodesWithoutText.push(node);
-      }
-    } else {
-      if (node.childCount === 0) {
-        nodesWithoutText.push(node);
-      }
+    if (node.type.name === 'zeroPointAnnotation' || node.type.name === 'hardBreak') {
+      return false;
+    }
+
+    if (!node.isText && node.textContent === '') {
+      emptyNodes.push(node);
+      return false;
     }
   });
 
-  return nodesWithoutText;
+  return emptyNodes;
 }
 
 function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotation[] {
@@ -190,7 +195,7 @@ function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotati
     const hasNewStart: boolean = !initialEntry || initialEntry.node.data.startIndex !== startIndex;
     const hasNewEnd: boolean = !initialEntry || initialEntry.node.data.endIndex !== endIndex;
     const hasChangedText: boolean = !initialEntry || initialEntry.node.data.text !== textSlice;
-    const isEditedOrDeleted: boolean = ['created', 'deleted', 'edited'].includes(
+    const isEditedOrDeleted: boolean = ['created', 'deleted', 'modified'].includes(
       currentEntry.meta.status,
     );
 
@@ -229,11 +234,17 @@ function getConfiguredNodeAttrs(node: Node, type: string) {
 
   const filteredAttrs: Record<string, any> = {};
 
+  console.log(node.attrs);
+
   fields.forEach((field: PropertyConfig) => {
     if (field.name in node.attrs) {
       filteredAttrs[field.name] = node.attrs[field.name];
     }
   });
+
+  // TODO: Currently hardcoded, think about better solution
+  filteredAttrs.uuid = node.attrs.uuid;
+  filteredAttrs.type = node.attrs.type;
 
   return filteredAttrs;
 }
@@ -244,7 +255,7 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
   const nodes = new Map<string, Node>();
 
   tiptap.value?.state.doc.descendants(node => {
-    if (isBlock(node)) {
+    if (isStructureElement(node)) {
       nodes.set(node.attrs.uuid, node);
     }
   });
@@ -301,7 +312,7 @@ function findChangedStructureElements(indexMap: IndexMap, plainText: string): An
   return affectedElements;
 }
 
-function getAffectedAnnotations(): Annotation[] {
+function getAffectedAnnotations(): { annotations: Annotation[]; structureElements: Annotation[] } {
   const plainText: string = tiptap.value!.state.doc.textContent;
 
   const { decorationIndexMap, structureBlockIndexMap, zeroPointIndexMap, hardBreakIndexMap } =
@@ -324,7 +335,7 @@ function getAffectedAnnotations(): Annotation[] {
     plainText,
   );
 
-  return [...affectedStructureBlocks, ...changedAnnotations];
+  return { annotations: changedAnnotations, structureElements: affectedStructureBlocks };
 }
 
 // TODO: Annotations structure has changed, overhaul all methods inside
@@ -333,7 +344,7 @@ async function handleSaveChanges(): Promise<void> {
     return;
   }
 
-  console.log(tiptap.value.state.doc);
+  // console.log(tiptap.value.state.doc);
   // return;
 
   // tiptap.value!.state.doc.descendants((node: Node) => {
@@ -347,17 +358,30 @@ async function handleSaveChanges(): Promise<void> {
   //   return;
   // }
 
-  // const nodesWithoutChildrenOrText = getEmtpyNodes();
+  const nodesWithoutChildrenOrText = getEmptyNodes();
 
-  // if (nodesWithoutChildrenOrText.length > 0) {
-  //   console.warn('Some nodes have no text: ', nodesWithoutChildrenOrText);
+  if (nodesWithoutChildrenOrText.length > 0) {
+    console.warn('Some nodes have no text: ', nodesWithoutChildrenOrText);
 
-  //   return;
-  // }
+    addToastMessage({
+      severity: 'warn',
+      summary: 'Empty block',
+      detail:
+        'Some nodes do not contain text or children. Please delete them or add text: ' +
+        nodesWithoutChildrenOrText,
+      life: 3000,
+    });
+
+    return;
+  }
 
   // return;
 
   const affectedAnnotations = getAffectedAnnotations();
+
+  const { structureElements, annotations } = affectedAnnotations;
+
+  console.log(structureElements);
 
   // console.timeEnd('transfer to annos');
 
