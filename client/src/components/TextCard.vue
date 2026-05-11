@@ -7,6 +7,10 @@ const props = defineProps<{
   mode: 'edit' | 'view';
 }>();
 
+const emit = defineEmits<{
+  (e: 'remove-node'): void;
+}>();
+
 const node = defineModel<NodeStatusObject<TextNode>>();
 
 const PREVIEW_LENGTH: number = 100;
@@ -33,7 +37,11 @@ function handleClickContainer(event: PointerEvent): void {
 }
 
 function handleRemoveNode(): void {
-  setNodeStatus('removed');
+  if (node.value!.meta.status === 'added') {
+    emit('remove-node');
+  } else {
+    setNodeStatus('removed');
+  }
 }
 
 function setNodeStatus(status: NodeStatus): void {

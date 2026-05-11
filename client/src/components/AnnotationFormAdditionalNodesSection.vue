@@ -81,6 +81,17 @@ function addNode(node: NodeStatusObject) {
   nodes.value!.push(node);
 }
 
+/**
+ * Handles the removal of a node from the list.
+ *
+ * Called when a temporary nodes is removed (was added during the current session - does not need to be sent to the server).
+ *
+ * @param {NodeStatusObject<CollectionNode | EntityNode | TextNode>} node - The node to be removed.
+ */
+function handleRemoveNode(node: NodeStatusObject<CollectionNode | EntityNode | TextNode>): void {
+  nodes.value = nodes.value!.filter(n => n.node.data.uuid !== node.node.data.uuid);
+}
+
 const nodeOptions = ref([
   {
     label: 'Possible Nodes',
@@ -123,21 +134,25 @@ function toggleMenu(event: PointerEvent) {
       <EntityCard
         v-if="isEntityNode(node)"
         v-model="nodes![index] as NodeStatusObject<EntityNode>"
+        @remove-node="handleRemoveNode(node)"
         :mode="props.mode"
       />
       <TextCard
         v-else-if="isTextNode(node) || isTextNode(node)"
         v-model="nodes![index] as NodeStatusObject<TextNode>"
+        @remove-node="handleRemoveNode(node)"
         :mode="props.mode"
       />
       <CollectionCard
         v-else-if="isCollectionNode(node)"
         v-model="nodes![index] as NodeStatusObject<CollectionNode>"
+        @remove-node="handleRemoveNode(node)"
         :mode="props.mode"
       />
       <AnnotationCard
         v-else-if="isAnnotationNode(node)"
         v-model="nodes![index] as NodeStatusObject<AnnotationNode>"
+        @remove-node="handleRemoveNode(node)"
         :mode="props.mode"
       />
 

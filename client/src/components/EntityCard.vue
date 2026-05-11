@@ -11,12 +11,21 @@ const props = defineProps<{
   mode: 'edit' | 'view';
 }>();
 
+const emit = defineEmits<{
+  (e: 'remove-node'): void;
+}>();
+
 const node = defineModel<NodeStatusObject<EntityNode>>();
 
 const infoIcon = useTemplateRef('info-icon');
 
 function handleRemoveNode(): void {
-  setNodeStatus('removed');
+  console.log('handle remove :)');
+  if (node.value!.meta.status === 'added') {
+    emit('remove-node');
+  } else {
+    setNodeStatus('removed');
+  }
 }
 
 function setNodeStatus(status: NodeStatus): void {

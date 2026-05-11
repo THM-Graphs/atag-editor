@@ -24,7 +24,7 @@ const props = defineProps<{
   annotation: NodeStatusObject<AnnotationNode>;
 }>();
 
-const initialData = toRef<NodeStatusObject<AnnotationNode>>(props.annotation);
+const initialData = toRef<NodeStatusObject<AnnotationNode>>(cloneDeep(props.annotation));
 const workingData = ref<NodeStatusObject<AnnotationNode>>(cloneDeep(props.annotation));
 
 const confirm = useConfirm();
@@ -223,7 +223,7 @@ function updateData(): void {
       </Fieldset>
       <AnnotationFormAdditionalNodesSection
         v-if="config.hasEntities === true"
-        v-model="annotation.connectedNodes"
+        v-model="workingData.connectedNodes"
         :mode="mode"
         :annotation-config="config"
       />

@@ -32,7 +32,6 @@ function getBaseNodeLabel(labels: string[]): BaseNodeLabel {
 }
 
 function handleRemoveClick(): void {
-  console.log('clicked..');
   // Just to be sure
   if (props.mode === 'view') {
     return;
