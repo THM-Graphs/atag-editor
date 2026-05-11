@@ -40,6 +40,7 @@ export function useSearchParams(options: {
   const searchParams = ref<NodeSearchParams>({
     searchInput: '',
     nodeLabels: availableNodeLabels,
+    offset: 0,
     rowCount: DEFAULT_ROW_COUNT,
     sortDirection: 'asc' as 'asc' | 'desc',
   });
@@ -54,6 +55,7 @@ export function useSearchParams(options: {
     searchParams.value = {
       searchInput: '',
       nodeLabels: availableNodeLabels,
+      offset: 0,
       rowCount: DEFAULT_ROW_COUNT,
       sortDirection: 'asc',
     };

@@ -26,7 +26,7 @@ const { getAvailableNodeLabels } = useGuidelinesStore();
 const { api } = useAppStore();
 const { searchParams, updateSearchParams, resetSearchParams } = useSearchParams({
   scope: props.baseNodeLabel,
-  rowCount: 25,
+  rowCount: 50,
 });
 
 const emit = defineEmits<{
@@ -122,6 +122,8 @@ function replaceData(data: (CollectionNode | EntityNode | TextNode)[]) {
 
 async function handleSearchParamsChange() {
   const { data, pagination } = await fetchData();
+
+  pagination.offset = (pagination.offset ?? 0) + data.length;
 
   replaceData(data);
   setPagination(pagination);
