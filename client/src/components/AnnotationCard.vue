@@ -9,6 +9,10 @@ import { capitalize, useTemplateRef } from 'vue';
 import { filterDefaultLabels } from '../utils/helper/helper';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 
+const props = defineProps<{
+  mode: 'view';
+}>();
+
 const node = defineModel<NodeStatusObject<AnnotationNode>>();
 
 const infoIcon = useTemplateRef('info-icon');
@@ -52,10 +56,12 @@ function togglePopover(event: MouseEvent): void {
       <small class="status">{{ node!.meta.status }}</small>
 
       <Button
+        :class="props.mode === 'view' ? 'invisible' : ''"
         icon="pi pi-times"
         size="small"
         severity="danger"
         title="Remove annotation"
+        :disabled="props.mode === 'view'"
         @click="handleRemoveNode"
       ></Button>
     </div>
@@ -119,6 +125,10 @@ function togglePopover(event: MouseEvent): void {
     width: 1rem;
     height: 1rem;
     padding: 10px;
+
+    &.invisible {
+      visibility: hidden;
+    }
   }
 
   .icon-container {
