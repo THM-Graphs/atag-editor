@@ -1,7 +1,7 @@
-import { QueryResult } from 'neo4j-driver';
+import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/notFound.error.js';
-import { TextNode, TextAccessObject } from '../models/types.js';
+import { NodeSearchParams, PaginationResult, TextNode, TextAccessObject } from '../models/types.js';
 import { ancestryPaths } from '../utils/cypher.js';
 import { toNativeTypes } from '../utils/helper.js';
 
@@ -45,6 +45,68 @@ export default class TextService {
    * @throws {NotFoundError} If the text with the specified UUID is not found.
    * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
    */
+  /**
+   * Retrieves a paginated list of Text nodes whose `text` property contains the search string.
+   *
+   * @param {Required<NodeSearchParams>} options - Pagination and filter options (search, nodeLabels, order, limit, offset).
+   * @return {Promise<PaginationResult<TextNode[]>>} A promise that resolves to a paginated result of Text nodes.
+   */
+  public async search(options: Required<NodeSearchParams>): Promise<PaginationResult<TextNode[]>> {
+    const { nodeLabels, limit, order, offset, search } = options;
+
+    const baseQuery: string = `
+    MATCH (n:Text)
+    WHERE toLower(n.text) CONTAINS toLower($search)
+    AND (size($nodeLabels) = 0 OR size(apoc.coll.intersection($nodeLabels, labels(n))) > 0)
+
+    WITH n
+    ORDER BY n.text ASC
+    `;
+
+    const countQuery: string = baseQuery + `RETURN count(n) AS totalRecords`;
+
+    const dataQuery: string =
+      baseQuery +
+      `
+      SKIP $offset
+      LIMIT $limit
+
+      RETURN collect({
+        nodeLabels: labels(n),
+        data: n {.*}
+      }) as texts
+    `;
+
+    const queryParams = {
+      order,
+      search,
+      nodeLabels,
+      offset: int(offset),
+      limit: int(limit),
+    };
+
+    const [countResult, dataResult] = await Promise.all([
+      Neo4jDriver.runQuery(countQuery, queryParams),
+      Neo4jDriver.runQuery(dataQuery, queryParams),
+    ]);
+
+    const totalRecords: number = countResult.records[0]?.get('totalRecords') || 0;
+
+    const rawData: TextNode[] = dataResult.records[0]?.get('texts') || [];
+    const data: TextNode[] = rawData.map(t => toNativeTypes(t)) as TextNode[];
+
+    return {
+      data,
+      pagination: {
+        limit,
+        order,
+        search,
+        totalRecords,
+        offset,
+      },
+    };
+  }
+
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
     const query: string = `
     MATCH (t:Text {uuid: $uuid})

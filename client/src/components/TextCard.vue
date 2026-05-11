@@ -29,7 +29,7 @@ function handleClickContainer(event: PointerEvent): void {
     return;
   }
 
-  window.open(`/texts/${node.value!.node.data.uuid}`, '_blank', 'noopener noreferrer');
+  window.open(`/editor/${node.value!.node.data.uuid}`, '_blank', 'noopener noreferrer');
 }
 
 function handleRemoveNode(): void {
