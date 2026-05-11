@@ -2,7 +2,7 @@ import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
 import TextService from '../services/text.service.js';
-import { TextNode, TextAccessObject } from '../models/types.js';
+import { TextNode, TextAccessObject, TextDto } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -16,6 +16,26 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const texts: TextNode[] = await textService.getTexts(collectionUuid);
 
     res.status(200).json(texts);
+  } catch (error: unknown) {
+    next(error);
+  }
+});
+
+router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
+  const uuid: string = req.params.uuid;
+  const data: TextDto = req.body;
+
+  try {
+    const updatedTextNode: TextNode = await textService.updateText(uuid, data);
+
+    // const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
+    // const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
+    //   uuid,
+    //   'Collection',
+    //   annotationObjects as Annotation[],
+    // );
+
+    res.status(200).json(updatedTextNode);
   } catch (error: unknown) {
     next(error);
   }

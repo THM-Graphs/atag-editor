@@ -147,6 +147,18 @@ export type NodeSearchParams = {
   search?: string;
 };
 
+/** A status object for incoming API requests that should update a subgraph */
+export type NodeStatusObject<
+  T extends Node<BaseNodeData> = AnnotationNode | EntityNode | CollectionNode | TextNode,
+> = {
+  node: T;
+  connectedNodes: NodeStatusObject<T>[];
+  meta: {
+    status: NodeStatus;
+    [key: string]: unknown;
+  };
+};
+
 export type PaginationData = {
   limit: number;
   offset?: number | null;
@@ -214,6 +226,22 @@ export type StandoffJson = {
 };
 
 export type TextNode = Node<IText>;
+
+export type UpdateObject = {
+  create: Node<Record<string, any>>[];
+  update: Node<Record<string, any>>[];
+  delete: (AnnotationNode | CollectionNode | EntityNode | TextNode | Node<Record<string, any>>)[];
+  remove: { type: string; startUuid: string; endUuid: string }[];
+  attach: { type: string; startUuid: string; endUuid: string }[];
+};
+
+/**
+ * Type for updating text + annotations.
+ */
+export type TextDto = {
+  text: NodeStatusObject<TextNode>;
+  annotations: NodeStatusObject[];
+};
 
 export type TextAccessObject = {
   collection: CollectionNode | null;

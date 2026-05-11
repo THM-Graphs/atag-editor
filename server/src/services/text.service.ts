@@ -1,11 +1,30 @@
 import { int, QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/notFound.error.js';
-import { NodeSearchParams, PaginationResult, TextNode, TextAccessObject } from '../models/types.js';
+import {
+  NodeSearchParams,
+  NodeStatusObject,
+  PaginationResult,
+  TextNode,
+  TextAccessObject,
+  TextDto,
+  UpdateObject,
+  PropertyConfig,
+  Node,
+  EntityNode,
+  AnnotationNode,
+  CollectionNode,
+} from '../models/types.js';
 import { ancestryPaths } from '../utils/cypher.js';
-import { toNativeTypes } from '../utils/helper.js';
+import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
+import { inferRelationship } from '../utils/ramen.js';
+import GuidelinesService from './guidelines.service.js';
+import { IGuidelines } from '../models/IGuidelines.js';
+import { IAnnotation } from '../models/IAnnotation.js';
 
 export default class TextService {
+  private guidelines: IGuidelines | null = null;
+
   public async getTexts(collectionUuid: string): Promise<TextNode[]> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
@@ -118,13 +137,13 @@ export default class TextService {
 
     RETURN {
         text: {
-            nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+            nodeLabels: labels(t),
             data: t {.*}
         },
         collection: CASE 
                         WHEN c IS NULL THEN null 
                         ELSE {
-                            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+                            nodeLabels: labels(c),
                             data: c {.*}
                         }
                     END,
@@ -142,5 +161,174 @@ export default class TextService {
     const text: TextAccessObject = toNativeTypes(rawText) as TextAccessObject;
 
     return text;
+  }
+
+  public async updateText(uuid: string, data: TextDto): Promise<TextNode> {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    this.guidelines = await guidelineService.getGuidelines();
+
+    const obj: UpdateObject = this.flattenNodeTree(data);
+
+    const query: string = `
+    // Delete nodes and their relationships
+    CALL () {
+        UNWIND $delete AS nodeToDelete
+
+        MATCH (n {uuid: nodeToDelete.data.uuid})
+
+        DETACH DELETE n
+    }
+
+    // Create new nodes with dynamic labels
+    CALL () {
+        UNWIND $create AS nodeToCreate
+
+        CREATE (n)
+        SET n = nodeToCreate.data
+        WITH n, nodeToCreate
+        CALL apoc.create.addLabels(n, nodeToCreate.nodeLabels) YIELD node
+
+        RETURN count(node) AS created
+    }
+
+    // Update properties and labels of existing nodes
+    CALL () {
+        UNWIND $update AS nodeToUpdate
+
+        MATCH (n {uuid: nodeToUpdate.data.uuid})
+        SET n = nodeToUpdate.data
+        WITH n, nodeToUpdate, labels(n) AS currentLabels
+        CALL apoc.create.removeLabels(n, currentLabels) YIELD node
+        CALL apoc.create.addLabels(node, nodeToUpdate.nodeLabels) YIELD node AS updatedNode
+        RETURN count(updatedNode) AS updated
+    }
+
+    // Remove relationships
+    CALL () {
+        UNWIND $remove AS edge
+
+        MATCH (start {uuid: edge.startUuid})-[r]->(end {uuid: edge.endUuid})
+        WHERE type(r) = edge.type
+
+        DELETE r
+    }
+
+    // Create relationships with dynamic type
+    CALL () {
+        UNWIND $attach AS edge
+
+        MATCH (start {uuid: edge.startUuid})
+        MATCH (end {uuid: edge.endUuid})
+        CALL apoc.merge.relationship(start, edge.type, {}, {}, end) YIELD rel
+
+        RETURN count(rel) AS attached
+    }
+
+    // Finally, match text node and return it
+    MATCH (t:Text {uuid: $uuid})
+
+    RETURN {
+        nodeLabels: labels(t),
+        data: t {.*}
+    } AS text
+    `;
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      uuid,
+      delete: obj.delete,
+      create: obj.create,
+      update: obj.update,
+      remove: obj.remove,
+      attach: obj.attach,
+    });
+
+    const updatedText: TextNode = result.records[0]?.get('text');
+
+    if (!updatedText) {
+      throw new NotFoundError(`Text with UUID ${uuid} not found`);
+    }
+
+    return toNativeTypes(updatedText) as TextNode;
+  }
+
+  private convertNodeToNeo4jFormat(
+    node: EntityNode | AnnotationNode | CollectionNode | TextNode,
+  ): Node<Record<string, any>> {
+    const guidelineService = new GuidelinesService();
+    const fields: PropertyConfig[] = [];
+
+    // Text nodes currently only hold string properties -> no problem.
+    // Entity nodes do not have a configuration, but should not be edited from the editor anyway
+    if (node.nodeLabels.includes('Text') || node.nodeLabels.includes('Entity')) {
+      return node;
+    } else if (node.nodeLabels.includes('Collection')) {
+      const collectionConfigFields: PropertyConfig[] =
+        guidelineService.getCollectionConfigFieldsFromGuidelines(this.guidelines!, node.nodeLabels);
+
+      fields.push(...collectionConfigFields);
+    } else if (node.nodeLabels.includes('Annotation')) {
+      const annotationConfigFields: PropertyConfig[] =
+        guidelineService.getAnnotationConfigFieldsFromGuidelines(
+          this.guidelines!,
+          (node.data as IAnnotation).type,
+        );
+
+      fields.push(...annotationConfigFields);
+    } else {
+      return node;
+    }
+
+    const convertedNode: Node<Record<string, any>> = {
+      nodeLabels: node.nodeLabels,
+      data: toNeo4jTypes(node.data, fields),
+    };
+
+    return convertedNode;
+  }
+
+  private insertNodeIntoObject(
+    parent: NodeStatusObject | null,
+    node: NodeStatusObject,
+    obj: UpdateObject,
+  ): UpdateObject {
+    node.connectedNodes.forEach(child => this.insertNodeIntoObject(node, child, obj));
+
+    if (node.meta.status === 'deleted') {
+      obj.delete.push(node.node);
+    }
+
+    if (node.meta.status === 'created') {
+      obj.create.push(this.convertNodeToNeo4jFormat(node.node));
+    }
+
+    if (node.meta.status === 'modified') {
+      obj.update.push(this.convertNodeToNeo4jFormat(node.node));
+    }
+
+    // Added/created with existing parent
+    if (parent && (node.meta.status === 'created' || node.meta.status === 'added')) {
+      obj.attach.push(inferRelationship(parent.node, node.node));
+    }
+
+    // Removed, but parent was deleted anyway
+    if (parent && node.meta.status === 'removed' && parent.meta.status !== 'deleted') {
+      obj.remove.push(inferRelationship(parent.node, node.node));
+    }
+
+    return obj;
+  }
+
+  private flattenNodeTree(textDto: TextDto): UpdateObject {
+    const obj: UpdateObject = {
+      create: [],
+      delete: [],
+      update: [],
+      remove: [],
+      attach: [],
+    };
+
+    this.insertNodeIntoObject(null, { ...textDto.text, connectedNodes: textDto.annotations }, obj);
+
+    return obj;
   }
 }
