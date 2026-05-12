@@ -35,7 +35,6 @@ import {
   TextUpdateDto,
   NodeStatus,
 } from '../models/types';
-import { logSetDiffs } from '../utils/helper/logHelper';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -61,6 +60,8 @@ const {
   tiptap,
   initializeTiptap,
   destroyTiptap,
+  resetToInitialState,
+  setNewInitialState,
   annotations,
   initialStructuralAnnotations,
   initialAnnotations,
@@ -159,7 +160,7 @@ function cleanUpAfterSave(
   cleanUpAnnotations(updatedAnnotations.annotations);
   cleanUpStructureElements(updatedAnnotations.structureElements);
 
-  // TODO: Reset history
+  setNewInitialState();
 }
 
 function cleanUpAnnotations(updatedAnnotations: NodeStatusObject[]): void {
@@ -588,52 +589,9 @@ function traverseNodeTreeAndSetToCreated(node: NodeStatusObject) {
 }
 
 async function handleCancelChanges(): Promise<void> {
-  // text.value = cloneDeep(initialText.value);
-  // snippetCharacters.value = cloneDeep(initialSnippetCharacters.value);
-  // snippetAnnotations.value = cloneDeep(initialSnippetAnnotations.value);
-  // // TODO: Combine this with extractSnippetAnnotations.
-  // updateTruncationStatus();
-  // totalCharacters.value[beforeStartIndex.value] = cloneDeep(initialBeforeStartCharacter.value);
-  // totalCharacters.value[afterEndIndex.value] = cloneDeep(initialAfterEndCharacter.value);
-  // initializeHistory();
-}
+  text.value = cloneDeep(initialText.value);
 
-async function saveCharacters(): Promise<void> {
-  // // This can be done within the snippet since changes in the chain can only occur here
-  // const { uuidStart, uuidEnd } = findChangesetBoundaries();
-  // // Insert the snippet into the whole chain to simplify index finding -> only one chain to consider
-  // // TODO: This might take a while on longer texts...fix?
-  // insertSnippetIntoChain();
-  // const startNodeIndex = uuidStart
-  //   ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidStart)
-  //   : -1;
-  // let endNodeIndex = uuidEnd
-  //   ? totalCharacters.value.findIndex((c: Character) => c.data.uuid === uuidEnd)
-  //   : totalCharacters.value.length;
-  // if (endNodeIndex === -1) {
-  //   endNodeIndex = totalCharacters.value.length;
-  // }
-  // const sliceStart: number = startNodeIndex + 1;
-  // const sliceEnd: number = endNodeIndex;
-  // const snippetToUpdate: Character[] = totalCharacters.value.slice(sliceStart, sliceEnd);
-  // // TODO: textUuid is not really needed since it is parsed from the url parameter
-  // const characterPostData: CharacterPostData = {
-  //   textUuid: text.value.data.uuid,
-  //   uuidStart: uuidStart,
-  //   uuidEnd: uuidEnd,
-  //   characters: snippetToUpdate.map((c: Character) => c.data),
-  //   text: totalCharacters.value.map(c => c.data.text).join(''),
-  // };
-  // await api.updateCharacterChain(textUuid.value, characterPostData);
-}
-
-async function saveAnnotations(): Promise<void> {
-  // // Insert into total map since next operations are executed on the total map
-  // insertSnippetIntoTotalAnnotations();
-  // updateAnnotationsBeforeSave();
-  // // Reduce amount of data that need to sent to the backend
-  // const annotationsToSave: Annotation[] = getAnnotationsToSave();
-  // await api.updateAnnotations(textUuid.value, annotationsToSave);
+  resetToInitialState();
 }
 
 function toggleSidebar(position: 'left' | 'right', wasCollapsed: boolean): void {

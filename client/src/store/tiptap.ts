@@ -1,5 +1,5 @@
 import { ref, shallowRef, watch } from 'vue';
-import { NodeDto, ApiJson, Annotation } from '../models/types';
+import { NodeDto, ApiJson, Annotation, NodeStatusObject, AnnotationNode } from '../models/types';
 import { Editor } from '@tiptap/vue-3';
 import Heading from '@tiptap/extension-heading';
 import Document from '@tiptap/extension-document';
@@ -28,6 +28,7 @@ import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
 import { useEventListener } from '@vueuse/core';
 import { AnnotationAttributes } from '../services/AnnotationAttributes';
+import { history } from 'prosemirror-history';
 
 const { selectedOptions } = useFilterStore();
 
@@ -38,6 +39,7 @@ const annotations = ref<Map<string, Annotation>>();
 
 const initialStructuralAnnotations = ref<Map<string, Annotation>>();
 const initialAnnotations = ref<Map<string, Annotation>>();
+let initialDoc: ReturnType<Editor['getJSON']> | null = null;
 
 const toCItems = ref<TableOfContentData>([]);
 
@@ -91,16 +93,31 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
     onCreate: ({ editor }) => {
-      const { from, to } = getVisibleDocRange(tiptap.value!.view);
+      // Needs to be initialized after creation since full text is needed to calculate visible range
+      initializeDecorationView(annotations);
 
-      editor.commands.initializeDecorations(annotations, selectedOptions.value, from, to);
+      // This is done in the hook since it has more context than just the raw JSON from the converter.
+      // TODO: Might be worth to refactor later, keep in mind
+      initialDoc = editor.getJSON();
 
-      const scrollContainer: HTMLElement | null = editor.view.dom.parentElement;
-
-      // TODO: Should this maybe moved directly to the plugin?
-      useEventListener(scrollContainer, 'scroll', handleScroll);
+      initializeEventListeners();
     },
   });
+}
+
+function initializeEventListeners(): void {
+  const scrollContainer: HTMLElement | null | undefined = tiptap.value?.view.dom.parentElement;
+
+  // TODO: Should this maybe moved directly to the plugin?
+  useEventListener(scrollContainer, 'scroll', handleScroll);
+}
+
+function initializeDecorationView(
+  annotations: Map<string, NodeStatusObject<AnnotationNode>>,
+): void {
+  const { from, to } = getVisibleDocRange(tiptap.value!.view);
+
+  tiptap.value?.commands.initializeDecorations(annotations, selectedOptions.value, from, to);
 }
 
 // TODO: Shouldn't this be in the filter? Circular depenency though :/ fix on architecure rewrite
@@ -112,6 +129,45 @@ watch(selectedOptions, newVal => {
 
   tiptap.value.commands.applyFilterUpdates(newVal);
 });
+
+function resetToInitialState(): void {
+  if (!tiptap.value || !initialDoc) {
+    return;
+  }
+
+  // Reset annotation maps
+  annotations.value = cloneDeep(initialAnnotations.value);
+  structuralAnnotations.value = cloneDeep(initialStructuralAnnotations.value);
+
+  // setContent goes through TipTap's dispatchTransaction, keeping internal state in sync.
+  // false = suppress the intermediate 'update' event; initializeDecorations below will emit one.
+  tiptap.value.commands.setContent(initialDoc, { emitUpdate: false });
+
+  initializeDecorationView(annotations.value!);
+
+  resetHistory();
+}
+
+function setNewInitialDocState() {
+  // Annotations and structural annotations are already reset in the editor's cleanup function
+  const json = tiptap.value!.getJSON();
+
+  initialDoc = json;
+}
+
+/**
+ * Reset editor history by unregistering and registering the history plugin. This was the easiest option since
+ * recreating editor state/instance is too expensive and directly accessing the history state is neither type-safe
+ * nor reliable. Might be updated in the future.
+ *
+ * Called when the editor is reset to initial state.
+ *
+ * @returns {void} This function does not return any value.
+ */
+function resetHistory(): void {
+  tiptap.value?.unregisterPlugin('history');
+  tiptap.value?.registerPlugin(history());
+}
 
 function destroyTiptap(): void {
   tiptap.value?.destroy();
@@ -138,6 +194,8 @@ export function useTiptapStore() {
     toCItems,
     destroyTiptap,
     initializeTiptap,
+    resetToInitialState,
     setAnnotations,
+    setNewInitialState: setNewInitialDocState,
   };
 }
