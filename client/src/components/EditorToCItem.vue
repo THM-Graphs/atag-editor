@@ -24,7 +24,7 @@ function handleItemClick(event: MouseEvent) {
     :style="{ '--level': item.level }"
   >
     <a :href="'#' + item.id" @click.prevent="handleItemClick" :data-item-index="item.itemIndex">
-      {{ item.node.type.name }} ({{ item.node.attrs.uuid }})
+      {{ item.node.type.name }} ({{ item.node.textContent.slice(0, 50) }})
     </a>
   </div>
 </template>

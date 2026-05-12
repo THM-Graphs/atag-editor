@@ -17,6 +17,7 @@ function handleItemClick(uuid: string) {
       return;
     }
 
+    // TODO: This can be smoother and more reliable -> Fix later
     const pos: number = tiptap.value.view.posAtDOM(element, 0);
 
     // set focus
@@ -27,7 +28,7 @@ function handleItemClick(uuid: string) {
     tiptap.value.view.dispatch(tr);
     tiptap.value.view.focus();
 
-    window.scrollTo({
+    tiptap.value!.view.dom.parentElement!.scrollTo({
       top: element.getBoundingClientRect().top + window.scrollY,
       behavior: 'smooth',
     });
@@ -76,5 +77,48 @@ function handleItemClick(uuid: string) {
 <style scoped>
 .toc-container {
   outline: 1px solid var(--p-primary-color);
+}
+
+.table-of-contents {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+  gap: 0.25rem;
+  overflow: auto;
+  text-decoration: none;
+
+  > div {
+    border-radius: 0.25rem;
+    padding-left: calc(0.875rem * (var(--level) - 1));
+    transition: all 0.2s cubic-bezier(0.65, 0.05, 0.36, 1);
+
+    &:hover {
+      background-color: var(--gray-2);
+    }
+  }
+
+  .empty-state {
+    color: var(--gray-5);
+    user-select: none;
+  }
+
+  .is-active a {
+    color: var(--purple);
+  }
+
+  .is-scrolled-over a {
+    color: var(--gray-5);
+  }
+
+  :deep(a) {
+    color: var(--black);
+    display: flex;
+    gap: 0.25rem;
+    text-decoration: none;
+
+    &::before {
+      content: attr(data-item-index) '.';
+    }
+  }
 }
 </style>

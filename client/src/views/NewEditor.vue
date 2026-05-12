@@ -850,70 +850,32 @@ watch(
       <EditorAnnotationButtonPaneNew />
       <div class="button-group text-center">
         <button
-          @click="
-            tiptap?.chain().focus().toggleHeading({ level: 1, annotationType: 'knecht' }).run()
-          "
+          @click="tiptap?.chain().focus().toggleHeading({ level: 1, type: 'heading' }).run()"
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
         >
           H1
         </button>
         <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
+          @click="tiptap?.chain().focus().toggleHeading({ level: 2, type: 'heading' }).run()"
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
         >
           H2
         </button>
         <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
+          @click="tiptap?.chain().focus().toggleHeading({ level: 3, type: 'heading' }).run()"
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
         >
           H3
         </button>
         <button
-          @click="tiptap?.chain().focus().setNode('paragraph').run()"
+          @click="tiptap?.chain().focus().setNode('paragraph', { type: 'paragraph' }).run()"
           :class="{ 'is-active': tiptap?.isActive('paragraph') }"
         >
           Paragraph
         </button>
-        <button
-          @click="tiptap?.chain().focus().toggleBold().run()"
-          :class="{ 'is-active': tiptap?.isActive('bold') }"
-        >
-          Bold
-        </button>
-        <button @click="tiptap?.chain().focus().insertTable().run()">⋮⋮⋮ Table</button>
-
-        <button
-          @click="tiptap?.chain().focus().toggleBulletList().run()"
-          :class="{ 'is-active': tiptap?.isActive('bulletList') }"
-        >
-          Toggle bullet list
-        </button>
-        <button
-          @click="
-            tiptap
-              ?.chain()
-              .focus()
-              .addZeroPointAnnotation({
-                nodeLabels: [],
-                data: {
-                  type: 'deleted',
-                  subType: '',
-                  isZeroPoint: true,
-                  uuid: '123',
-                  startIndex: 0,
-                  endIndex: 0,
-                  text: '',
-                },
-              })
-              .run()
-          "
-          :class="{ 'is-active': tiptap?.isActive('zeroPointAnnotation') }"
-        >
-          Zero point test
-        </button>
       </div>
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
+
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
     </section>
     <EditorResizer
