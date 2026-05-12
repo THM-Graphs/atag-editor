@@ -47,6 +47,7 @@ import { cloneDeep } from '../utils/helper/helper';
 import { useCreateIndexMaps } from '../composables/useCreateIndexMaps';
 import { useGuidelinesStore } from '../store/guidelines';
 import { IAnnotation } from '../models/IAnnotation';
+import EditorToC from '../components/EditorToC.vue';
 
 interface SidebarConfig {
   isCollapsed: boolean;
@@ -135,7 +136,7 @@ const mainWidth: ComputedRef<number> = computed(() => {
 
 const sidebars = ref<Record<string, SidebarConfig>>({
   left: {
-    isCollapsed: true,
+    isCollapsed: false,
     resizerActive: false,
     width: 350,
   },
@@ -831,7 +832,7 @@ watch(
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
     >
-      <EditorMetadata ref="metadataRef" />
+      <EditorToC />
       <EditorAnnotations />
     </EditorSidebar>
     <EditorResizer

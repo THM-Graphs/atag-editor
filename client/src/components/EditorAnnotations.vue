@@ -1,66 +1,38 @@
 <script setup lang="ts">
 import { computed, ComputedRef, ref, watch } from 'vue';
-import { useAnnotationStore } from '../store/annotations';
-import { useCharactersStore } from '../store/characters';
-import { useEditorStore } from '../store/editor';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize, toggleTextHightlighting } from '../utils/helper/helper';
-import { AnnotationOld, AnnotationType, Character } from '../models/types';
+import { AnnotationType, NodeStatusObject, AnnotationNode } from '../models/types';
 import Button from 'primevue/button';
-import ButtonGroup from 'primevue/buttongroup';
 import Panel from 'primevue/panel';
-import ToggleButton from 'primevue/togglebutton';
 import Tree from 'primevue/tree';
 import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
-import TruncatedBadge from './TruncatedBadge.vue';
+import { useTiptapStore } from '../store/tiptap';
 
 export interface TreeNode {
   annotationCount?: number;
   children?: TreeNode[];
-  data?: AnnotationOld;
+  data?: NodeStatusObject;
   key: string;
   label: string;
   type: 'category' | 'type' | 'annotation';
 }
 
-const { placeCaret, setNewRangeAnchorUuid } = useEditorStore();
-const { snippetCharacters, beforeStartIndex, afterEndIndex } = useCharactersStore();
-const { snippetAnnotations, totalAnnotations } = useAnnotationStore();
 const { groupedAndSortedAnnotationTypes } = useGuidelinesStore();
+const { annotations } = useTiptapStore();
 
-const displayedAnnotations = ref<AnnotationOld[]>([]);
-
-const selectedView = ref<'current' | 'all'>('current');
-const isCurrentSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'current');
-const isAllSelected: ComputedRef<boolean> = computed(() => selectedView.value === 'all');
+const displayedAnnotations = ref<NodeStatusObject<AnnotationNode>[]>([]);
 
 const expandedKeys = ref<Record<string, boolean>>({});
 
 watch(
-  [afterEndIndex, beforeStartIndex, snippetAnnotations, selectedView],
+  () => annotations.value?.size,
   () => {
-    if (selectedView.value === 'current') {
-      displayedAnnotations.value = snippetAnnotations.value.filter(
-        (a: AnnotationOld) => a.status !== 'deleted',
-      );
-    } else {
-      // Combine snippetAnnotations and totalAnnotations without overriding
-      const combined: Map<string, AnnotationOld> = new Map(
-        snippetAnnotations.value.map(a => [a.data.properties.uuid, a]),
-      );
-
-      totalAnnotations.value.forEach((annotation: AnnotationOld) => {
-        const uuid: string = annotation.data.properties.uuid;
-
-        if (!combined.has(uuid)) {
-          combined.set(uuid, annotation);
-        }
-      });
-
-      displayedAnnotations.value = [...combined.values()].filter(a => a.status !== 'deleted');
-    }
+    displayedAnnotations.value = [...annotations.value!.values()].filter(
+      (a: NodeStatusObject) => a.meta.status !== 'deleted',
+    );
   },
-  { deep: true, immediate: true },
+  { deep: false, immediate: true },
 );
 
 const nodes: ComputedRef<TreeNode[]> = computed(() => {
@@ -84,14 +56,14 @@ const nodes: ComputedRef<TreeNode[]> = computed(() => {
           children: [],
         };
 
-        const annos: AnnotationOld[] = displayedAnnotations.value.filter(
-          a => a.data.properties.type === annoType.type,
+        const annos: NodeStatusObject[] = displayedAnnotations.value.filter(
+          a => a.node.data.type === annoType.type,
         );
 
-        annos.forEach((anno: AnnotationOld, k: number) => {
+        annos.forEach((anno: NodeStatusObject, k: number) => {
           const newAnnotation: TreeNode = {
             key: i.toString() + '-' + j.toString() + '-' + k.toString(),
-            label: anno.data.properties.text,
+            label: anno.node.data.text,
             type: 'annotation',
             data: anno,
           };
@@ -148,17 +120,6 @@ function handleAnnotationClick(event: MouseEvent): void {
   if (!annotationUuid) {
     return;
   }
-
-  const lastAnnotatedChar: Character | undefined = snippetCharacters.value.findLast(c =>
-    c.annotations.some(a => a.uuid === annotationUuid),
-  );
-
-  if (!lastAnnotatedChar) {
-    return;
-  }
-
-  setNewRangeAnchorUuid(lastAnnotatedChar.data.uuid);
-  placeCaret();
 }
 
 function toggleViewMode(direction: 'current' | 'all'): void {
@@ -183,28 +144,6 @@ function toggleViewMode(direction: 'current' | 'all'): void {
     <template #toggleicon="{ collapsed }">
       <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
     </template>
-    <div class="tab-buttons">
-      <ButtonGroup class="w-full flex">
-        <ToggleButton
-          :model-value="isCurrentSelected"
-          class="w-full"
-          onLabel="Current"
-          offLabel="Current"
-          title="Show only annotations in current snippet"
-          badge="2"
-          @change="toggleViewMode('current')"
-        />
-        <ToggleButton
-          :model-value="isAllSelected"
-          class="w-full"
-          onLabel="All"
-          offLabel="All"
-          title="Show all annotations of text"
-          badge="2"
-          @change="toggleViewMode('all')"
-        />
-      </ButtonGroup>
-    </div>
     <div class="collapse-buttons">
       <Button
         type="button"
@@ -235,7 +174,7 @@ function toggleViewMode(direction: 'current' | 'all'): void {
           <template #default="slotProps">
             <div v-if="slotProps.node.type === 'category'">
               <div class="name-container ml-2 font-bold">
-                {{ capitalize(slotProps.node.label) }} [{{ slotProps.node.annotationCount }}]
+                {{ capitalize(slotProps.node.label!) }} [{{ slotProps.node.annotationCount }}]
               </div>
             </div>
             <div v-else-if="slotProps.node.type === 'type'" class="flex align-items-center">
@@ -255,11 +194,9 @@ function toggleViewMode(direction: 'current' | 'all'): void {
             >
               <div
                 class="ml-2 anno-entry preview"
-                :data-annotation-uuid="slotProps.node.data.data.properties.uuid"
+                :data-annotation-uuid="slotProps.node.data.node.data.uuid"
               >
-                <!-- TODO: Fix overflow -->
-                <TruncatedBadge v-if="slotProps.node.data.isTruncated" :icon="true" :text="false" />
-                {{ slotProps.node.label }}
+                {{ slotProps.node.data.node.data.text }}
               </div>
             </div>
           </template>

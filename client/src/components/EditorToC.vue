@@ -2,6 +2,7 @@
 import { useTiptapStore } from '../store/tiptap';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
 import EditorToCItem from './EditorToCItem.vue';
+import { Panel } from 'primevue';
 
 const { tiptap, toCItems } = useTiptapStore();
 
@@ -35,8 +36,22 @@ function handleItemClick(uuid: string) {
 </script>
 
 <template>
-  <div class="container">
-    <div class="label-large">Table of contents</div>
+  <Panel
+    class="toc-container mb-3"
+    toggleable
+    :toggle-button-props="{
+      severity: 'secondary',
+      title: 'Toggle full view',
+      rounded: true,
+      text: true,
+    }"
+  >
+    <template #header>
+      <div class="header font-bold">Table of Contents</div>
+    </template>
+    <template #toggleicon="{ collapsed }">
+      <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
+    </template>
     <div class="table-of-contents">
       <template v-if="tiptap">
         <template v-if="toCItems.length === 0">
@@ -55,7 +70,11 @@ function handleItemClick(uuid: string) {
         </template>
       </template>
     </div>
-  </div>
+  </Panel>
 </template>
 
-<style scoped></style>
+<style scoped>
+.toc-container {
+  outline: 1px solid var(--p-primary-color);
+}
+</style>
