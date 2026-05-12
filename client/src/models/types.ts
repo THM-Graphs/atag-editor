@@ -321,6 +321,14 @@ export type TextAccessObject = {
   text: TextNode;
 };
 
+/**
+ * Type for updating text + annotations.
+ */
+export type TextUpdateDto = {
+  text: NodeStatusObject<TextNode>;
+  annotations: Annotation[];
+};
+
 export type TextOperationResult = {
   leftBoundary?: string | null;
   rightBoundary?: string | null;

@@ -238,7 +238,7 @@ export type UpdateObject = {
 /**
  * Type for updating text + annotations.
  */
-export type TextDto = {
+export type TextUpdateDto = {
   text: NodeStatusObject<TextNode>;
   annotations: NodeStatusObject[];
 };

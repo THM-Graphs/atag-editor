@@ -7,7 +7,7 @@ import {
   PaginationResult,
   TextNode,
   TextAccessObject,
-  TextDto,
+  TextUpdateDto,
   UpdateObject,
   PropertyConfig,
   Node,
@@ -163,7 +163,7 @@ export default class TextService {
     return text;
   }
 
-  public async updateText(uuid: string, data: TextDto): Promise<TextNode> {
+  public async updateText(uuid: string, data: TextUpdateDto): Promise<TextNode> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     this.guidelines = await guidelineService.getGuidelines();
 
@@ -318,7 +318,7 @@ export default class TextService {
     return obj;
   }
 
-  private flattenNodeTree(textDto: TextDto): UpdateObject {
+  private flattenNodeTree(textDto: TextUpdateDto): UpdateObject {
     const obj: UpdateObject = {
       create: [],
       delete: [],

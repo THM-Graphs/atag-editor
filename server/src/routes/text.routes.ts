@@ -2,7 +2,7 @@ import express, { Request, Response, Router, NextFunction } from 'express';
 import characterRoutes from './characters.routes.js';
 import annotationRoutes from './annotations.routes.js';
 import TextService from '../services/text.service.js';
-import { TextNode, TextAccessObject, TextDto } from '../models/types.js';
+import { TextNode, TextAccessObject, TextUpdateDto } from '../models/types.js';
 
 const router: Router = express.Router({ mergeParams: true });
 
@@ -23,7 +23,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
-  const data: TextDto = req.body;
+  const data: TextUpdateDto = req.body;
 
   try {
     const updatedTextNode: TextNode = await textService.updateText(uuid, data);
