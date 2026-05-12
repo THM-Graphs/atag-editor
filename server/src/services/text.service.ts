@@ -14,6 +14,7 @@ import {
   EntityNode,
   AnnotationNode,
   CollectionNode,
+  NodeDto,
 } from '../models/types.js';
 import { ancestryPaths } from '../utils/cypher.js';
 import { toNativeTypes, toNeo4jTypes } from '../utils/helper.js';
@@ -25,7 +26,7 @@ import { IAnnotation } from '../models/IAnnotation.js';
 export default class TextService {
   private guidelines: IGuidelines | null = null;
 
-  public async getTexts(collectionUuid: string): Promise<TextNode[]> {
+  public async getTexts(collectionUuid: string): Promise<NodeDto<TextNode>[]> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
@@ -47,8 +48,12 @@ export default class TextService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuid: collectionUuid });
+    const rawTexts: TextNode[] = result.records[0]?.get('texts') || [];
 
-    return result.records[0]?.get('texts');
+    return rawTexts.map(text => ({
+      node: text,
+      connectedNodes: [],
+    }));
   }
 
   /**

@@ -28,8 +28,10 @@ export interface AnnotationData {
 }
 
 /** A node object for retrieving data */
-export type NodeDto = {
-  node: AnnotationNode | CollectionNode | EntityNode | TextNode;
+export type NodeDto<
+  T extends Node<BaseNodeData> = AnnotationNode | EntityNode | CollectionNode | TextNode,
+> = {
+  node: T;
   connectedNodes: NodeDto[];
 };
 

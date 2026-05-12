@@ -12,6 +12,7 @@ import {
   CollectionPostData,
   NodeAncestry,
   PaginationResult,
+  NodeDto,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
 
@@ -60,7 +61,7 @@ router.get('/:uuid', async (req: Request, res: Response, next: NextFunction) => 
   const uuid: string = req.params.uuid;
 
   try {
-    const collection: CollectionNode = await collectionService.getCollection(uuid);
+    const collection: NodeDto<CollectionNode> = await collectionService.getCollection(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {

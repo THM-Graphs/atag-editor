@@ -4,6 +4,9 @@ import {
   CollectionAccessObject,
   CollectionStatusObject,
   Level,
+  NodeDto,
+  NodeStatusObject,
+  CollectionAccessStatusObject,
 } from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
@@ -12,7 +15,7 @@ const { api } = useAppStore();
 
 const levels = ref<Level[]>([]);
 
-const activeCollection = ref<CollectionAccessObject | null>(null);
+const activeCollection = ref<CollectionAccessStatusObject | null>(null);
 const pathToActiveCollection = ref<CollectionNode[]>([]);
 
 const previousPaths = useRefHistory(pathToActiveCollection, {
@@ -157,7 +160,7 @@ export function useCollectionManagerStore() {
    * @param {CollectionAccessObject} cao - The collection to set as active.
    * @returns {void} This function does not return a value.
    */
-  function setCollectionActive(cao: CollectionAccessObject): void {
+  function setCollectionActive(cao: CollectionAccessStatusObject | null): void {
     activeCollection.value = cao;
   }
 
@@ -204,11 +207,28 @@ export function useCollectionManagerStore() {
       return;
     }
 
-    const cao: CollectionAccessObject = await fetchCollectionDetails(
+    const rawCao: CollectionAccessObject = await fetchCollectionDetails(
       newPath[newPath.length - 1].data.uuid,
     );
 
+    const cao: CollectionAccessStatusObject = {
+      collection: createNodeStatusObjectFromRawData(rawCao.collection),
+      texts: rawCao.texts.map(t => createNodeStatusObjectFromRawData(t)),
+      annotations: rawCao.annotations.map(a => createNodeStatusObjectFromRawData(a)),
+    };
+
     setCollectionActive(cao);
+  }
+
+  function createNodeStatusObjectFromRawData(rawNode: NodeDto): NodeStatusObject {
+    // console.log(rawNode);
+    return {
+      node: rawNode.node,
+      connectedNodes: rawNode.connectedNodes.map(n => createNodeStatusObjectFromRawData(n)),
+      meta: {
+        status: 'unchanged',
+      },
+    };
   }
 
   /**

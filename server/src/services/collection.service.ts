@@ -18,6 +18,7 @@ import {
   CollectionCreationData,
   CursorData,
   NodeSearchParams,
+  NodeDto,
 } from '../models/types.js';
 import ICharacter from '../models/ICharacter.js';
 import ValidationError from '../errors/validation.error.js';
@@ -167,9 +168,9 @@ export default class CollectionService {
    *
    * @param {string} uuid - The UUID of the collection node to retrieve.
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
-   * @return {Promise<CollectionNode>} A promise that resolves to the retrieved collection.
+   * @return {Promise<NodeDto<CollectionNode>>} A promise that resolves to the retrieved collection.
    */
-  public async getCollection(uuid: string): Promise<CollectionNode> {
+  public async getCollection(uuid: string): Promise<NodeDto<CollectionNode>> {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
@@ -186,7 +187,10 @@ export default class CollectionService {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    const collection: CollectionNode = toNativeTypes(rawCollection) as CollectionNode;
+    const collection: NodeDto<CollectionNode> = {
+      node: toNativeTypes(rawCollection) as CollectionNode,
+      connectedNodes: [],
+    };
 
     return collection;
   }

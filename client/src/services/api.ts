@@ -18,6 +18,7 @@ import {
   TextAccessObject,
   BaseNodeLabel,
   TextUpdateDto,
+  AnnotationNode,
 } from '../models/types';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
@@ -141,7 +142,7 @@ export default class ApiService {
   public async getAnnotations(
     nodeType: 'collection' | 'text',
     nodeUuid: string,
-  ): Promise<NodeDto[]> {
+  ): Promise<NodeDto<AnnotationNode>[]> {
     try {
       const url: string = `${this.baseUrl}/${nodeType}s/${nodeUuid}/annotations`;
 
@@ -169,7 +170,7 @@ export default class ApiService {
     }
   }
 
-  public async getCollection(collectionUuid: string): Promise<CollectionNode> {
+  public async getCollection(collectionUuid: string): Promise<NodeDto<CollectionNode>> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}`;
 
@@ -329,7 +330,7 @@ export default class ApiService {
     }
   }
 
-  public async getChildTexts(collectionUuid: string): Promise<TextNode[]> {
+  public async getChildTexts(collectionUuid: string): Promise<NodeDto<TextNode>[]> | undefined {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}/texts`;
 

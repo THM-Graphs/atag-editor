@@ -134,9 +134,15 @@ export type CharacterPostData = {
 export type CollectionNode = Node<ICollection>;
 
 export type CollectionAccessObject = {
-  annotations: AnnotationData[];
-  collection: CollectionNode;
-  texts: TextNode[];
+  annotations: NodeDto<AnnotationNode>[];
+  collection: NodeDto<CollectionNode>;
+  texts: NodeDto<TextNode>[];
+};
+
+export type CollectionAccessStatusObject = {
+  collection: NodeStatusObject;
+  texts: NodeStatusObject[];
+  annotations: NodeStatusObject[];
 };
 
 export type CollectionCreationData = CollectionAccessObject & {
