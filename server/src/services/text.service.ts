@@ -29,17 +29,11 @@ export default class TextService {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
-    CALL {
-        WITH c
-  
-        OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-        WHERE NOT ()-[:NEXT]->(tStart)
-        OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
-
-        WITH tStart, collect(t) AS nextTexts
-        WITH coalesce(tStart, []) + nextTexts AS texts
-
-        RETURN texts as texts
+    // Match optional Text nodes
+    CALL (c) {
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        
+        RETURN collect(t) as texts
     }
 
     WITH c, texts

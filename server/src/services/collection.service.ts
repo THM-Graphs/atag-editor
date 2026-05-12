@@ -174,7 +174,7 @@ export default class CollectionService {
     MATCH (c:Collection {uuid: $uuid})
 
     RETURN {
-        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        nodeLabels: labels(c),
         data: c {.*}
     } AS collection
     `;
@@ -237,30 +237,23 @@ export default class CollectionService {
     const query: string = `
     MATCH (c:Collection {uuid: $uuid})
 
-    // Match optional Text node chain
-    CALL {
-        WITH c
-  
-        OPTIONAL MATCH (c)<-[:PART_OF]-(tStart:Text)
-        WHERE NOT ()-[:NEXT]->(tStart)
-        OPTIONAL MATCH (tStart)-[:NEXT*]->(t:Text)
-
-        WITH tStart, collect(t) AS nextTexts
-        WITH coalesce(tStart, []) + nextTexts AS texts
-
-        RETURN texts as texts
+    // Match optional Text nodes
+    CALL (c) {
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        
+        RETURN collect(t) as texts
     }
 
     WITH c, texts
 
     RETURN {
         collection: {
-            nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+            nodeLabels: labels(c),
             data: c {.*}
         }, 
         texts: [
             t IN texts | {
-                nodeLabels: [l IN labels(t) WHERE l <> 'Text' | l],
+                nodeLabels: labels(t),
                 data: t {.*}
             }
         ]
@@ -358,7 +351,7 @@ export default class CollectionService {
 
     query += `
     RETURN {
-        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        nodeLabels: labels(c),
         data: c {.*}
     } AS collection
     `;
@@ -542,28 +535,8 @@ export default class CollectionService {
       RETURN collect(t) as relabeledTexts
     }
     
-    // Remove NEXT relationships from all texts
-    CALL {
-      WITH c
-      MATCH (c)<-[:PART_OF]-(t:Text)-[r:NEXT]->(t2:Text)
-      DETACH DELETE r
-    }
-
-    // Create new chain of NEXT relationships between nodes
-    CALL {
-        WITH c
-
-        UNWIND range(0, size($texts.all) - 2) AS idx
-        
-        MATCH (t1:Text {uuid: $texts.all[idx].data.uuid})
-        MATCH (t2:Text {uuid: $texts.all[idx + 1].data.uuid})
-        MERGE (t1)-[:NEXT]->(t2)
-        
-        RETURN collect(t1) as updatedTexts
-    }
-
     RETURN {
-        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        nodeLabels: labels(c),
         data: c {.*}
     } AS collection
     `;
@@ -591,7 +564,7 @@ export default class CollectionService {
     MATCH (c:Collection {uuid: $uuid})
 
     WITH c, {
-        nodeLabels: [l IN labels(c) WHERE l <> 'Collection' | l],
+        nodeLabels: labels(c),
         data: c {.*}
     } AS collectionToDelete
 
