@@ -1,35 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
 import EditorHistoryButton from './EditorHistoryButton.vue';
 import EditorImportButton from './EditorImportButton.vue';
 import FulltextSearchbar from './FulltextSearchbar.vue';
-import { useTextStore } from '../store/text';
-import Breadcrumb from 'primevue/breadcrumb';
 import Button from 'primevue/button';
-import NodeTag from './NodeTag.vue';
 import BookmarkButton from './BookmarkButton.vue';
-import { useBookmarks } from '../composables/useBookmarks';
-import { MenuItem } from 'primevue/menuitem';
 import EditorExportButton from './EditorExportButton.vue';
 import EditorSwitchButton from './EditorSwitchButton.vue';
-
-const { text, correspondingCollection } = useTextStore();
-const { bookmarks, toggleBookmark } = useBookmarks();
-
-const breadcrumbRoot = ref<MenuItem>({
-  role: 'Collection',
-  label: correspondingCollection.value?.data.label,
-  uuid: correspondingCollection.value?.data.uuid,
-});
-const breadcrumbItems = ref<MenuItem[]>([{ role: 'Text', labels: text.value.nodeLabels }]);
-
-const isBookmarked = computed<boolean>(() => {
-  return bookmarks.value.some(b => b.data.data.uuid === text.value.data.uuid);
-});
-
-function handleBookmarkAction() {
-  toggleBookmark({ data: text.value, type: 'text' });
-}
 </script>
 
 <template>
@@ -52,47 +28,6 @@ function handleBookmarkAction() {
         <BookmarkButton />
         <EditorSwitchButton />
       </div>
-    </div>
-
-    <div class="flex justify-content-center align-items-center">
-      <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
-        <template #item="{ item }">
-          <div v-if="item.role === 'Collection'">
-            <RouterLink
-              :to="`/collections/${item.uuid}`"
-              severity="contrast"
-              :title="`Collection: ${item.label}`"
-            >
-              {{ item.label }}
-            </RouterLink>
-          </div>
-          <div v-else class="text-labels">
-            <NodeTag
-              v-if="item.labels.length > 0"
-              v-for="label in item.labels"
-              :content="label"
-              type="Text"
-              class="mr-1 mb-1"
-            />
-            <span v-else class="font-italic" title="This Text has no labels yet"
-              >No Text labels yet</span
-            >
-          </div>
-        </template>
-      </Breadcrumb>
-      <Button
-        type="button"
-        severity="secondary"
-        :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
-        size="small"
-        :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
-        @click="handleBookmarkAction"
-        :pt="{
-          icon: {
-            style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
-          },
-        }"
-      />
     </div>
   </div>
 </template>

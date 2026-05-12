@@ -11,30 +11,28 @@ import Fieldset from 'primevue/fieldset';
 import InputText from 'primevue/inputtext';
 import Panel from 'primevue/panel';
 import NodeTag from './NodeTag.vue';
+import { useBookmarks } from '../composables/useBookmarks';
+import { MenuItem } from 'primevue/menuitem';
+import Breadcrumb from 'primevue/breadcrumb';
+import { computed, ref } from 'vue';
 
-type CollectionTableEntry = {
-  property: string;
-  value: string | number | boolean;
-};
+const { text, correspondingCollection } = useTextStore();
 
-const { text, correspondingCollection, paths } = useTextStore();
-const { getCollectionConfigFields } = useGuidelinesStore();
+const { bookmarks, toggleBookmark } = useBookmarks();
 
-const tableData: CollectionTableEntry[] = getCollectionTableData();
+const breadcrumbRoot = ref<MenuItem>({
+  role: 'Collection',
+  label: correspondingCollection.value?.data.label,
+  uuid: correspondingCollection.value?.data.uuid,
+});
+const breadcrumbItems = ref<MenuItem[]>([{ role: 'Text', labels: text.value.nodeLabels }]);
 
-function getCollectionTableData(): CollectionTableEntry[] | null {
-  if (!correspondingCollection.value) {
-    return null;
-  }
+const isBookmarked = computed<boolean>(() => {
+  return bookmarks.value.some(b => b.data.data.uuid === text.value.data.uuid);
+});
 
-  const fields: PropertyConfig[] = getCollectionConfigFields(
-    correspondingCollection.value?.nodeLabels as string[],
-  );
-
-  return fields.map(field => ({
-    property: field.name,
-    value: correspondingCollection.value.data[field.name],
-  }));
+function handleBookmarkAction() {
+  toggleBookmark({ data: text.value, type: 'text' });
 }
 
 async function handleCopy(): Promise<void> {
@@ -47,6 +45,7 @@ async function handleCopy(): Promise<void> {
     header="Metadata"
     class="metadata-container mb-3"
     toggleable
+    collapsed
     :toggle-button-props="{
       severity: 'secondary',
       title: 'Toggle full view',
@@ -96,73 +95,50 @@ async function handleCopy(): Promise<void> {
       </div>
     </Fieldset>
 
-    <Fieldset legend="Ancestry path" toggleable collapsed>
+    <Fieldset legend="Ancestry path" toggleable>
       <template #toggleicon="{ collapsed }">
         <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
       </template>
-      <template v-for="(path, index) in paths">
-        <div class="text-center font-bold">Path {{ index + 1 }}:</div>
-
-        <div class="flex flex-column align-items-center mb-4">
-          <template v-for="(node, index) in path">
-            <i v-if="index !== 0" class="pi pi-arrow-down" style="font-size: 0.75rem"></i>
-            <div class="py-1">
+      <div class="flex justify-content-center align-items-center">
+        <Breadcrumb :home="breadcrumbRoot" :model="breadcrumbItems">
+          <template #item="{ item }">
+            <div v-if="item.role === 'Collection'">
               <RouterLink
-                v-if="node.nodeLabels.includes('Collection')"
-                :to="`/collections/${node.data.uuid}`"
-                :title="`Go to Collection ${node.data.uuid}`"
+                :to="`/collections/${item.uuid}`"
+                severity="contrast"
+                :title="`Collection: ${item.label}`"
               >
-                <NodeTag :content="node.nodeLabels.join(' | ')" type="Collection" class="mr-2" />
-                <i class="pi pi-external-link"></i>
+                {{ item.label }}
               </RouterLink>
-              <a
-                v-else-if="node.nodeLabels.includes('Text')"
-                :href="`/texts/${node.data.uuid}`"
-                :title="`Go to Text ${node.data.uuid}`"
-                target="_blank"
+            </div>
+            <div v-else class="text-labels">
+              <NodeTag
+                v-if="item.labels.length > 0"
+                v-for="label in item.labels"
+                :content="label"
+                type="Text"
+                class="mr-1 mb-1"
+              />
+              <span v-else class="font-italic" title="This Text has no labels yet"
+                >No Text labels yet</span
               >
-                <NodeTag :content="node.nodeLabels.join(' | ')" type="Text" class="mr-2" />
-                <i class="pi pi-external-link"></i>
-              </a>
-              <span v-else>
-                <NodeTag
-                  :content="node.nodeLabels.join(' | ')"
-                  type="Annotation"
-                  :title="`${node.data.type}, '${node.data.text}'`"
-                  class="mr-2"
-                />
-              </span>
             </div>
           </template>
-        </div>
-      </template>
-    </Fieldset>
-
-    <Fieldset legend="Collection" toggleable v-if="tableData">
-      <template #toggleicon="{ collapsed }">
-        <span :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></span>
-      </template>
-
-      <DataTable
-        :value="tableData"
-        scrollable
-        scrollHeight="flex"
-        resizableColumns
-        rowHover
-        tableStyle="table-layout: fixed;"
-        size="small"
-      >
-        <Column field="property" header="Property">
-          <template #body="{ data }">
-            <span>{{ capitalize(data['property']) }}</span>
-          </template>
-        </Column>
-        <Column field="value" header="Value">
-          <template #body="{ data }">
-            <span style="white-space: normal">{{ data['value'] }}</span>
-          </template>
-        </Column>
-      </DataTable>
+        </Breadcrumb>
+        <Button
+          type="button"
+          severity="secondary"
+          :icon="`pi pi-bookmark${isBookmarked ? '-fill' : ''}`"
+          size="small"
+          :title="isBookmarked ? 'Remove text from bookmarks' : 'Add text to bookmarks'"
+          @click="handleBookmarkAction"
+          :pt="{
+            icon: {
+              style: isBookmarked ? { color: 'var(--p-primary-color)' } : {},
+            },
+          }"
+        />
+      </div>
     </Fieldset>
   </Panel>
 </template>

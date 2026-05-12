@@ -832,6 +832,7 @@ watch(
       :isCollapsed="sidebars['left'].isCollapsed === true"
       :width="sidebars['left'].width"
     >
+      <EditorMetadata />
       <EditorToC />
       <EditorAnnotations />
     </EditorSidebar>
