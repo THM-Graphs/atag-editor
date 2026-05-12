@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { CollectionStatusObject } from '../models/types';
 import NodeTag from './NodeTag.vue';
+import { filterDefaultLabels } from '../utils/helper/helper';
 
 const emit = defineEmits(['itemSelected']);
 
@@ -8,6 +10,8 @@ const props = defineProps<{
   collection: CollectionStatusObject;
   isActive: boolean;
 }>();
+
+const nodeLabels = computed<string[]>(() => filterDefaultLabels(props.collection.data.nodeLabels));
 
 function handleItemClick(): void {
   // Emit the event with the collection data
@@ -34,7 +38,7 @@ function handleItemClick(): void {
           border: '1px solid black',
         }"
         class="test mr-1"
-        v-for="label in props.collection.data.nodeLabels"
+        v-for="label in nodeLabels"
         :content="label"
         type="Collection"
       />

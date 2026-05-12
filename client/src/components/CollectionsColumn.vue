@@ -38,7 +38,7 @@ const {
   setMode,
   setPathToActiveCollection,
 } = useCollectionManagerStore();
-const { searchParams, updateSearchParams } = useSearchParams(25);
+const { searchParams, updateSearchParams } = useSearchParams({ scope: 'Collection', rowCount: 25 });
 
 const availableCollectionLabels = getAvailableCollectionLabels();
 
@@ -195,7 +195,8 @@ async function handleItemSelected(uuid: string): Promise<void> {
     return;
   }
 
-  const isAlreadyActiveInEditPane: boolean = uuid === activeCollection.value?.collection.data.uuid;
+  const isAlreadyActiveInEditPane: boolean =
+    uuid === activeCollection.value?.collection.node.data.uuid;
 
   // Nothing happens, return
   if (isAlreadyActiveInEditPane) {

@@ -102,7 +102,7 @@ const propertiesAreCollapsed = ref<boolean>(false);
 
 const isBookmarked = computed<boolean>(() => {
   return bookmarks.value.some(
-    b => b.data.data.uuid === temporaryWorkData.value?.collection.data.uuid,
+    b => b.data.data.uuid === temporaryWorkData.value?.collection.node.data.uuid,
   );
 });
 
@@ -113,19 +113,20 @@ const isAnnotationsSelected = computed<boolean>(() => selectedView.value === 'an
 
 const collectionFields: ComputedRef<PropertyConfig[]> = computed(() => {
   return guidelines.value
-    ? getCollectionConfigFields(temporaryWorkData.value.collection.nodeLabels)
+    ? getCollectionConfigFields(temporaryWorkData.value.collection.node.nodeLabels)
     : [];
 });
 
 const availableCollectionLabels = computed(getAvailableCollectionLabels);
 const availabeAnnotationTypes: ComputedRef<AnnotationType[]> = computed(() =>
-  getAvailableCollectionAnnotationConfigs(temporaryWorkData.value.collection.nodeLabels),
+  getAvailableCollectionAnnotationConfigs(temporaryWorkData.value.collection.node.nodeLabels),
 );
 
 watch(
-  () => activeCollection.value?.collection.data.uuid,
+  () => activeCollection.value?.collection?.node.data.uuid,
   () => {
     temporaryWorkData.value = cloneDeep(activeCollection.value);
+    console.log(temporaryWorkData.value);
     initialTemporaryWorkData.value = cloneDeep(activeCollection.value);
 
     temporaryTexts.value = [];
@@ -158,13 +159,13 @@ function checkValidity(): boolean {
   // Collections must have and additional node label (if options exist)
   if (
     availableCollectionLabels.value.length > 0 &&
-    temporaryWorkData.value.collection.nodeLabels.length === 0
+    temporaryWorkData.value.collection.node.nodeLabels.length === 0
   ) {
     throw new ValidationError('A Collection MUST have an additional node label.');
   }
 
   // Label property must always be a meaningful string
-  const labelProp: string = temporaryWorkData.value.collection.data.label;
+  const labelProp: string = temporaryWorkData.value.collection.node.data.label;
 
   if (labelProp === '') {
     throw new ValidationError('The "label" property must not be empty.');
@@ -185,7 +186,7 @@ function clearTemporaryTexts(): void {
 
 function deleteAnnotation(uuid: string): void {
   temporaryWorkData.value.annotations = temporaryWorkData.value.annotations.filter(
-    a => a.properties.uuid !== uuid,
+    a => a.node.data.uuid !== uuid,
   );
 }
 
@@ -201,8 +202,8 @@ function enrichCollectionData(): void {
   const allPossibleFields: PropertyConfig[] = getAllCollectionConfigFields();
 
   allPossibleFields.forEach(field => {
-    if (!(field.name in temporaryWorkData.value.collection.data)) {
-      temporaryWorkData.value.collection.data[field.name] =
+    if (!(field.name in temporaryWorkData.value.collection.node.data)) {
+      temporaryWorkData.value.collection.node.data[field.name] =
         field?.required === true ? getDefaultValueForProperty(field.type) : null;
     }
   });
@@ -211,7 +212,7 @@ function enrichCollectionData(): void {
 function handleAnnotationButtonClick(data: { type: string; subType?: string | number }) {
   const newAnnotation: AnnotationData = createAnnotation({
     ...data,
-    nodeLabels: temporaryWorkData.value.collection.nodeLabels,
+    nodeLabels: temporaryWorkData.value.collection.node.nodeLabels,
   });
 
   temporaryWorkData.value.annotations.push(newAnnotation);
@@ -298,7 +299,7 @@ async function createCollection(): Promise<CollectionNode> {
   };
 
   const updated: CollectionNode = await api.updateCollection(
-    temporaryWorkData.value.collection.data.uuid,
+    temporaryWorkData.value.collection.node.data.uuid,
     updateData,
   );
 
@@ -409,7 +410,7 @@ function updateView() {
   // Remove collection from level explicitly. This is not handled by the watcher since the watcher
   // either refetches completely or keeps the last level.
   levels.value[newUuids.length].collections = levels.value[newUuids.length].collections.filter(
-    c => c.data.data.uuid !== temporaryWorkData.value.collection.data.uuid,
+    c => c.data.data.uuid !== temporaryWorkData.value.collection.node.data.uuid,
   );
 
   setMode('view');
@@ -427,13 +428,13 @@ function updateView() {
 function removeUnnecessaryDataBeforeSave(): void {
   // Get configured field names that are allowed to be saved
   const configuredFieldNames: string[] = getCollectionConfigFields(
-    temporaryWorkData.value.collection.nodeLabels,
+    temporaryWorkData.value.collection.node.nodeLabels,
   ).map(f => f.name);
 
   // Remove data entries that are not configured
-  Object.keys(temporaryWorkData.value.collection.data).forEach(key => {
+  Object.keys(temporaryWorkData.value.collection.node.data).forEach(key => {
     if (!configuredFieldNames.includes(key) && key !== 'uuid') {
-      delete temporaryWorkData.value.collection.data[key];
+      delete temporaryWorkData.value.collection.node.data[key];
     }
   });
 }
@@ -447,7 +448,7 @@ async function updateCollection(): Promise<CollectionNode> {
   };
 
   return await api.updateCollection(
-    temporaryWorkData.value.collection.data.uuid,
+    temporaryWorkData.value.collection.node.data.uuid,
     collectionPostData,
   );
 }
@@ -498,8 +499,8 @@ function toggleViewMode(direction: TabView): void {
       </div>
 
       <div class="label-section">
-        <h3 v-if="temporaryWorkData.collection.data.label">
-          {{ temporaryWorkData.collection.data.label }}
+        <h3 v-if="temporaryWorkData.collection.node.data.label">
+          {{ temporaryWorkData.collection.node.data.label }}
         </h3>
         <h3 v-else class="font-italic font-normal">No label provided</h3>
       </div>
@@ -544,12 +545,12 @@ function toggleViewMode(direction: TabView): void {
           <h3 class="text-center">Labels</h3>
           <div v-if="formMode === 'edit'" class="flex justify-content-center">
             <MultiSelect
-              v-model="temporaryWorkData.collection.nodeLabels"
+              v-model="temporaryWorkData.collection.node.nodeLabels"
               :options="availableCollectionLabels"
               display="chip"
               :invalid="
                 availableCollectionLabels.length > 0 &&
-                temporaryWorkData.collection.nodeLabels.length === 0
+                temporaryWorkData.collection.node.nodeLabels.length === 0
               "
               title="Select node labels"
               placeholder="Select labels"
@@ -562,8 +563,8 @@ function toggleViewMode(direction: TabView): void {
           </div>
           <div v-else class="flex gap-2 justify-content-center">
             <template
-              v-if="temporaryWorkData.collection.nodeLabels.length > 0"
-              v-for="label in temporaryWorkData.collection.nodeLabels"
+              v-if="temporaryWorkData.collection.node.nodeLabels.length > 0"
+              v-for="label in temporaryWorkData.collection.node.nodeLabels"
               :key="label"
             >
               <NodeTag :content="label" type="Collection" class="mr-1" />
@@ -582,13 +583,13 @@ function toggleViewMode(direction: TabView): void {
                 </label>
                 <DataInputGroup
                   v-if="field.type === 'array'"
-                  v-model="temporaryWorkData.collection.data[field.name]"
+                  v-model="temporaryWorkData.collection.node.data[field.name]"
                   :config="field"
                   :mode="formMode"
                 />
                 <DataInputComponent
                   v-else
-                  v-model="temporaryWorkData.collection.data[field.name]"
+                  v-model="temporaryWorkData.collection.node.data[field.name]"
                   :config="field"
                   :mode="formMode"
                 />
@@ -605,7 +606,10 @@ function toggleViewMode(direction: TabView): void {
               :key="type.type"
               :disabled="(formMode as 'view' | 'edit') === 'view'"
               :config="
-                getCollectionAnnotationConfig(temporaryWorkData.collection.nodeLabels, type.type)
+                getCollectionAnnotationConfig(
+                  temporaryWorkData.collection.node.nodeLabels,
+                  type.type,
+                )
               "
               @clicked="handleAnnotationButtonClick($event)"
             />
@@ -621,7 +625,7 @@ function toggleViewMode(direction: TabView): void {
           <Panel
             v-for="annotation in temporaryWorkData.annotations"
             class="annotation-form mb-3"
-            :data-annotation-uuid="annotation.properties.uuid"
+            :data-annotation-uuid="annotation.node.data.uuid"
             toggleable
             :collapsed="true"
             :toggle-button-props="{
@@ -634,10 +638,10 @@ function toggleViewMode(direction: TabView): void {
             <template #header>
               <div class="flex items-center gap-1 align-items-center">
                 <div class="icon-container">
-                  <AnnotationTypeIcon :annotationType="annotation.properties.type" />
+                  <AnnotationTypeIcon :annotationType="annotation.node.data.type" />
                 </div>
                 <div class="annotation-type-container">
-                  <span class="font-bold">{{ annotation.properties.type }}</span>
+                  <span class="font-bold">{{ annotation.node.data.type }}</span>
                 </div>
               </div>
             </template>
@@ -656,52 +660,26 @@ function toggleViewMode(direction: TabView): void {
                 <span :class="`pi pi-chevron-${propertiesAreCollapsed ? 'down' : 'up'}`"></span>
               </template>
               <FormPropertiesSection
-                v-model="annotation.properties"
+                v-model="annotation.node.data"
                 :fields="
                   getCollectionAnnotationFields(
-                    temporaryWorkData.collection.nodeLabels,
-                    annotation.properties.type,
+                    temporaryWorkData.collection.node.nodeLabels,
+                    annotation.node.data.type,
                   )
                 "
                 :mode="formMode"
               />
             </Fieldset>
-            <AnnotationFormAdditionalTextSection
-              v-if="
-                getCollectionAnnotationConfig(
-                  temporaryWorkData.collection.nodeLabels,
-                  annotation.properties.type,
-                )?.hasAdditionalTexts === true
-              "
-              :mode="formMode"
-              v-model="annotation.additionalTexts"
-              :initial-additional-texts="
-                initialTemporaryWorkData.annotations.find(
-                  a => a.properties.uuid === annotation.properties.uuid,
-                )?.additionalTexts ?? []
-              "
-            />
-            <AnnotationFormEntitiesSection
-              v-if="
-                getCollectionAnnotationConfig(
-                  temporaryWorkData.collection.nodeLabels,
-                  annotation.properties.type,
-                )?.hasEntities === true
-              "
+            <!-- <AnnotationFormAdditionalNodesSection
+              v-model="annotation.connectedNodes"
+              :mode="'view'"
               :annotation-config="
                 getCollectionAnnotationConfig(
-                  temporaryWorkData.collection.nodeLabels,
-                  annotation.properties.type,
+                  temporaryWorkData.collection.node.nodeLabels,
+                  annotation.node.data.type,
                 )
               "
-              :mode="formMode"
-              v-model="annotation.entities"
-              :initialEntities="
-                initialTemporaryWorkData.annotations.find(
-                  a => a.properties.uuid === annotation.properties.uuid,
-                )?.entities ?? []
-              "
-            />
+            /> -->
             <div class="action-buttons flex justify-content-center">
               <Button
                 v-if="formMode === 'edit'"
@@ -710,7 +688,7 @@ function toggleViewMode(direction: TabView): void {
                 severity="danger"
                 icon="pi pi-trash"
                 size="small"
-                @click="handleDeleteAnnotation($event, annotation.properties.uuid)"
+                @click="handleDeleteAnnotation($event, annotation.node.data.uuid)"
               />
             </div>
             <ConfirmPopup></ConfirmPopup>
@@ -725,10 +703,10 @@ function toggleViewMode(direction: TabView): void {
           </div>
           <TextContainer
             v-for="text in temporaryWorkData.texts"
-            :text="text"
+            :text="text.node"
             :mode="formMode"
             status="existing"
-            @text-removed="handleRemoveText(text, 'existing')"
+            @text-removed="handleRemoveText(text.node, 'existing')"
           />
           <TextContainer
             v-for="text in temporaryTexts"
