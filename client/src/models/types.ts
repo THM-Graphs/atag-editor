@@ -108,6 +108,7 @@ export type BaseNodeData = {
   uuid: string;
 };
 
+/** Base node labels in RAMEN */
 export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
 
 export type Bookmark = {

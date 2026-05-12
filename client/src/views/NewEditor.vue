@@ -490,46 +490,54 @@ async function handleSaveChanges(): Promise<void> {
 
   const { structureElements, annotations } = affectedAnnotations;
 
-  const combined: Annotation[] = [...structureElements, ...annotations];
+  const annotationsToUpdate: Annotation[] = [...structureElements, ...annotations];
+  const newTextNode: NodeStatusObject<TextNode> = {
+    node: {
+      data: {
+        uuid: text.value.data.uuid,
+        text: tiptap.value!.state.doc.textContent,
+      },
+      nodeLabels: [...text.value.nodeLabels],
+    },
+    meta: { status: 'modified' },
+    connectedNodes: [],
+  };
 
   // Object to send via API
-  const textDto: TextUpdateDto = {
-    text: toValue({
-      node: text.value,
-      meta: { status: 'modified' },
-      connectedNodes: [],
-    }),
-    annotations: toValue(combined),
+  const textToUpdate: TextUpdateDto = {
+    text: toValue(newTextNode),
+    annotations: toValue(annotationsToUpdate),
   };
 
   // Only for testing purposes
-  const flattened = flattenNodeTree(textDto);
+  const flattened = flattenNodeTree(textToUpdate);
   console.log(flattened);
 
-  // asyncOperationRunning.value = true;
-  // try {
-  //   // TODO: Text needs to be saved to when labels are changed
-  //   // await saveText();
-  //   await saveCharacters();
-  //   await saveAnnotations();
-  //   // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
-  //   updateAnnotationStatuses();
-  //   // Reset initial values of all state components
-  //   initialText.value = cloneDeep(text.value);
-  //   initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
-  //   initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
-  //   // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
-  //   // since the new snippetAnnotations will be extracted from the new totalAnnotations state
-  //   extractSnippetAnnotations();
-  //   // Store function is used, combines boundaries resettings
-  //   resetInitialBoundaryCharacters();
-  //   showMessage('success');
-  // } catch (error: unknown) {
-  //   showMessage('error', error as Error);
-  //   console.error('Error updating text:', error);
-  // } finally {
-  //   asyncOperationRunning.value = false;
-  // }
+  asyncOperationRunning.value = true;
+  try {
+    await api.updateText(text.value.data.uuid, textToUpdate);
+    // TODO: Text needs to be saved to when labels are changed
+    // await saveText();
+    // await saveCharacters();
+    // await saveAnnotations();
+    // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
+    // updateAnnotationStatuses();
+    // Reset initial values of all state components
+    // initialText.value = cloneDeep(text.value);
+    // initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
+    // initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
+    // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
+    // since the new snippetAnnotations will be extracted from the new totalAnnotations state
+    // extractSnippetAnnotations();
+    // Store function is used, combines boundaries resettings
+    // resetInitialBoundaryCharacters();
+    showMessage('success');
+  } catch (error: unknown) {
+    showMessage('error', error as Error);
+    console.error('Error updating text:', error);
+  } finally {
+    asyncOperationRunning.value = false;
+  }
 }
 
 async function handleCancelChanges(): Promise<void> {

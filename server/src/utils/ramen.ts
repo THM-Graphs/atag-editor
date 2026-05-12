@@ -1,23 +1,23 @@
-import { BaseNodeData, Node } from '../models/types.js';
-
-export type EdgeDescriptor = {
-  type: string;
-  startUuid: string;
-  endUuid: string;
-};
+import { BaseNodeData, EdgeDescriptor, Node } from '../models/types.js';
 
 /**
- * Infers the Neo4j relationship type and correct edge direction between a parent and child node
- * in the annotation/collection tree, based on their labels.
+ * Given a parent and child node from a node tree, returns the Neo4j relationship type
+ * and the correctly-directed `startUuid`/`endUuid` for that edge. Used for creating flat update information
+ * when passing data of unknown tree-depth into the cypher query.
  *
- * The returned `startUuid` and `endUuid` reflect the Neo4j edge direction, which may differ from
- * the tree traversal order. For `PART_OF`, the tree parent is Collection but the edge runs
- * (Text|Collection)-[:PART_OF]->(Collection), so `startUuid` is the child and `endUuid` the parent.
+ * The tree is always ownership-ordered: a Text owns its Annotations, a Collection owns its Texts
+ * and Annotations, and an Annotation owns its sub-annotations and referenced nodes. The relationship
+ * type follows from the label pair, and the edge direction matches Neo4j conventions — which for
+ * `PART_OF` means the child points to the parent: `(Text|Collection)-[:PART_OF]->(Collection)`.
  *
- * @param parent - The parent node in the tree traversal.
- * @param child - The child node in the tree traversal.
+ * This function is only valid when called with trees structured in that ownership order. Passing
+ * an inverted or flat structure will produce incorrect results. Currently this is only used when updating texts via Editor.
+ *
+ * @param parent - The owner node (closer to the tree root).
+ * @param child - The owned node (further from the tree root).
  * @returns An {@link EdgeDescriptor} with the relationship type and correctly-oriented UUIDs.
- * @throws If no relationship rule exists for the given label combination.
+ *
+ * @throws If the label combination has no known relationship rule.
  */
 export function inferRelationship(
   parent: Node<BaseNodeData>,

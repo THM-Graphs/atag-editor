@@ -66,11 +66,15 @@ export type AnnotationConfigEntity = {
   nodeLabel: string;
 };
 
+/** Base node labels in RAMEN */
 export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
 
 export type BaseNodeData = {
   uuid: string;
 };
+
+/** Relationship types in RAMEN */
+export type BaseRelationshipType = 'HAS_ANNOTATION' | 'PART_OF' | 'REFERS_TO';
 
 export type Character = {
   data: ICharacter;
@@ -111,6 +115,13 @@ export type CollectionPreview = {
     texts: number;
     collections: number;
   };
+};
+
+/** Object for specifying relationship between two nodes. Used during preprocessing data before updating Text nodes */
+export type EdgeDescriptor = {
+  type: BaseRelationshipType;
+  startUuid: string;
+  endUuid: string;
 };
 
 export type EntityNode = Node<IEntity>;
@@ -227,7 +238,7 @@ export type StandoffJson = {
 
 export type TextNode = Node<IText>;
 
-export type UpdateObject = {
+export type NodeUpdateObject = {
   create: Node<Record<string, any>>[];
   update: Node<Record<string, any>>[];
   delete: (AnnotationNode | CollectionNode | EntityNode | TextNode | Node<Record<string, any>>)[];

@@ -8,7 +8,7 @@ import {
   TextNode,
   TextAccessObject,
   TextUpdateDto,
-  UpdateObject,
+  NodeUpdateObject,
   PropertyConfig,
   Node,
   EntityNode,
@@ -57,13 +57,6 @@ export default class TextService {
     return result.records[0]?.get('texts');
   }
 
-  /**
-   * Retrieves extended data of a specified text node (Text node, corresponding Collection node and path to top-level Collection node).
-   *
-   * @param {string} uuid - The UUID of the text node to retrieve.
-   * @throws {NotFoundError} If the text with the specified UUID is not found.
-   * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
-   */
   /**
    * Retrieves a paginated list of Text nodes whose `text` property contains the search string.
    *
@@ -126,6 +119,13 @@ export default class TextService {
     };
   }
 
+  /**
+   * Retrieves extended data of a specified text node (Text node, corresponding Collection node and path to top-level Collection node).
+   *
+   * @param {string} uuid - The UUID of the text node to retrieve.
+   * @throws {NotFoundError} If the text with the specified UUID is not found.
+   * @return {Promise<TextAccessObject>} A promise that resolves to the retrieved extended text.
+   */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
     const query: string = `
     MATCH (t:Text {uuid: $uuid})
@@ -167,7 +167,7 @@ export default class TextService {
     const guidelineService: GuidelinesService = new GuidelinesService();
     this.guidelines = await guidelineService.getGuidelines();
 
-    const obj: UpdateObject = this.flattenNodeTree(data);
+    const flatNodeTree: NodeUpdateObject = this.flattenNodeTree(data);
 
     const query: string = `
     // Delete nodes and their relationships
@@ -195,7 +195,7 @@ export default class TextService {
     CALL () {
         UNWIND $update AS nodeToUpdate
 
-        MATCH (n {uuid: nodeToUpdate.data.uuid})
+        MATCH (n:Annotation|Text|Collection|Entity {uuid: nodeToUpdate.data.uuid})
         SET n = nodeToUpdate.data
         WITH n, nodeToUpdate, labels(n) AS currentLabels
         CALL apoc.create.removeLabels(n, currentLabels) YIELD node
@@ -207,7 +207,7 @@ export default class TextService {
     CALL () {
         UNWIND $remove AS edge
 
-        MATCH (start {uuid: edge.startUuid})-[r]->(end {uuid: edge.endUuid})
+        MATCH (start:Annotation|Text|Collection|Entity {uuid: edge.startUuid})-[r]->(end:Annotation|Text|Collection|Entity {uuid: edge.endUuid})
         WHERE type(r) = edge.type
 
         DELETE r
@@ -217,8 +217,8 @@ export default class TextService {
     CALL () {
         UNWIND $attach AS edge
 
-        MATCH (start {uuid: edge.startUuid})
-        MATCH (end {uuid: edge.endUuid})
+        MATCH (start:Annotation|Text|Collection|Entity {uuid: edge.startUuid})
+        MATCH (end:Annotation|Text|Collection|Entity {uuid: edge.endUuid})
         CALL apoc.merge.relationship(start, edge.type, {}, {}, end) YIELD rel
 
         RETURN count(rel) AS attached
@@ -235,11 +235,11 @@ export default class TextService {
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
       uuid,
-      delete: obj.delete,
-      create: obj.create,
-      update: obj.update,
-      remove: obj.remove,
-      attach: obj.attach,
+      delete: flatNodeTree.delete,
+      create: flatNodeTree.create,
+      update: flatNodeTree.update,
+      remove: flatNodeTree.remove,
+      attach: flatNodeTree.attach,
     });
 
     const updatedText: TextNode = result.records[0]?.get('text');
@@ -289,8 +289,8 @@ export default class TextService {
   private insertNodeIntoObject(
     parent: NodeStatusObject | null,
     node: NodeStatusObject,
-    obj: UpdateObject,
-  ): UpdateObject {
+    obj: NodeUpdateObject,
+  ): NodeUpdateObject {
     node.connectedNodes.forEach(child => this.insertNodeIntoObject(node, child, obj));
 
     if (node.meta.status === 'deleted') {
@@ -318,8 +318,8 @@ export default class TextService {
     return obj;
   }
 
-  private flattenNodeTree(textDto: TextUpdateDto): UpdateObject {
-    const obj: UpdateObject = {
+  private flattenNodeTree(textDto: TextUpdateDto): NodeUpdateObject {
+    const obj: NodeUpdateObject = {
       create: [],
       delete: [],
       update: [],

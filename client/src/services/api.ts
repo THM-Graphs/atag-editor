@@ -17,6 +17,7 @@ import {
   TextNode,
   TextAccessObject,
   BaseNodeLabel,
+  TextUpdateDto,
 } from '../models/types';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
@@ -448,6 +449,27 @@ export default class ApiService {
       await this.assertResponseOk(response);
 
       return await response.json();
+    } catch (error: unknown) {
+      this.handleApiError(error);
+    }
+  }
+
+  public async updateText(uuid: string, text: TextUpdateDto): Promise<void> {
+    try {
+      const url: string = `${this.baseUrl}/texts/${uuid}`;
+
+      const response: Response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify(text),
+      });
+
+      await this.assertResponseOk(response);
     } catch (error: unknown) {
       this.handleApiError(error);
     }
