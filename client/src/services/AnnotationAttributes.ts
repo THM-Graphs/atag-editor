@@ -31,6 +31,7 @@ function propertiesToAttributes(config: AnnotationType): Record<string, Attribut
   // TODO: Currently hardcoded, think about better solution...
   nodeAttrs.type = {
     isRequired: false,
+    default: config.type,
     parseHTML: (el: HTMLElement) => el.getAttribute('type'),
     renderHTML: attrs => ({ type: attrs.type }),
   };
