@@ -150,9 +150,10 @@ function toggleFormMode(newState?: 'view' | 'edit'): void {
 function updateData(): void {
   const newData: NodeStatusObject<AnnotationNode> = cloneDeep(workingData.value);
 
+  console.log(newData);
   // Set status field depeding on whether the annotation freshly created
-  if (initialData.value.meta.status === 'added') {
-    newData.meta.status = 'added';
+  if (initialData.value.meta.status === 'created') {
+    newData.meta.status = 'created';
   } else {
     newData.meta.status = 'modified';
   }
