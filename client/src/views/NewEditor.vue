@@ -35,6 +35,7 @@ import {
   TextUpdateDto,
   NodeStatus,
 } from '../models/types';
+import { logSetDiffs } from '../utils/helper/logHelper';
 import { useEditorStore } from '../store/editor';
 import { useShortcutsStore } from '../store/shortcuts';
 import { useTextStore } from '../store/text';
@@ -149,6 +150,66 @@ const metadataRef = ref(null);
 const labelInputRef = ref(null);
 const editorRef = ref<HTMLDivElement>(null);
 
+function cleanUpAfterSave(
+  updatedText: NodeStatusObject<TextNode>,
+  updatedAnnotations: { annotations: Annotation[]; structureElements: Annotation[] },
+): void {
+  text.value = cloneDeep(updatedText.node);
+
+  cleanUpAnnotations(updatedAnnotations.annotations);
+  cleanUpStructureElements(updatedAnnotations.structureElements);
+
+  // TODO: Reset history
+}
+
+function cleanUpAnnotations(updatedAnnotations: NodeStatusObject[]): void {
+  updatedAnnotations.forEach(a => {
+    if (a.meta.status === 'deleted') {
+      // Can be removed from the map safely
+      annotations.value?.delete(a.node.data.uuid);
+    } else {
+      // Recursively set all nodes to "unchanged"
+      traverseNodeTreeAndSetToCreated(a);
+
+      // Update value
+      annotations.value?.set(a.node.data.uuid, a as Annotation);
+    }
+  });
+
+  // Reset
+  initialAnnotations.value = cloneDeep(annotations.value);
+}
+
+function cleanUpStructureElements(structureElements: NodeStatusObject[]): void {
+  structureElements.forEach((elm: NodeStatusObject) => {
+    const uuid: string = elm.node.data.uuid;
+
+    if (elm.meta.status === 'deleted') {
+      // Can be removed from the map safely
+      initialStructuralAnnotations.value?.delete(uuid);
+    } else {
+      // Recursively set all nodes to "unchanged". Technically, this is currently not necessary
+      // since the structure elements can not have any connected nodes.
+      traverseNodeTreeAndSetToCreated(elm);
+
+      // Update value
+      initialStructuralAnnotations.value?.set(uuid, elm as Annotation);
+    }
+  });
+
+  // const docNodes = new Map<string, DocNode>();
+
+  // tiptap.value?.state.doc.descendants(node => {
+  //   if (isStructureElement(node)) {
+  //     docNodes.set(node.attrs.uuid, node);
+  //   }
+  // });
+
+  // console.log(docNodes);
+  // console.log(initialStructuralAnnotations.value);
+  // Reset
+}
+
 /**
  * Checks if a node is a structure element editor-wise, meaning that it is either a block element that contains text or other block elmements
  * (div, paragraph) or a `hardBreak`.
@@ -161,16 +222,6 @@ function isStructureElement(node: DocNode): boolean {
   }
 
   return false;
-}
-
-function logMap(heading: string, map: IndexMap) {
-  console.log(`%c${heading}`, 'font-weight: bold; font-size: 18px;');
-  const plainText: string = tiptap.value!.state.doc.textContent;
-
-  [...map.values()].forEach(indexSet => {
-    const slice = plainText.slice(indexSet.startIndex, indexSet.endIndex + 1);
-    console.log(indexSet.startIndex, indexSet.endIndex, slice);
-  });
 }
 
 function getEmptyNodes(): DocNode[] {
@@ -516,21 +567,11 @@ async function handleSaveChanges(): Promise<void> {
   asyncOperationRunning.value = true;
   try {
     await api.updateText(text.value.data.uuid, textToUpdate);
-    // TODO: Text needs to be saved to when labels are changed
-    // await saveText();
-    // await saveCharacters();
-    // await saveAnnotations();
-    // All Annotation statuses are updated explicitly to "existing" and the initialData property set to the current data
-    // updateAnnotationStatuses();
-    // Reset initial values of all state components
-    // initialText.value = cloneDeep(text.value);
-    // initialSnippetCharacters.value = cloneDeep(snippetCharacters.value);
-    // initialTotalAnnotations.value = cloneDeep(totalAnnotations.value);
-    // Check which annotations are now in snippet. Calling this function is less error prone than setting the state variables explicitly
-    // since the new snippetAnnotations will be extracted from the new totalAnnotations state
-    // extractSnippetAnnotations();
-    // Store function is used, combines boundaries resettings
-    // resetInitialBoundaryCharacters();
+
+    // Update all initial values: Annotations, structuralAnnotations and text
+
+    cleanUpAfterSave(newTextNode, affectedAnnotations);
+
     showMessage('success');
   } catch (error: unknown) {
     showMessage('error', error as Error);
@@ -538,6 +579,12 @@ async function handleSaveChanges(): Promise<void> {
   } finally {
     asyncOperationRunning.value = false;
   }
+}
+
+function traverseNodeTreeAndSetToCreated(node: NodeStatusObject) {
+  node.meta.status = 'unchanged';
+
+  node.connectedNodes.forEach(child => traverseNodeTreeAndSetToCreated(child));
 }
 
 async function handleCancelChanges(): Promise<void> {
@@ -852,23 +899,19 @@ watch(
           H1
         </button>
         <button
-          @click="
-            tiptap?.chain().focus().toggleHeading({ level: 2, annotationType: 'knecht' }).run()
-          "
+          @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
         >
           H2
         </button>
         <button
-          @click="
-            tiptap?.chain().focus().toggleHeading({ level: 3, annotationType: 'knecht' }).run()
-          "
+          @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
           :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
         >
           H3
         </button>
         <button
-          @click="tiptap?.chain().focus().setParagraph().run()"
+          @click="tiptap?.chain().focus().setNode('paragraph').run()"
           :class="{ 'is-active': tiptap?.isActive('paragraph') }"
         >
           Paragraph
