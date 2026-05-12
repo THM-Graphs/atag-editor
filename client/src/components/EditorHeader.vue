@@ -26,7 +26,6 @@ import EditorSwitchButton from './EditorSwitchButton.vue';
         <EditorImportButton />
         <EditorExportButton />
         <BookmarkButton />
-        <EditorSwitchButton />
       </div>
     </div>
   </div>
