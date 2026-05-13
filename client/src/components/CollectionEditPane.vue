@@ -13,7 +13,7 @@ import {
   CollectionAccessObject,
   CollectionCreationData,
   CollectionPostData,
-  CollectionStatusObject,
+  ColumnEntry,
   PropertyConfig,
   TextNode,
   NodeDto,
@@ -26,7 +26,7 @@ import {
   cloneDeep,
   createNodeDtoFromNode,
   createNodeStatusObjectFromRawData,
-  createTextNode,
+  createCollectionNode,
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import MultiSelect from 'primevue/multiselect';
@@ -131,7 +131,6 @@ watch(
   () => activeCollection.value?.collection?.node.data.uuid,
   () => {
     temporaryWorkData.value = cloneDeep(activeCollection.value);
-    console.log(temporaryWorkData.value);
     initialTemporaryWorkData.value = cloneDeep(activeCollection.value);
 
     temporaryTexts.value = [];
@@ -235,7 +234,7 @@ function handleAddText(newText: NodeStatusObject<TextNode>) {
 
 async function handleAddTextClick(): Promise<void> {
   const newText: NodeStatusObject<TextNode> = createNodeStatusObjectFromRawData(
-    createNodeDtoFromNode(createTextNode()),
+    createNodeDtoFromNode(createCollectionNode()),
   ) as NodeStatusObject<TextNode>;
 
   newText.meta.status = 'created';
@@ -321,7 +320,7 @@ async function createCollection(): Promise<CollectionNode> {
 
 function transferDataToListItem(uuid: string, index: number, data: CollectionNode): void {
   // TODO: Make this more elegant
-  const collectionObject: CollectionStatusObject | null = findCollectionInHierarchy(uuid, index);
+  const collectionObject: ColumnEntry | null = findCollectionInHierarchy(uuid, index);
 
   if (collectionObject) {
     collectionObject.data.data = data.data;

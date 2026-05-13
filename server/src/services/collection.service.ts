@@ -71,7 +71,7 @@ export default class CollectionService {
     search: string,
     parentUuid: string | null,
     cursor: CursorData | null = null,
-  ): Promise<PaginationResult<CollectionNode[]>> {
+  ): Promise<PaginationResult<NodeDto<CollectionNode>[]>> {
     // Defines the scope: If parent uuid is provided, fetch only subcollections of it. Else, fetch collections
     // that don't have a parent (top level collections)
     const baseCollectionSnippet = parentUuid
@@ -137,17 +137,23 @@ export default class CollectionService {
     const hasMore: boolean = rawData.length > limit;
     const collections: CollectionNode[] = hasMore ? rawData.slice(0, limit) : rawData;
 
-    const data: CollectionNode[] = collections.map(c => toNativeTypes(c)) as CollectionNode[];
+    const data: NodeDto<CollectionNode>[] = collections.map(c => ({
+      node: {
+        nodeLabels: c.nodeLabels,
+        data: toNativeTypes(c.data),
+      },
+      connectedNodes: [],
+    }));
 
     // Generate next cursor from the last item
     let nextCursor: CursorData | null = null;
 
     if (hasMore && data.length > 0) {
-      const lastItem: CollectionNode = data[data.length - 1];
+      const lastItem: NodeDto<CollectionNode> = data[data.length - 1];
 
       nextCursor = {
-        label: lastItem.data.label,
-        uuid: lastItem.data.uuid,
+        label: lastItem.node.data.label,
+        uuid: lastItem.node.data.uuid,
       };
     }
 

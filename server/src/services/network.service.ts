@@ -1,7 +1,7 @@
 import { QueryResult } from 'neo4j-driver';
 import Neo4jDriver from '../database/neo4j.js';
 import NotFoundError from '../errors/notFound.error.js';
-import { TextNode, CollectionNode, NetworkPostData } from '../models/types.js';
+import { TextNode, CollectionNode, NetworkPostData, NodeDto } from '../models/types.js';
 
 /**
  * Service class for managing network operations on Collections and Text nodes.
@@ -140,7 +140,7 @@ export default class NetworkService {
     return updatedNodes;
   }
 
-  async validatePath(uuids: string[]): Promise<CollectionNode[]> {
+  async validatePath(uuids: string[]): Promise<NodeDto<CollectionNode>[]> {
     if (!uuids || uuids.length === 0) {
       return [];
     }
@@ -172,11 +172,16 @@ export default class NetworkService {
     `;
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, { uuids });
-    const path: CollectionNode[] = result.records[0]?.get('path');
+    const nodes: CollectionNode[] = result.records[0]?.get('path');
 
-    if (!path) {
+    if (!nodes) {
       throw new NotFoundError(`The requested path [${uuids}] does not exist`);
     }
+
+    const path: NodeDto<CollectionNode>[] = nodes.map(n => ({
+      node: n,
+      connectedNodes: [],
+    }));
 
     return path;
   }

@@ -217,14 +217,14 @@ export type HistoryRecord = {
 
 export type IndexMap = Map<string, { startIndex: number; endIndex: number }>;
 
-export type CollectionStatusObject = {
-  data: CollectionNode;
+export type ColumnEntry = {
+  data: NodeDto<CollectionNode>;
   status: 'existing' | 'temporary';
 };
 
 export type Level = {
-  collections: CollectionStatusObject[];
-  activeCollection: CollectionNode | null;
+  collections: ColumnEntry[];
+  activeCollection: NodeDto<CollectionNode> | null;
   parentUuid: string | null;
 };
 
@@ -245,7 +245,7 @@ export type Node<T = AnnotationNode | CollectionNode | EntityNode | TextNode> = 
   nodeLabels: string[];
 };
 
-export type NodeAncestry = (TextNode | CollectionNode | IAnnotation)[];
+export type NodeAncestry = NodeDto<TextNode | CollectionNode | AnnotationNode>[];
 
 export type PaginationData = {
   limit: number;

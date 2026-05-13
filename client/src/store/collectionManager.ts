@@ -2,11 +2,12 @@ import { computed, readonly, ref } from 'vue';
 import {
   CollectionNode,
   CollectionAccessObject,
-  CollectionStatusObject,
+  ColumnEntry,
   Level,
   NodeStatusObject,
   CollectionAccessStatusObject,
   TextNode,
+  NodeDto,
 } from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
@@ -17,7 +18,7 @@ const { api } = useAppStore();
 const levels = ref<Level[]>([]);
 
 const activeCollection = ref<CollectionAccessStatusObject | null>(null);
-const pathToActiveCollection = ref<CollectionNode[]>([]);
+const pathToActiveCollection = ref<NodeDto<CollectionNode>[]>([]);
 
 const previousPaths = useRefHistory(pathToActiveCollection, {
   capacity: 5,
@@ -104,10 +105,10 @@ export function useCollectionManagerStore() {
    *
    * @param {string} uuid The UUID of the collection to find.
    * @param {number} index The index in the hierarchy to search for the collection.
-   * @returns {CollectionStatusObject | null} The collection if found, or null if not found.
+   * @returns {ColumnEntry | null} The collection if found, or null if not found.
    */
-  function findCollectionInHierarchy(uuid: string, index: number): CollectionStatusObject | null {
-    return levels.value[index].collections.find(c => c.data.data.uuid === uuid) ?? null;
+  function findCollectionInHierarchy(uuid: string, index: number): ColumnEntry | null {
+    return levels.value[index].collections.find(c => c.data.node.data.uuid === uuid) ?? null;
   }
 
   /**
@@ -171,10 +172,10 @@ export function useCollectionManagerStore() {
    * Called when the user navigates through the hierarchy by clicking on a collection item in the columns
    * or when the URL changes.
    *
-   * @param {CollectionNode[]} path The active path selection.
+   * @param {NodeDto<CollectionNode>[]} path The active path selection.
    * @returns {void} This function does not return a value.
    */
-  function setPathToActiveCollection(path: CollectionNode[]): void {
+  function setPathToActiveCollection(path: NodeDto<CollectionNode>[]): void {
     pathToActiveCollection.value = path;
   }
 
@@ -195,10 +196,10 @@ export function useCollectionManagerStore() {
    *
    * Called on URL path change (by watcher) or when a creation process of a new collection is canceled.
    *
-   * @param {CollectionNode[]} newPath The new path selection.
+   * @param {NodeDto<CollectionNode>[]} newPath The new path selection.
    * @returns {Promise<void>} A promise that resolves when the operation is complete.
    */
-  async function updateLevelsAndFetchData(newPath: CollectionNode[]): Promise<void> {
+  async function updateLevelsAndFetchData(newPath: NodeDto<CollectionNode>[]): Promise<void> {
     setPathToActiveCollection(newPath);
     updateLevels();
 
@@ -209,7 +210,7 @@ export function useCollectionManagerStore() {
     }
 
     const rawCao: CollectionAccessObject = await fetchCollectionDetails(
-      newPath[newPath.length - 1].data.uuid,
+      newPath[newPath.length - 1].node.data.uuid,
     );
 
     const cao: CollectionAccessStatusObject = {
@@ -262,11 +263,11 @@ export function useCollectionManagerStore() {
     // Then: Set activeCollection and parentUuid of each level
     levels.value.forEach((level: Level, index: number) => {
       level.activeCollection = pathToActiveCollection.value[index];
-      level.parentUuid = levels.value[index - 1]?.activeCollection?.data.uuid ?? null;
+      level.parentUuid = levels.value[index - 1]?.activeCollection?.node.data.uuid ?? null;
     });
 
     const lastActiveCollectionIsSame: boolean =
-      levels.value[levels.value.length - 1]?.activeCollection?.data.uuid ===
+      levels.value[levels.value.length - 1]?.activeCollection?.node.data.uuid ===
       currentLastColumn?.parentUuid;
 
     // Then: Add level for the children of last selection in path. Is either an empty level
@@ -278,7 +279,7 @@ export function useCollectionManagerStore() {
       levels.value.push({
         activeCollection: null,
         collections: [],
-        parentUuid: levels.value[levels.value.length - 1]?.activeCollection?.data.uuid ?? null,
+        parentUuid: levels.value[levels.value.length - 1]?.activeCollection?.node.data.uuid ?? null,
       });
     }
   }
@@ -287,9 +288,9 @@ export function useCollectionManagerStore() {
    * Validates a collection path given by a comma-separated string of UUIDs.
    *
    * @param {string} uuidString - The comma-separated string of UUIDs to validate.
-   * @returns {Promise<CollectionNode[]>} - A promise that resolves with the validated collection path.
+   * @returns {Promise<NodeDto<CollectionNode>[]>} - A promise that resolves with the validated collection path.
    */
-  async function validatePath(uuidString: string): Promise<CollectionNode[]> {
+  async function validatePath(uuidString: string): Promise<NodeDto<CollectionNode>[]> {
     return await api.validateCollectionPath(uuidString);
   }
 

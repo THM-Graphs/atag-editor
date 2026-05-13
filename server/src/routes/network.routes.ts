@@ -1,7 +1,12 @@
 // routes/network.routes.js
 import express, { Request, Response, Router, NextFunction } from 'express';
 import NetworkService from '../services/network.service.js';
-import { CollectionNode, CollectionNetworkActionType, NetworkPostData } from '../models/types.js';
+import {
+  CollectionNode,
+  CollectionNetworkActionType,
+  NetworkPostData,
+  NodeDto,
+} from '../models/types.js';
 import NotFoundError from '../errors/notFound.error.js';
 
 const router: Router = express.Router();
@@ -12,7 +17,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   const uuids: string[] = uuidString ? uuidString.split(',') : [];
 
   try {
-    const path: CollectionNode[] = await networkService.validatePath(uuids);
+    const path: NodeDto<CollectionNode>[] = await networkService.validatePath(uuids);
 
     res.status(200).json(path);
   } catch (error: unknown) {

@@ -114,20 +114,20 @@ export function createNodeStatusObjectFromRawData(rawNode: NodeDto): NodeStatusO
   };
 }
 
-export function createNewCollectionAccessObject(
-  data?: Partial<ICollection>,
-): CollectionAccessObject {
+/**
+ * Creates a new Collection object with default values.
+ *
+ * This function is used to generate a new Collection object with default values for the node labels and data properties.
+ *
+ * @return {CollectionNode} A new Collection object with default values.
+ */
+export function createCollectionNode(): CollectionNode {
   return {
-    collection: {
-      data: {
-        label: '',
-        uuid: crypto.randomUUID(),
-        ...data,
-      } as ICollection,
-      nodeLabels: [],
+    nodeLabels: [],
+    data: {
+      uuid: crypto.randomUUID(),
+      label: '',
     },
-    texts: [],
-    annotations: [],
   };
 }
 

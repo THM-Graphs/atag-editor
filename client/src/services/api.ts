@@ -241,7 +241,7 @@ export default class ApiService {
       filters: DeepReadonly<NodeSearchParams> | NodeSearchParams;
       cursor: CursorData | null;
     },
-  ): Promise<PaginationResult<CollectionNode[]>> {
+  ): Promise<PaginationResult<NodeDto<CollectionNode>[]>> {
     const DEFAULT_ROW_COUNT: number | null = 10;
 
     const path: string = parentUuid
@@ -476,7 +476,7 @@ export default class ApiService {
     }
   }
 
-  public async validateCollectionPath(uuidString: string): Promise<CollectionNode[]> {
+  public async validateCollectionPath(uuidString: string): Promise<NodeDto<CollectionNode>[]> {
     try {
       const url: string = `${this.baseUrl}/network?path=${uuidString}`;
 

@@ -5,11 +5,13 @@ import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
 import {
   CollectionNode,
-  CollectionAccessObject,
   NodeSearchParams,
-  CollectionStatusObject,
+  ColumnEntry,
   PaginationData,
   PaginationResult,
+  NodeDto,
+  CollectionAccessStatusObject,
+  NodeStatusObject,
 } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
@@ -18,7 +20,11 @@ import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
 import { useEventListener, useInfiniteScroll } from '@vueuse/core';
-import { createNewCollectionAccessObject } from '../utils/helper/helper';
+import {
+  createCollectionNode,
+  createNodeDtoFromNode,
+  createNodeStatusObjectFromRawData,
+} from '../utils/helper/helper';
 
 const props = defineProps<{
   index: number;
@@ -95,13 +101,16 @@ onMounted(() => {
   scrollToColumn();
 });
 
-function addData(data: CollectionNode[]) {
+function addData(data: NodeDto<CollectionNode>[]) {
   levels.value[props.index].collections.push(
-    ...data.map((c: CollectionNode) => {
+    ...data.map(c => {
       return {
-        data: c,
+        data: {
+          node: c.node,
+          connectedNodes: [],
+        },
         status: 'existing',
-      } as CollectionStatusObject;
+      } as ColumnEntry;
     }),
   );
 }
@@ -110,7 +119,7 @@ function endResize() {
   window.removeEventListener('mousemove', handleResize);
 }
 
-async function fetchData(): Promise<PaginationResult<CollectionNode[]>> {
+async function fetchData(): Promise<PaginationResult<NodeDto<CollectionNode>[]>> {
   const { data, pagination } = await api.getChildCollections(props.parentUuid, {
     filters: searchParams.value,
     cursor: columnPagination.value?.nextCursor,
@@ -136,7 +145,7 @@ async function fetchMoreData(): Promise<void> {
 
   const { data, pagination } = await fetchData();
 
-  const filteredData: CollectionNode[] = removeDuplicatesAfterFetching(data);
+  const filteredData: NodeDto<CollectionNode>[] = removeDuplicatesAfterFetching(data);
 
   addData(filteredData);
   setPagination(pagination);
@@ -152,12 +161,24 @@ function handleAddCollectionClick() {
 
   setMode('create');
 
-  const newCollection: CollectionAccessObject = createNewCollectionAccessObject();
+  const newCollection: CollectionAccessStatusObject = {
+    collection: createNodeStatusObjectFromRawData(
+      createNodeDtoFromNode(createCollectionNode()),
+    ) as NodeStatusObject<CollectionNode>,
+    texts: [],
+    annotations: [],
+  };
 
-  const temporaryListItem: CollectionStatusObject = {
+  // const newText: NodeStatusObject<TextNode> = ,
+  // ) as NodeStatusObject<TextNode>;
+
+  const temporaryListItem: ColumnEntry = {
     data: {
-      ...newCollection.collection,
-      data: { ...newCollection.collection.data, label: 'New Collection' },
+      node: {
+        data: { ...newCollection.collection.node.data, label: 'New Collection' },
+        nodeLabels: ['Collection'],
+      },
+      connectedNodes: [],
     },
     status: 'temporary',
   };
@@ -168,8 +189,13 @@ function handleAddCollectionClick() {
   // Add new collection as active in this column
   levels.value[props.index].activeCollection = temporaryListItem.data;
 
+  // Calculate new path
+  const newPath: NodeDto<CollectionNode>[] = levels.value
+    .slice(0, props.index + 1)
+    .map(l => l.activeCollection) as NodeDto<CollectionNode>[];
+
   // Set new path
-  setPathToActiveCollection(levels.value.slice(0, props.index + 1).map(l => l.activeCollection));
+  setPathToActiveCollection(newPath);
 
   // Display in edit pane
   setCollectionActive(newCollection);
@@ -232,8 +258,8 @@ async function handleRefreshClick() {
 }
 
 function handleResize(event: MouseEvent) {
-  const newWidth: number = event.clientX - column.value.getBoundingClientRect().left;
-  column.value.style.width = `${newWidth}px`;
+  const newWidth: number = event.clientX - column.value!.getBoundingClientRect().left;
+  column.value!.style.width = `${newWidth}px`;
 }
 
 function handleSearchInputChange(newInput: string) {
@@ -255,22 +281,22 @@ async function handleSearchParamsChange() {
  * A duplicate is the case when the user created a new collection which gets added on top of the list for UX reasons.
  * When data are fetched alphabetically, it might be loaded again.
  *
- * @param {CollectionNode[]} data - The collection data to filter.
- * @returns {CollectionNode[]} The filtered data.
+ * @param {NodeDto<CollectionNode>[]} data - The collection data to filter.
+ * @returns {NodeDto<CollectionNode>[]} The filtered data.
  */
-function removeDuplicatesAfterFetching(data: CollectionNode[]): CollectionNode[] {
+function removeDuplicatesAfterFetching(data: NodeDto<CollectionNode>[]): NodeDto<CollectionNode>[] {
   const existingUuids: Set<string> = new Set(
-    levels.value[props.index].collections.map((c: CollectionStatusObject) => c.data.data.uuid),
+    levels.value[props.index].collections.map((c: ColumnEntry) => c.data.node.data.uuid),
   );
 
-  const filteredData: CollectionNode[] = data.filter(
-    (c: CollectionNode) => !existingUuids.has(c.data.uuid),
+  const filteredData: NodeDto<CollectionNode>[] = data.filter(
+    c => !existingUuids.has(c.node.data.uuid),
   );
 
   return filteredData;
 }
 
-function replaceData(data: CollectionNode[]) {
+function replaceData(data: NodeDto<CollectionNode>[]) {
   levels.value[props.index].collections = data.map(c => {
     return {
       data: c,
@@ -301,7 +327,7 @@ function updateUrlPath(uuid: string, index: number): void {
 }
 
 function scrollToColumn() {
-  column.value.scrollIntoView({ behavior: 'smooth' });
+  column.value!.scrollIntoView({ behavior: 'smooth' });
 }
 
 function setIsLoading(state: boolean) {
@@ -371,9 +397,11 @@ function startResize() {
     <div class="content" ref="scroll-pane">
       <CollectionItem
         v-for="collection of levels[props.index].collections"
-        :key="collection.data.data.uuid"
+        :key="collection.data.node.data.uuid"
         :collection="collection"
-        :isActive="levels[props.index].activeCollection?.data.uuid === collection.data.data.uuid"
+        :isActive="
+          levels[props.index].activeCollection?.node.data.uuid === collection.data.node.data.uuid
+        "
         @item-selected="handleItemSelected"
       ></CollectionItem>
       <div

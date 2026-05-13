@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CollectionStatusObject } from '../models/types';
+import { ColumnEntry } from '../models/types';
 import NodeTag from './NodeTag.vue';
 import { filterDefaultLabels } from '../utils/helper/helper';
 
 const emit = defineEmits(['itemSelected']);
 
 const props = defineProps<{
-  collection: CollectionStatusObject;
+  collection: ColumnEntry;
   isActive: boolean;
 }>();
 
-const nodeLabels = computed<string[]>(() => filterDefaultLabels(props.collection.data.nodeLabels));
+const nodeLabels = computed<string[]>(() =>
+  filterDefaultLabels(props.collection.data.node.nodeLabels),
+);
 
 function handleItemClick(): void {
   // Emit the event with the collection data
-  emit('itemSelected', props.collection.data.data.uuid);
+  emit('itemSelected', props.collection.data.node.data.uuid);
 }
 </script>
 
@@ -23,7 +25,7 @@ function handleItemClick(): void {
   <div
     class="container p-1"
     :class="{ active: props.isActive, temporary: props.collection.status === 'temporary' }"
-    :title="`Click to show details of ${props.collection.data.data.label}`"
+    :title="`Click to show details of ${props.collection.data.node.data.label}`"
     @click="handleItemClick"
   >
     <div class="labels">
@@ -44,7 +46,7 @@ function handleItemClick(): void {
       />
     </div>
     <div class="label font-bold">
-      {{ props.collection.data.data.label }}
+      {{ props.collection.data.node.data.label }}
     </div>
   </div>
 </template>

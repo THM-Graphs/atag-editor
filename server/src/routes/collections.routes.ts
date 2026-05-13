@@ -30,14 +30,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const parentUuid: string | null = req.query.parentUuid as string | null;
 
-    const collections: PaginationResult<CollectionNode[]> = await collectionService.getCollections(
-      nodeLabels,
-      order,
-      limit,
-      search,
-      parentUuid,
-      cursor,
-    );
+    const collections: PaginationResult<NodeDto<CollectionNode>[]> =
+      await collectionService.getCollections(nodeLabels, order, limit, search, parentUuid, cursor);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
@@ -78,14 +72,8 @@ router.get('/:uuid/collections', async (req: Request, res: Response, next: NextF
     .filter(label => label.trim() !== '');
 
   try {
-    const collections: PaginationResult<CollectionNode[]> = await collectionService.getCollections(
-      nodeLabels,
-      order,
-      limit,
-      search,
-      parentUuid,
-      cursor,
-    );
+    const collections: PaginationResult<NodeDto<CollectionNode>[]> =
+      await collectionService.getCollections(nodeLabels, order, limit, search, parentUuid, cursor);
 
     res.status(200).json(collections);
   } catch (error: unknown) {
