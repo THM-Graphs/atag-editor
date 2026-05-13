@@ -1,0 +1,20 @@
+name: Deploy Version 2 of editor to playground server
+
+on: workflow_dispatch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute remote ssh commands using ssh key
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST_TEST }}
+          key: ${{ secrets.SSH_KEY }}
+          username: ${{ secrets.USERNAME }}
+          # Images are built locally on the server
+          script: |
+            cd editor-v2
+            git checkout feature/editor-overhaul
+            git pull
+            docker compose -p editor-v2 -f docker-compose.prod.yml up --build -d
