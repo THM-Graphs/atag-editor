@@ -140,8 +140,8 @@ export type CollectionAccessObject = {
 };
 
 export type CollectionAccessStatusObject = {
-  collection: NodeStatusObject;
-  texts: NodeStatusObject[];
+  collection: NodeStatusObject<CollectionNode>;
+  texts: NodeStatusObject<TextNode>[];
   annotations: NodeStatusObject[];
 };
 

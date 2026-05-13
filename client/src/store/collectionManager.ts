@@ -4,12 +4,13 @@ import {
   CollectionAccessObject,
   CollectionStatusObject,
   Level,
-  NodeDto,
   NodeStatusObject,
   CollectionAccessStatusObject,
+  TextNode,
 } from '../models/types';
 import { useAppStore } from './app';
 import { useRefHistory } from '@vueuse/core';
+import { createNodeStatusObjectFromRawData } from '../utils/helper/helper';
 
 const { api } = useAppStore();
 
@@ -212,23 +213,16 @@ export function useCollectionManagerStore() {
     );
 
     const cao: CollectionAccessStatusObject = {
-      collection: createNodeStatusObjectFromRawData(rawCao.collection),
-      texts: rawCao.texts.map(t => createNodeStatusObjectFromRawData(t)),
+      collection: createNodeStatusObjectFromRawData(
+        rawCao.collection,
+      ) as NodeStatusObject<CollectionNode>,
+      texts: rawCao.texts.map(t =>
+        createNodeStatusObjectFromRawData(t),
+      ) as NodeStatusObject<TextNode>[],
       annotations: rawCao.annotations.map(a => createNodeStatusObjectFromRawData(a)),
     };
 
     setCollectionActive(cao);
-  }
-
-  function createNodeStatusObjectFromRawData(rawNode: NodeDto): NodeStatusObject {
-    // console.log(rawNode);
-    return {
-      node: rawNode.node,
-      connectedNodes: rawNode.connectedNodes.map(n => createNodeStatusObjectFromRawData(n)),
-      meta: {
-        status: 'unchanged',
-      },
-    };
   }
 
   /**

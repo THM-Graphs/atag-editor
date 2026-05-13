@@ -330,7 +330,7 @@ export default class ApiService {
     }
   }
 
-  public async getChildTexts(collectionUuid: string): Promise<NodeDto<TextNode>[]> | undefined {
+  public async getChildTexts(collectionUuid: string): Promise<NodeDto<TextNode>[]> {
     try {
       const url: string = `${this.baseUrl}/collections/${collectionUuid}/texts`;
 

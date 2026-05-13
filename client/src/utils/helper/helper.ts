@@ -98,6 +98,22 @@ export function createNewCharacter(char: string): Character {
   };
 }
 
+/**
+ * Creates a a valid node status object from a given {@link NodeDto} by adding
+ * a `meta` key to the node DTO which makes it editable in the frontend.
+ *
+ * @return {NodeStatusObject} A new node statsu object.
+ */
+export function createNodeStatusObjectFromRawData(rawNode: NodeDto): NodeStatusObject {
+  return {
+    node: rawNode.node,
+    connectedNodes: rawNode.connectedNodes.map(n => createNodeStatusObjectFromRawData(n)),
+    meta: {
+      status: 'unchanged',
+    },
+  };
+}
+
 export function createNewCollectionAccessObject(
   data?: Partial<ICollection>,
 ): CollectionAccessObject {
@@ -122,13 +138,28 @@ export function createNewCollectionAccessObject(
  *
  * @return {TextNode} A new Text object with default values.
  */
-export function createNewTextObject(): TextNode {
+export function createTextNode(): TextNode {
   return {
     nodeLabels: [],
     data: {
       uuid: crypto.randomUUID(),
       text: '',
     },
+  };
+}
+
+/**
+ * Creates a a valid node DTO object from a given raw node (Annotation, Entity, Collection, Text).
+ * This is to match the structure of the generic {@link NodeDto} object used in the API data.
+ *
+ * @return {TextNode} A new Text object with default values.
+ */
+export function createNodeDtoFromNode<
+  T extends AnnotationNode | EntityNode | CollectionNode | TextNode,
+>(rawNode: T): NodeDto<T> {
+  return {
+    node: rawNode,
+    connectedNodes: [],
   };
 }
 

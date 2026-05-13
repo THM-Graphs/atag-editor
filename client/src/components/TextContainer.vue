@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TextNode } from '../models/types';
+import { NodeDto, NodeStatusObject, TextNode } from '../models/types';
 import Card from 'primevue/card';
 import NodeTag from './NodeTag.vue';
 import Button from 'primevue/button';
@@ -8,35 +8,36 @@ import Textarea from 'primevue/textarea';
 import { useGuidelinesStore } from '../store/guidelines';
 import { computed } from 'vue';
 import { useBookmarks } from '../composables/useBookmarks';
+import NodeStatusBadge from './NodeStatusBadge.vue';
 
 const props = defineProps<{
   status: 'existing' | 'temporary';
-  text: TextNode;
+  text: NodeStatusObject<TextNode>;
   mode: 'view' | 'edit';
 }>();
 
 const emit = defineEmits<{
-  (e: 'textAdded', text: TextNode): void;
-  (e: 'textRemoved', text: TextNode): void;
+  (e: 'textAdded', text: NodeDto<TextNode>): void;
+  (e: 'textRemoved', text: NodeDto<TextNode>): void;
 }>();
 
 const { getAvailableTextLabels } = useGuidelinesStore();
 const { bookmarks, toggleBookmark } = useBookmarks();
 
 const isBookmarked = computed<boolean>(() => {
-  return bookmarks.value.some(b => b.data.data.uuid === props.text.data.uuid);
+  return bookmarks.value.some(b => b.data.data.uuid === props.text.node.data.uuid);
 });
 
 function handleBookmarkAction() {
-  toggleBookmark({ data: props.text, type: 'text' });
+  toggleBookmark({ data: props.text.node, type: 'text' });
 }
 
 const PREVIEW_LENGTH: number = 300;
 
 const displayedText = computed<string>(
   () =>
-    props.text.data.text.slice(0, PREVIEW_LENGTH) +
-    (props.text.data.text.length > PREVIEW_LENGTH ? '...' : ''),
+    props.text.node.data.text.slice(0, PREVIEW_LENGTH) +
+    (props.text.node.data.text.length > PREVIEW_LENGTH ? '...' : ''),
 );
 
 function handleRemoveText() {
@@ -65,7 +66,7 @@ function handleClickContainer(event: PointerEvent): void {
     return;
   }
 
-  window.open(`/texts/${props.text.data.uuid}`, '_blank', 'noopener noreferrer');
+  window.open(`/editor/${props.text.node.data.uuid}`, '_blank', 'noopener noreferrer');
 }
 </script>
 
@@ -89,7 +90,9 @@ function handleClickContainer(event: PointerEvent): void {
   >
     <template #title>
       <div class="header">
-        <div class="button-pane flex justify-content-end">
+        <div class="button-pane flex justify-content-end align-items-center">
+          <NodeStatusBadge :status="props.text.meta.status" :style="{ marginRight: 'auto' }" />
+
           <Button
             type="button"
             severity="secondary"
@@ -117,13 +120,13 @@ function handleClickContainer(event: PointerEvent): void {
         </div>
         <div class="node-labels-container">
           <template v-if="mode === 'view'">
-            <NodeTag v-for="label in props.text.nodeLabels" :content="label" type="Text" />
+            <NodeTag v-for="label in props.text.node.nodeLabels" :content="label" type="Text" />
           </template>
 
           <template v-if="mode === 'edit'">
             <MultiSelect
               size="small"
-              v-model="text.nodeLabels"
+              v-model="text.node.nodeLabels"
               :options="getAvailableTextLabels()"
               display="chip"
               placeholder="Text labels"
@@ -151,7 +154,7 @@ function handleClickContainer(event: PointerEvent): void {
         </div>
       </div>
       <div v-else>
-        <Textarea v-model="text.data.text" class="w-full" placeholder="Add text" />
+        <Textarea v-model="text.node.data.text" class="w-full" placeholder="Add text" />
       </div>
     </template>
 

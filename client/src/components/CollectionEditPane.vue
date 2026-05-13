@@ -16,12 +16,17 @@ import {
   CollectionStatusObject,
   PropertyConfig,
   TextNode,
+  NodeDto,
+  CollectionAccessStatusObject,
+  NodeStatusObject,
 } from '../models/types';
 import Tag from 'primevue/tag';
 import {
   capitalize,
   cloneDeep,
-  createNewTextObject,
+  createNodeDtoFromNode,
+  createNodeStatusObjectFromRawData,
+  createTextNode,
   getDefaultValueForProperty,
 } from '../utils/helper/helper';
 import MultiSelect from 'primevue/multiselect';
@@ -33,8 +38,6 @@ import AnnotationTypeIcon from './AnnotationTypeIcon.vue';
 import Panel from 'primevue/panel';
 import Fieldset from 'primevue/fieldset';
 import FormPropertiesSection from './FormPropertiesSection.vue';
-import AnnotationFormAdditionalTextSection from './AnnotationFormAdditionalTextSection.vue';
-import AnnotationFormEntitiesSection from './AnnotationFormEntitiesSection.vue';
 import TextContainer from './TextContainer.vue';
 import { useAppStore } from '../store/app';
 import { useRouter } from 'vue-router';
@@ -45,6 +48,8 @@ import ValidationError from '../utils/errors/validation.error';
 import { useBookmarks } from '../composables/useBookmarks';
 import AnnotationButton from './AnnotationButton.vue';
 import { useCreateAnnotation } from '../composables/useCreateAnnotation';
+import AnnotationFormAdditionalNodesSection from './AnnotationFormAdditionalNodesSection.vue';
+import NodeStatusBadge from './NodeStatusBadge.vue';
 
 type TabView = 'annotations' | 'details' | 'texts';
 
@@ -83,10 +88,10 @@ const { createCollectionAnnotation: createAnnotation } = useCreateAnnotation('Co
 
 const confirm = useConfirm();
 
-const temporaryWorkData = ref<CollectionAccessObject | null>(null);
-const initialTemporaryWorkData = ref<CollectionAccessObject | null>(null);
+const temporaryWorkData = ref<CollectionAccessStatusObject | null>(null);
+const initialTemporaryWorkData = ref<CollectionAccessStatusObject | null>(null);
 
-const temporaryTexts = ref<TextNode[]>([]);
+const temporaryTexts = ref<NodeStatusObject<TextNode>[]>([]);
 
 // Responsible for setting inputs (non-)editable. The global mode
 // determines the state of the page.
@@ -210,7 +215,7 @@ function enrichCollectionData(): void {
 }
 
 function handleAnnotationButtonClick(data: { type: string; subType?: string | number }) {
-  const newAnnotation: AnnotationData = createAnnotation({
+  const newAnnotation: NodeStatusObject = createAnnotation({
     ...data,
     nodeLabels: temporaryWorkData.value.collection.node.nodeLabels,
   });
@@ -218,16 +223,22 @@ function handleAnnotationButtonClick(data: { type: string; subType?: string | nu
   temporaryWorkData.value.annotations.push(newAnnotation);
 }
 
-function handleAddText(newText: TextNode) {
-  newText.data.text = newText.data.text.replace(/(\r\n|\n|\r)/g, ' ');
+function handleAddText(newText: NodeStatusObject<TextNode>) {
+  newText.node.data.text = newText.node.data.text.replace(/(\r\n|\n|\r)/g, ' ');
 
-  temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== newText.data.uuid);
+  temporaryTexts.value = temporaryTexts.value.filter(
+    t => t.node.data.uuid !== newText.node.data.uuid,
+  );
 
   temporaryWorkData.value.texts.push(newText);
 }
 
 async function handleAddTextClick(): Promise<void> {
-  const newText: TextNode = createNewTextObject();
+  const newText: NodeStatusObject<TextNode> = createNodeStatusObjectFromRawData(
+    createNodeDtoFromNode(createTextNode()),
+  ) as NodeStatusObject<TextNode>;
+
+  newText.meta.status = 'created';
 
   temporaryTexts.value.push(newText);
 }
@@ -272,13 +283,15 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
   });
 }
 
-function handleRemoveText(text: TextNode, status: 'existing' | 'temporary'): void {
+function handleRemoveText(text: NodeDto<TextNode>, status: 'existing' | 'temporary'): void {
   if (status === 'existing') {
     temporaryWorkData.value.texts = temporaryWorkData.value.texts.filter(
-      t => t.data.uuid !== text.data.uuid,
+      t => t.node.data.uuid !== text.node.data.uuid,
     );
   } else {
-    temporaryTexts.value = temporaryTexts.value.filter(t => t.data.uuid !== text.data.uuid);
+    temporaryTexts.value = temporaryTexts.value.filter(
+      t => t.node.data.uuid !== text.node.data.uuid,
+    );
   }
 }
 
@@ -369,7 +382,7 @@ async function handleApplyChanges(): Promise<void> {
 }
 
 function handleBookmarkAction(): void {
-  toggleBookmark({ data: temporaryWorkData.value.collection, type: 'collection' });
+  toggleBookmark({ data: temporaryWorkData.value.collection.node, type: 'collection' });
 }
 
 async function handleDeleteColletion() {
@@ -644,6 +657,7 @@ function toggleViewMode(direction: TabView): void {
                   <span class="font-bold">{{ annotation.node.data.type }}</span>
                 </div>
               </div>
+              <NodeStatusBadge :status="annotation.meta.status" />
             </template>
             <template #toggleicon="{ collapsed }">
               <i :class="`pi pi-chevron-${collapsed ? 'down' : 'up'}`"></i>
@@ -670,16 +684,16 @@ function toggleViewMode(direction: TabView): void {
                 :mode="formMode"
               />
             </Fieldset>
-            <!-- <AnnotationFormAdditionalNodesSection
+            <AnnotationFormAdditionalNodesSection
               v-model="annotation.connectedNodes"
-              :mode="'view'"
+              :mode="formMode"
               :annotation-config="
                 getCollectionAnnotationConfig(
                   temporaryWorkData.collection.node.nodeLabels,
                   annotation.node.data.type,
                 )
               "
-            /> -->
+            />
             <div class="action-buttons flex justify-content-center">
               <Button
                 v-if="formMode === 'edit'"
@@ -703,10 +717,10 @@ function toggleViewMode(direction: TabView): void {
           </div>
           <TextContainer
             v-for="text in temporaryWorkData.texts"
-            :text="text.node"
+            :text="text"
             :mode="formMode"
             status="existing"
-            @text-removed="handleRemoveText(text.node, 'existing')"
+            @text-removed="handleRemoveText(text, 'existing')"
           />
           <TextContainer
             v-for="text in temporaryTexts"
@@ -831,6 +845,7 @@ function toggleViewMode(direction: TabView): void {
 .content {
   flex-grow: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .icon-container {
