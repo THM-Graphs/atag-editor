@@ -318,13 +318,13 @@ async function createCollection(): Promise<CollectionNode> {
   return updated;
 }
 
-function transferDataToListItem(uuid: string, index: number, data: CollectionNode): void {
+function transferDataToListItem(uuid: string, index: number, data: NodeDto<CollectionNode>): void {
   // TODO: Make this more elegant
   const collectionObject: ColumnEntry | null = findCollectionInHierarchy(uuid, index);
 
   if (collectionObject) {
-    collectionObject.data.data = data.data;
-    collectionObject.data.nodeLabels = data.nodeLabels;
+    collectionObject.data.node.data = data.node.data;
+    collectionObject.data.node.nodeLabels = data.node.nodeLabels;
     collectionObject.status = 'existing';
   }
 }
@@ -352,14 +352,17 @@ async function handleApplyChanges(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
-    const result: CollectionNode =
-      globalMode.value === 'create' ? await createCollection() : await updateCollection();
+    // TODO: Implement Creating collections
+    // const result: CollectionNode =
+    //   globalMode.value === 'create' ? await createCollection() : await updateCollection();
+
+    const result = await updateCollection();
 
     // Set returned collection data to column list item
     const pathIndex: number = pathToActiveCollection.value.length - 1;
 
     // Update column entry (data, status)
-    transferDataToListItem(result.data.uuid, pathIndex, result);
+    transferDataToListItem(result.node.data.uuid, pathIndex, result);
 
     // Clean up pane data
     initialTemporaryWorkData.value = cloneDeep(temporaryWorkData.value);
@@ -451,18 +454,49 @@ function removeUnnecessaryDataBeforeSave(): void {
   });
 }
 
-async function updateCollection(): Promise<CollectionNode> {
-  removeUnnecessaryDataBeforeSave();
+function wrapDataInSingleStructure(data: CollectionAccessStatusObject) {
+  const { collection, texts, annotations } = data;
 
-  const collectionPostData: CollectionPostData = {
-    data: temporaryWorkData.value,
-    initialData: initialTemporaryWorkData.value,
+  // Collection is set to "modified", along with all annotations. The annotation
+  // status handling could be more fine granular, but this here makes things
+  // easier (Collections won't have hundreds/thousands of annotations, query is
+  // still performant)
+  const freshCollection: NodeStatusObject = { ...collection, meta: { status: 'modified' } };
+  const freshAnnotations: NodeStatusObject[] = annotations.map(a => {
+    const newStatus = a.meta.status === 'unchanged' ? 'modified' : a.meta.status;
+
+    return {
+      ...a,
+      meta: { status: newStatus },
+    };
+  });
+
+  return {
+    ...freshCollection,
+    connectedNodes: [...texts, ...freshAnnotations],
   };
+}
 
-  return await api.updateCollection(
+async function updateCollection(): Promise<NodeDto<CollectionNode>> {
+  const updateObj = wrapDataInSingleStructure(temporaryWorkData.value!);
+
+  // console.log(updateObj);
+
+  // console.log(flattenNodeTree(updateObj));
+  // TODO: Include this step
+  // removeUnnecessaryDataBeforeSave();
+
+  // const collectionPostData: CollectionPostData = {
+  //   data: temporaryWorkData.value,
+  //   initialData: initialTemporaryWorkData.value,
+  // };
+
+  const json = await api.updateCollection(
     temporaryWorkData.value.collection.node.data.uuid,
-    collectionPostData,
+    updateObj,
   );
+
+  return json;
 }
 
 function showMessage(result: 'success' | 'error', error?: Error) {

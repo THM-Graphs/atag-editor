@@ -19,6 +19,7 @@ import {
   BaseNodeLabel,
   TextUpdateDto,
   AnnotationNode,
+  NodeStatusObject,
 } from '../models/types';
 import DatabaseConnectionError from '../utils/errors/databaseConnection.error';
 import ApiError from '../utils/errors/api.error';
@@ -409,7 +410,10 @@ export default class ApiService {
     }
   }
 
-  public async updateCollection(uuid: string, data: CollectionPostData): Promise<CollectionNode> {
+  public async updateCollection(
+    uuid: string,
+    data: NodeStatusObject,
+  ): Promise<NodeDto<CollectionNode>> {
     const url: string = `${this.baseUrl}/collections/${uuid}`;
 
     try {

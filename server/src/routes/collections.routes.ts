@@ -13,6 +13,7 @@ import {
   NodeAncestry,
   PaginationResult,
   NodeDto,
+  NodeStatusObject,
 } from '../models/types.js';
 import { getPagination } from '../utils/helper.js';
 
@@ -95,19 +96,15 @@ router.get('/:uuid/ancestry', async (req: Request, res: Response, next: NextFunc
 
 router.post('/:uuid', async (req: Request, res: Response, next: NextFunction) => {
   const uuid: string = req.params.uuid;
-  const data: CollectionPostData = req.body;
+  const data: NodeStatusObject = req.body;
 
   try {
-    const collection: CollectionNode = await collectionService.updateCollection(uuid, data);
-
-    const annotationObjects = annotationService.createAnnotationObjectsFromCollection(data);
-    const updatedAnnotations: IAnnotation[] = await annotationService.saveAnnotations(
+    const updatedCollection: NodeDto<CollectionNode> = await collectionService.updateCollection(
       uuid,
-      'Collection',
-      annotationObjects as Annotation[],
+      data,
     );
 
-    res.status(200).json(collection);
+    res.status(200).json(updatedCollection);
   } catch (error: unknown) {
     next(error);
   }
