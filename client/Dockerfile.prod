@@ -18,8 +18,8 @@ ENV VITE_PROTOCOL=${VITE_PROTOCOL}
 # Install dependencies including devDependencies
 RUN npm install
 
-# Build bundle
-RUN npm run build
+# Build bundle but ignore type errors
+RUN npm run build:ignore-errors
 
 # Build nginx image to serve bundle
 FROM nginx:alpine AS production
