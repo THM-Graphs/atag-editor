@@ -92,6 +92,14 @@ function handleRemoveNode(node: NodeStatusObject<CollectionNode | EntityNode | T
   nodes.value = nodes.value!.filter(n => n.node.data.uuid !== node.node.data.uuid);
 }
 
+/**
+ * Helper function to determine whether a node is not deleted or removed in the
+ * current session. Used for centralizing styling of these nodees (do not show, show "removed" flag etc.).
+ */
+function isNotDeleted(node: NodeStatusObject): boolean {
+  return node.meta.status !== 'deleted' && node.meta.status !== 'removed';
+}
+
 const nodeOptions = ref([
   {
     label: 'Possible Nodes',
@@ -131,34 +139,36 @@ function toggleMenu(event: PointerEvent) {
     </template>
 
     <template v-for="(node, index) in nodes" :key="node.node.data.uuid">
-      <EntityCard
-        v-if="isEntityNode(node)"
-        v-model="nodes![index] as NodeStatusObject<EntityNode>"
-        @remove-node="handleRemoveNode(node)"
-        :mode="props.mode"
-      />
-      <TextCard
-        v-else-if="isTextNode(node) || isTextNode(node)"
-        v-model="nodes![index] as NodeStatusObject<TextNode>"
-        @remove-node="handleRemoveNode(node)"
-        :mode="props.mode"
-      />
-      <CollectionCard
-        v-else-if="isCollectionNode(node)"
-        v-model="nodes![index] as NodeStatusObject<CollectionNode>"
-        @remove-node="handleRemoveNode(node)"
-        :mode="props.mode"
-      />
-      <AnnotationCard
-        v-else-if="isAnnotationNode(node)"
-        v-model="nodes![index] as NodeStatusObject<AnnotationNode>"
-        @remove-node="handleRemoveNode(node)"
-        :mode="props.mode"
-      />
+      <template v-if="isNotDeleted(node)">
+        <EntityCard
+          v-if="isEntityNode(node)"
+          v-model="nodes![index] as NodeStatusObject<EntityNode>"
+          @remove-node="handleRemoveNode(node)"
+          :mode="props.mode"
+        />
+        <TextCard
+          v-else-if="isTextNode(node) || isTextNode(node)"
+          v-model="nodes![index] as NodeStatusObject<TextNode>"
+          @remove-node="handleRemoveNode(node)"
+          :mode="props.mode"
+        />
+        <CollectionCard
+          v-else-if="isCollectionNode(node)"
+          v-model="nodes![index] as NodeStatusObject<CollectionNode>"
+          @remove-node="handleRemoveNode(node)"
+          :mode="props.mode"
+        />
+        <AnnotationCard
+          v-else-if="isAnnotationNode(node)"
+          v-model="nodes![index] as NodeStatusObject<AnnotationNode>"
+          @remove-node="handleRemoveNode(node)"
+          mode="view"
+        />
 
-      <div v-else>
-        <p>Unsupported node type: {{ node.node.nodeLabels }}</p>
-      </div>
+        <div v-else>
+          <p>Unsupported node type: {{ node.node.nodeLabels }}</p>
+        </div>
+      </template>
     </template>
     <Button
       v-if="mode === 'edit'"
