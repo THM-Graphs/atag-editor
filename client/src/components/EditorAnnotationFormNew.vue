@@ -190,7 +190,7 @@ function updateData(): void {
         <span class="font-italic text-xs text-color-secondary" :title="workingData.node.data.text">
           {{ previewText }}
         </span>
-        <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div>
+        <!-- <div class="spy pi pi-eye cursor-pointer" title="Show annotated text"></div> -->
       </div>
       <NodeStatusBadge :status="workingData.meta.status" />
       <Button
@@ -231,7 +231,7 @@ function updateData(): void {
     </div>
 
     <div class="annotation-card-footer">
-      <div
+      <!-- <div
         v-if="mode === 'view'"
         class="edit-buttons flex justify-content-center align-items-center"
       >
@@ -285,7 +285,7 @@ function updateData(): void {
           @click="handleRedraw"
           :style="{ width: '20px', height: '20px' }"
         />
-      </div>
+      </div> -->
       <div class="action-buttons flex gap-1 justify-content-center">
         <Button
           v-if="mode === 'view'"
@@ -357,13 +357,6 @@ function updateData(): void {
   gap: 0.25rem;
   padding: 0.5rem;
   background: var(--p-panel-header-background);
-}
-
-[data-mode='view'] .annotation-card-footer {
-  justify-content: space-between !important;
-}
-
-[data-mode='edit'] .annotation-card-footer {
   justify-content: center;
 }
 
