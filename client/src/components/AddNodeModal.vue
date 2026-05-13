@@ -46,6 +46,16 @@ const inputIsValid = computed<boolean>(() => {
   return false;
 });
 
+const nodeAsCollection = computed(
+  () => (nodeToAdd.value ?? undefined) as NodeStatusObject<CollectionNode> | undefined,
+);
+const nodeAsText = computed(
+  () => (nodeToAdd.value ?? undefined) as NodeStatusObject<TextNode> | undefined,
+);
+const nodeAsEntity = computed(
+  () => (nodeToAdd.value ?? undefined) as NodeStatusObject<EntityNode> | undefined,
+);
+
 watch(() => route.path, closeModal);
 
 function handleFinishClick(): void {
@@ -90,19 +100,11 @@ function closeModal(): void {
     <template v-if="currentStep === 'finishing'">
       <CollectionCard
         v-if="baseNodeLabel === 'Collection'"
-        v-model="nodeToAdd as NodeStatusObject<CollectionNode>"
+        :model-value="nodeAsCollection"
         mode="view"
       />
-      <TextCard
-        v-if="baseNodeLabel === 'Text'"
-        v-model="nodeToAdd as NodeStatusObject<TextNode>"
-        mode="view"
-      />
-      <EntityCard
-        v-if="baseNodeLabel === 'Entity'"
-        v-model="nodeToAdd as NodeStatusObject<EntityNode>"
-        mode="view"
-      />
+      <TextCard v-if="baseNodeLabel === 'Text'" :model-value="nodeAsText" mode="view" />
+      <EntityCard v-if="baseNodeLabel === 'Entity'" :model-value="nodeAsEntity" mode="view" />
       <div class="flex justify-content-center gap-2 mt-4 w-full">
         <Button label="Add" icon="pi pi-plus" @click="handleFinishClick" />
         <Button
