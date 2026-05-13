@@ -1,5 +1,5 @@
-import ICollection from './ICollection.js';
-import IText from './IText.js';
+import { ICollection } from './ICollection.js';
+import { IText } from './IText.js';
 
 export default interface ILetter {
   guid: string;

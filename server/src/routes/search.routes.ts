@@ -24,7 +24,10 @@ const searchService: SearchService = new SearchService();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { limit, offset, order, search }: NodeSearchParams = getPagination(req);
-    const scope: 'Collection' | 'Entity' | 'Text' = req.query.scope;
+    const scope: 'Collection' | 'Entity' | 'Text' = req.query.scope as
+      | 'Collection'
+      | 'Entity'
+      | 'Text';
 
     if (!scope) {
       return [];

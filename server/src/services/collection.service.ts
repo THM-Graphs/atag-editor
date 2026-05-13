@@ -23,6 +23,7 @@ import {
 import { flattenNodeTree, buildSubgraphUpdateQuery } from '../utils/nodeUpdate.js';
 import ICharacter from '../models/ICharacter.js';
 import ValidationError from '../errors/validation.error.js';
+import { ICollection } from '../models/ICollection.js';
 
 type CollectionTextObject = {
   all: TextNode[];
@@ -141,9 +142,9 @@ export default class CollectionService {
     const data: NodeDto<CollectionNode>[] = collections.map(c => ({
       node: {
         nodeLabels: c.nodeLabels,
-        data: toNativeTypes(c.data),
+        data: toNativeTypes(c.data) as ICollection,
       },
-      connectedNodes: [],
+      connectedNodes: [] as NodeDto[],
     }));
 
     // Generate next cursor from the last item

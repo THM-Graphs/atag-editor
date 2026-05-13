@@ -3,13 +3,9 @@ import annotationRoutes from './annotations.routes.js';
 import textRoutes from './text.routes.js';
 import AnnotationService from '../services/annotation.service.js';
 import CollectionService from '../services/collection.service.js';
-import ICollection from '../models/ICollection.js';
-import IAnnotation from '../models/IAnnotation.js';
 import {
-  Annotation,
   CollectionNode,
   CollectionCreationData,
-  CollectionPostData,
   NodeAncestry,
   PaginationResult,
   NodeDto,
