@@ -418,6 +418,7 @@ function startResize() {
     <div class="footer flex justify-content-center">
       <Button
         size="small"
+        disabled
         severity="secondary"
         icon="pi pi-plus"
         class="w-full"

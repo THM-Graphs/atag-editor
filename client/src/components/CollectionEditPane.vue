@@ -349,6 +349,17 @@ async function handleApplyChanges(): Promise<void> {
 
   const operationType: 'create' | 'update' = globalMode.value === 'create' ? 'create' : 'update';
 
+  // TODO: Enable
+  if (operationType === 'create') {
+    addToastMessage({
+      severity: 'info',
+      summary: 'Not implemented',
+      detail: 'Creating new Collections is not yet enabled.',
+      life: 3000,
+    });
+    return;
+  }
+
   asyncOperationRunning.value = true;
 
   try {
