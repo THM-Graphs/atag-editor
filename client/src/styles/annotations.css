@@ -293,8 +293,26 @@
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/main/client/public/icons/receivedPerson.svg');
 }
 
+.annotation-type-icon-pb {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/pbMarker.svg');
+}
+
+.annotation-type-icon-cb {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/cbMarker.svg');
+}
+
+/* -------- INLINE TEXT MARKERS ------------------------------------------------------------------------------------------------------------ */
+
 .annotation-type-marker-deleted {
   background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/deletedMarker.svg');
+}
+
+.annotation-type-marker-pb {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/pbMarker.svg');
+}
+
+.annotation-type-marker-cb {
+  background-image: url('https://raw.githubusercontent.com/THM-Graphs/atag-editor/refs/heads/feature/editor-overhaul/client/public/icons/cbMarker.svg');
 }
 
 /* -------- TODO: Paragraph annotations, remove in the since not customizable...? ---------------------------------------- */

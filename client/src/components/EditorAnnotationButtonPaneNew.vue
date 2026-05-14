@@ -154,17 +154,19 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
       v-for="(annotationTypes, category) in groupedAnnotationTypes"
       :key="category"
     >
-      <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
-      <div class="buttons">
-        <AnnotationButton
-          v-for="type in annotationTypes"
-          :type="type.type"
-          :key="type.type"
-          :disabled="!selectedOptions.includes(type.type)"
-          :config="getAnnotationConfig(type.type)"
-          @clicked="handleClick($event)"
-        />
-      </div>
+      <template v-if="category !== 'structure'">
+        <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
+        <div class="buttons">
+          <AnnotationButton
+            v-for="type in annotationTypes"
+            :type="type.type"
+            :key="type.type"
+            :disabled="!selectedOptions.includes(type.type)"
+            :config="getAnnotationConfig(type.type)"
+            @clicked="handleClick($event)"
+          />
+        </div>
+      </template>
     </div>
   </div>
 </template>

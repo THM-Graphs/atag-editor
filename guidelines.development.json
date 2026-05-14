@@ -241,6 +241,37 @@
         ]
       },
       {
+        "type": "pb",
+        "category": "layout",
+        "defaultSelected": true,
+        "isZeroPoint": true,
+        "hasAdditionalTexts": false,
+        "properties": [
+          {
+            "name": "page",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          },
+          {
+            "name": "url",
+            "type": "string",
+            "required": false,
+            "editable": true,
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "cb",
+        "category": "layout",
+        "defaultSelected": true,
+        "isZeroPoint": true,
+        "hasAdditionalTexts": false,
+        "properties": []
+      },
+      {
         "type": "transposition",
         "category": "layout",
         "defaultSelected": true,
