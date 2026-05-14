@@ -13,6 +13,7 @@ import AnnotationCreateModal from './AnnotationCreateModal.vue';
 import { useTiptapStore } from '../store/tiptap';
 import { useValidateTextSelection } from '../composables/useValidateTextSelection';
 import { Selection } from '@tiptap/pm/state';
+import Button from 'primevue/button';
 const { isValid: isSelectionValid } = useValidateTextSelection();
 
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, isZeroPoint } =
@@ -154,9 +155,9 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
       v-for="(annotationTypes, category) in groupedAnnotationTypes"
       :key="category"
     >
-      <template v-if="category !== 'structure'">
-        <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
-        <div class="buttons">
+      <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
+      <div class="buttons">
+        <template v-if="category !== 'structure'">
           <AnnotationButton
             v-for="type in annotationTypes"
             :type="type.type"
@@ -165,8 +166,42 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
             :config="getAnnotationConfig(type.type)"
             @clicked="handleClick($event)"
           />
-        </div>
-      </template>
+        </template>
+        <template v-else>
+          <Button
+            severity="secondary"
+            v-tooltip.hover.top="{ value: 'h1', showDelay: 50 }"
+            @click="tiptap?.chain().focus().toggleHeading({ level: 1, type: 'heading' }).run()"
+            :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
+          >
+            H1
+          </Button>
+          <Button
+            severity="secondary"
+            v-tooltip.hover.top="{ value: 'h2', showDelay: 50 }"
+            @click="tiptap?.chain().focus().toggleHeading({ level: 2, type: 'heading' }).run()"
+            :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
+          >
+            H2
+          </Button>
+          <Button
+            severity="secondary"
+            v-tooltip.hover.top="{ value: 'h3', showDelay: 50 }"
+            @click="tiptap?.chain().focus().toggleHeading({ level: 3, type: 'heading' }).run()"
+            :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
+          >
+            H3
+          </Button>
+          <Button
+            severity="secondary"
+            icon="pi pi-align-justify"
+            v-tooltip.hover.top="{ value: 'paragraph', showDelay: 50 }"
+            @click="tiptap?.chain().focus().setNode('paragraph', { type: 'paragraph' }).run()"
+            :class="{ 'is-active': tiptap?.isActive('paragraph') }"
+          >
+          </Button>
+        </template>
+      </div>
     </div>
   </div>
 </template>

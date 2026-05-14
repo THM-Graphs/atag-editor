@@ -849,32 +849,6 @@ watch(
     >
       <EditorHeader ref="labelInputRef" />
       <EditorAnnotationButtonPaneNew />
-      <div class="button-group text-center">
-        <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 1, type: 'heading' }).run()"
-          :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
-        >
-          H1
-        </button>
-        <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 2, type: 'heading' }).run()"
-          :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
-        >
-          H2
-        </button>
-        <button
-          @click="tiptap?.chain().focus().toggleHeading({ level: 3, type: 'heading' }).run()"
-          :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
-        >
-          H3
-        </button>
-        <button
-          @click="tiptap?.chain().focus().setNode('paragraph', { type: 'paragraph' }).run()"
-          :class="{ 'is-active': tiptap?.isActive('paragraph') }"
-        >
-          Paragraph
-        </button>
-      </div>
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
 
       <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />

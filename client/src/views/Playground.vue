@@ -157,13 +157,6 @@ function toggleTextHightlighting(annotation: AnnotationOld, direction: 'on' | 'o
 
 <style>
 #editor {
-  width: 80%;
-
-  &:has(:focus-visible) {
-    box-shadow: var(--box-shadow-focus);
-    outline: 0;
-  }
-
   span.highlight {
     background-color: yellow !important;
   }
