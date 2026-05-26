@@ -26,8 +26,8 @@ import {
   cloneDeep,
   createNodeDtoFromNode,
   createNodeStatusObjectFromRawData,
-  createCollectionNode,
   getDefaultValueForProperty,
+  createTextNode,
 } from '../utils/helper/helper';
 import MultiSelect from 'primevue/multiselect';
 import DataInputComponent from './DataInputComponent.vue';
@@ -234,8 +234,12 @@ function handleAddText(newText: NodeStatusObject<TextNode>) {
 
 async function handleAddTextClick(): Promise<void> {
   const newText: NodeStatusObject<TextNode> = createNodeStatusObjectFromRawData(
-    createNodeDtoFromNode(createCollectionNode()),
+    createNodeDtoFromNode(createTextNode()),
   ) as NodeStatusObject<TextNode>;
+
+  if (!newText.node.nodeLabels.includes('Text')) {
+    newText.node.nodeLabels.push('Text');
+  }
 
   newText.meta.status = 'created';
 
@@ -284,9 +288,15 @@ function handleDeleteAnnotation(event: MouseEvent, uuid: string): void {
 
 function handleRemoveText(text: NodeDto<TextNode>, status: 'existing' | 'temporary'): void {
   if (status === 'existing') {
-    temporaryWorkData.value.texts = temporaryWorkData.value.texts.filter(
-      t => t.node.data.uuid !== text.node.data.uuid,
+    const textToRemove = temporaryWorkData.value.texts.find(
+      t => t.node.data.uuid === text.node.data.uuid,
     );
+
+    if (!textToRemove) {
+      console.error(`Text with UUID ${text.node.data.uuid} not found in existing texts.`);
+    }
+
+    textToRemove.meta.status = 'removed';
   } else {
     temporaryTexts.value = temporaryTexts.value.filter(
       t => t.node.data.uuid !== text.node.data.uuid,
@@ -303,7 +313,7 @@ async function createCollection(): Promise<CollectionNode> {
     parentCollection,
   };
 
-  await api.createCollection(creationData);
+  await api.createOrAddCollection(creationData);
 
   const updateData: CollectionPostData = {
     data: temporaryWorkData.value,
@@ -490,8 +500,6 @@ function wrapDataInSingleStructure(data: CollectionAccessStatusObject) {
 
 async function updateCollection(): Promise<NodeDto<CollectionNode>> {
   const updateObj = wrapDataInSingleStructure(temporaryWorkData.value!);
-
-  // console.log(updateObj);
 
   // console.log(flattenNodeTree(updateObj));
   // TODO: Include this step
