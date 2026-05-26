@@ -37,10 +37,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const data: CollectionCreationData = req.body;
+  const data: NodeStatusObject = req.body.data;
+  const uuid: string = req.body.uuid;
 
   try {
-    const newCollection: CollectionNode = await collectionService.createNewCollection(data);
+    const newCollection: NodeDto<CollectionNode> = await collectionService.createOrAddCollection(
+      uuid,
+      data,
+    );
 
     res.status(201).json(newCollection);
   } catch (error: unknown) {

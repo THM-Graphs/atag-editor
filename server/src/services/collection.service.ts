@@ -19,6 +19,7 @@ import {
   NodeSearchParams,
   NodeDto,
   NodeStatusObject,
+  NodeUpdateObject,
 } from '../models/types.js';
 import { flattenNodeTree, buildSubgraphUpdateQuery } from '../utils/nodeUpdate.js';
 import ICharacter from '../models/ICharacter.js';
@@ -331,7 +332,7 @@ export default class CollectionService {
    * @throws {NotFoundError} If the collection with the specified UUID is not found.
    * @return {Promise<CollectionNode>} A promise that resolves to the created collection node.
    */
-  public async createNewCollection(data: CollectionCreationData): Promise<CollectionNode> {
+  public async createNewCollectionAlt(data: CollectionCreationData): Promise<CollectionNode> {
     const guidelineService: GuidelinesService = new GuidelinesService();
     const guidelines: IGuidelines = await guidelineService.getGuidelines();
 
@@ -371,6 +372,38 @@ export default class CollectionService {
     const result: QueryResult = await Neo4jDriver.runQuery(query, { collection, parentUuid });
 
     return result.records[0]?.get('collection');
+  }
+
+  public async createOrAddCollection(
+    uuid: string,
+    data: NodeStatusObject,
+  ): Promise<NodeDto<CollectionNode>> {
+    const guidelineService: GuidelinesService = new GuidelinesService();
+    const guidelines = await guidelineService.getGuidelines();
+
+    const flatNodeTree: NodeUpdateObject = flattenNodeTree(data, guidelines);
+
+    const query: string = buildSubgraphUpdateQuery('Collection');
+
+    const result: QueryResult = await Neo4jDriver.runQuery(query, {
+      uuid,
+      delete: flatNodeTree.delete,
+      create: flatNodeTree.create,
+      update: flatNodeTree.update,
+      remove: flatNodeTree.remove,
+      attach: flatNodeTree.attach,
+    });
+
+    const createdOrAddedCollection: CollectionNode = result.records[0]?.get('node');
+
+    if (!createdOrAddedCollection) {
+      throw new NotFoundError(`Could not add/create Collection with UUID ${uuid}`);
+    }
+
+    return {
+      node: toNativeTypes(createdOrAddedCollection) as CollectionNode,
+      connectedNodes: [],
+    };
   }
 
   public processCollectionTextsBeforeSaving(data: CollectionPostData): CollectionTextObject {

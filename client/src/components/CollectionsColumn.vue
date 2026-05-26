@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { InputText, Button } from 'primevue';
+import { InputText, Button, useDialog } from 'primevue';
 import { useCollectionManagerStore } from '../store/collectionManager';
 import CollectionItem from './CollectionItem.vue';
 import { useRouter } from 'vue-router';
+import { MenuItem } from 'primevue/menuitem';
+
 import {
   CollectionNode,
   NodeSearchParams,
@@ -10,21 +12,16 @@ import {
   PaginationData,
   PaginationResult,
   NodeDto,
-  CollectionAccessStatusObject,
-  NodeStatusObject,
 } from '../models/types';
 import { useGuidelinesStore } from '../store/guidelines';
 import MultiSelect from 'primevue/multiselect';
+import Menu from 'primevue/menu';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import OverlayBadge from 'primevue/overlaybadge';
 import { useSearchParams } from '../composables/useSearchParams';
 import { useAppStore } from '../store/app';
 import { useEventListener, useInfiniteScroll } from '@vueuse/core';
-import {
-  createCollectionNode,
-  createNodeDtoFromNode,
-  createNodeStatusObjectFromRawData,
-} from '../utils/helper/helper';
+import CreateCollectionModal from './CreateCollectionModal.vue';
 
 const props = defineProps<{
   index: number;
@@ -33,18 +30,20 @@ const props = defineProps<{
 
 const router = useRouter();
 
-const { api, addToastMessage } = useAppStore();
+const { api, addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
+const dialog: ReturnType<typeof useDialog> = useDialog();
+
 const { getAvailableCollectionLabels } = useGuidelinesStore();
-const {
-  activeCollection,
-  canNavigate,
-  levels,
-  createNewUrlPath,
-  setCollectionActive,
-  setMode,
-  setPathToActiveCollection,
-} = useCollectionManagerStore();
+const { activeCollection, canNavigate, levels, createNewUrlPath, setMode } =
+  useCollectionManagerStore();
 const { searchParams, updateSearchParams } = useSearchParams({ scope: 'Collection', rowCount: 25 });
+
+const addMenu = useTemplateRef('add-menu');
+
+const addMenuItems: MenuItem[] = [
+  { label: 'New', icon: 'pi pi-file-plus', command: () => openCreateCollectionModal('new') },
+  { label: 'Existing', icon: 'pi pi-search', command: () => openCreateCollectionModal('existing') },
+];
 
 const availableCollectionLabels = getAvailableCollectionLabels();
 
@@ -153,52 +152,69 @@ async function fetchMoreData(): Promise<void> {
   setIsLoading(false);
 }
 
-function handleAddCollectionClick() {
+function openCreateCollectionModal(mode: 'new' | 'existing') {
   if (!canNavigate.value) {
-    // TODO: Show message?
+    showUnsavedChangesWarning();
     return;
   }
 
-  setMode('create');
+  const parentCollection: CollectionNode | null =
+    props.index > 0 ? levels.value[props.index - 1]?.activeCollection?.node ?? null : null;
 
-  const newCollection: CollectionAccessStatusObject = {
-    collection: createNodeStatusObjectFromRawData(
-      createNodeDtoFromNode(createCollectionNode()),
-    ) as NodeStatusObject<CollectionNode>,
-    texts: [],
-    annotations: [],
-  };
+  //TODO: this is a hack, should be removed
+  if (parentCollection && !parentCollection.nodeLabels.includes('Collection')) {
+    parentCollection.nodeLabels.push('Collection');
+  }
 
-  // const newText: NodeStatusObject<TextNode> = ,
-  // ) as NodeStatusObject<TextNode>;
-
-  const temporaryListItem: ColumnEntry = {
-    data: {
-      node: {
-        data: { ...newCollection.collection.node.data, label: 'New Collection' },
-        nodeLabels: ['Collection'],
+  createModalInstance(
+    dialog.open(CreateCollectionModal, {
+      props: {
+        modal: true,
+        closable: false,
+        header: mode === 'new' ? 'Create new Collection' : 'Add existing Collection',
+        style: { width: '420px' },
       },
-      connectedNodes: [],
-    },
-    status: 'temporary',
-  };
+      data: { mode, parentCollection },
+      emits: {
+        onSuccess: (createdCollection: NodeDto<CollectionNode>) => {
+          // Should not be the case, but still
+          if (!createdCollection) {
+            return;
+          }
 
-  // Add to beginning of list
-  levels.value[props.index].collections.unshift(temporaryListItem);
+          // Create new item and add it to beginning of list (should be visible directly)
+          const columnItem: ColumnEntry = {
+            data: createdCollection,
+            status: 'existing',
+          };
 
-  // Add new collection as active in this column
-  levels.value[props.index].activeCollection = temporaryListItem.data;
+          levels.value[props.index].collections.unshift(columnItem);
 
-  // Calculate new path
-  const newPath: NodeDto<CollectionNode>[] = levels.value
-    .slice(0, props.index + 1)
-    .map(l => l.activeCollection) as NodeDto<CollectionNode>[];
+          // Update route when new collection was created (created collection must be in focus and children displayed)
+          router.push({
+            query: { path: createNewUrlPath(createdCollection.node.data.uuid, props.index) },
+          });
 
-  // Set new path
-  setPathToActiveCollection(newPath);
+          addToastMessage({
+            severity: 'success',
+            summary: 'Operation successful',
+            detail: '',
+            life: 2000,
+          });
 
-  // Display in edit pane
-  setCollectionActive(newCollection);
+          setMode('view');
+
+          // Close modal
+          destroyModalInstance();
+        },
+      },
+      onClose: destroyModalInstance,
+    }),
+  );
+}
+
+function toggleAddMenu(event: Event) {
+  (addMenu.value as any).toggle(event);
 }
 
 function handleChangeSortOrderClick() {
@@ -418,14 +434,14 @@ function startResize() {
     <div class="footer flex justify-content-center">
       <Button
         size="small"
-        disabled
         severity="secondary"
         icon="pi pi-plus"
         class="w-full"
         label="Add Collection"
-        title="Add new Collection"
-        @click="handleAddCollectionClick"
+        title="Add Collection"
+        @click="toggleAddMenu"
       />
+      <Menu ref="add-menu" :model="addMenuItems" :popup="true" />
     </div>
   </div>
   <div class="resizer" ref="resizer" title="Hold down mouse and drag to resize column">

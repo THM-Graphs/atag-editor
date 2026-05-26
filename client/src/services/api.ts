@@ -6,8 +6,6 @@ import {
   Character,
   CharacterPostData,
   CollectionNode,
-  CollectionCreationData,
-  CollectionPostData,
   NodeSearchParams,
   CursorData,
   EntityNode,
@@ -95,7 +93,10 @@ export default class ApiService {
     }
   }
 
-  public async createCollection(data: CollectionCreationData): Promise<CollectionNode> {
+  public async createOrAddCollection(
+    uuid: string,
+    data: NodeStatusObject,
+  ): Promise<NodeDto<CollectionNode>> {
     try {
       const url: string = `${this.baseUrl}/collections`;
 
@@ -107,7 +108,10 @@ export default class ApiService {
           'Content-Type': 'application/json',
         },
         referrerPolicy: 'no-referrer',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          uuid: uuid,
+          data: data,
+        }),
       });
 
       await this.assertResponseOk(response);
@@ -356,7 +360,7 @@ export default class ApiService {
    *
    * @throws {ApiError} - The API error (either the original or a subclass of it).
    */
-  private handleApiError(error: ApiError | unknown): void {
+  private handleApiError(error: ApiError | unknown): never {
     console.error(error);
 
     throw error;
