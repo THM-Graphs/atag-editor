@@ -122,7 +122,7 @@ export default class ApiService {
     }
   }
 
-  public async deleteCollection(uuid: string): Promise<CollectionNode> {
+  public async deleteCollection(uuid: string): Promise<NodeDto<CollectionNode>> {
     try {
       const url: string = `${this.baseUrl}/collections/${uuid}`;
 

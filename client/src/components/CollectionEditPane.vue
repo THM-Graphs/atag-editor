@@ -431,6 +431,7 @@ async function handleDeleteColletion() {
 
 function handleSuccessfullDeletion() {
   showMessage('success');
+  destroyModalInstance();
   updateView();
 }
 
@@ -446,7 +447,7 @@ function updateView() {
   // Remove collection from level explicitly. This is not handled by the watcher since the watcher
   // either refetches completely or keeps the last level.
   levels.value[newUuids.length].collections = levels.value[newUuids.length].collections.filter(
-    c => c.data.data.uuid !== temporaryWorkData.value.collection.node.data.uuid,
+    c => c.data.node.data.uuid !== temporaryWorkData.value.collection.node.data.uuid,
   );
 
   setMode('view');

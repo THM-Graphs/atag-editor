@@ -545,7 +545,7 @@ export default class CollectionService {
     };
   }
 
-  public async deleteCollection(uuid: string): Promise<CollectionNode> {
+  public async deleteCollection(uuid: string): Promise<NodeDto<CollectionNode>> {
     const query: string = `
 
     MATCH (c:Collection {uuid: $uuid})
@@ -584,6 +584,9 @@ export default class CollectionService {
       throw new NotFoundError(`Collection with UUID ${uuid} not found`);
     }
 
-    return deletedCollection;
+    return {
+      node: toNativeTypes(deletedCollection) as CollectionNode,
+      connectedNodes: [],
+    };
   }
 }

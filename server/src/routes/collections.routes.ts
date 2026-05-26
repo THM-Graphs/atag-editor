@@ -114,7 +114,7 @@ router.delete('/:uuid', async (req: Request, res: Response, next: NextFunction) 
   const uuid: string = req.params.uuid;
 
   try {
-    const collection: CollectionNode = await collectionService.deleteCollection(uuid);
+    const collection: NodeDto<CollectionNode> = await collectionService.deleteCollection(uuid);
 
     res.status(200).json(collection);
   } catch (error: unknown) {

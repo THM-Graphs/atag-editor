@@ -8,8 +8,10 @@ import { useRoute } from 'vue-router';
 const emit = defineEmits(['deleted', 'canceled']);
 
 const route = useRoute();
+const dialogRef: any = inject('dialogRef');
 
 const { api, addToastMessage } = useAppStore();
+
 const asyncOperationRunning = ref<boolean>(false);
 
 // Must be computed since PrimeVue's Dialog Service does not allow custom props for components
@@ -18,7 +20,7 @@ const collection = computed<CollectionAccessObject>(() => {
 });
 
 const deleteMessage = computed<string>(() => {
-  const label: string = collection.value?.collection?.data?.label ?? '';
+  const label: string = collection.value?.collection.node.data.label ?? '';
   const textsCount: number = collection.value?.texts?.length ?? 0;
   const annotationsCount: number = collection.value?.annotations?.length ?? 0;
 
@@ -37,8 +39,6 @@ const deleteMessage = computed<string>(() => {
   return `The Collection with label "${label}" will be deleted${itemsPart}. Are you sure?`;
 });
 
-const dialogRef: any = inject('dialogRef');
-
 watch(() => route.path, closeModal);
 
 // ------------------------- UI stuff ------------------------
@@ -47,7 +47,7 @@ async function handleSubmitClick(): Promise<void> {
   asyncOperationRunning.value = true;
 
   try {
-    await api.deleteCollection(collection.value.collection.data.uuid);
+    await api.deleteCollection(collection.value.collection.node.data.uuid);
 
     closeModal();
 
@@ -78,7 +78,9 @@ async function handleCancelClick(): Promise<void> {
 </script>
 
 <template>
-  <h2 class="w-full text-center m-0">Delete collection "{{ collection.collection.data.label }}"</h2>
+  <h2 class="w-full text-center m-0">
+    Delete collection "{{ collection.collection.node.data.label }}"
+  </h2>
 
   <div class="content text-center mb-2">
     <p>
