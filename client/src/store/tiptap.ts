@@ -64,7 +64,10 @@ function getConfiguredExtensions(): any[] {
     HardBreak,
     UndoRedo,
     ZeroPointAnnotation,
-    AnnotationDecoration,
+    AnnotationDecoration.configure({
+      getAnnotationByUuid: (uuid: string) =>
+        annotations.value?.get(uuid)?.node ?? structuralAnnotations.value?.get(uuid)?.node,
+    }),
     UniqueID.configure({
       types: 'all',
       attributeName: 'uuid',

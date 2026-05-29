@@ -1,4 +1,5 @@
-import { Plugin, PluginKey, Transaction } from '@tiptap/pm/state';
+import { Plugin, PluginKey, Transaction, EditorState } from '@tiptap/pm/state';
+import { Mapping } from '@tiptap/pm/transform';
 import { Extension } from '@tiptap/core';
 import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
@@ -122,6 +123,12 @@ function createFilteredDecorations(
 export const AnnotationDecoration = Extension.create({
   name: 'annotationDecoration',
 
+  addOptions() {
+    return {
+      getAnnotationByUuid: (_uuid: string): AnnotationNode | undefined => undefined,
+    };
+  },
+
   addCommands() {
     return {
       addAnnotationDecoration:
@@ -233,6 +240,8 @@ export const AnnotationDecoration = Extension.create({
   },
 
   addProseMirrorPlugins() {
+    const { getAnnotationByUuid } = this.options;
+
     return [
       new Plugin({
         key: ANNOTATION_DECORATION_KEY,
@@ -324,8 +333,12 @@ export const AnnotationDecoration = Extension.create({
             let newAll: DecorationSet = oldDecorations.all;
             let decorationsChanged: boolean = false;
 
+            // Map first so existing decorations move into post-transaction coordinate space.
+            // AddAnnotationStep positions (including those from undo of eviction) are in
+            // post-transaction space and must be added after this remap, not before.
+            newAll = newAll.map(tr.mapping, doc);
+
             // Loop over transaction steps to discover if any of them are AddAnnotationStep/RemoveAnnotationStep.
-            // This would mean the last transaction should add/remove a decoration
             for (const step of tr.steps) {
               if (step instanceof AddAnnotationStep) {
                 const { from, to, annotation } = step;
@@ -347,9 +360,6 @@ export const AnnotationDecoration = Extension.create({
               }
             }
 
-            // Remap all positions for any document changes (typing, deletions, etc.)
-            newAll = newAll.map(tr.mapping, doc);
-
             // Remap stored viewport bounds so the filter window stays accurate after
             // insertions/deletions that shift document positions.
             const newVisibleFrom: number = tr.docChanged
@@ -362,7 +372,7 @@ export const AnnotationDecoration = Extension.create({
             let newFiltered: DecorationSet = oldDecorations.filtered;
 
             if (decorationsChanged || tr.docChanged) {
-              /* 
+              /*
               TODO: Recreation of the "filtered" set might be an overkill, but it works currently. Before, the "filtered" set did not change since
               the drawn HTML would not change completely. However, when a lot of text is removed an new text comes into
               the viewport, it does not have decorations yet - they are only added when a viewportChanged transaction
@@ -389,6 +399,105 @@ export const AnnotationDecoration = Extension.create({
             // Only the filtered annotations should be rendered
             return this.getState(state)?.filtered ?? DecorationSet.empty;
           },
+        },
+
+        appendTransaction(
+          transactions: readonly Transaction[],
+          oldState: EditorState,
+          newState: EditorState,
+        ): Transaction | null {
+          // Undo/redo transactions are handled by history replaying the steps we
+          // already emitted — re-running detection here would misread those
+          // corrections as new changes and emit spurious counter-steps.
+          if (
+            transactions.some(
+              tr => tr.getMeta('uiEvent') === 'undo' || tr.getMeta('uiEvent') === 'redo',
+            )
+          ) {
+            console.log('undo/redo detected...');
+            return null;
+          }
+
+          // Only perform calculations when the document actually changed
+          if (!transactions.some(tr => tr.docChanged)) {
+            return null;
+          }
+
+          const oldPluginState = ANNOTATION_DECORATION_KEY.getState(oldState);
+          const newPluginState = ANNOTATION_DECORATION_KEY.getState(newState);
+
+          if (!oldPluginState || !newPluginState) {
+            console.error('Old or new plugin state not found');
+
+            return null;
+          }
+
+          // UUIDS by annotations that were explicitly removed and are already handled in the apply() section —
+          // These are intentional user removals, no partial/complete deletions by text operations.
+          const explicitlyRemovedUuids = new Set<string>(
+            transactions
+              .flatMap(tr => tr.steps)
+              .filter((step): step is RemoveAnnotationStep => step instanceof RemoveAnnotationStep)
+              .map(step => step.annotation.data.uuid),
+          );
+
+          // Create maps (faster/easier to compare)
+          const oldDecoMap = new Map<string, Decoration>(
+            oldPluginState.all.find().map(d => [(d.spec as AnnotationDecorationSpec)._uuid, d]),
+          );
+          const newDecoMap = new Map<string, Decoration>(
+            newPluginState.all.find().map(d => [(d.spec as AnnotationDecorationSpec)._uuid, d]),
+          );
+
+          // Compose all mappings that happened in the transactions so far so we can test whether individual
+          // decoration boundaries landed inside a deleted range.
+          const composedMapping: Mapping = new Mapping();
+
+          for (const t of transactions) {
+            composedMapping.appendMapping(t.mapping);
+          }
+
+          // Create new Transaction object
+          const tr: Transaction = newState.tr;
+
+          for (const [uuid, oldDeco] of oldDecoMap) {
+            // Skip explicitly removed UUIDs, they are handled in the apply() section
+            if (explicitlyRemovedUuids.has(uuid)) {
+              continue;
+            }
+
+            // TODO: This is technically not important since the annotation data are not stored in the decoration.
+            // Should be removed along with all annotation data in the custom step classes, the tiptap config etc.
+            const annotation: AnnotationNode | undefined = getAnnotationByUuid(uuid);
+
+            if (!annotation) {
+              continue;
+            }
+
+            const newDeco: Decoration | undefined = newDecoMap.get(uuid);
+
+            if (!newDeco) {
+              // Completely removed by a delete operations — add Remove step so history can
+              // invert it to Add on undo, restoring the decoration with the text.
+              tr.step(new RemoveAnnotationStep(annotation, oldDeco.from, oldDeco.to));
+            } else if (
+              composedMapping.mapResult(oldDeco.from, 1).deleted ||
+              composedMapping.mapResult(oldDeco.to, -1).deleted
+            ) {
+              // A boundary was clipped (landed inside a deleted range and snapped
+              // to the deletion start). Pure shifts — deletions entirely before the
+              // decoration — have deleted=false for both endpoints and are skipped.
+              // Add Remove(old) + Add(new) steps so history records the exact range
+              // change. On undo, the inverse steps Remove(new) + Add(old) run
+              // inside apply() (map-first order): the wrong-mapped decoration is
+              // removed by UUID, then the original range is re-added at positions
+              // that are valid again in the restored doc.
+              tr.step(new RemoveAnnotationStep(annotation, oldDeco.from, oldDeco.to));
+              tr.step(new AddAnnotationStep(annotation, newDeco.from, newDeco.to));
+            }
+          }
+
+          return tr.steps.length > 0 ? tr : null;
         },
       }),
     ];
