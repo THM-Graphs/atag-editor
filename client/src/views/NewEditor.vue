@@ -58,14 +58,15 @@ const route: RouteLocationNormalizedLoaded = useRoute();
 const textUuid = computed<string>(() => route.params.uuid as string);
 
 const {
-  tiptap,
-  initializeTiptap,
-  destroyTiptap,
-  resetToInitialState,
-  setNewInitialState,
   annotations,
   initialStructuralAnnotations,
   initialAnnotations,
+  tiptap,
+  destroyTiptap,
+  hasUnsavedChanges,
+  initializeTiptap,
+  resetToInitialState,
+  setNewInitialState,
 } = useTiptapStore();
 
 const { getStructuralAnnotationConfig } = useGuidelinesStore();
@@ -89,7 +90,7 @@ const asyncOperationRunning = ref<boolean>(false);
 
 const { api, addToastMessage } = useAppStore();
 
-const { isRedrawMode, redrawMode, hasUnsavedChanges, toggleRedrawMode } = useEditorStore();
+const { isRedrawMode, redrawMode, toggleRedrawMode } = useEditorStore();
 const { error: textFetchError, text, initialText, fetchAndInitializeText } = useTextStore();
 // const {
 //   afterEndIndex,

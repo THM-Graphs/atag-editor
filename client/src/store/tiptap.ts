@@ -40,6 +40,7 @@ const annotations = ref<Map<string, Annotation>>();
 const initialStructuralAnnotations = ref<Map<string, Annotation>>();
 const initialAnnotations = ref<Map<string, Annotation>>();
 let initialDoc: ReturnType<Editor['getJSON']> | null = null;
+let initialPlainText: string | null = null;
 
 const toCItems = ref<TableOfContentData>([]);
 
@@ -83,6 +84,51 @@ function handleScroll() {
   tiptap.value?.commands.applyViewportUpdates({ from, to });
 }
 
+/**
+ * Checks whether the editor state has diverged from its last saved snapshot.
+ *
+ * Compares, in order: plain text content (fast path), the full JSON document
+ * structure, the number of annotations, and whether any annotation has been
+ * modified. Returns `true` as soon as any difference is detected.
+ *
+ * @returns {boolean} `true` if there are unsaved changes, `false` otherwise.
+ */
+function hasUnsavedChanges(): boolean {
+  // Compare text labels
+  // TODO: This needs to be adjusted as soon as labels can be edited
+  // if (!areSetsEqual(new Set(initialText.value.nodeLabels), new Set(text.value.nodeLabels))) {
+  //   return true;
+  // }
+
+  // TODO: Check if any modal/annotation form is openend or in edit mode. Do later
+
+  // Compare plain text
+  if (tiptap.value?.state.doc.textContent !== initialPlainText) {
+    console.log('Text has changed.');
+    return true;
+  }
+
+  // Compare docs. Maybe a bit slow on longer texts, but most cases are probably catched by plain text comparison
+  if (JSON.stringify(tiptap.value?.getJSON()) !== JSON.stringify(initialDoc)) {
+    console.log('Doc has changed.');
+    return true;
+  }
+
+  // Compare annotations size
+  if (initialAnnotations.value?.size !== annotations.value?.size) {
+    console.log('Annotation size has changed.');
+    return true;
+  }
+
+  // Compare annotations status (modified -> something has been changed, not need to deep compare)
+  if (annotations.value?.values().some(a => a.meta.status !== 'unchanged')) {
+    console.log('Some annotations were modified');
+    return true;
+  }
+
+  return false;
+}
+
 function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[] }): void {
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
@@ -102,6 +148,7 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
       // This is done in the hook since it has more context than just the raw JSON from the converter.
       // TODO: Might be worth to refactor later, keep in mind
       initialDoc = editor.getJSON();
+      initialPlainText = editor.state.doc.textContent;
 
       initializeEventListeners();
     },
@@ -134,7 +181,7 @@ watch(selectedOptions, newVal => {
 });
 
 function resetToInitialState(): void {
-  if (!tiptap.value || !initialDoc) {
+  if (!tiptap.value || !initialDoc || !initialPlainText) {
     return;
   }
 
@@ -153,9 +200,9 @@ function resetToInitialState(): void {
 
 function setNewInitialDocState() {
   // Annotations and structural annotations are already reset in the editor's cleanup function
-  const json = tiptap.value!.getJSON();
 
-  initialDoc = json;
+  initialDoc = tiptap.value!.getJSON();
+  initialPlainText = tiptap.value!.state.doc.textContent;
 }
 
 /**
@@ -196,6 +243,7 @@ export function useTiptapStore() {
     tiptap,
     toCItems,
     destroyTiptap,
+    hasUnsavedChanges,
     initializeTiptap,
     resetToInitialState,
     setAnnotations,
