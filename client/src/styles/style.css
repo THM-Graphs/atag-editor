@@ -24,14 +24,6 @@ body {
   min-height: 100vh;
 }
 
-ul {
-  padding: 0;
-}
-
-li {
-  list-style-type: none;
-}
-
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;

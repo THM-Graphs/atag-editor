@@ -112,6 +112,14 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     defaultSelected: true,
   },
   {
+    type: 'orderedList',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
     type: 'listItem',
     properties: [],
     shortcut: [],

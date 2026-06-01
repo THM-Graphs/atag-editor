@@ -20,6 +20,7 @@ const STRUCTURAL_CHILDREN: Record<string, string[]> = {
   tableCell: ['paragraph', 'heading'],
   tableHeader: ['paragraph', 'heading'],
   bulletList: ['listItem'],
+  orderedList: ['listItem'],
   listItem: ['paragraph', 'heading', 'bulletList', 'orderedList'],
 } as const;
 
