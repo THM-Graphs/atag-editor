@@ -1,3 +1,4 @@
+import { TreeNode } from 'primevue/treenode';
 import { IAnnotation } from './IAnnotation';
 import ICharacter from './ICharacter';
 import { ICollection } from './ICollection';
@@ -340,4 +341,14 @@ export type TextOperationResult = {
   leftBoundary?: string | null;
   rightBoundary?: string | null;
   changeSet?: Character[];
+};
+
+export type ToCItem = TreeNode & {
+  data: {
+    nodeSize: number;
+    nodeType: string;
+    pos: number;
+    text: string;
+  };
+  children: ToCItem[];
 };

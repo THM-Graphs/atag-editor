@@ -3,7 +3,6 @@ import {
   AnnotationOld,
   NodeDto,
   Character,
-  CollectionAccessObject,
   PropertyConfigDataType,
   StandoffAnnotation,
   StandoffJson,
@@ -12,9 +11,59 @@ import {
   AnnotationNode,
   EntityNode,
   CollectionNode,
+  ToCItem,
 } from '../../models/types';
-import { ICollection } from '../../models/ICollection';
 import { EditorView } from '@tiptap/pm/view';
+import { Node } from '@tiptap/pm/model';
+
+/**
+ * Recursively builds a tree of {@link ToCItem} nodes from a ProseMirror node's block children.
+ *
+ * @param node - The ProseMirror node whose block children to traverse.
+ * @param contentStartPos - Absolute document position where `node`'s content begins.
+ *   For the document root this is `0`; for any other block node it is `nodePos + 1`
+ *   (skipping the opening token).
+ */
+export function buildDocChildren(node: Node, contentStartPos: number): ToCItem[] {
+  const result: ToCItem[] = [];
+
+  node.forEach((child: Node, offset: number) => {
+    if (!child.isBlock) {
+      return;
+    }
+
+    const childPos: number = contentStartPos + offset;
+
+    result.push({
+      key: child.attrs.uuid ?? childPos.toString(),
+      label: child.type.name,
+      data: {
+        text: child.textContent ?? '',
+        pos: childPos,
+        nodeSize: child.nodeSize,
+        nodeType: child.type.name,
+      },
+      children: buildDocChildren(child, childPos + 1),
+    });
+  });
+
+  return result;
+}
+
+/**
+ * Builds a nested {@link ToCItem} tree representing the full block structure of a ProseMirror document.
+ *
+ * Each item carries the node's absolute position (`data.pos`), which can be passed directly to
+ * `editor.commands.setTextSelection` or `editor.view.nodeDOM` for navigation.
+ *
+ * @param doc - The ProseMirror document node (`editor.state.doc`).
+ */
+export function buildDocStructure(doc: Node): ToCItem[] {
+  // doc has no opening token, so its content starts at position 0
+  const structure: ToCItem[] = buildDocChildren(doc, 0);
+
+  return structure;
+}
 
 /**
  * Converts the given characters and annotations into a single StandoffJson object.

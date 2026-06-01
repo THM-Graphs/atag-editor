@@ -1,6 +1,14 @@
 import { ref, shallowRef, watch } from 'vue';
-import { NodeDto, ApiJson, Annotation, NodeStatusObject, AnnotationNode } from '../models/types';
+import {
+  NodeDto,
+  ApiJson,
+  Annotation,
+  NodeStatusObject,
+  AnnotationNode,
+  ToCItem,
+} from '../models/types';
 import { Editor } from '@tiptap/vue-3';
+import { Node } from '@tiptap/pm/model';
 import Heading from '@tiptap/extension-heading';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
@@ -11,15 +19,11 @@ import HardBreak from '@tiptap/extension-hard-break';
 import { TableKit } from '@tiptap/extension-table';
 import { UndoRedo } from '@tiptap/extensions';
 import { Gapcursor } from '@tiptap/extensions';
-import {
-  getHierarchicalIndexes,
-  TableOfContentData,
-  TableOfContents,
-} from '@tiptap/extension-table-of-contents';
 import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import {
+  buildDocStructure,
   cloneDeep,
   createExtendedStandoffObject,
   getVisibleDocRange,
@@ -42,7 +46,7 @@ const initialAnnotations = ref<Map<string, Annotation>>();
 let initialDoc: ReturnType<Editor['getJSON']> | null = null;
 let initialPlainText: string | null = null;
 
-const toCItems = ref<TableOfContentData>([]);
+const tableOfContent = ref<ToCItem[]>([]);
 
 function getConfiguredExtensions(): any[] {
   return [
@@ -52,13 +56,6 @@ function getConfiguredExtensions(): any[] {
     Heading,
     TableKit.configure({
       table: { resizable: true },
-    }),
-    TableOfContents.configure({
-      anchorTypes: ['heading', 'paragraph', 'table', 'tableRow', 'tableHeader', 'tableCell'],
-      getIndex: getHierarchicalIndexes,
-      onUpdate: content => {
-        toCItems.value = content;
-      },
     }),
     ListKit,
     Gapcursor,
@@ -137,7 +134,6 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
   setAnnotations({ annotations, structuralAnnotations });
 
   tiptap.value = new Editor({
-    // TODO: Content comes dynamically
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
@@ -151,6 +147,11 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
       initialPlainText = editor.state.doc.textContent;
 
       initializeEventListeners();
+
+      updateTableOfContent(editor.state.doc);
+    },
+    onUpdate: ({ transaction }) => {
+      updateTableOfContent(transaction.doc);
     },
   });
 }
@@ -234,6 +235,11 @@ function setAnnotations(data: {
   initialAnnotations.value = cloneDeep(data.annotations);
   initialStructuralAnnotations.value = cloneDeep(data.structuralAnnotations);
 }
+
+function updateTableOfContent(doc: Node): void {
+  tableOfContent.value = buildDocStructure(doc);
+}
+
 export function useTiptapStore() {
   return {
     annotations,
@@ -241,7 +247,7 @@ export function useTiptapStore() {
     initialStructuralAnnotations,
     structuralAnnotations,
     tiptap,
-    toCItems,
+    tableOfContent,
     destroyTiptap,
     hasUnsavedChanges,
     initializeTiptap,

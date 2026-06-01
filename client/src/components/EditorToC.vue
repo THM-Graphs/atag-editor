@@ -1,37 +1,27 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useTiptapStore } from '../store/tiptap';
-import { TextSelection, Transaction } from '@tiptap/pm/state';
+import Tree from 'primevue/tree';
+import Panel from 'primevue/panel';
+import { ToCItem } from '../models/types.ts';
 import EditorToCItem from './EditorToCItem.vue';
-import { Panel } from 'primevue';
 
-const { tiptap, toCItems } = useTiptapStore();
+const { tiptap, tableOfContent } = useTiptapStore();
 
-function handleItemClick(uuid: string) {
-  if (tiptap.value) {
-    const element: HTMLElement | null = tiptap.value.view.dom.querySelector(
-      `[data-toc-id="${uuid}"`,
-    );
+const expandedKeys = ref<Record<string, boolean>>({});
 
-    if (!element) {
-      console.warn('The corresponding item could not be found');
-      return;
-    }
+function handleNodeClick(node: ToCItem) {
+  if (!tiptap.value) {
+    return;
+  }
 
-    // TODO: This can be smoother and more reliable -> Fix later
-    const pos: number = tiptap.value.view.posAtDOM(element, 0);
+  tiptap.value.chain().setTextSelection(node.data.pos).focus().run();
 
-    // set focus
-    const tr: Transaction = tiptap.value.view.state.tr;
+  const domNode = tiptap.value.view.nodeDOM(node.data.pos);
 
-    tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
-
-    tiptap.value.view.dispatch(tr);
-    tiptap.value.view.focus();
-
-    tiptap.value!.view.dom.parentElement!.scrollTo({
-      top: element.getBoundingClientRect().top + window.scrollY,
-      behavior: 'smooth',
-    });
+  // This does not work reliably, maybe CSS attributes on scroll containers need to be more strict...
+  if (domNode instanceof Element) {
+    domNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 </script>
@@ -55,19 +45,27 @@ function handleItemClick(uuid: string) {
     </template>
     <div class="table-of-contents">
       <template v-if="tiptap">
-        <template v-if="toCItems.length === 0">
+        <template v-if="tableOfContent.length === 0">
           <div class="empty-state">
             <p>Start editing your document to see the outline.</p>
           </div>
         </template>
         <template v-else>
-          <EditorToCItem
-            v-for="(item, i) in toCItems"
-            :key="item.id"
-            :item="item"
-            :index="i + 1"
-            @item-click="handleItemClick"
-          />
+          <Tree
+            v-model:expandedKeys="expandedKeys"
+            :value="tableOfContent"
+            selectionMode="single"
+            :metaKeySelection="false"
+            class="w-full"
+          >
+            <template #default="slotProps">
+              <EditorToCItem
+                :key="slotProps.node.key"
+                :item="slotProps.node as ToCItem"
+                @item-click="handleNodeClick"
+              />
+            </template>
+          </Tree>
         </template>
       </template>
     </div>
@@ -77,48 +75,5 @@ function handleItemClick(uuid: string) {
 <style scoped>
 .toc-container {
   outline: 1px solid var(--p-primary-color);
-}
-
-.table-of-contents {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  gap: 0.25rem;
-  overflow: auto;
-  text-decoration: none;
-
-  > div {
-    border-radius: 0.25rem;
-    padding-left: calc(0.875rem * (var(--level) - 1));
-    transition: all 0.2s cubic-bezier(0.65, 0.05, 0.36, 1);
-
-    &:hover {
-      background-color: var(--gray-2);
-    }
-  }
-
-  .empty-state {
-    color: var(--gray-5);
-    user-select: none;
-  }
-
-  .is-active a {
-    color: var(--purple);
-  }
-
-  .is-scrolled-over a {
-    color: var(--gray-5);
-  }
-
-  :deep(a) {
-    color: var(--black);
-    display: flex;
-    gap: 0.25rem;
-    text-decoration: none;
-
-    &::before {
-      content: attr(data-item-index) '.';
-    }
-  }
 }
 </style>
