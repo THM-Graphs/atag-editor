@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
@@ -14,6 +15,8 @@ import { useTiptapStore } from '../store/tiptap';
 import { useValidateTextSelection } from '../composables/useValidateTextSelection';
 import { Selection } from '@tiptap/pm/state';
 import Button from 'primevue/button';
+import TableInsertPopover from './TableInsertPopover.vue';
+
 const { isValid: isSelectionValid } = useValidateTextSelection();
 
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, isZeroPoint } =
@@ -146,6 +149,8 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
   // Add to store
   annotations.value?.set(annotation.node.data.uuid, annotation);
 }
+
+const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('table-popover');
 </script>
 
 <template>
@@ -205,13 +210,15 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
             icon="pi pi-table"
             v-tooltip.hover.top="{ value: 'table', showDelay: 50 }"
             :class="{ 'is-active': tiptap?.isActive('table') }"
-            @click="tiptap?.chain().focus().insertTable().run()"
+            @click="tablePopover?.toggle($event)"
           >
           </Button>
         </template>
       </div>
     </div>
   </div>
+
+  <TableInsertPopover ref="table-popover" />
 </template>
 
 <style scoped>
