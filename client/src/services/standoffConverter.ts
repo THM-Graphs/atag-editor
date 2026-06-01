@@ -10,6 +10,19 @@ import { useGuidelinesStore } from '../store/guidelines';
 
 const { structuralAnnotationConfigs, isZeroPoint } = useGuidelinesStore();
 
+// Maps each container type to the structural node types it may DIRECTLY contain.
+// Absent types are leaf nodes (paragraph, heading) that hold only inline content.
+// Should be moved to a configuration or guidelines later.
+const STRUCTURAL_CHILDREN: Record<string, string[]> = {
+  doc: ['paragraph', 'heading', 'table', 'bulletList', 'orderedList'],
+  table: ['tableRow'],
+  tableRow: ['tableHeader', 'tableCell'],
+  tableCell: ['paragraph', 'heading'],
+  tableHeader: ['paragraph', 'heading'],
+  bulletList: ['listItem'],
+  listItem: ['paragraph', 'heading', 'bulletList', 'orderedList'],
+} as const;
+
 export default class StandoffConverter {
   private annotations: Map<string, NodeStatusObject<AnnotationNode>> = new Map();
   private structuralAnnotations: Map<string, NodeStatusObject<AnnotationNode>> = new Map();
@@ -58,26 +71,30 @@ export default class StandoffConverter {
     }
   }
 
-  // Returns the immediate structural children of `annotation` within `allStructural`.
-  // Hard breaks are excluded — they are inline nodes handled in createLeafContent.
+  // Returns the immediate structural children of the given parent range whose types
+  // are explicitly allowed by STRUCTURAL_CHILDREN for this parent type.
+  // Type-aware filtering avoids co-equal-range ambiguity (e.g. tableCell and paragraph
+  // sharing identical startIndex/endIndex at different nesting levels).
   private findDirectChildren(
-    annotation: NodeStatusObject<AnnotationNode>,
+    parentType: string,
+    startIndex: number,
+    endIndex: number,
     allStructural: NodeStatusObject<AnnotationNode>[],
   ): NodeStatusObject<AnnotationNode>[] {
-    const { uuid, startIndex, endIndex } = annotation.node.data;
+    const allowedTypes = STRUCTURAL_CHILDREN[parentType] ?? [];
+    if (allowedTypes.length === 0) return [];
 
-    const contained = allStructural.filter(
+    const candidates = allStructural.filter(
       a =>
-        a.node.data.uuid !== uuid &&
-        a.node.data.type !== 'hardBreak' &&
+        allowedTypes.includes(a.node.data.type) &&
         a.node.data.startIndex >= startIndex &&
         a.node.data.endIndex <= endIndex,
     );
 
-    return contained
+    return candidates
       .filter(
         child =>
-          !contained.some(
+          !candidates.some(
             b =>
               b.node.data.uuid !== child.node.data.uuid &&
               b.node.data.startIndex <= child.node.data.startIndex &&
@@ -88,12 +105,19 @@ export default class StandoffConverter {
   }
 
   private createTextNode(startIndex: number, endIndex: number): TiptapNode[] {
-    const text = this.standoffJson.text.slice(startIndex, endIndex + 1);
+    const text: string = this.standoffJson.text.slice(startIndex, endIndex + 1);
+
     return text ? [{ type: 'text', text }] : [];
   }
 
-  // Builds the inline content of a leaf structural node, interleaving text with
-  // zero-point atom nodes and hard breaks, all sorted by position.
+  /**
+   * Builds the inline content of a leaf structural node, interleaving text with
+   * zero-point atom nodes and hard breaks, all sorted by position.
+   *
+   * @param {number} startIndex
+   * @param {number} endIndex
+   * @returns {TipTapNode[]}
+   */
   private createLeafContent(startIndex: number, endIndex: number): TiptapNode[] {
     type InlineEntry = { pos: number; node: TiptapNode };
 
@@ -127,11 +151,12 @@ export default class StandoffConverter {
     let cursor = startIndex;
 
     for (const { pos, node } of inlineNodes) {
-      // Text up to and including the character at pos (inline node sits after this character)
       if (cursor <= pos) {
         nodes.push(...this.createTextNode(cursor, pos));
       }
+
       nodes.push(node);
+
       cursor = pos + 1;
     }
 
@@ -142,26 +167,102 @@ export default class StandoffConverter {
     return nodes;
   }
 
+  private hasText(startIndex: number, endIndex: number): boolean {
+    return this.standoffJson.text.slice(startIndex, endIndex + 1).trim().length > 0;
+  }
+
+  private syntheticParagraph(
+    startIndex: number,
+    endIndex: number,
+    content: TiptapNode[],
+  ): TiptapNode {
+    // TODO: Should the annotation also be added to the annotations map?
+    return {
+      type: 'paragraph',
+      attrs: {
+        type: 'paragraph',
+        uuid: crypto.randomUUID(),
+        startIndex,
+        endIndex,
+      },
+      content,
+    };
+  }
+
   private buildStructuralNode(
     annotation: NodeStatusObject<AnnotationNode>,
     allStructural: NodeStatusObject<AnnotationNode>[],
   ): TiptapNode {
-    const directChildren = this.findDirectChildren(annotation, allStructural);
     const { startIndex, endIndex } = annotation.node.data;
+    const allowedChildTypes: string[] = STRUCTURAL_CHILDREN[annotation.node.data.type] ?? [];
 
-    const content: TiptapNode[] =
-      directChildren.length === 0
-        ? this.createLeafContent(startIndex, endIndex)
-        : directChildren.map(child => this.buildStructuralNode(child, allStructural));
+    if (allowedChildTypes.length === 0) {
+      return {
+        type: annotation.node.data.type,
+        attrs: { ...annotation.node.data },
+        content: this.createLeafContent(startIndex, endIndex),
+      };
+    }
+
+    const directChildren = this.findDirectChildren(
+      annotation.node.data.type,
+      startIndex,
+      endIndex,
+      allStructural,
+    );
+
+    const content: TiptapNode[] = [];
+    let cursor: number = startIndex;
+
+    for (const child of directChildren) {
+      const gapEnd: number = child.node.data.startIndex - 1;
+
+      // Close gaps (un-annotated slices) by adding synthetic paragraph nodes.
+      if (cursor <= gapEnd && this.hasText(cursor, gapEnd)) {
+        content.push(
+          this.syntheticParagraph(cursor, gapEnd, this.createLeafContent(cursor, gapEnd)),
+        );
+      }
+
+      content.push(this.buildStructuralNode(child, allStructural));
+
+      cursor = child.node.data.endIndex + 1;
+    }
+
+    if (cursor <= endIndex && this.hasText(cursor, endIndex)) {
+      content.push(
+        this.syntheticParagraph(cursor, endIndex, this.createLeafContent(cursor, endIndex)),
+      );
+    }
+
+    // Tiptap requires container nodes to have at least one block child
+    if (content.length === 0) {
+      content.push(this.syntheticParagraph(startIndex, endIndex, []));
+    }
 
     return {
       type: annotation.node.data.type,
-      // Spread all annotation properties so the save path can reconstruct them from node.attrs
-      attrs: {
-        ...annotation.node.data,
-      },
+      attrs: { ...annotation.node.data },
       content,
     };
+  }
+
+  private findTopLevelAnnotations(
+    annotations: NodeStatusObject<AnnotationNode>[],
+  ): NodeStatusObject<AnnotationNode>[] {
+    const topLevelAnnos: NodeStatusObject<AnnotationNode>[] = annotations
+      .filter(
+        a =>
+          !annotations.some(
+            b =>
+              b.node.data.uuid !== a.node.data.uuid &&
+              b.node.data.startIndex <= a.node.data.startIndex &&
+              b.node.data.endIndex >= a.node.data.endIndex,
+          ),
+      )
+      .sort((a, b) => a.node.data.startIndex - b.node.data.startIndex);
+
+    return topLevelAnnos;
   }
 
   public convertStandoffToTipTap(): void {
@@ -171,22 +272,37 @@ export default class StandoffConverter {
       ...this.structuralAnnotations.values(),
     ];
 
-    // Root annotations: not contained by any other structural annotation
-    const roots: NodeStatusObject<AnnotationNode>[] = allStructural
-      .filter(
-        a =>
-          !allStructural.some(
-            b =>
-              b.node.data.uuid !== a.node.data.uuid &&
-              b.node.data.startIndex <= a.node.data.startIndex &&
-              b.node.data.endIndex >= a.node.data.endIndex,
-          ),
-      )
-      .sort((a, b) => a.node.data.startIndex - b.node.data.startIndex);
+    // Top-level annotations: not contained by any other structural annotation
+    const topLevelAnnos: NodeStatusObject<AnnotationNode>[] =
+      this.findTopLevelAnnotations(allStructural);
 
-    this.tiptapJson = {
-      type: 'doc',
-      content: roots.map(root => this.buildStructuralNode(root, allStructural)),
-    };
+    const docContent: TiptapNode[] = [];
+    let cursor = 0;
+
+    for (const node of topLevelAnnos) {
+      const gapEnd: number = node.node.data.startIndex - 1;
+
+      // Close gaps (un-annotated slices) by adding synthetic paragraph nodes.
+      if (cursor <= gapEnd && this.hasText(cursor, gapEnd)) {
+        docContent.push(
+          this.syntheticParagraph(cursor, gapEnd, this.createLeafContent(cursor, gapEnd)),
+        );
+      }
+
+      docContent.push(this.buildStructuralNode(node, allStructural));
+
+      cursor = node.node.data.endIndex + 1;
+    }
+
+    const textEnd: number = this.standoffJson.text.length - 1;
+
+    // If text remains after the last structural annotation has closed
+    if (cursor <= textEnd && this.hasText(cursor, textEnd)) {
+      docContent.push(
+        this.syntheticParagraph(cursor, textEnd, this.createLeafContent(cursor, textEnd)),
+      );
+    }
+
+    this.tiptapJson = { type: 'doc', content: docContent };
   }
 }

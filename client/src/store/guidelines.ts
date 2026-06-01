@@ -103,6 +103,22 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     category: 'structure',
     defaultSelected: true,
   },
+  {
+    type: 'bulletList',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'listItem',
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
 ];
 
 /**

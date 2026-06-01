@@ -200,6 +200,14 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
             :class="{ 'is-active': tiptap?.isActive('paragraph') }"
           >
           </Button>
+          <Button
+            severity="secondary"
+            icon="pi pi-table"
+            v-tooltip.hover.top="{ value: 'table', showDelay: 50 }"
+            :class="{ 'is-active': tiptap?.isActive('table') }"
+            @click="tiptap?.chain().focus().insertTable().run()"
+          >
+          </Button>
         </template>
       </div>
     </div>
