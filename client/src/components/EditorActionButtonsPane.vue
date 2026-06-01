@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
 
-const emit = defineEmits(['save', 'cancel']);
+const isDevelopment: boolean = import.meta.env.DEV;
+
+const emit = defineEmits(['save', 'cancel', 'log']);
 
 function handleSave(): void {
   emit('save');
+}
+
+function handleLog() {
+  emit('log');
 }
 
 function handleCancel(): void {
@@ -21,6 +27,14 @@ function handleCancel(): void {
       aria-label="Cancel changes"
       @click="handleCancel"
       >Cancel</Button
+    >
+    <Button
+      v-if="isDevelopment"
+      aria-label="Log doc"
+      title="Log doc"
+      severity="info"
+      @click="handleLog"
+      >Log</Button
     >
   </div>
 </template>

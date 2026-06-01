@@ -852,7 +852,11 @@ watch(
       <EditorAnnotationButtonPaneNew />
       <editor-content id="editor" :editor="tiptap" spellcheck="false" />
 
-      <EditorActionButtonsPane @save="handleSaveChanges" @cancel="handleCancelChanges" />
+      <EditorActionButtonsPane
+        @save="handleSaveChanges"
+        @cancel="handleCancelChanges"
+        @log="console.log(tiptap?.state.doc)"
+      />
     </section>
     <EditorResizer
       position="right"
