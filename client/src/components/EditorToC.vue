@@ -5,6 +5,7 @@ import Tree from 'primevue/tree';
 import Panel from 'primevue/panel';
 import { ToCItem } from '../models/types.ts';
 import EditorToCItem from './EditorToCItem.vue';
+import Button from 'primevue/button';
 
 const { tiptap, tableOfContent } = useTiptapStore();
 
@@ -75,8 +76,22 @@ function handleNodeClick(node: ToCItem) {
                   width: '100%',
                 },
               },
+              nodeToggleButton: ({ context }) => ({
+                style: {
+                  visibility: 'visible',
+                  pointerEvents: context.node.children?.length !== 0 ? 'auto' : 'none',
+                },
+              }),
             }"
           >
+            <template #nodetoggleicon="{ node, expanded }">
+              <template v-if="node.children?.length !== 0">
+                <i :class="`pi pi-chevron-${expanded ? 'down' : 'right'}`"></i>
+              </template>
+              <template v-else>
+                <i class="pi pi-minus"></i>
+              </template>
+            </template>
             <template #default="slotProps">
               <EditorToCItem
                 :key="slotProps.node.key"
