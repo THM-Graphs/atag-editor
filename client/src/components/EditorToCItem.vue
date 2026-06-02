@@ -5,6 +5,7 @@ import { MenuItem, MenuItemCommandEvent } from 'primevue/menuitem';
 import { Menu } from 'primevue';
 import Button from 'primevue/button';
 import { useAppStore } from '../store/app';
+import Popover from 'primevue/popover';
 
 const props = defineProps<{
   item: ToCItem;
@@ -63,6 +64,22 @@ function handleMenuItemClick(e: MenuItemCommandEvent) {
     life: 2000,
   });
 }
+
+function togglePopover(event: MouseEvent): void {
+  infoIcon.value?.toggle(event);
+}
+
+const infoIcon = useTemplateRef('info-icon');
+
+const displayedLabel = computed<string>(() => {
+  const item: ToCItem = props.item;
+
+  if (item.data.nodeType === 'heading') {
+    return `h${item.data._annotationData.level}`;
+  } else {
+    return item.data.nodeType;
+  }
+});
 </script>
 
 <template>
@@ -71,9 +88,7 @@ function handleMenuItemClick(e: MenuItemCommandEvent) {
       class="type-container ml-1 flex align-items-center gap-2 flex-grow-1"
       @click="handleNodeClick"
     >
-      <span>
-        {{ (props.item as ToCItem).label }}
-      </span>
+      <span> {{ displayedLabel }} </span>
       <small :title="props.item.data.text" class="font-italic">
         {{ displayedText }}
       </small>
@@ -90,7 +105,21 @@ function handleMenuItemClick(e: MenuItemCommandEvent) {
         aria-haspopup="true"
         aria-controls="overlay_menu"
       />
+      <Button
+        icon="pi pi-info-circle"
+        size="small"
+        severity="secondary"
+        class="ml-2"
+        title="Click to show preview of entity data"
+        @click="togglePopover"
+      ></Button>
     </div>
   </div>
   <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" />
+  <Popover ref="info-icon">
+    <pre
+      >{{ JSON.stringify(props.item.data, null, 2) }}
+  </pre
+    >
+  </Popover>
 </template>
