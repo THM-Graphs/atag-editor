@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { ToCItem } from '../models/types';
 import { MenuItem, MenuItemCommandEvent } from 'primevue/menuitem';
 import { Menu } from 'primevue';
@@ -19,6 +19,12 @@ function handleNodeClick() {
 }
 
 const { addToastMessage } = useAppStore();
+
+const displayedText = computed<string>(
+  () =>
+    (props.item as ToCItem).data.text.slice(0, 10) +
+    (props.item.data.text.length > 10 ? '...' : ''),
+);
 
 const menu = useTemplateRef('menu');
 const items = ref<MenuItem>([
@@ -61,18 +67,22 @@ function handleMenuItemClick(e: MenuItemCommandEvent) {
 
 <template>
   <div class="flex align-items-center">
-    <div class="type-container ml-2 flex align-items-center gap-2" @click="handleNodeClick">
+    <div
+      class="type-container ml-1 flex align-items-center gap-2 flex-grow-1"
+      @click="handleNodeClick"
+    >
       <span>
         {{ (props.item as ToCItem).label }}
       </span>
-      <small :title="props.item.data.text">
-        {{ (props.item as ToCItem).data.text.slice(0, 10) }}
+      <small :title="props.item.data.text" class="font-italic">
+        {{ displayedText }}
       </small>
     </div>
     <div class="action-container ml-2">
       <Button
         type="button"
         icon="pi pi-ellipsis-v"
+        class="p-1"
         size="small"
         rounded
         severity="secondary"

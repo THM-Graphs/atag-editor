@@ -57,6 +57,25 @@ function handleNodeClick(node: ToCItem) {
             selectionMode="single"
             :metaKeySelection="false"
             class="w-full"
+            :pt="{
+              root: {
+                style: {
+                  paddingLeft: 0,
+                },
+              },
+              nodeContent: {
+                style: {
+                  gap: 0,
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                },
+              },
+              nodeLabel: {
+                style: {
+                  width: '100%',
+                },
+              },
+            }"
           >
             <template #default="slotProps">
               <EditorToCItem
