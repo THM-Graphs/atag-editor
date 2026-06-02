@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
+import { useTemplateRef, ref } from 'vue';
 import { useGuidelinesStore } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
@@ -16,16 +16,19 @@ import { useValidateTextSelection } from '../composables/useValidateTextSelectio
 import { Selection } from '@tiptap/pm/state';
 import Button from 'primevue/button';
 import TableInsertPopover from './TableInsertPopover.vue';
+import Tabs from 'primevue/tabs';
+import TabList from 'primevue/tablist';
+import Tab from 'primevue/tab';
 
 const { isValid: isSelectionValid } = useValidateTextSelection();
-
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, isZeroPoint } =
   useGuidelinesStore();
 const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { selectedOptions } = useFilterStore();
+const { tiptap, annotations } = useTiptapStore();
 const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 
-const { tiptap, annotations } = useTiptapStore();
+const selectedTab = ref<'annotations' | 'structure'>('annotations');
 
 const dialog: ReturnType<typeof useDialog> = useDialog();
 
@@ -154,15 +157,21 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
 </script>
 
 <template>
+  <Tabs v-model:value="selectedTab">
+    <TabList>
+      <Tab value="annotations">Annotations</Tab>
+      <Tab value="structure">Structure</Tab>
+    </TabList>
+  </Tabs>
   <div class="annotation-button-pane flex flex-wrap gap-3">
-    <div
-      class="group"
+    <template
+      v-if="selectedTab === 'annotations'"
       v-for="(annotationTypes, category) in groupedAnnotationTypes"
       :key="category"
     >
-      <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
-      <div class="buttons">
-        <template v-if="category !== 'structure'">
+      <div class="group" v-if="category !== 'structure'">
+        <div class="name font-semibold pb-2">{{ capitalize(category) }}</div>
+        <div class="buttons">
           <AnnotationButton
             v-for="type in annotationTypes"
             :type="type.type"
@@ -171,51 +180,51 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
             :config="getAnnotationConfig(type.type)"
             @clicked="handleClick($event)"
           />
-        </template>
-        <template v-else>
-          <Button
-            severity="secondary"
-            v-tooltip.hover.top="{ value: 'h1', showDelay: 50 }"
-            @click="tiptap?.chain().focus().toggleHeading({ level: 1, type: 'heading' }).run()"
-            :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
-          >
-            H1
-          </Button>
-          <Button
-            severity="secondary"
-            v-tooltip.hover.top="{ value: 'h2', showDelay: 50 }"
-            @click="tiptap?.chain().focus().toggleHeading({ level: 2, type: 'heading' }).run()"
-            :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
-          >
-            H2
-          </Button>
-          <Button
-            severity="secondary"
-            v-tooltip.hover.top="{ value: 'h3', showDelay: 50 }"
-            @click="tiptap?.chain().focus().toggleHeading({ level: 3, type: 'heading' }).run()"
-            :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
-          >
-            H3
-          </Button>
-          <Button
-            severity="secondary"
-            icon="pi pi-align-justify"
-            v-tooltip.hover.top="{ value: 'paragraph', showDelay: 50 }"
-            @click="tiptap?.chain().focus().setNode('paragraph', { type: 'paragraph' }).run()"
-            :class="{ 'is-active': tiptap?.isActive('paragraph') }"
-          >
-          </Button>
-          <Button
-            severity="secondary"
-            icon="pi pi-table"
-            v-tooltip.hover.top="{ value: 'table', showDelay: 50 }"
-            :class="{ 'is-active': tiptap?.isActive('table') }"
-            @click="tablePopover?.toggle($event)"
-          >
-          </Button>
-        </template>
+        </div>
       </div>
-    </div>
+    </template>
+    <template v-else>
+      <Button
+        severity="secondary"
+        v-tooltip.hover.top="{ value: 'h1', showDelay: 50 }"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
+        :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
+      >
+        H1
+      </Button>
+      <Button
+        severity="secondary"
+        v-tooltip.hover.top="{ value: 'h2', showDelay: 50 }"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
+        :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
+      >
+        H2
+      </Button>
+      <Button
+        severity="secondary"
+        v-tooltip.hover.top="{ value: 'h3', showDelay: 50 }"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
+        :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
+      >
+        H3
+      </Button>
+      <Button
+        severity="secondary"
+        icon="pi pi-align-justify"
+        v-tooltip.hover.top="{ value: 'paragraph', showDelay: 50 }"
+        @click="tiptap?.chain().focus().setNode('paragraph').run()"
+        :class="{ 'is-active': tiptap?.isActive('paragraph') }"
+      >
+      </Button>
+      <Button
+        severity="secondary"
+        icon="pi pi-table"
+        v-tooltip.hover.top="{ value: 'table', showDelay: 50 }"
+        :class="{ 'is-active': tiptap?.isActive('table') }"
+        @click="tablePopover?.toggle($event)"
+      >
+      </Button>
+    </template>
   </div>
 
   <TableInsertPopover ref="table-popover" />
