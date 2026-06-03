@@ -42,6 +42,7 @@ export function buildDocChildren(node: Node, contentStartPos: number): ToCItem[]
         pos: childPos,
         nodeSize: child.nodeSize,
         nodeType: child.type.name,
+        _type: child.attrs._type,
         _annotationData: child.attrs._annotationData,
       },
       children: buildDocChildren(child, childPos + 1),

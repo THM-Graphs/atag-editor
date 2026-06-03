@@ -29,9 +29,15 @@ type BuiltinNodeType = (typeof BUILTIN_STRUCTURAL_NODE_TYPES)[number];
 // _annotationData: full neo4j round-trip payload; default = { type } for built-ins, null for customBlock.
 function makeDataAttr(defaultType: string | null): Record<string, Attribute> {
   return {
-    _type: { default: defaultType },
+    _type: {
+      default: defaultType,
+      renderHTML: () => {
+        return { 'data-annotation-type': defaultType };
+      },
+    },
     _annotationData: {
       default: defaultType !== null ? { type: defaultType } : null,
+      rendered: false,
     },
   };
 }

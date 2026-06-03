@@ -15,22 +15,16 @@ export const CustomBlock = Node.create({
 
   content: 'block+',
 
-  renderHTML({ node }) {
-    const type: string = node.attrs._annotationData?.type ?? 'customBlock';
+  renderHTML({ node, HTMLAttributes }) {
+    const type: string = node.attrs._type ?? node.attrs._annotationData?.type ?? 'customBlock';
 
-    return [
-      'div',
-      {
-        'data-custom-block-type': type,
-      },
-      0,
-    ];
+    return ['div', { ...HTMLAttributes, 'data-annotation-type': type }, 0];
   },
 
   parseHTML() {
     return [
       {
-        tag: 'div[data-custom-block-type]',
+        tag: 'div[data-annotation-type]',
         getAttrs: el => ({
           _annotationData: (() => {
             try {
