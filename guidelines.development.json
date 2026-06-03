@@ -415,6 +415,9 @@
       },
       {
         "type": "paragraph",
+        "isBlock": true,
+        "contains": [],
+        "topLevel": true,
         "properties": [],
         "shortcut": [],
         "text": "",
@@ -423,6 +426,9 @@
       },
       {
         "type": "heading",
+        "isBlock": true,
+        "contains": [],
+        "topLevel": true,
         "properties": [
           {
             "name": "level",
@@ -441,6 +447,42 @@
       },
       {
         "type": "hardBreak",
+        "isBlock": true,
+        "contains": [],
+        "topLevel": false,
+        "properties": [],
+        "shortcut": [],
+        "text": "",
+        "category": "structure",
+        "defaultSelected": true
+      },
+      {
+        "type": "closer",
+        "isBlock": true,
+        "contains": ["dateline", "salute", "addrLine", "address"],
+        "topLevel": true,
+        "properties": [],
+        "shortcut": [],
+        "text": "",
+        "category": "structure",
+        "defaultSelected": true
+      },
+      {
+        "type": "address",
+        "isBlock": true,
+        "contains": ["addrLine"],
+        "topLevel": false,
+        "properties": [],
+        "shortcut": [],
+        "text": "",
+        "category": "structure",
+        "defaultSelected": true
+      },
+      {
+        "type": "addrLine",
+        "isBlock": true,
+        "contains": [],
+        "topLevel": false,
         "properties": [],
         "shortcut": [],
         "text": "",

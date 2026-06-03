@@ -32,6 +32,7 @@ import { AnnotationDecoration } from '../services/annotationDecoration';
 import { useFilterStore } from './filter';
 import { useEventListener } from '@vueuse/core';
 import { AnnotationAttributes } from '../services/AnnotationAttributes';
+import { CustomBlock } from '../services/customBlock';
 import { history } from 'prosemirror-history';
 
 const { selectedOptions } = useFilterStore();
@@ -62,6 +63,7 @@ function getConfiguredExtensions(): any[] {
     HardBreak,
     UndoRedo,
     ZeroPointAnnotation,
+    CustomBlock,
     AnnotationDecoration.configure({
       getAnnotationByUuid: (uuid: string) =>
         annotations.value?.get(uuid)?.node ?? structuralAnnotations.value?.get(uuid)?.node,
@@ -137,6 +139,11 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
     content: tipTapJson,
     extensions: [...getConfiguredExtensions()],
     autofocus: 'start',
+    editorProps: {
+      attributes: {
+        class: 'tiptap-editor-pane',
+      },
+    },
     onCreate: ({ editor }) => {
       // Needs to be initialized after creation since full text is needed to calculate visible range
       initializeDecorationView(annotations);

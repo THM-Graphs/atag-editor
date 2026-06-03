@@ -21,9 +21,15 @@ const availableEntityLabels = ref<string[]>([]);
 const availableTextLabels = ref<string[]>([]);
 const groupedAndSortedAnnotationTypes = ref<Record<string, AnnotationType[]>>();
 
-const structuralAnnotationConfigs: AnnotationType[] = [
+// Built-in structural annotation types with their tiptap hierarchy rules.
+// Projects can extend these (add properties) via annotations.types in the guidelines JSON.
+// "contains" drives the dynamic STRUCTURAL_CHILDREN map used during standoff→tiptap conversion.
+const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
   {
     type: 'paragraph',
+    isBlock: true,
+    contains: [],
+    topLevel: true,
     properties: [],
     shortcut: [],
     text: '',
@@ -32,6 +38,9 @@ const structuralAnnotationConfigs: AnnotationType[] = [
   },
   {
     type: 'heading',
+    isBlock: true,
+    contains: [],
+    topLevel: true,
     properties: [
       {
         name: 'level',
@@ -49,7 +58,10 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     defaultSelected: true,
   },
   {
-    type: 'table',
+    type: 'hardBreak',
+    isBlock: true,
+    contains: [],
+    topLevel: false,
     properties: [],
     shortcut: [],
     text: '',
@@ -57,7 +69,11 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     defaultSelected: true,
   },
   {
-    type: 'tableCell',
+    type: 'table',
+    isBlock: true,
+    // caption/heading can be added later by extending contains via guidelines JSON
+    contains: ['tableRow'],
+    topLevel: true,
     properties: [],
     shortcut: [],
     text: '',
@@ -66,6 +82,20 @@ const structuralAnnotationConfigs: AnnotationType[] = [
   },
   {
     type: 'tableRow',
+    isBlock: true,
+    contains: ['tableHeader', 'tableCell'],
+    topLevel: false,
+    properties: [],
+    shortcut: [],
+    text: '',
+    category: 'structure',
+    defaultSelected: true,
+  },
+  {
+    type: 'tableCell',
+    isBlock: true,
+    contains: ['paragraph', 'heading', 'bulletList'],
+    topLevel: false,
     properties: [],
     shortcut: [],
     text: '',
@@ -74,21 +104,12 @@ const structuralAnnotationConfigs: AnnotationType[] = [
   },
   {
     type: 'tableHeader',
+    isBlock: true,
+    contains: ['paragraph', 'heading', 'bulletList'],
+    topLevel: false,
     properties: [
-      {
-        name: 'rowspan',
-        type: 'number',
-        required: true,
-        editable: true,
-        visible: true,
-      },
-      {
-        name: 'colspan',
-        type: 'number',
-        required: true,
-        editable: true,
-        visible: true,
-      },
+      { name: 'rowspan', type: 'number', required: true, editable: true, visible: true },
+      { name: 'colspan', type: 'number', required: true, editable: true, visible: true },
     ],
     shortcut: [],
     text: '',
@@ -96,23 +117,11 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     defaultSelected: true,
   },
   {
-    type: 'hardBreak',
-    properties: [],
-    shortcut: [],
-    text: '',
-    category: 'structure',
-    defaultSelected: true,
-  },
-  {
     type: 'bulletList',
-    properties: [],
-    shortcut: [],
-    text: '',
-    category: 'structure',
-    defaultSelected: true,
-  },
-  {
-    type: 'orderedList',
+    isBlock: true,
+    // caption/heading can be added later by extending contains via guidelines JSON
+    contains: ['listItem'],
+    topLevel: true,
     properties: [],
     shortcut: [],
     text: '',
@@ -121,6 +130,9 @@ const structuralAnnotationConfigs: AnnotationType[] = [
   },
   {
     type: 'listItem',
+    isBlock: true,
+    contains: ['paragraph', 'heading', 'bulletList'],
+    topLevel: false,
     properties: [],
     shortcut: [],
     text: '',
@@ -128,6 +140,62 @@ const structuralAnnotationConfigs: AnnotationType[] = [
     defaultSelected: true,
   },
 ];
+
+export const BUILTIN_STRUCTURAL_TYPES_SET: ReadonlySet<string> = new Set(
+  BUILTIN_STRUCTURAL_CONFIGS.map(c => c.type),
+);
+
+// Merged structural configs: built-ins + any isBlock:true entries from the guidelines JSON.
+// Populated after initializeGuidelines; starts from built-in defaults.
+const mergedStructuralConfigs = ref<AnnotationType[]>([...BUILTIN_STRUCTURAL_CONFIGS]);
+
+// Map of structural type → allowed direct child structural types.
+// Replaces the hardcoded STRUCTURAL_CHILDREN constant in standoffConverter.ts.
+const structuralChildrenMap = computed<Record<string, string[]>>(() =>
+  Object.fromEntries(
+    mergedStructuralConfigs.value
+      .filter(c => c.contains && c.contains.length > 0)
+      .map(c => [c.type, c.contains!]),
+  ),
+);
+
+// Structural types that may appear directly under the document root.
+const docContainsTypes = computed<string[]>(() =>
+  mergedStructuralConfigs.value.filter(c => c.topLevel === true).map(c => c.type),
+);
+
+function buildMergedStructuralConfigs(guidelinesData: IGuidelines): AnnotationType[] {
+  // Deep-copy built-ins so mutations don't affect the constant.
+  const result: AnnotationType[] = BUILTIN_STRUCTURAL_CONFIGS.map(c => ({
+    ...c,
+    properties: [...(c.properties ?? [])],
+    contains: [...(c.contains ?? [])],
+  }));
+
+  for (const entry of guidelinesData.annotations.types) {
+    if (!entry.isBlock) continue;
+
+    const existing = result.find(c => c.type === entry.type);
+    if (existing) {
+      // Extend built-in: append any extra properties defined in JSON
+      existing.properties = [...(existing.properties ?? []), ...(entry.properties ?? [])];
+      // Optionally extend contains (add types not already listed)
+      if (entry.contains) {
+        const current = existing.contains ?? [];
+        existing.contains = [...current, ...entry.contains.filter(t => !current.includes(t))];
+      }
+    } else {
+      // New project-specific custom structural type
+      result.push({
+        ...entry,
+        properties: [...(entry.properties ?? [])],
+        contains: [...(entry.contains ?? [])],
+      });
+    }
+  }
+
+  return result;
+}
 
 /**
  * Store for making the edition guidelines available to all components. When the component is mounted,
@@ -143,6 +211,7 @@ export function useGuidelinesStore() {
    */
   function initializeGuidelines(guidelinesData: IGuidelines): void {
     guidelines.value = guidelinesData;
+    mergedStructuralConfigs.value = buildMergedStructuralConfigs(guidelinesData);
     groupedAnnotationTypes.value = groupAnnotationTypes();
     groupedAndSortedAnnotationTypes.value = sortAnnotationTypesInGroup();
     availableCollectionLabels.value = getAvailableCollectionLabels();
@@ -187,7 +256,7 @@ export function useGuidelinesStore() {
   }
 
   function getStructuralAnnotationConfig(type: string): AnnotationType | undefined {
-    return structuralAnnotationConfigs.find(t => t.type === type);
+    return mergedStructuralConfigs.value.find(t => t.type === type);
   }
 
   /**
@@ -469,7 +538,10 @@ export function useGuidelinesStore() {
     guidelines,
     isFetching: readonly(isFetching),
     isInitialized: readonly(isInitialized),
-    structuralAnnotationConfigs,
+    structuralAnnotationConfigs: mergedStructuralConfigs,
+    getStructuralAnnotationConfigs: (): AnnotationType[] => mergedStructuralConfigs.value,
+    structuralChildrenMap,
+    docContainsTypes,
     annotationHasConstraints,
     getAllCollectionConfigFields,
     getAnnotationConfig,

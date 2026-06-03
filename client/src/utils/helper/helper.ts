@@ -36,12 +36,13 @@ export function buildDocChildren(node: Node, contentStartPos: number): ToCItem[]
 
     result.push({
       key: child.attrs.uuid ?? childPos.toString(),
-      label: child.type.name,
+      label: child.attrs._annotationData?.type ?? child.type.name,
       data: {
         text: child.textContent ?? '',
         pos: childPos,
         nodeSize: child.nodeSize,
         nodeType: child.type.name,
+        _annotationData: child.attrs._annotationData,
       },
       children: buildDocChildren(child, childPos + 1),
     });
@@ -228,7 +229,7 @@ export function createExtendedStandoffObject(standoffObject: {
       data: {
         text: standoffObject.text,
         startIndex: 0,
-        uuid: 'wrapper-paragraph',
+        uuid: crypto.randomUUID(),
         subType: '',
         endIndex: standoffObject.text.length - 1,
         type: 'paragraph',

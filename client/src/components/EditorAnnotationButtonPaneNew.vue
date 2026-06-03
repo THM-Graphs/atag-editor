@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useTemplateRef, ref } from 'vue';
-import { useGuidelinesStore } from '../store/guidelines';
+import { useTemplateRef, computed, ref } from 'vue';
+import { useGuidelinesStore, BUILTIN_STRUCTURAL_TYPES_SET } from '../store/guidelines';
 import { capitalize } from '../utils/helper/helper';
 import AnnotationButton from './AnnotationButton.vue';
 import { AnnotationType, NodeStatusObject, AnnotationNode, Annotation } from '../models/types';
@@ -19,6 +19,7 @@ import TableInsertPopover from './TableInsertPopover.vue';
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';
 import Tab from 'primevue/tab';
+import { useCustomBlockCommand } from '../composables/useCustomBlockCommand';
 
 const { isValid: isSelectionValid } = useValidateTextSelection();
 const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, isZeroPoint } =
@@ -30,7 +31,16 @@ const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
 
 const selectedTab = ref<'annotations' | 'structure'>('annotations');
 
+const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('table-popover');
 const dialog: ReturnType<typeof useDialog> = useDialog();
+
+// Project-defined custom block types: isBlock:true entries that are not pre-configured built-ins.
+// These get a generic wrapIn/lift toggle button rather than a dedicated tiptap command button.
+const customStructureTypes = computed(() =>
+  (groupedAnnotationTypes.value?.['structure'] ?? []).filter(
+    t => t.isBlock && !BUILTIN_STRUCTURAL_TYPES_SET.has(t.type),
+  ),
+);
 
 /**
  * Checks if the annotation type is enabled by verifying if it is included in the selected options. If not, an `ShortcutError` is thrown.
@@ -153,7 +163,13 @@ function addAnnotation(annotation: Annotation, selection: { from: number; to: nu
   annotations.value?.set(annotation.node.data.uuid, annotation);
 }
 
-const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('table-popover');
+function isCustomBlockActive(type: string): boolean {
+  return useCustomBlockCommand(tiptap.value).isCustomBlockActive(type);
+}
+
+function toggleCustomBlock(type: string): void {
+  useCustomBlockCommand(tiptap.value).toggleCustomBlock(type);
+}
 </script>
 
 <template>
@@ -187,7 +203,7 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
       <Button
         severity="secondary"
         v-tooltip.hover.top="{ value: 'h1', showDelay: 50 }"
-        @click="tiptap?.chain().focus().toggleHeading({ level: 1 }).run()"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 1, _type: 'heading' }).run()"
         :class="{ 'is-active': tiptap?.isActive('heading', { level: 1 }) }"
       >
         H1
@@ -195,7 +211,7 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
       <Button
         severity="secondary"
         v-tooltip.hover.top="{ value: 'h2', showDelay: 50 }"
-        @click="tiptap?.chain().focus().toggleHeading({ level: 2 }).run()"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 2, _type: 'heading' }).run()"
         :class="{ 'is-active': tiptap?.isActive('heading', { level: 2 }) }"
       >
         H2
@@ -203,7 +219,7 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
       <Button
         severity="secondary"
         v-tooltip.hover.top="{ value: 'h3', showDelay: 50 }"
-        @click="tiptap?.chain().focus().toggleHeading({ level: 3 }).run()"
+        @click="tiptap?.chain().focus().toggleHeading({ level: 3, _type: 'heading' }).run()"
         :class="{ 'is-active': tiptap?.isActive('heading', { level: 3 }) }"
       >
         H3
@@ -212,7 +228,7 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
         severity="secondary"
         icon="pi pi-align-justify"
         v-tooltip.hover.top="{ value: 'paragraph', showDelay: 50 }"
-        @click="tiptap?.chain().focus().setNode('paragraph').run()"
+        @click="tiptap?.chain().focus().setNode('paragraph', { _type: 'paragraph' }).run()"
         :class="{ 'is-active': tiptap?.isActive('paragraph') }"
       >
       </Button>
@@ -223,6 +239,16 @@ const tablePopover = useTemplateRef<InstanceType<typeof TableInsertPopover>>('ta
         :class="{ 'is-active': tiptap?.isActive('table') }"
         @click="tablePopover?.toggle($event)"
       >
+      </Button>
+      <Button
+        v-for="blockType in customStructureTypes"
+        :key="blockType.type"
+        severity="secondary"
+        v-tooltip.hover.top="{ value: blockType.type, showDelay: 50 }"
+        :class="{ 'is-active': isCustomBlockActive(blockType.type) }"
+        @click="toggleCustomBlock(blockType.type)"
+      >
+        {{ blockType.type }}
       </Button>
     </template>
   </div>

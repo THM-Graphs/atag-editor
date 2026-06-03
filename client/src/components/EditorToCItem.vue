@@ -75,9 +75,9 @@ const displayedLabel = computed<string>(() => {
   const item: ToCItem = props.item;
 
   if (item.data.nodeType === 'heading') {
-    return `h${item.data._annotationData.level}`;
+    return `heading-${item.data._annotationData.level}`;
   } else {
-    return item.data.nodeType;
+    return item.data._annotationData.type;
   }
 });
 </script>

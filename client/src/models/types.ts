@@ -68,6 +68,9 @@ export type AnnotationType = {
   shortcut: string[];
   text: string;
   type: string;
+  isBlock?: boolean;
+  contains?: string[];
+  topLevel?: boolean;
 };
 
 export type AnnotationReference = {

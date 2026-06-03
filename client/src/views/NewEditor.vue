@@ -310,23 +310,44 @@ function findChangedAnnotations(indexMap: IndexMap, plainText: string): Annotati
   return affectedAnnos;
 }
 
-function getConfiguredNodeAttrs(node: DocNode, type: string) {
-  // retrieve configured attributes from node (e.g. not "data-toc-id" or anything editor related)
-  const fields: PropertyConfig[] = getStructuralAnnotationConfig(type)?.properties ?? [];
+function getConfiguredNodeAttrs(node: DocNode, _tiptapType: string) {
+  // Base: all neo4j data stored in _annotationData at load time (uuid, type, custom properties, …)
+  const neo4jProperties: Record<string, any> = {};
 
-  const filteredAttrs: Record<string, any> = {};
+  // 1. retrieve configured attributes from node (e.g. not "data-toc-id" or anything editor related)
+  const fields: PropertyConfig[] =
+    getStructuralAnnotationConfig(node.attrs._type)?.properties ?? [];
 
   fields.forEach((field: PropertyConfig) => {
-    if (field.name in node.attrs) {
-      filteredAttrs[field.name] = node.attrs[field.name];
+    if (field.name in node.attrs._annotationData) {
+      neo4jProperties[field.name] = node.attrs._annotationData[field.name];
     }
   });
 
-  // TODO: Currently hardcoded, think about better solution
-  filteredAttrs.uuid = node.attrs.uuid;
-  filteredAttrs.type = node.attrs.type;
+  // 2. Override properties that are handled by tiptap
 
-  return filteredAttrs;
+  // UUID is managed by the UniqueID extension — this is authoritative after
+  // any tiptap operations (e.g. copy-paste that assigns a fresh uuid to a duplicated block).
+  neo4jProperties.uuid = node.attrs.uuid;
+
+  // Type property: Essential for saving annotations
+  neo4jProperties.type = node.attrs._type ?? node.attrs._annotationData.type ?? node.type.name;
+
+  // tiptap-native attrs that may have been edited in the UI, override the
+  // stale _annotationData values with the current tiptap attr values.
+  if (neo4jProperties.type === 'heading' && node.attrs.level !== undefined) {
+    neo4jProperties.level = node.attrs.level;
+  }
+
+  const isPartOfTable: boolean =
+    neo4jProperties.type === 'tableCell' || neo4jProperties.type === 'tableHeader';
+
+  if (isPartOfTable && node.attrs.colspan !== undefined) {
+    neo4jProperties.colspan = node.attrs.colspan;
+    neo4jProperties.rowspan = node.attrs.rowspan;
+  }
+
+  return neo4jProperties;
 }
 
 function findChangedStructureElements(indexMap: IndexMap, plainText: string): Annotation[] {
@@ -888,6 +909,16 @@ watch(
 
 #editor {
   overflow-y: scroll;
+  flex-grow: 1;
+  display: flex;
+  padding: 5px;
+  /* outline: 1px solid var(--purple); */
+}
+
+.tiptap-editor-pane:focus-visible {
+  /* background-color: green; */
+  outline: 0;
+  flex-grow: 1;
 }
 
 /* Table-specific styling */
