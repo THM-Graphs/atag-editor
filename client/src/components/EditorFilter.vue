@@ -65,19 +65,21 @@ function toggleDropdown(): void {
         </div>
         <div class="container flex flex-wrap gap-2">
           <div v-for="(annotationTypes, category) in groupedAndSortedAnnotationTypes" class="group">
-            <div class="name font-semibold">
-              {{ capitalize(category) }}
-            </div>
-            <div v-for="annotationType of annotationTypes" :key="annotationType.type">
-              <Checkbox
-                v-model="selectedOptions"
-                :inputId="annotationType.type"
-                :value="annotationType.type"
-              />
-              <label :for="annotationType.type" class="ml-2 cursor-pointer">
-                {{ annotationType.type }}
-              </label>
-            </div>
+            <template v-if="category !== 'structure'">
+              <div class="name font-semibold">
+                {{ capitalize(category) }}
+              </div>
+              <div v-for="annotationType of annotationTypes" :key="annotationType.type">
+                <Checkbox
+                  v-model="selectedOptions"
+                  :inputId="annotationType.type"
+                  :value="annotationType.type"
+                />
+                <label :for="annotationType.type" class="ml-2 cursor-pointer">
+                  {{ annotationType.type }}
+                </label>
+              </div>
+            </template>
           </div>
         </div>
       </template>
