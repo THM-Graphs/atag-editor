@@ -103,7 +103,7 @@ function closeModal(): void {
         :model-value="nodeAsCollection"
         mode="view"
       />
-      <TextCard v-if="baseNodeLabel === 'Text'" :model-value="nodeAsText" mode="view" />
+      <TextCard v-if="baseNodeLabel === 'Content'" :model-value="nodeAsText" mode="view" />
       <EntityCard v-if="baseNodeLabel === 'Entity'" :model-value="nodeAsEntity" mode="view" />
       <div class="flex justify-content-center gap-2 mt-4 w-full">
         <Button label="Add" icon="pi pi-plus" @click="handleFinishClick" />

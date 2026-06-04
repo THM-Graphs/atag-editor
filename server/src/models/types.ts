@@ -69,7 +69,7 @@ export type AnnotationConfigEntity = {
 };
 
 /** Base node labels in RAMEN */
-export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Text';
+export type BaseNodeLabel = 'Annotation' | 'Character' | 'Collection' | 'Entity' | 'Content';
 
 export type BaseNodeData = {
   uuid: string;
@@ -239,6 +239,8 @@ export type StandoffJson = {
 };
 
 export type TextNode = Node<IText>;
+// TODO: Remove TextNode (or remove IText) -> ContentNode will be default
+export type ContentNode = Node<IText>;
 
 export type NodeUpdateObject = {
   create: Node<Record<string, any>>[];

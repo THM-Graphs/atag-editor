@@ -25,7 +25,7 @@ const breadcrumbRoot = ref<MenuItem>({
   label: correspondingCollection.value?.data.label,
   uuid: correspondingCollection.value?.data.uuid,
 });
-const breadcrumbItems = ref<MenuItem[]>([{ role: 'Text', labels: text.value.nodeLabels }]);
+const breadcrumbItems = ref<MenuItem[]>([{ role: 'Content', labels: text.value.nodeLabels }]);
 
 const isBookmarked = computed<boolean>(() => {
   return bookmarks.value.some(b => b.data.data.uuid === text.value.data.uuid);

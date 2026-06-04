@@ -12,7 +12,7 @@ export default class CharacterService {
    */
   public async getCharacters(textUuid: string): Promise<Character[]> {
     const query: string = `
-    MATCH (t:Text {uuid: $textUuid})-[:NEXT_CHARACTER*]->(char:Character)
+    MATCH (t:Content {uuid: $textUuid})-[:NEXT_CHARACTER*]->(char:Character)
     WITH char, [(char)-[:CHARACTER_HAS_ANNOTATION]->(a:Annotation) | 
       {
         uuid: a.uuid,
@@ -50,7 +50,7 @@ export default class CharacterService {
     text: string,
   ): Promise<ICharacter[]> {
     const query: string = `
-    MATCH (t:Text {uuid: $textUuid})
+    MATCH (t:Content {uuid: $textUuid})
     SET t.text = $text
     WITH t
     CALL atag.chains.update(t.uuid, $uuidStart, $uuidEnd, $characters, {

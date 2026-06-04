@@ -27,10 +27,12 @@ type UseCreateAnnotationReturnType = {
  * Since the annotations currently differ a bit (text annotations contain more character-specific data), there must be two functions.
  * In the future, the annotation handling should be more generic.
  *
- * @param {('Text' | 'Collection')} scope - The scope for which the annotation is being created. This determines the type of annotation that will be created.
+ * @param {('Content' | 'Collection')} scope - The scope for which the annotation is being created. This determines the type of annotation that will be created.
  * @returns {UseCreateAnnotationReturnType} An object containing the functions to create annotations.
  */
-export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnnotationReturnType {
+export function useCreateAnnotation(
+  scope: 'Content' | 'Collection',
+): UseCreateAnnotationReturnType {
   const { getAnnotationFields, getCollectionAnnotationFields } = useGuidelinesStore();
 
   /**
@@ -126,8 +128,8 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   /**
    * Creates a node data object with the given parameters.
    *
-   * The node data object contains base node data (see `createBaseNodeData`) and, if the scope is 'Text',
-   * additional fields specific to text annotations are added (`startIndex`, `endIndex` and `text`).
+   * The node data object contains base node data (see `createBaseNodeData`) and, if the scope is 'Content',
+   * additional fields specific to content annotations are added (`startIndex`, `endIndex` and `text`).
    *
    * @param {Object} params - The parameters object. Contains the fields, subType (optional) and type of the annotation.
    * @returns {IAnnotation} A node data object with the given parameters.
@@ -139,8 +141,8 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   }): IAnnotation {
     const nodeData: IAnnotation = createBaseNodeData(params);
 
-    // Other fields specifically for text annotations
-    if (scope === 'Text') {
+    // Other fields specifically for content annotations
+    if (scope === 'Content') {
       // Both can be 0 since the real values are created in the backend on save
       nodeData.startIndex = 0;
       nodeData.endIndex = 0;
@@ -152,10 +154,10 @@ export function useCreateAnnotation(scope: 'Text' | 'Collection'): UseCreateAnno
   }
 
   /**
-   * Creates a text annotation with the given type and subtype.
+   * Creates a content annotation with the given type and subtype.
    *
    * @param {Object} params - The parameters object. Currently consists only of the type, subtype (optional) and characters to be annotated.
-   * @returns {AnnotationOld} - The created text annotation object.
+   * @returns {AnnotationOld} - The created content annotation object.
    */
   function createTextAnnotation(params: {
     type: string;

@@ -20,7 +20,7 @@ const { addToastMessage, createModalInstance, destroyModalInstance } = useAppSto
 const { execCommand } = useEditorStore();
 const { getCharactersInSelection } = useCharactersStore();
 const { selectedOptions } = useFilterStore();
-const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
+const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Content');
 const { isValid: isSelectionValid } = useValidateTextSelection();
 
 const dialog: ReturnType<typeof useDialog> = useDialog();

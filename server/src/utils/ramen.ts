@@ -5,13 +5,13 @@ import { BaseNodeData, EdgeDescriptor, Node } from '../models/types.js';
  * and the correctly-directed `startUuid`/`endUuid` for that edge. Used for creating flat update information
  * when passing data of unknown tree-depth into the cypher query.
  *
- * The tree is always ownership-ordered: a Text owns its Annotations, a Collection owns its Texts
+ * The tree is always ownership-ordered: a Content owns its Annotations, a Collection owns its Content
  * and Annotations, and an Annotation owns its sub-annotations and referenced nodes. The relationship
  * type follows from the label pair, and the edge direction matches Neo4j conventions — which for
- * `PART_OF` means the child points to the parent: `(Text|Collection)-[:PART_OF]->(Collection)`.
+ * `PART_OF` means the child points to the parent: `(Content|Collection)-[:PART_OF]->(Collection)`.
  *
  * This function is only valid when called with trees structured in that ownership order. Passing
- * an inverted or flat structure will produce incorrect results. Currently this is only used when updating texts via Editor.
+ * an inverted or flat structure will produce incorrect results. Currently this is only used when updating content via Editor.
  *
  * @param parent - The owner node (closer to the tree root).
  * @param child - The owned node (further from the tree root).
@@ -34,18 +34,18 @@ export function inferRelationship(
     return { type: 'HAS_ANNOTATION', startUuid: parentUuid, endUuid: childUuid };
   }
 
-  // Annotation → Entity | Collection | Text: referenced nodes
+  // Annotation → Entity | Collection | Content: referenced nodes
   if (p.includes('Annotation')) {
     return { type: 'REFERS_TO', startUuid: parentUuid, endUuid: childUuid };
   }
 
-  // Text | Collection → Annotation
+  // Content | Collection → Annotation
   if (c.includes('Annotation')) {
     return { type: 'HAS_ANNOTATION', startUuid: parentUuid, endUuid: childUuid };
   }
 
-  // Collection → Text | Collection → Collection: edge runs (Text|Collection)-[:PART_OF]->(Collection)
-  if (p.includes('Collection') && (c.includes('Text') || c.includes('Collection'))) {
+  // Collection → Content | Collection → Collection: edge runs (Content|Collection)-[:PART_OF]->(Collection)
+  if (p.includes('Collection') && (c.includes('Content') || c.includes('Collection'))) {
     return { type: 'PART_OF', startUuid: childUuid, endUuid: parentUuid };
   }
 

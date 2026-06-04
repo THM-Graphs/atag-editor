@@ -27,7 +27,7 @@ const { groupedAnnotationTypes, annotationHasConstraints, getAnnotationConfig, i
 const { addToastMessage, createModalInstance, destroyModalInstance } = useAppStore();
 const { selectedOptions } = useFilterStore();
 const { tiptap, annotations } = useTiptapStore();
-const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Text');
+const { createTextAnnotation: createAnnotation } = useCreateAnnotation('Content');
 
 const selectedTab = ref<'annotations' | 'structure'>('annotations');
 

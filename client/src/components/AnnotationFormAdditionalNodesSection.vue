@@ -16,8 +16,8 @@ import {
 import {
   isAnnotationNode,
   isCollectionNode,
+  isContentNode,
   isEntityNode,
-  isTextNode,
 } from '../utils/helper/helper';
 import AnnotationCard from './AnnotationCard.vue';
 import Button from 'primevue/button';
@@ -113,8 +113,8 @@ const nodeOptions = ref([
         command: () => startAddingNode('Entity'),
       },
       {
-        label: 'Text',
-        command: () => startAddingNode('Text'),
+        label: 'Content',
+        command: () => startAddingNode('Content'),
       },
     ],
   },
@@ -147,7 +147,7 @@ function toggleMenu(event: PointerEvent) {
           :mode="props.mode"
         />
         <TextCard
-          v-else-if="isTextNode(node) || isTextNode(node)"
+          v-else-if="isContentNode(node)"
           v-model="nodes![index] as NodeStatusObject<TextNode>"
           @remove-node="handleRemoveNode(node)"
           :mode="props.mode"

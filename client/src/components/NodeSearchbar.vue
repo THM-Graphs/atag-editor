@@ -53,8 +53,8 @@ function getNodeLabelPlural(nodeLabel: BaseNodeLabel): string {
   switch (nodeLabel) {
     case 'Collection':
       return 'Collections';
-    case 'Text':
-      return 'Texts';
+    case 'Content':
+      return 'Contents';
     case 'Entity':
       return 'Entities';
     case 'Annotation':
@@ -177,7 +177,7 @@ async function handleSearchParamsChange() {
             <span :title="option.data">{{ option.data?.label ?? option.data?.text }}</span>
           </div>
         </template>
-        <template v-if="props.baseNodeLabel === 'Text'">
+        <template v-if="props.baseNodeLabel === 'Content'">
           <div class="result-item">
             <template v-for="nodeLabel in filterDefaultLabels(option.nodeLabels)">
               <NodeTag :content="nodeLabel" :type="baseNodeLabel" />

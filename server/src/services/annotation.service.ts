@@ -168,7 +168,7 @@ export default class AnnotationService {
 
   public async getAnnotations(nodeUuid: string): Promise<NodeDto[]> {
     const query: string = `
-    MATCH (n:Text|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
+    MATCH (n:Content|Collection {uuid: $nodeUuid})-[:HAS_ANNOTATION]->(a:Annotation)
 
     // Traverse the HAS_ANNOTATION tree if it exists (it has an unknown depth)
     CALL apoc.path.subgraphAll(a, {
@@ -303,7 +303,7 @@ export default class AnnotationService {
 
   public async saveAnnotations(
     nodeUuid: string,
-    nodeLabel: 'Collection' | 'Text',
+    nodeLabel: 'Collection' | 'Content',
     annotations: Partial<Annotation>[],
   ): Promise<IAnnotation[]> {
     const processedAnnotations: ProcessedAnnotation[] =
@@ -326,7 +326,7 @@ export default class AnnotationService {
 
     WITH allAnnotations
 
-    MATCH (t:Text|Collection {uuid: $nodeUuid})
+    MATCH (t:Content|Collection {uuid: $nodeUuid})
 
     // 2. Handle other annotations (merge)
     UNWIND allAnnotations AS ann
@@ -379,7 +379,7 @@ export default class AnnotationService {
         WITH ann, a
         UNWIND ann.data.additionalTexts.created as textToCreate
         
-        CREATE (a)-[:HAS_ANNOTATION]->(aCommentary:Annotation)-[:REFERS_TO]->(t:Text)
+        CREATE (a)-[:HAS_ANNOTATION]->(aCommentary:Annotation)-[:REFERS_TO]->(t:Content)
 
         WITH textToCreate, a, aCommentary, t
 
@@ -405,7 +405,7 @@ export default class AnnotationService {
     }
 
     // Character-specific operations that are only applied for Text annotations
-    if (nodeLabel === 'Text') {
+    if (nodeLabel === 'Content') {
       query += `
       // Remove existing relationships between annotation and character nodes before creating new ones
       CALL {
@@ -433,7 +433,7 @@ export default class AnnotationService {
 
       // Set startIndex and andIndex properties of Annotation nodes
       
-      MATCH (t:Text {uuid: $nodeUuid})-[:NEXT_CHARACTER*]->(ch:Character)
+      MATCH (t:Content {uuid: $nodeUuid})-[:NEXT_CHARACTER*]->(ch:Character)
       WITH collect(ch) as characters, annotations
 
       UNWIND range(0, size(characters) - 1) AS idx

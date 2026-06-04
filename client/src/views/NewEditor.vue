@@ -470,7 +470,7 @@ function inferRelationship(parent: Node<BaseNodeData>, child: Node<BaseNodeData>
   }
 
   // Collection → Text | Collection → Collection: edge runs (Text|Collection)-[:PART_OF]->(Collection)
-  if (p.includes('Collection') && (c.includes('Text') || c.includes('Collection'))) {
+  if (p.includes('Collection') && (c.includes('Content') || c.includes('Collection'))) {
     return { type: 'PART_OF', startUuid: childUuid, endUuid: parentUuid };
   }
 

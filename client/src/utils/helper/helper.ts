@@ -304,7 +304,7 @@ export function areSetsEqual(setA: Set<string>, setB: Set<string>): boolean {
  */
 export function filterDefaultLabels(nodeLabels: string[]): string[] {
   // TODO: Remove "Text" check ("Content") is enough. Only kept for legacy reasons :)
-  const baseNodeLabels: string[] = ['Annotation', 'Collection', 'Content', 'Entity', 'Text'];
+  const baseNodeLabels: string[] = ['Annotation', 'Collection', 'Content', 'Entity', 'Content'];
 
   return nodeLabels.filter(l => !baseNodeLabels.includes(l));
 }
@@ -504,10 +504,6 @@ export function isAnnotationNode(node: NodeStatusObject): node is NodeStatusObje
 
 export function isCollectionNode(node: NodeStatusObject): node is NodeStatusObject<CollectionNode> {
   return node.node.nodeLabels.includes('Collection');
-}
-
-export function isTextNode(node: NodeStatusObject): node is NodeStatusObject<TextNode> {
-  return node.node.nodeLabels.includes('Text');
 }
 
 export function isContentNode(node: NodeStatusObject): node is NodeStatusObject<TextNode> {

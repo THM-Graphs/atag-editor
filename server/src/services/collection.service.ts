@@ -252,7 +252,7 @@ export default class CollectionService {
 
     // Match optional Text nodes
     CALL (c) {
-        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Content)
         
         RETURN collect(t) as texts
     }
@@ -563,7 +563,7 @@ export default class CollectionService {
 
     // Delete texts, characters, and annotations
     CALL (c) {
-        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Content)
         
         OPTIONAL MATCH (t)-[:HAS_ANNOTATION]->(a:Annotation)
         OPTIONAL MATCH (t)-[:NEXT_CHARACTER*]->(ch:Character)

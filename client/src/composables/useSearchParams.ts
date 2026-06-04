@@ -28,7 +28,7 @@ export type UseSearchParamsReturn = {
  * @returns {UseSearchParamsReturn} An object with reactive properties for performing a search query on the backend.
  */
 export function useSearchParams(options: {
-  scope: 'Collection' | 'Entity' | 'Text';
+  scope: 'Collection' | 'Entity' | 'Content';
   rowCount?: number;
 }): UseSearchParamsReturn {
   const { getAvailableNodeLabels } = useGuidelinesStore();

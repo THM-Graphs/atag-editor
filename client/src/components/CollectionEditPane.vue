@@ -237,8 +237,8 @@ async function handleAddTextClick(): Promise<void> {
     createNodeDtoFromNode(createTextNode()),
   ) as NodeStatusObject<TextNode>;
 
-  if (!newText.node.nodeLabels.includes('Text')) {
-    newText.node.nodeLabels.push('Text');
+  if (!newText.node.nodeLabels.includes('Content')) {
+    newText.node.nodeLabels.push('Content');
   }
 
   newText.meta.status = 'created';

@@ -22,8 +22,8 @@ function getBaseNodeLabel(labels: string[]): BaseNodeLabel {
     return 'Entity';
   } else if (labels.includes('Collection')) {
     return 'Collection';
-  } else if (labels.includes('Text')) {
-    return 'Text';
+  } else if (labels.includes('Content')) {
+    return 'Content';
   } else if (labels.includes('Annotation')) {
     return 'Annotation';
   } else {

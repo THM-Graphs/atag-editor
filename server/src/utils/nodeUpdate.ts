@@ -8,20 +8,20 @@ import {
   NodeStatusObject,
   NodeUpdateObject,
   PropertyConfig,
-  TextNode,
+  ContentNode,
 } from '../models/types.js';
 import GuidelinesService from '../services/guidelines.service.js';
 import { toNeo4jTypes } from './helper.js';
 import { inferRelationship } from './ramen.js';
 
 function convertNodeToNeo4jFormat(
-  node: EntityNode | AnnotationNode | CollectionNode | TextNode,
+  node: EntityNode | AnnotationNode | CollectionNode | ContentNode,
   guidelines: IGuidelines,
 ): Node<Record<string, any>> {
   const guidelineService = new GuidelinesService();
   const fields: PropertyConfig[] = [];
 
-  if (node.nodeLabels.includes('Text') || node.nodeLabels.includes('Entity')) {
+  if (node.nodeLabels.includes('Content') || node.nodeLabels.includes('Entity')) {
     return node;
   } else if (node.nodeLabels.includes('Collection')) {
     fields.push(
@@ -83,7 +83,7 @@ function insertNodeIntoObject(
  * from the parent–child status pairs. Type conversion to Neo4j-compatible values is applied
  * using the provided guidelines.
  *
- * @param root - Root of the ownership tree (e.g. a Text or Collection node with its children already set as `connectedNodes`).
+ * @param root - Root of the ownership tree (e.g. a Content or Collection node with its children already set as `connectedNodes`).
  * @param guidelines - Project guidelines used to resolve property type configurations for Annotation and Collection nodes.
  * @returns A flat {@link NodeUpdateObject} with separate lists for each operation category.
  */
@@ -108,15 +108,15 @@ export function flattenNodeTree(root: NodeStatusObject, guidelines: IGuidelines)
  * Expected parameters: `$uuid`, `$delete`, `$create`, `$update`, `$remove`, `$attach` —
  * as produced by {@link flattenNodeTree}.
  *
- * @param rootLabel - `'Text'` or `'Collection'` — the label of the root node that is matched and returned.
+ * @param rootLabel - `'Content'` or `'Collection'` — the label of the root node that is matched and returned.
  */
-export function buildSubgraphUpdateQuery(rootLabel: 'Text' | 'Collection'): string {
+export function buildSubgraphUpdateQuery(rootLabel: 'Content' | 'Collection'): string {
   return `
   // Delete nodes and their relationships
   CALL () {
       UNWIND $delete AS nodeToDelete
 
-      MATCH (n:Annotation|Text|Collection|Entity {uuid: nodeToDelete.data.uuid})
+      MATCH (n:Annotation|Content|Collection|Entity {uuid: nodeToDelete.data.uuid})
 
       DETACH DELETE n
   }
@@ -137,7 +137,7 @@ export function buildSubgraphUpdateQuery(rootLabel: 'Text' | 'Collection'): stri
   CALL () {
       UNWIND $update AS nodeToUpdate
 
-      MATCH (n:Annotation|Text|Collection|Entity {uuid: nodeToUpdate.data.uuid})
+      MATCH (n:Annotation|Content|Collection|Entity {uuid: nodeToUpdate.data.uuid})
       SET n = nodeToUpdate.data
       WITH n, nodeToUpdate, labels(n) AS currentLabels
       CALL apoc.create.removeLabels(n, currentLabels) YIELD node
@@ -149,7 +149,7 @@ export function buildSubgraphUpdateQuery(rootLabel: 'Text' | 'Collection'): stri
   CALL () {
       UNWIND $remove AS edge
 
-      MATCH (start:Annotation|Text|Collection|Entity {uuid: edge.startUuid})-[r]->(end:Annotation|Text|Collection|Entity {uuid: edge.endUuid})
+      MATCH (start:Annotation|Content|Collection|Entity {uuid: edge.startUuid})-[r]->(end:Annotation|Content|Collection|Entity {uuid: edge.endUuid})
       WHERE type(r) = edge.type
 
       DELETE r
@@ -159,8 +159,8 @@ export function buildSubgraphUpdateQuery(rootLabel: 'Text' | 'Collection'): stri
   CALL () {
       UNWIND $attach AS edge
 
-      MATCH (start:Annotation|Text|Collection|Entity {uuid: edge.startUuid})
-      MATCH (end:Annotation|Text|Collection|Entity {uuid: edge.endUuid})
+      MATCH (start:Annotation|Content|Collection|Entity {uuid: edge.startUuid})
+      MATCH (end:Annotation|Content|Collection|Entity {uuid: edge.endUuid})
       CALL apoc.merge.relationship(start, edge.type, {}, {}, end) YIELD rel
 
       RETURN count(rel) AS attached

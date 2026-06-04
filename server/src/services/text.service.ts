@@ -21,7 +21,7 @@ export default class TextService {
 
     // Match optional Text nodes
     CALL (c) {
-        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Text)
+        OPTIONAL MATCH (c)<-[:PART_OF]-(t:Content)
         
         RETURN collect(t) as texts
     }
@@ -55,7 +55,7 @@ export default class TextService {
     const { nodeLabels, limit, order, offset, search } = options;
 
     const baseQuery: string = `
-    MATCH (n:Text)
+    MATCH (n:Content)
     WHERE toLower(n.text) CONTAINS toLower($search)
     AND (size($nodeLabels) = 0 OR size(apoc.coll.intersection($nodeLabels, labels(n))) > 0)
 
@@ -116,7 +116,7 @@ export default class TextService {
    */
   public async getExtendedTextByUuid(uuid: string): Promise<TextAccessObject> {
     const query: string = `
-    MATCH (t:Text {uuid: $uuid})
+    MATCH (t:Content {uuid: $uuid})
     OPTIONAL MATCH (t)-[:PART_OF]->(c:Collection)
     
     CALL (t) {
@@ -160,7 +160,7 @@ export default class TextService {
       guidelines,
     );
 
-    const query: string = buildSubgraphUpdateQuery('Text');
+    const query: string = buildSubgraphUpdateQuery('Content');
 
     const result: QueryResult = await Neo4jDriver.runQuery(query, {
       uuid,

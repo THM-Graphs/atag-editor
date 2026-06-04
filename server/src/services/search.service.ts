@@ -19,14 +19,14 @@ export default class SearchService {
    * Delegates to the appropriate service based on the scope. Entity and Text scopes
    * are not yet implemented and return an empty result.
    *
-   * @param {'Collection' | 'Entity' | 'Text'} scope - The type of nodes to search.
+   * @param {'Collection' | 'Entity' | 'Content'} scope - The type of nodes to search.
    * @param {Required<NodeSearchParams>} options - Pagination and filter options, including
    *   the search string, node labels, sort order, limit, and offset.
    * @return {Promise<PaginationResult<(CollectionNode | EntityNode | TextNode)[]>>} A promise
    *   that resolves to a paginated result containing the matching nodes.
    */
   public async searchNodes(
-    scope: 'Collection' | 'Entity' | 'Text',
+    scope: 'Collection' | 'Entity' | 'Content',
     options: Required<NodeSearchParams>,
   ): Promise<PaginationResult<(CollectionNode | EntityNode | TextNode)[]>> {
     if (scope === 'Collection') {
@@ -37,7 +37,7 @@ export default class SearchService {
       const entityService = new EntityService();
 
       return await entityService.search(options);
-    } else if (scope === 'Text') {
+    } else if (scope === 'Content') {
       const textService = new TextService();
 
       return await textService.search(options);
