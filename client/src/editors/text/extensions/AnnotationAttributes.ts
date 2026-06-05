@@ -1,7 +1,7 @@
 import { Attribute, Extension, GlobalAttributes } from '@tiptap/vue-3';
-import { getDefaultValueForProperty } from '../utils/helper/helper';
-import { AnnotationType, PropertyConfig } from '../models/types';
-import { useGuidelinesStore } from '../store/guidelines';
+import { getDefaultValueForProperty } from '../../../utils/helper/helper';
+import { AnnotationType, PropertyConfig } from '../../../models/types';
+import { useGuidelinesStore } from '../../../store/guidelines';
 import { Node } from '@tiptap/pm/model';
 
 const { structuralAnnotationConfigs } = useGuidelinesStore();

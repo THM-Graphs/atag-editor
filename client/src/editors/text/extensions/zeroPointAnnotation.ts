@@ -1,5 +1,5 @@
 import { Node, NodeViewRendererProps } from '@tiptap/core';
-import { AnnotationNode } from '../models/types';
+import { AnnotationNode } from '../../../models/types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {

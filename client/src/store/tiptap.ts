@@ -19,7 +19,7 @@ import HardBreak from '@tiptap/extension-hard-break';
 import { TableKit } from '@tiptap/extension-table';
 import { UndoRedo } from '@tiptap/extensions';
 import { Gapcursor } from '@tiptap/extensions';
-import { ZeroPointAnnotation } from '../services/zeroPointAnnotation';
+import { ZeroPointAnnotation } from '../editors/text/extensions/zeroPointAnnotation';
 import StandoffConverter from '../services/standoffConverter';
 import { standoffJson } from '../services/standoffJson';
 import {
@@ -28,11 +28,11 @@ import {
   createExtendedStandoffObject,
   getVisibleDocRange,
 } from '../utils/helper/helper';
-import { AnnotationDecoration } from '../services/annotationDecoration';
+import { AnnotationDecoration } from '../editors/text/extensions/annotationDecoration';
 import { useFilterStore } from './filter';
 import { useEventListener } from '@vueuse/core';
-import { AnnotationAttributes } from '../services/AnnotationAttributes';
-import { CustomBlock } from '../services/customBlock';
+import { AnnotationAttributes } from '../editors/text/extensions/AnnotationAttributes';
+import { CustomBlock } from '../editors/text/extensions/customBlock';
 import { history } from 'prosemirror-history';
 
 const { selectedOptions } = useFilterStore();

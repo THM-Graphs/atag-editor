@@ -1,6 +1,6 @@
 import { computed, readonly, ref } from 'vue';
 import { useTiptapStore } from '../store/tiptap';
-import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
+import { ANNOTATION_DECORATION_KEY } from '../editors/text/extensions/annotationDecoration';
 import { IndexMap } from '../models/types';
 import { Decoration } from '@tiptap/pm/view';
 import { Node } from '@tiptap/pm/model';

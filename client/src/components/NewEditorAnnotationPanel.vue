@@ -5,7 +5,7 @@ import { useFilterStore } from '../store/filter';
 import { Annotation } from '../models/types';
 import Badge from 'primevue/badge';
 import { useTiptapStore } from '../store/tiptap';
-import { ANNOTATION_DECORATION_KEY } from '../services/annotationDecoration';
+import { ANNOTATION_DECORATION_KEY } from '../editors/text/extensions/annotationDecoration.ts';
 import { DecorationSet } from '@tiptap/pm/view';
 
 const { tiptap, annotations: allAnnotations } = useTiptapStore();

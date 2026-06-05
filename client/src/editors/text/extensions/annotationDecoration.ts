@@ -3,11 +3,11 @@ import { Mapping } from '@tiptap/pm/transform';
 import { Extension } from '@tiptap/core';
 import { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { useGuidelinesStore } from '../store/guidelines';
-import { AddAnnotationStep } from './addAnnotationStep';
-import { AnnotationNode, NodeStatusObject } from '../models/types';
-import { RemoveAnnotationStep } from './removeAnnotationStep';
-import { indexToPosition } from '../utils/helper/indexHelper';
+import { useGuidelinesStore } from '../../../store/guidelines';
+import { AddAnnotationStep } from '../steps/addAnnotationStep';
+import { AnnotationNode, NodeStatusObject } from '../../../models/types';
+import { RemoveAnnotationStep } from '../steps/removeAnnotationStep';
+import { indexToPosition } from '../../../utils/helper/indexHelper';
 
 const { isZeroPoint } = useGuidelinesStore();
 
