@@ -71,6 +71,7 @@ export type AnnotationType = {
   isBlock?: boolean;
   contains?: string[];
   topLevel?: boolean;
+  priority?: number;
 };
 
 export type AnnotationReference = {

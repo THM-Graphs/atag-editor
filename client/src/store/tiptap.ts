@@ -34,6 +34,7 @@ import { useEventListener } from '@vueuse/core';
 import { AnnotationAttributes } from '../editors/text/extensions/AnnotationAttributes';
 import { CustomBlock } from '../editors/text/extensions/customBlock';
 import { history } from 'prosemirror-history';
+import { StructureParser } from '../services/structureParser';
 
 const { selectedOptions } = useFilterStore();
 
@@ -132,6 +133,8 @@ function initializeTiptap(standoffObject?: { text: string; annotations: NodeDto[
   const data = standoffObject ? createExtendedStandoffObject(standoffObject) : standoffJson;
   const converter: StandoffConverter = new StandoffConverter(data as ApiJson);
   const { tipTapJson, annotations, structuralAnnotations } = converter.getData();
+
+  const structureParser = new StructureParser(data.text, data.annotations);
 
   setAnnotations({ annotations, structuralAnnotations });
 

@@ -22,11 +22,13 @@ const BUILTIN_STRUCTURAL_NODE_TYPES = [
 
 type BuiltinNodeType = (typeof BUILTIN_STRUCTURAL_NODE_TYPES)[number];
 
-// Returns { _type, _annotationData } attributes.
+// Returns { _type, _annotationData, _annotations } attributes.
 // _type: stores the actual neo4j/semantic type (e.g. 'paragraph', 'address').
 //   Default = typeName for built-ins (new nodes already know their type),
 //   null for customBlock (always set explicitly via wrapIn attrs).
 // _annotationData: full neo4j round-trip payload; default = { type } for built-ins, null for customBlock.
+// _annotations: custom TEI structural annotations (closer, address, …) that wrap this node's range,
+//   stored as an array of full annotation data objects sorted outermost-first. null when none.
 function makeDataAttr(defaultType: string | null): Record<string, Attribute> {
   return {
     _type: {
@@ -37,6 +39,10 @@ function makeDataAttr(defaultType: string | null): Record<string, Attribute> {
     },
     _annotationData: {
       default: defaultType !== null ? { type: defaultType } : null,
+      rendered: false,
+    },
+    _annotations: {
+      default: null,
       rendered: false,
     },
   };

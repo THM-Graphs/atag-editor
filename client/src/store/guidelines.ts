@@ -30,6 +30,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: [],
     topLevel: true,
+    priority: 80,
     properties: [],
     shortcut: [],
     text: '',
@@ -41,6 +42,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: [],
     topLevel: true,
+    priority: 70,
     properties: [
       {
         name: 'level',
@@ -62,6 +64,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: [],
     topLevel: false,
+    priority: 90,
     properties: [],
     shortcut: [],
     text: '',
@@ -74,6 +77,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     // caption/heading can be added later by extending contains via guidelines JSON
     contains: ['tableRow'],
     topLevel: true,
+    priority: 10,
     properties: [],
     shortcut: [],
     text: '',
@@ -85,6 +89,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: ['tableHeader', 'tableCell'],
     topLevel: false,
+    priority: 20,
     properties: [],
     shortcut: [],
     text: '',
@@ -96,6 +101,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: ['paragraph', 'heading', 'bulletList'],
     topLevel: false,
+    priority: 30,
     properties: [],
     shortcut: [],
     text: '',
@@ -107,6 +113,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: ['paragraph', 'heading', 'bulletList'],
     topLevel: false,
+    priority: 30,
     properties: [
       { name: 'rowspan', type: 'number', required: true, editable: true, visible: true },
       { name: 'colspan', type: 'number', required: true, editable: true, visible: true },
@@ -122,6 +129,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     // caption/heading can be added later by extending contains via guidelines JSON
     contains: ['listItem'],
     topLevel: true,
+    priority: 40,
     properties: [],
     shortcut: [],
     text: '',
@@ -133,6 +141,7 @@ const BUILTIN_STRUCTURAL_CONFIGS: AnnotationType[] = [
     isBlock: true,
     contains: ['paragraph', 'heading', 'bulletList'],
     topLevel: false,
+    priority: 50,
     properties: [],
     shortcut: [],
     text: '',
@@ -428,7 +437,7 @@ export function useGuidelinesStore() {
         return availableCollectionLabels.value;
       case 'Entity':
         return availableEntityLabels.value;
-      case 'Text':
+      case 'Content':
         return availableTextLabels.value;
       default:
         return [];
@@ -528,6 +537,10 @@ export function useGuidelinesStore() {
     );
   }
 
+  function getPriorityForType(type: string): number {
+    return mergedStructuralConfigs.value.find(c => c.type === type)?.priority ?? 100;
+  }
+
   return {
     availableCollectionLabels,
     availableEntityLabels,
@@ -540,6 +553,7 @@ export function useGuidelinesStore() {
     isInitialized: readonly(isInitialized),
     structuralAnnotationConfigs: mergedStructuralConfigs,
     getStructuralAnnotationConfigs: (): AnnotationType[] => mergedStructuralConfigs.value,
+    getPriorityForType,
     structuralChildrenMap,
     docContainsTypes,
     annotationHasConstraints,
